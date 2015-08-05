@@ -1,0 +1,90 @@
+#AP_list a {
+	font-weight: normal;
+}
+#dtScanList .progressbar {
+	height: 20px;
+	width: 98%;
+}
+
+.dataTables_wrapper {
+	position: relative;
+	clear: both;
+}
+table.display {
+	clear: both;
+	width: 98%;
+	margin-left: 1%;
+}
+.dataTables_length {
+	display: block;
+	width: 40%;
+	float: left;
+	margin-bottom: 1em;
+	margin-left: 2%;
+}
+.dataTables_filter {
+	width: 50%;
+	float: right;
+	text-align: right;
+	margin-bottom: 1em;
+	margin-right: 2%;
+}
+
+
+.paging_full_numbers {
+	width: auto;
+	height: 22px;
+	line-height: 22px;
+	padding-right: 16px;
+}
+.dataTables_info, .dataTables_paginate {
+	margin-bottom: 1.5em;
+	float: left;
+	font-size:12px;
+	margin-left: 1%;
+}
+.dataTables_paginate {
+	float: right;
+	text-align: right;
+	margin-top: 0;
+}
+.paging_full_numbers .paginate_button:hover, .paging_full_numbers {
+	color: #033038;
+}
+.paging_full_numbers .paginate_button, .paging_full_numbers {
+	color: #5495AF;
+}
+.paging_full_numbers .paginate_button, .paging_full_numbers {
+	color: #5495AF;
+}
+.paging_full_numbers .paginate_button, .paging_full_numbers .paginate_active {
+	border: 1px solid #AAA;
+	border-radius: 2px;
+	padding: 1px 5px;
+	margin: 0px 3px;
+	cursor: pointer;
+}
+
+
+.sorting_asc {
+	background:  url(images/sort_asc.png) no-repeat center right;line-height:1;text-align:center; 
+}
+
+.sorting_desc {
+	background:  url(images/sort_desc.png) no-repeat center right;line-height:1;text-align:center; 
+}
+
+.sorting {
+	background:  url(images/sort_both.png) no-repeat center right;line-height:1;text-align:center; 
+}
+div.btn_function {
+	margin-left: 1%;
+}
+a.underline{color: #cc0000; text-decoration: underline;}
+.fontwidth_family{font-family: fixedsys}
+
+/* 
+	刷新过快出现错乱闪现
+	dialog添加display:none
+*/
+.dialog-content{display:block !important;}

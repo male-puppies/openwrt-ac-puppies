@@ -1,0 +1,201 @@
+<%+header%>
+
+<link media="screen" rel="stylesheet" type="text/css" href="<%=resource%>/js/themes_easyui/default/easyui.css"/>
+<link media="screen" rel="stylesheet" type="text/css" href="<%=resource%>/js/themes_easyui/default/managecss.css" />  
+<link media="screen" rel="stylesheet" type="text/css" href="<%=resource%>/js/themes_easyui/icon.css"/>
+<style type="text/css" media="screen">
+	.dataTables_wrapper {
+		min-height: 0px;
+	}
+	.datagrid-body {
+		overflow: hidden;
+	}
+	.container_12>.panel{
+		overflow-x:hidden;
+		margin-bottom:5px;
+	}
+
+	.fields {
+		min-height: 20px;
+		clear:both;
+	}
+	.fields .larrow {
+		width: 40px;
+	}
+	.fields label {
+		float:left;
+		clear:left;
+		padding:7px 20px 7px 3px;
+		text-align:right;
+		display:inline-block;
+		width:150px;
+	}
+	fieldset .fields div {
+		padding-left: 80px;
+		margin: 2px 0 3px 1px;
+	}
+
+	.chk_wrapper {
+		float: left;
+		margin: 5px;
+	}
+
+	#pan_TcAiMessage {
+		margin: 10px;
+	}
+	
+	#pan_TcAiMessage p {
+		margin: 10px 0 0 10px;
+		font-weight: bold;
+	}
+
+	#pan_TcAiMessage b {
+		font-weight: normal;
+		margin: 10px 0 0 20px;
+	}
+	
+	.fcontrol-z{
+			height:30px;
+			line-height:28px;
+			padding:10px 2% 0 1%
+	}
+	.hide{
+		display:none;
+	}
+</style>
+<!-- BEGIN: load jquery -->
+<script type="text/javascript" src="<%=resource%>/js/jquery.js"></script>
+<script type="text/javascript" src="<%=resource%>/js/jquery.easyui.min.js"></script>
+<!--begin of jquery easy ui-->
+
+<script type="text/javascript" src="<%=resource%>/js/jquery.ui.ext.js"></script>
+<script type="text/javascript" src="<%=resource%>/js/jquery.dataTables.js"></script>
+<script type="text/javascript" src="<%=resource%>/js/jquery.dataTables.ext.js"></script>
+<script type="text/javascript" src="<%=resource%>/js/underscore.string.js"></script>
+<script type="text/javascript" src="<%=resource%>/js/flowCtrlSetup.js"></script>
+<script type="text/javascript" src="<%=resource%>/js/jquery.ext.verify.js"></script>
+<!-- END: load jquery -->
+
+<div class="container_12" style="overflow:hidden">
+	<h2><a id="content" name="content">流量控制</a></h2>
+	<div>
+        <fieldset>
+            <legend><label>总出口带宽配置</label><span class="icon-style icon-tip" title="请输入0-16000的数值." ></span></legend>
+            <div class="form-horizontal mrtp10">
+                <div class="fcontrol-z">
+                    <label>总出口上传配置：</label><input id="GlobalSharedUpload" class="changeMark" type="text" maxlength="5" title="" />
+                    <select id="GlobalSharedUpload_Unit" class="select loadunit_Select" style="width:80px;">
+                        <option selected value="Mbps">Mbps</option>
+                    </select>
+                </div>
+            	<div class="fcontrol-z">
+                	<label>总出口下载配置：</label><input id="GlobalSharedDownload" class="changeMark" type="text" maxlength="5" title="" />
+                    <select id="GlobalSharedDownload_Unit" class="select loadunit_Select" style="width:80px;">
+                        <option selected value="Mbps">Mbps</option>
+                    </select>
+                </div>
+                <div class="fcontrol-z" style="margin-bottom:30px;margin-left:200px;">
+                	<input type="button" value="保存出口带宽" class="btn btn_save_conf"/>
+                </div> 
+            </div>
+        </fieldset>
+    </div>
+
+    <div id="pan_TcChannels">
+        <div class="easyui-panel" title="流量策略配置">
+            <table class="display showtab" id="flow_ctrl">
+                <thead>
+                    <tr>
+                        <td>名称</td>
+                        <td>地址范围</td>
+                        <td>共享下载</td>
+                        <td>共享上传</td>
+                        <td>单机下载</td>
+                        <td>单机上传</td>
+                        <td>状态</td>
+                        <td>操作</td>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+			<div style="clear:both;"></div>
+            <div class="btn_function">
+                <input type="button" value="添加" class="btn add_new cbi-button-add cbi-button" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--******************流量控制配置*******************************************************-->
+<div class="hide">
+	<div id="panl_TcRule" class="easyui-dialog">
+        <fieldset>
+            <legend><label>配置信息</label></legend>
+            <div class="fields">
+                <label for="Name" >名称：</label>
+                <div>
+                    <input id="Name" verify="name" class="empty input" disabled type="text"/>
+                </div>
+            </div>
+            
+            <div class="fields">
+                <label for="Ip">地址范围：</label>
+                <div>
+                    <input type="text" id="Ip" class="input" style="width:214px" title="" />
+            		<span class="icon-style icon-tip" title="支持单个IP或地址范围. 例如，&#10;192.168.0.100&#10;或者&#10;192.168.0.1-192.168.0.255" ></span>
+                </div>
+                
+            </div>
+        </fieldset>
+            
+        <fieldset>
+            <legend><label>流量控制<span class="icon-style icon-tip" title="请输入范围0-2000MBytes或0-2000000KBytes." ></span> </label></legend>
+            <div class="fields">
+                <label for="SharedDownload">共享下载：</label>
+                <div>
+                    <input type="text" id="SharedDownload" class="input" maxlength="6" title="" />
+                    <select id="SharedDownload_Unit" class="select" style="width:80px;">
+                        <option selected="selected" value="KBytes">KBytes</option>
+                        <option value="MBytes">MBytes</option>
+                    </select>
+                    
+                </div>
+            </div>
+            
+            <div class="fields">
+                <label for="SharedUpload">共享上传：</label>
+                <div>
+                    <input type="text" id="SharedUpload" class="input" maxlength="6" title="" />
+                    <select id="SharedUpload_Unit" class="select" style="width:80px;">
+                        <option selected="selected" value="KBytes">KBytes</option>
+                        <option value="MBytes">MBytes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="fields">
+                <label for="PerIpDownload">单机下载：</label>
+                <div>
+                    <input type="text" id="PerIpDownload" class="input" maxlength="6" title="" />
+                    <select id="PerIpDownload_Unit" class="select" style="width:80px;">
+                        <option selected="selected" value="KBytes">KBytes</option>
+                        <option value="MBytes">MBytes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="fields">
+                <label for="PerIpUpload">单机上传：</label>
+                <div>
+                    <input type="text" id="PerIpUpload" class="input" maxlength="6" title="" />
+                    <select id="PerIpUpload_Unit" class="select" style="width:80px;">
+                        <option selected="selected" value="KBytes">KBytes</option>
+                        <option value="MBytes">MBytes</option>
+                    </select>
+                </div>
+            </div>
+        </fieldset>
+	</div>
+</div>
+
+<%+footer%>
