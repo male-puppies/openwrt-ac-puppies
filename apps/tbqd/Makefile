@@ -25,7 +25,7 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
+	-$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/Compile
@@ -33,7 +33,8 @@ define Build/Compile
 endef
 
 define Package/tbqd/install
-	$(INSTALL_DATA) ./files/* $(1)/
+	echo $(1) $(2)
+	$(CP) -a ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,tbqd))
