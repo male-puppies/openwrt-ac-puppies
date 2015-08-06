@@ -1,4 +1,3 @@
-local log = require("luci.log")
 local js = require("cjson")
 module("luci.controller.admin.flowcrtl", package.seeall)
 local path = "/etc/tc.json"
