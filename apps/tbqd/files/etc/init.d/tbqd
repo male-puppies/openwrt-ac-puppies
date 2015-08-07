@@ -22,7 +22,7 @@ restart() {
 }
 
 start() {
-	lua /usr/sbin/settc.lua /etc/tc.json | cat > /sys/modules/tbq/tbq
+	lua /usr/sbin/settc.lua /etc/tc.json | cat > /sys/module/tbq/tbq
 }
 stop() {
 	return 0
