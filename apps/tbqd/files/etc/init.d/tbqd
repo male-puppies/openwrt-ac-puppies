@@ -1,0 +1,29 @@
+#!/bin/sh /etc/rc.common
+START=93
+STOP=20
+
+boot() {
+	start
+	return 0
+}
+
+reload() {
+	stop
+	rmmod tbq
+	modprobe tbq
+	start
+	return 0
+}
+
+restart() {
+	stop
+	sleep 1
+	start
+}
+
+start() {
+	lua /usr/sbin/settc.lua /etc/tc.json | cat > /sys/modules/tbq/tbq
+}
+stop() {
+	return 0
+}

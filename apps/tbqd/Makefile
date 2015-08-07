@@ -37,5 +37,21 @@ define Package/tbqd/install
 	$(CP) -a ./files/* $(1)/
 endef
 
+define Package/tbqd/postinst
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	echo "Enabling rc.d symlink for tbq"
+	/etc/init.d/tbqd enable
+fi
+exit 0
+endef
+
+define Package/tbqd/prerm
+if [ -z "$${IPKG_INSTROOT}" ]; then
+	echo "Removing rc.d symlink for tbqd"
+	/etc/init.d/tbqd disable
+fi
+exit 0
+endef
+
 $(eval $(call BuildPackage,tbqd))
 
