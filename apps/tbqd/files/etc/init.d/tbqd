@@ -2,6 +2,8 @@
 START=93
 STOP=20
 
+FSYS='/sys/module/tbq/tbq'
+
 boot() {
 	start
 	return 0
@@ -22,7 +24,9 @@ restart() {
 }
 
 start() {
-	lua /usr/sbin/settc.lua /etc/tc.json | cat > /sys/module/tbq/tbq
+	echo 0 > ${FSYS}
+	lua /usr/sbin/settc.lua /etc/tc.json | cat > ${FSYS}
+	echo 1 > ${FSYS}
 }
 stop() {
 	return 0

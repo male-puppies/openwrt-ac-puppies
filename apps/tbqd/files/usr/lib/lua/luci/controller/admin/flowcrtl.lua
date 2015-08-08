@@ -41,6 +41,9 @@ local function save_file(path, map)
 
 	local cmd = "lua /usr/sbin/settc.lua /etc/tc.json | cat > /sys/module/tbq/tbq"
 	os.execute(cmd)
+
+	local cmd = "echo 1 > /sys/module/tbq/tbq"
+	os.execute(cmd)
 end
 
 function get_flow()
