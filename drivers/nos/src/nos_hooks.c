@@ -11,14 +11,14 @@ static unsigned int nodes_usage_expamples(struct nos_track* nos, struct sk_buff*
 
 	struct nos_flow_info *flow = nos_get_flow_info(nos);
 	struct nos_user_info *user = nos_get_user_info(nos);
-	struct nos_peer_info *peer = nos_get_peer_info(nos);
+	struct nos_user_info *peer = nos_get_peer_info(nos);
 
 	if(!flow || !user || !peer) {
 		goto __finished;
 	}
 
 	/* example of debug show flow */
-	if(net_ratelimits()){
+	if(net_ratelimit()){
 		loginfo("FLOW "FMT_FLOW_STR"\n", FMT_FLOW(flow));
 	}
 
@@ -36,14 +36,13 @@ __finished:
 	return ret;
 }
 
-static unsigned int nos_hook_fw(unsigned int hooknum, 
+static unsigned int nos_hook_fw(const struct nf_hook_ops *ops, 
 		struct sk_buff *skb,
 		const struct net_device *in,
 		const struct net_device *out, 
 		int (*okfn)(struct sk_buff *))
 {
 	unsigned int res = NF_ACCEPT;
-	uint64_t flags = 0;
 	
 	struct nf_conn *ct;
 	struct iphdr *iph;
@@ -135,7 +134,7 @@ static int __init nos_module_init(void)
 	
 	ret = nf_register_hooks(nos_nf_hook_ops, ARRAY_SIZE(nos_nf_hook_ops));
 	if (ret != 0) {
-		TBQ_ERROR("nf_register_hook failed: %d\n", ret);
+		logerr("nf_register_hook failed: %d\n", ret);
 		goto unregister_sysfs;
 	}
 
