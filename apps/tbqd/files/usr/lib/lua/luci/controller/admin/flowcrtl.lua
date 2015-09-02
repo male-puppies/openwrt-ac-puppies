@@ -48,6 +48,7 @@ end
 
 function get_flow()
 	local s = read(path) or "" 
+	luci.http.header("Content-Length", #s)
 	luci.http.write(s)
 end
 
@@ -63,8 +64,7 @@ function set_globalshare()
 		fmap[k] = v
 	end
 	save_file(path, fmap)
-
-	luci.http.write("0")
+	luci.http.write_json({state = 0})
 end
 
 function insRules()
@@ -83,9 +83,9 @@ function insRules()
 	if f == true then
 		table.insert(fmap["Rules"], map)
 		save_file(path, fmap)
-		luci.http.write("0")
+		luci.http.write_json({state = 0})
 	else
-		luci.http.write("1")
+		luci.http.write_json({state = 1})
 	end
 end
 
@@ -96,7 +96,7 @@ function updateRules()
 	local f = false
 	
 	if not fmap["Rules"] then
-		luci.http.write("1")
+		luci.http.write_json({state = 1})
 		return
 	end
 
@@ -116,9 +116,9 @@ function updateRules()
 	fmap["Rules"] = arr
 	if f == true then
 		save_file(path, fmap)
-		luci.http.write("0")
+		luci.http.write_json({state = 0})
 	else
-		luci.http.write("1")
+		luci.http.write_json({state = 1})
 	end
 end
 
@@ -129,7 +129,7 @@ function deletRules()
 
 	local f = false
 	if not fmap["Rules"] then
-		luci.http.write("1")
+		luci.http.write_json({state = 1})
 		return
 	end
 	
@@ -144,8 +144,8 @@ function deletRules()
 	fmap["Rules"] = arr
 	if f == true then
 		save_file(path, fmap)
-		luci.http.write("0")
+		luci.http.write_json({state = 0})
 	else
-		luci.http.write("1")
+		luci.http.write_json({state = 1})
 	end
 end

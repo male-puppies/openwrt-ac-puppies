@@ -176,7 +176,7 @@ function saveTcRule() {
 			"insRules",
 			o,
 			function(d) {
-				if (d == '0') {
+				if (d.state == '0') {
 					initData();
 				} else {
 					alert('添加失败！')
@@ -189,12 +189,13 @@ function saveTcRule() {
 			"updateRules",
 			o,
 			function(d) {
-				if (d == '0') {
+				if (d.state == '0') {
 					initData();
 				} else {
 					alert('修改失败！')
 				}
-			}
+			},
+			"json"
 		)
 	}
 	$('#panl_TcRule').dialog('close');
@@ -266,7 +267,7 @@ function set_del(name) {
 			"Name": name
 		},
 		function(d) {
-			if (d == "0") {
+			if (d.state == "0") {
 				initData();
 			} else {
 				alert('删除失败！');
@@ -284,7 +285,7 @@ function set_enable(name, en){
 			"Enabled": en == 'true' ? false : true
 		},
 		function(d) {
-			if (d == "0") {
+			if (d.state == "0") {
 				initData();
 			} else {
 				alert('修改失败！');
@@ -309,7 +310,7 @@ function on_save_conf() {
 		"set_globalshare",
 		s,
 		function(d) {
-			if (d == '0') {
+			if (d.state == '0') {
 				alert('保存成功!');
 			} else {
 				alert('保存失败!');
