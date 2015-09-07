@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=${PKG_NAME}-${PKG_VERSION}.tar.gz
 PKG_SOURCE_URL:=https://ohse.de/uwe/releases/
-PKG_MD5SUM:=24d0831812d8262b6cac8316b0bac483
+PKG_MD5SUM:=b5ce6a74abc9b9eb2af94dffdfd372a4
 
 PKG_MAINTAINER:=Bruno Randolf <ohse.de@gnu.org>
 PKG_LICENSE:=GPL-2.0
