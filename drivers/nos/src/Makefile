@@ -3,5 +3,5 @@
 #
 
 obj-${CONFIG_NOS} += nos.o
-nos-y	:= nos_hooks.o nos_config.o
+nos-y	:= nos_hooks.o nos_config.o 
 

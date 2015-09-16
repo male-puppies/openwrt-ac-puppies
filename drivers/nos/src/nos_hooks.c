@@ -4,7 +4,9 @@
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"nos package mangle & auth driver"
 
-static unsigned int nodes_usage_expamples(struct nos_track* nos, struct sk_buff* skb)
+struct nos_global g_nos;
+
+static unsigned int nos_do(struct nos_track* nos, struct sk_buff* skb)
 {
 	unsigned int ret = NF_ACCEPT;
 	void *priv;
@@ -16,7 +18,7 @@ static unsigned int nodes_usage_expamples(struct nos_track* nos, struct sk_buff*
 	if(!flow || !user || !peer) {
 		goto __finished;
 	}
-
+	
 	/* example of debug show flow */
 	if(net_ratelimit()){
 		loginfo("FLOW "FMT_FLOW_STR"\n", FMT_FLOW(flow));
@@ -31,8 +33,8 @@ static unsigned int nodes_usage_expamples(struct nos_track* nos, struct sk_buff*
 	priv = nos_user_info_priv(peer);
 	/* 200 bytes you can use */
 
-
-__finished:
+	
+__finished: 
 	return ret;
 }
 
@@ -50,15 +52,15 @@ static unsigned int nos_hook_fw(const struct nf_hook_ops *ops,
 	enum ip_conntrack_info ctinfo;
 
 	struct nos_track* nos;
-	
+
 	ct = nf_ct_get(skb, &ctinfo);
 	if (!ct) {
-		//NOS_DBG("null ct.\n");
+		NOS_DBG("null ct.\n");
 		return NF_ACCEPT;
 	}
 
 	if(nf_ct_is_untracked(ct)) {
-		//NOS_DBG("untracked ct.\n");
+		NOS_DBG("--------------- untracked ct.\n");
 		return NF_ACCEPT;
 	}
 
@@ -103,7 +105,7 @@ static unsigned int nos_hook_fw(const struct nf_hook_ops *ops,
 	}
 
 	/* 存取flow & user & peer 节点 */
-	res = nodes_usage_expamples(nos, use_skb);
+	res = nos_do(nos, use_skb);
 
 __failed_out:
 	if(linear_skb) {
@@ -126,24 +128,23 @@ static struct nf_hook_ops nos_nf_hook_ops[] = {
 static int __init nos_module_init(void)
 {
 	int ret = 0;
-
+	nos_global_init();
 	ret = nos_sysfs_register();
 	if (ret != 0) {
 		goto cleanup_global;
 	}
-	
 	ret = nf_register_hooks(nos_nf_hook_ops, ARRAY_SIZE(nos_nf_hook_ops));
 	if (ret != 0) {
 		logerr("nf_register_hook failed: %d\n", ret);
 		goto unregister_sysfs;
 	}
-
 	loginfo("nos_init() OK\n");
 	return 0;
 
 unregister_sysfs:
 	nos_sysfs_unregister();
 cleanup_global:
+	nos_global_cleanup();
 	return ret;
 }
 
@@ -151,6 +152,7 @@ static void __exit nos_module_fini(void)
 {
 	nos_sysfs_unregister();
 	nf_unregister_hooks(nos_nf_hook_ops, ARRAY_SIZE(nos_nf_hook_ops));
+	nos_global_cleanup();
 	loginfo("nos_fini() OK\n");
 }
 
