@@ -23,7 +23,13 @@ void nos_timer_cleanup(struct nos_timer *timer)
 }
 
 /* ---------------------------------------- start user ------------------------------------------- */
-
+int check_dir(const char *inname, const char *outname) {
+	if (!inname || !outname)
+		return 0;
+	if (!strncmp(inname, "br-lan", 6) && !strncmp(outname, "eth0.5", 6))
+		return 1;
+	return 0;
+}
 static void user_hash_init(void)
 {
 	unsigned int i;  
@@ -50,7 +56,7 @@ static inline uint32_t hash_num(void *mac)
 	return jhash(mac, ETH_ALEN, 0) % NOS_MAX_USER;
 }
 
-static struct user_node *user_hash_find(void *mac) 
+struct user_node *user_hash_find(void *mac) 
 {
 	struct user_node *p = NULL;
 	struct hlist_head *bkt = NULL;
@@ -63,7 +69,7 @@ static struct user_node *user_hash_find(void *mac)
 	return NULL;
 }
 
-static int user_hash_add(struct user_node *n)
+int user_hash_add(struct user_node *n)
 {
 	if (user_hash_find(n->mac)) {
 		return 0;

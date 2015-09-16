@@ -126,5 +126,7 @@ void nos_global_init(void);
 void nos_global_cleanup(void);
 int nos_sysfs_register(void);
 void nos_sysfs_unregister(void);
-
+int check_dir(const char *inname, const char *outname);
+struct user_node *user_hash_find(void *mac) ;
+int user_hash_add(struct user_node *n);
 #endif //__NOS_MODULE_H__
