@@ -155,9 +155,12 @@ static int auth_URL(const char *url, int urllen, struct sk_buff *skb, const stru
 	dev_queue_xmit(nskb);
 	return 0; 
 }
+/*
+iptables -t nat -A PREROUTING -p tcp -d 10.10.10.10 --dport 80 -j DNAT --to 192.168.1.1:8080
+*/
 
-const char *urlfmt = "HTTP/1.1 302 Moved Temporarily\r\nLocation: http://192.168.0.100:8080/index.html?mac=00:00:00:00:00:01&ip=192.168.0.1\r\nContent-Type: text/html;\r\nCache-Control: no-cache\r\nContent-Length: 0\r\n\r\n";
-
+#define URLFMT "HTTP/1.1 302 Moved Temporarily\r\nLocation: http://10.10.10.10/index.html?mac=%02x:%02x:%02x:%02x:%02x:%02x&ip=%u.%u.%u.%u\r\nContent-Type: text/html;\r\nCache-Control: no-cache\r\nContent-Length: 0\r\n\r\n"
+#define URLFMT_SIZE (sizeof(URLFMT) + sizeof("00:00:00:00:00:00") + sizeof("255.255.255.255") + 1)
 static int auth_redirect(const char *url, int urllen, struct sk_buff *skb,
 					const struct net_device *in,
 					const struct net_device *out)
@@ -182,7 +185,7 @@ static unsigned int nos_do(struct nos_track* nos, struct sk_buff* skb, const str
 	struct iphdr *iph;
 	struct tcphdr *tcph;
 	struct udphdr *udph;
-	
+
 	if (!check_dir(in->name, out->name)) {
 		return NF_ACCEPT;
 	}
@@ -226,9 +229,14 @@ static unsigned int nos_do(struct nos_track* nos, struct sk_buff* skb, const str
 	payload = skb->data + (iph->ihl << 2) + (tcph->doff << 2);
 	if (paylen <= 0 || strncasecmp(payload, "GET", 3))
 		return NF_DROP; 
-
-	auth_redirect(urlfmt, strlen(urlfmt), skb, in, out); 
 	
+	{
+	char buff[URLFMT_SIZE];
+	ret = snprintf(buff, sizeof(buff), URLFMT, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], NIPQUAD(iph->saddr));
+	buff[ret] = 0;
+	loginfo("%s", buff);
+	auth_redirect(buff, ret, skb, in, out); 
+	}
 	return NF_DROP;
 }
 
@@ -332,7 +340,7 @@ static int __init nos_module_init(void)
 		logerr("nf_register_hook failed: %d\n", ret);
 		goto unregister_sysfs;
 	}
-	loginfo("nos_init() OK\n");
+	loginfo("nos_init() OK +\n");
 	return 0;
 
 unregister_sysfs:
