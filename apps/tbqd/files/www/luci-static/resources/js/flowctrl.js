@@ -173,15 +173,14 @@ function combUnit(ooo){
 
 function fixUnit(ooo){
 	for (var k in ooo) {
-		if (typeof(ooo[k]) == "object") continue;
+		if (typeof(ooo[k]) == "object" || k == "Name" || k == "Enabled" || k == "Ip") continue;
 		var unit = $('#' + k + '_Unit');
-		var val = ooo[k]; 
-		var ctl = $('#' + k);
+		var val = ooo[k];
 		var idx = val.indexOf('M');
-		if (idx < 0) 
-			idx = val.indexOf('K');
+		if (idx < 0) idx = val.indexOf('K');
+		if (idx < 0) continue;
 
-		ctl.val(val.substr(0, idx));
+		$('#' + k).val(val.substr(0, idx));
 		if (val != "" && unit.length > 0) unit.val(val.substr(idx));
 	};
 }
