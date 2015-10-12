@@ -105,7 +105,7 @@ function initData() {
 			jsonTraversal(oConf, jsTravSet);
 			fixUnit(oConf);
 			if (typeof(oConf.Rules) != "undefined" && oConf.Rules.length != 0) {
-				dtReloadData(oTbChannel, oConf.Rules);
+				dtReloadData(oTbChannel, dtObjToArray(oConf.Rules));
 			} else {
 				oTbChannel.fnClearTable();
 			}
