@@ -134,6 +134,7 @@ function saveTcRule() {
 			function(d) {
 				if (d.state == '0') {
 					initData();
+					$('#panl_TcRule').dialog('close');
 				} else {
 					alert('添加失败！')
 				}
@@ -147,6 +148,7 @@ function saveTcRule() {
 			function(d) {
 				if (d.state == '0') {
 					initData();
+					$('#panl_TcRule').dialog('close');
 				} else {
 					alert('修改失败！')
 				}
@@ -154,8 +156,6 @@ function saveTcRule() {
 			"json"
 		)
 	}
-	$('#panl_TcRule').dialog('close');
-
 }
 
 function combUnit(ooo){
