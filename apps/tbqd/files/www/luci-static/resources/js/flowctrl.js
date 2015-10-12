@@ -175,7 +175,6 @@ function fixUnit(ooo){
 	for (var k in ooo) {
 		if (typeof(ooo[k]) == "object") continue;
 		var unit = $('#' + k + '_Unit');
-		if (!unit.length) continue;
 		var val = ooo[k]; 
 		var ctl = $('#' + k);
 		var idx = val.indexOf('M');
@@ -183,7 +182,7 @@ function fixUnit(ooo){
 			idx = val.indexOf('K');
 
 		ctl.val(val.substr(0, idx));
-		if (val != "") unit.val(val.substr(idx));
+		if (val != "" && unit.length > 0) unit.val(val.substr(idx));
 	};
 }
 
