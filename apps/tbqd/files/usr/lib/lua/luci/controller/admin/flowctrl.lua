@@ -1,16 +1,16 @@
 local js = require("cjson")
-module("luci.controller.admin.flowcrtl", package.seeall)
+module("luci.controller.admin.flowctrl", package.seeall)
 local path = "/etc/tc.json"
 
 function index()
-	entry({"admin", "flowcrtl"}, alias("admin", "flowcrtl", "flowcrtl"), _("流量控制"), 50).index = true 
-	entry({"admin", "flowcrtl", "flowcrtl"}, template("admin_flowcrtl/flowctrl"), _("流量控制"), 1)
+	entry({"admin", "flowctrl"}, alias("admin", "flowctrl", "flowctrl"), _("流量控制"), 50).index = true 
+	entry({"admin", "flowctrl", "flowctrl"}, template("admin_flowcrtl/flowctrl"), _("流量控制"), 1)
 	
-	entry({"admin", "flowcrtl", "get_flow"}, call("get_flow")).leaf = true
-	entry({"admin", "flowcrtl", "set_globalshare"}, call("set_globalshare")).leaf = true
-	entry({"admin", "flowcrtl", "insRules"}, call("insRules")).leaf = true
-	entry({"admin", "flowcrtl", "updateRules"}, call("updateRules")).leaf = true
-	entry({"admin", "flowcrtl", "deletRules"}, call("deletRules")).leaf = true
+	entry({"admin", "flowctrl", "get_flow"}, call("get_flow")).leaf = true
+	entry({"admin", "flowctrl", "set_globalshare"}, call("set_globalshare")).leaf = true
+	entry({"admin", "flowctrl", "insRules"}, call("insRules")).leaf = true
+	entry({"admin", "flowctrl", "updateRules"}, call("updateRules")).leaf = true
+	entry({"admin", "flowctrl", "deletRules"}, call("deletRules")).leaf = true
 end
 
 local function read(path, func)
