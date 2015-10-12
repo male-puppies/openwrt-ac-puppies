@@ -58,7 +58,7 @@ function createoTableChannelsConfig(){
 			{
 				"mData": "Name",
 				"mRender": function(d, t, f) {
-					return "<a href='javascript:;' class='edit' title='编辑' onclick='set_edit(\"" + d + "\")'>"+ d +"</a>";
+					return "<a href='javascript:;' class='edit' onclick='set_edit(\"" + d + "\")'>"+ d +"</a>";
 				}
 			},
 			{
@@ -80,9 +80,9 @@ function createoTableChannelsConfig(){
 				"mData": "Enabled",
 				"mRender":function(d, t, f) {
 					if (d.toString() == "true") {
-						return '<a href="javascript:;" class="edit icon-ok" title="禁用" onclick="set_enable(\'' + f.Name + '\', \'' + d + '\')">已启用</a>';
+						return '<a href="javascript:;" class="edit icon-ok" onclick="set_enable(\'' + f.Name + '\', \'' + d + '\')">已启用</a>';
 					} else {
-						return '<a href="javascript:;" class="edit icon-no" title="启用" onclick="set_enable(\'' + f.Name + '\', \'' + d + '\')">已禁用</a>';
+						return '<a href="javascript:;" class="edit icon-no" onclick="set_enable(\'' + f.Name + '\', \'' + d + '\')">已禁用</a>';
 					}
 				}	
 			},
