@@ -25,7 +25,7 @@ restart() {
 
 start() {
 	echo 0 > ${FSYS}
-	lua /usr/sbin/settc.lua /etc/tc.json | cat > ${FSYS}
+	lua /usr/sbin/settc.lua /etc/config/tc.json | cat > ${FSYS}
 	echo 1 > ${FSYS}
 }
 stop() {

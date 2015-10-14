@@ -1,6 +1,6 @@
 local js = require("cjson")
 module("luci.controller.admin.flowctrl", package.seeall)
-local path = "/etc/tc.json"
+local path = "/etc/config/tc.json"
 
 function index()
 	entry({"admin", "flowctrl"}, alias("admin", "flowctrl", "flowctrl"), _("流量控制"), 50).index = true 
@@ -39,7 +39,7 @@ local function save_file(path, map)
 	local cmd = string.format("mv %s %s", tmp, path)
 	os.execute(cmd)
 
-	local cmd = "lua /usr/sbin/settc.lua /etc/tc.json | cat > /sys/module/tbq/tbq"
+	local cmd = "lua /usr/sbin/settc.lua /etc/config/tc.json | cat > /sys/module/tbq/tbq"
 	os.execute(cmd)
 
 	local cmd = "echo 1 > /sys/module/tbq/tbq"
