@@ -24,6 +24,7 @@ restart() {
 }
 
 start() {
+	mkdir -p /tmp/memfile/
 	echo 0 > ${FSYS}
 	lua /usr/sbin/settc.lua /etc/config/tc.json | cat > ${FSYS}
 	echo 1 > ${FSYS}
