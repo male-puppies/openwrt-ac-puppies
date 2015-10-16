@@ -11,7 +11,7 @@ end
 
 local function read(path, func)
 	func = func and func or io.open
-	local fp = func(path, "rb")
+	local fp = func(path, "r")
 	if not fp then 
 		return 
 	end 
@@ -83,11 +83,48 @@ local function new_rule()
 	}
 end 
 
+local function toarr(map)
+	local arr = {}
+	for k in pairs(map) do 
+		table.insert(arr, k)
+	end 
+	return arr 
+end
+
+local function get_iface()
+	local s = read("ip ro", io.popen)
+	s = s .. "\n"
+
+	local wan, lan, all = {}, {}, {}
+	for part in s:gmatch("(.-)\n") do 
+		local ifname = part:match("dev%s+(.-)%s")
+		if ifname and not wan[ifname] then 
+			all[ifname] = 1
+
+			local iswlan = part:find("^default")
+			if iswlan then 
+				wan[ifname] = 1
+			end
+		end
+	end
+
+	for ifname in pairs(all) do 
+		if not wan[ifname] then 
+			lan[ifname] = 1
+		end
+	end 
+
+	return lan, wan 
+end
+
 local function convert(s)
+	local lan, wan = get_iface()
 	local tc = decode(s)
 	local tbqcfg = {
 		MaxBacklogPackets = 9999,
 		Rules = {new_rule()},
+		LAN = table.concat(toarr(lan), "\t") .. "\t",
+		WAN = table.concat(toarr(wan), "\t") .. "\t",
 	}
 	setTCRate(tbqcfg.Rules[1], tc.GlobalSharedUpload, tc.GlobalSharedDownload, tc.GlobalSharedUpload, tc.GlobalSharedDownload)
 
@@ -100,11 +137,23 @@ local function convert(s)
 			table.insert(tbqcfg.Rules, tbqrule)
 		end
 	end
-
+	
 	return encode(tbqcfg)
+end
+
+local function write(path, s)
+	local fp, err = io.open(path, "wb")
+	if not fp then 
+		return false, err
+	end 
+	fp:write(s)
+	fp:flush()
+	fp:close()
+	return true
 end
 
 local path = ... 	assert(path)
 local s = read(path)
 local s = convert(s)
+write("/tmp/memfile/tbq_config.json", s)
 print(s)
