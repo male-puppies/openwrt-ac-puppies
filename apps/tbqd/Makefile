@@ -17,6 +17,7 @@ define Package/tbqd
   SECTION:=Applications
   CATEGORY:=Puppies
   TITLE:=Generic tbqd user space scripts & htmls 
+  DEPENDS:= +kmod-nos
 endef
 
 define Package/tbqd/description
