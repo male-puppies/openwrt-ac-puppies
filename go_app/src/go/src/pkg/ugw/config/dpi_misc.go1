@@ -1,0 +1,506 @@
+package config
+
+/*
+#include "nos_dpi.h"
+*/
+import "C"
+
+import (
+	"fmt"
+	"log"
+)
+
+const (
+	DPI_RULE_ID_UNKNOWN  = 0
+	DPI_RULE_ID_NO_FOUND = 0xffff
+)
+
+func notify_dpi(cmd string) {
+	go DPINotify.SendMsg(cmd, []string{""})
+}
+
+func (dpi *DPIConfig) allocRuleId() uint16 {
+	var found bool
+	for i := 1; i <= C.DPI_MAX_SUPPORTED_PROTOCOLS; i++ {
+		found = false
+		for _, v := range dpi.Rules {
+			if uint16(i) == v.Id {
+				//used
+				found = true
+				break
+			}
+		}
+		if !found {
+			return uint16(i)
+		}
+	}
+	return 0
+}
+
+func (dpi *DPIConfig) allocAppId() uint16 {
+	var found bool
+	for i := 1; i < C.DPI_MAX_SUPPORTED_APP_TYPES; i++ {
+		found = false
+		for _, v := range dpi.Apps {
+			if uint16(i) == v.Id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return uint16(i)
+		}
+	}
+	return 0
+}
+
+func (dpi *DPIConfig) allocTypeId() uint16 {
+	var found bool
+	for i := 1; i < C.DPI_MAX_SUPPORTED_APP_TYPES; i++ {
+		found = false
+		for _, v := range dpi.AppTypes {
+			if uint16(i) == v.Id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return uint16(i)
+		}
+	}
+	return 0
+}
+
+func (dpi *DPIConfig) createNewApp(rule *DpiRuleSt) *DpiAppSt {
+	var appnew DpiAppSt
+
+	appnew.Id = dpi.allocAppId()
+	appnew.Rules = make(map[string]uint16, 0)
+	appnew.Rules[rule.Name] = rule.Id
+
+	return &appnew
+}
+
+func (dpi *DPIConfig) createNewType(rule *DpiRuleSt) *DpiAppTypeSt {
+	var typenew DpiAppTypeSt
+
+	typenew.Id = dpi.allocTypeId()
+	typenew.Rules = make(map[string]uint16, 0)
+	typenew.Rules[rule.Name] = rule.Id
+
+	return &typenew
+}
+
+func (dpi *DPIConfig) OnRulesInsert(m map[string]*DpiRuleSt, key string, val *DpiRuleSt) bool {
+	log.Printf("rule on new\n")
+	//gen id
+	if val.Id == 0 {
+		val.Id = dpi.allocRuleId()
+	}
+	//bind app -> rule
+	app, ok := dpi.Apps[val.AppName]
+	if ok {
+		app.Rules[key] = val.Id
+	} else {
+		dpi.Apps[val.AppName] = dpi.createNewApp(val)
+		log.Printf("app name[%s] id[%d] not found for[%s] created.\n", val.AppName, dpi.Apps[val.AppName].Id, key)
+	}
+	val.AppId = dpi.Apps[val.AppName].Id
+
+	//bind type -> app
+	app_t, ok := dpi.AppTypes[val.AppType]
+	if ok {
+		app_t.Rules[key] = val.Id
+	} else {
+		dpi.AppTypes[val.AppType] = dpi.createNewType(val)
+		log.Printf("app type[%s] created for[%s]\n", val.AppType, key)
+	}
+
+	notify_dpi("insert")
+	return true
+}
+
+func (dpi *DPIConfig) OnRulesDelete(m map[string]*DpiRuleSt, key string, val *DpiRuleSt) bool {
+	//检查是否允许删除.
+	if val.Id < 5 {
+		//HTTP
+		log.Printf("del not allowed: [%s:%d]\n", key, val.Id)
+		return false
+	}
+
+	//remove rule from apps
+	app, ok := dpi.Apps[dpi.Rules[key].AppName]
+	if ok {
+		_, ok := app.Rules[key]
+		if ok {
+			delete(app.Rules, key)
+		}
+		//remove the app?
+	}
+
+	//rm rule form type
+	app_t, ok := dpi.AppTypes[dpi.Rules[key].AppType]
+	if ok {
+		_, ok := app_t.Rules[key]
+		if ok {
+			delete(app_t.Rules, key)
+		}
+	}
+
+	notify_dpi("delete")
+	return true
+}
+
+func (dpi *DPIConfig) OnRulesUpdate(m map[string]*DpiRuleSt, key string, val *DpiRuleSt) bool {
+	log.Printf("rule on update\n")
+	//id changed?
+	vprev, ok := dpi.Rules[key]
+	if ok {
+		if val.Id != vprev.Id {
+			swRule := dpi.GetRuleById(val.Id)
+			if swRule != nil {
+				log.Printf("Rule[%s] switch Id[%d] vs [%s][%d]\n", key, val.Id, swRule.Name, swRule.Id)
+				swRule.Id = vprev.Id
+			}
+		}
+	}
+
+	//app remove prev & add new
+	if dpi.Apps == nil {
+		dpi.Apps = make(map[string]*DpiAppSt, 0)
+	}
+	for _, app := range dpi.Apps {
+		delete(app.Rules, key)
+	}
+	app, ok := dpi.Apps[val.AppName]
+	if ok {
+		app.Rules[key] = val.Id
+		if app.Id == 0 {
+			app.Id = dpi.allocAppId()
+		}
+	} else {
+		dpi.Apps[val.AppName] = dpi.createNewApp(val)
+		log.Printf("update: create new app[%s] id[%d] not found for[%s]\n", val.AppName, dpi.Apps[val.AppName].Id, key)
+	}
+	val.AppId = dpi.Apps[val.AppName].Id
+
+	if dpi.AppTypes == nil {
+		dpi.AppTypes = make(map[string]*DpiAppTypeSt, 0)
+	}
+	for _, app_t := range dpi.AppTypes {
+		delete(app_t.Rules, key)
+	}
+	app_t, ok := dpi.AppTypes[val.AppType]
+	if ok {
+		app_t.Rules[key] = val.Id
+	} else {
+		dpi.AppTypes[val.AppType] = dpi.createNewType(val)
+		log.Printf("update: create new type[%s] for [%s]\n", dpi.Rules[key].AppType, key)
+	}
+
+	notify_dpi("update")
+	return true
+}
+
+func (dpi *DPIConfig) GetRuleByName(key string) *DpiRuleSt {
+	dpi.InitRefs()
+	rule, ok := dpi.Rules[key]
+	if ok {
+		return rule
+	}
+	return nil //没找到规则
+}
+
+func (dpi *DPIConfig) GetRuleById(id uint16) *DpiRuleSt {
+	dpi.InitRefs()
+	name, ok := dpi.id2Name[id]
+	if ok {
+		return dpi.GetRuleByName(name)
+	}
+	return nil
+}
+
+func (dpi *DPIConfig) GetIdByName(key string) uint16 {
+	dpi.InitRefs()
+	rule, ok := dpi.Rules[key]
+	if ok {
+		return rule.Id
+	}
+	return DPI_RULE_ID_NO_FOUND //没找到规则
+}
+
+func (dpi *DPIConfig) GetNameById(id uint16) string {
+	dpi.InitRefs()
+	name, ok := dpi.id2Name[id]
+	if ok {
+		return name
+	}
+	return ""
+}
+
+func (dpi *DPIConfig) GetAppIdByName(name string) uint16 {
+	dpi.InitRefs()
+	app, ok := dpi.Apps[name]
+	if ok {
+		return app.Id
+	}
+	return DPI_RULE_ID_NO_FOUND
+}
+
+func (dpi *DPIConfig) GetTypeIdByName(name string) uint16 {
+	dpi.InitRefs()
+	app_t, ok := dpi.Apps[name]
+	if ok {
+		return app_t.Id
+	}
+	return DPI_RULE_ID_NO_FOUND
+}
+
+func (dpi *DPIConfig) GetAppNameByProto(proto uint16) string {
+	dpi.InitRefs()
+	app, ok := dpi.id2AppName[proto]
+	if ok {
+		return app
+	}
+	return ""
+}
+
+func (dpi *DPIConfig) GetAppTypeByProto(proto uint16) string {
+	dpi.InitRefs()
+	app_t, ok := dpi.id2AppType[proto]
+	if ok {
+		return app_t
+	}
+	return ""
+}
+
+func (dpi *DPIConfig) GetTypeRules(app_t string) (map[string]uint16, error) {
+	dpi.InitRefs()
+	var res = make(map[string]uint16, 0)
+	rules, ok := dpi.AppTypes[app_t]
+	if ok {
+		return rules.Rules, nil
+	}
+	return res, fmt.Errorf("type[%s] not found.\n", app_t)
+}
+
+func (dpi *DPIConfig) GetAppRules(app string) (map[string]uint16, error) {
+	dpi.InitRefs()
+	var res = make(map[string]uint16, 0)
+	rules, ok := dpi.Apps[app]
+	if ok {
+		return rules.Rules, nil
+	}
+	return res, fmt.Errorf("app[%s] not found.\n", app)
+}
+
+func (dpi *DPIConfig) GetRules() map[string]uint16 {
+	dpi.InitRefs()
+	res := make(map[string]uint16, 0)
+	for name, rule := range dpi.Rules {
+		res[name] = rule.Id
+	}
+
+	return res
+}
+
+func (dpi *DPIConfig) GetTypeAppTree() map[string][]string {
+	dpi.InitRefs()
+	tree := make(map[string][]string, 0)
+	for rName, rule := range dpi.Rules {
+		if rule.Enable != true {
+			log.Printf("Rule[%s] not enabled\n", rName)
+			continue
+		}
+		_, ok := tree[rule.AppType]
+		if !ok {
+			tree[rule.AppType] = make([]string, 0)
+		}
+		found := false
+		for _, t := range tree[rule.AppType] {
+			if t == rule.AppName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			tree[rule.AppType] = append(tree[rule.AppType], rule.AppName)
+		}
+	}
+	return tree
+}
+
+func (dpi *DPIConfig) GetTypeRuleTree() map[string][]string {
+	dpi.InitRefs()
+	tree := make(map[string][]string, 0)
+	for tName, app_t := range dpi.AppTypes {
+		for rName, rId := range app_t.Rules {
+			rule := dpi.GetRuleById(rId)
+			if rule != nil && rule.Enable {
+				node, ok := tree[tName]
+				if !ok {
+					node = make([]string, 0)
+					tree[tName] = node
+				}
+				tree[tName] = append(node, rName)
+			} else {
+				if rule != nil {
+					log.Printf("Type[%s] Rule[%s] disabled\n", tName, rName)
+				} else {
+					log.Printf("Type[%s] Rule[%s] not found\n", tName, rName)
+				}
+			}
+		}
+	}
+	return tree
+}
+
+func (dpi *DPIConfig) GetAppRuleTree() map[string][]string {
+	dpi.InitRefs()
+	tree := make(map[string][]string, 0)
+	for appName, app := range dpi.Apps {
+		for ruleName, _ := range app.Rules {
+			node, ok := tree[appName]
+			if !ok {
+				node = make([]string, 0)
+				tree[appName] = node
+			}
+			tree[appName] = append(node, ruleName)
+		}
+	}
+
+	return tree
+}
+
+func (dpi *DPIConfig) GetConfig() *DPIConfig {
+	for _, rule := range dpi.Rules {
+		if rule.AppId == 0 {
+			rule.AppId = dpi.GetAppIdByName(rule.AppName)
+		}
+		var ref = make([]string, 0)
+		for _, refName := range rule.RefRulesName {
+			id := dpi.GetIdByName(refName)
+			if id != DPI_RULE_ID_NO_FOUND {
+				//not found cleanup
+				ref = append(ref, refName)
+			}
+		}
+		rule.RefRulesName = ref
+	}
+
+	return dpi
+}
+
+func (dpi *DPIConfig) NotifyUpdated() bool {
+	notify_dpi("update")
+	return true
+}
+
+func (dpi *DPIConfig) IsAllRules(name string) bool {
+	return name == "all_app"
+}
+
+func (dpi *DPIConfig) InitRefs() {
+	if dpi.inited == true {
+		return
+	}
+	//ID2Name
+	dpi.id2Name = make(map[uint16]string, 0)
+	for name, rule := range dpi.Rules {
+		dpi.id2Name[rule.Id] = name
+	}
+	//Id2App
+	dpi.id2AppName = make(map[uint16]string, 0)
+	for _, rule := range dpi.Rules {
+		dpi.id2AppName[rule.Id] = rule.AppName
+	}
+	//Id2Type
+	dpi.id2AppType = make(map[uint16]string, 0)
+	for _, rule := range dpi.Rules {
+		dpi.id2AppType[rule.Id] = rule.AppType
+	}
+
+	//只需要初始化一次.
+	dpi.inited = true
+}
+
+func (dpi *DPIConfig) Re2(re string, cont []uint8) bool {
+	if len(cont) == 0 {
+		//open file
+		log.Println("test str from file:")
+	} else {
+		//buffer
+	}
+	return true
+	//return bool(C.dpi_match_test(C.CString(re), C.uint16_t(len(re)),
+	//	(*C.char)(unsafe.Pointer(&cont[0])), C.uint16_t(len(cont)), C.uint16_t(0), C.uint16_t(len(cont))))
+}
+
+func (dpi *DPIConfig) GetRulesMap() []string {
+	maxid := uint16(0)
+	for _, app := range dpi.Apps {
+		if app.Id > maxid {
+			maxid = app.Id
+		}
+	}
+	maxid += 1
+	appmap := make([]string, maxid)
+	appmap[0] = "其他"
+	for name, app := range dpi.Apps {
+		appmap[app.Id] = name
+	}
+
+	return appmap
+}
+
+func (dpi *DPIConfig) GetRulesTree() map[string]map[string]uint16 {
+	tree := make(map[string]map[string]uint16, 0)
+	for _, rule := range dpi.Rules {
+		app, ok := tree[rule.AppType]
+		if !ok {
+			tree[rule.AppType] = make(map[string]uint16, 0)
+			app = tree[rule.AppType]
+		}
+
+		if _, ok := app[rule.AppName]; !ok {
+			app[rule.AppName] = dpi.Apps[rule.AppName].Id
+		}
+
+	}
+	return tree
+}
+
+func (dpi *DPIConfig) RebuildRules() bool {
+
+	for tName, t := range dpi.AppTypes {
+		for rName, rId := range t.Rules {
+			rule := dpi.GetRuleByName(rName)
+			if rule != nil {
+				if rule.Id != rId {
+					log.Printf("App Type[%s:%s] Rule Id not valid.[%d vs %d]\n", tName, rName, rule.Id, rId)
+					t.Rules[rName] = rule.Id
+				}
+			} else {
+				log.Printf("App Type[%s] Rule[%s] not found.\n", tName, rName)
+				delete(t.Rules, rName)
+			}
+		}
+	}
+
+	for aName, a := range dpi.Apps {
+		for rName, rId := range a.Rules {
+			rule := dpi.GetRuleByName(rName)
+			if rule != nil {
+				if rule.Id != rId {
+					log.Printf("Apps[%s:%s] Rule Id not valid.[%d vs %d]\n", aName, rName, rule.Id, rId)
+					a.Rules[rName] = rule.Id
+				}
+			} else {
+				log.Printf("Apps [%s] Rule[%s] not found.\n", aName, rName)
+				delete(a.Rules, rName)
+			}
+		}
+	}
+
+	return true
+}

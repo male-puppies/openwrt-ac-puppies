@@ -30,11 +30,27 @@ define Package/$(PKG_NAME)/description
 endef
 
 
-define Build/Prepare
+define Build/Prepare 
+	$(shell if [ ! -e go ]; then \
+		tar -xzf $(DL_DIR)/go1.5.1.linux-amd64.tar.gz -C . ; \
+	fi)
 	true
 endef
 
-define Build/Compile
+define Build/Compile 
+	ARCH=$(ARCH) \
+	SUBARCH=$(ARCH) \
+	CGO_ENABLED=1 \
+	CROSS_COMPILE=$(TARGET_CROSS) \
+	GOROOT="`pwd`/go" \
+	GOPATH="`pwd`/src/go" \
+	CGO_CFLAGS="-std=gnu99 -fno-strict-aliasing -D_GNU_SOURCE $(HOST_CFLAGS)" \
+	CFLAGS="$(HOST_CFLAGS)" \
+	CXXFLAGS="$(HOST_CFLAGS)" \
+	STAGING_DIR="$(STAGING_DIR)" \
+	PATH="`pwd`/go/bin:$(PATH)" \
+	LD_LIBRARY_PATH="$(STAGING_DIR_HOST)/lib:$(STAGING_DIR_HOST)/usr/lib:$(STAGING_DIR)/host/lib" \
+	$(MAKE) -C src/go/src/app $(TARGET_CONFIGURE_OPTS) 
 	true
 endef
 
