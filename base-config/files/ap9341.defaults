@@ -1,3 +1,10 @@
 #!/bin/sh
 
-echo ap9341
+uci -q batch <<-EOT
+delete firewall.lan
+set network.lan=interface
+set network.lan.type='bridge'
+set network.lan.ifname='eth0'
+set network.lan.proto='dhcp'
+commit network
+EOT
