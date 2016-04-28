@@ -1,0 +1,19 @@
+config BASE_CONFIG_TARGET
+    bool "Select config profile"
+    depends on PACKAGE_base-config
+    default y
+    help
+        Select the base config profile
+    choice
+        prompt "config profile"
+        default BASE_CONFIG_TARGET_ap9341
+        depends on BASE_CONFIG_TARGET
+        help
+            select target config
+        config BASE_CONFIG_TARGET_ap9341
+            bool "for-ap9341"
+        config BASE_CONFIG_TARGET_mt7621
+            bool "for-mt7621"
+        config BASE_CONFIG_TARGET_x86
+            bool "for-x86"
+    endchoice
