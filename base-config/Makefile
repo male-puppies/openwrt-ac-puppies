@@ -17,10 +17,6 @@ PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/$(PKG_NAME)/config
-  source "$(SOURCE)/Config.in"
-endef
-
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
@@ -50,14 +46,14 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-ifeq ($(CONFIG_BASE_CONFIG_TARGET_ap9341),y)
+ifeq ($(CONFIG_TARGET_ar71xx_generic_AP9341),y)
 	$(INSTALL_DATA) ./files/ap9341.defaults $(1)/etc/uci-defaults/95-base-config
 endif
-ifeq ($(CONFIG_BASE_CONFIG_TARGET_mt7621),y)
+ifeq ($(CONFIG_TARGET_ramips_mt7621_PUPPIES),y)
 	$(INSTALL_DATA) ./files/mt7621.defaults $(1)/etc/uci-defaults/95-base-config
 endif
-ifeq ($(CONFIG_BASE_CONFIG_TARGET_x86),y)
-	$(INSTALL_DATA) ./files/base-x86.defaults $(1)/etc/uci-defaults/95-base-config
+ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
+	$(INSTALL_DATA) ./files/x86_64.defaults $(1)/etc/uci-defaults/95-base-config
 endif
 endef
 
