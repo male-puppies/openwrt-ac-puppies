@@ -1,0 +1,43 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+
+ipset_init()
+{
+	ipset -! create WebAuth hash:ip
+	ipset add WebAuth 192.168.1.1/24
+}
+
+iptables_init()
+{
+	PORT_REJ="PREROUTING -d 1.0.0.8/32 -p tcp -j REDIRECT --to-port 6680"
+	if iptables -t nat -C ${PORT_REJ}; then
+		iptables -t nat -A ${PORT_REJ}
+	fi
+}
+
+bridge_init()
+{
+	brctl addbr br-lo
+	ip addr add 1.0.0.8/32 brd + dev br-lo 
+}
+
+boot() {
+	modprobe ntrack	
+	bridge_init
+	ipset_init
+}
+
+start() {
+	iptables_init
+}
+
+reload() {
+	echo "restart ntrackd"
+}
+
+stop() {
+	echo "stop ntrackd" 
+}
+
+
