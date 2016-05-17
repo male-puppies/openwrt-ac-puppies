@@ -142,14 +142,14 @@ static unsigned int ntrack_hook_test(const struct nf_hook_ops *ops,
 static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	{
 		.hook = ntrack_hook_fw,
-		.owner = THIS_MODULE,
+		// .owner = THIS_MODULE,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_FORWARD,
 		.priority = NF_IP_PRI_LAST,
 	},
 	{
 		.hook = ntrack_hook_test,
-		.owner = THIS_MODULE,
+		// .owner = THIS_MODULE,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_PRE_ROUTING,
 		.priority = NF_IP_PRI_FILTER + 1,
