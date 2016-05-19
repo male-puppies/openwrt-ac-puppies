@@ -157,7 +157,9 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 	par.family = NFPROTO_IPV4;
 	par.thoff = ip_hdrlen(skb);
 	par.hooknum = 0;
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
 	par.net = &init_net;
+#endif
 
 	opt.family = par.family;
 	opt.dim = IPSET_DIM_THREE;
