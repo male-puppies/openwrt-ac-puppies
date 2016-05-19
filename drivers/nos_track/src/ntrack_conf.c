@@ -104,7 +104,8 @@ int ntrack_conf_sync(char *conf_str)
 
 		/* save rule to Global configure. */
 		if (rule.num_idx) {
-			nt_info("rule:[%s] valid added.\n", rule.name);
+			nt_info("rule:[%s], num: %d idx0: %d valid added.\n", 
+				rule.name, rule.num_idx, rule.uset_idx[0]);
 			conf_tmp->rules[conf_tmp->num_rules] = rule;
 			conf_tmp->num_rules ++;
 			if(conf_tmp->num_rules > MAX_URL_RULES) {
@@ -131,7 +132,7 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 {
 	int ret = 0, i, j;
 	struct ip_set_adt_opt opt;
-	struct xt_action_param act;
+	struct xt_action_param par;
 	struct net_device *indev, *dev;
 	struct iphdr *iph;
 	// const struct xt_set_info *set = (const void *) em->data;
@@ -150,11 +151,15 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 		return 0;
 	}
 
-	act.family = NFPROTO_IPV4;
-	act.thoff = ip_hdrlen(skb);
-	act.hooknum = 0;
+	// memset(&par, 0, sizeof(par));
+	// memset(&opt, 0, sizeof(opt));
 
-	opt.family = act.family;
+	par.family = NFPROTO_IPV4;
+	par.thoff = ip_hdrlen(skb);
+	par.hooknum = 0;
+	par.net = &init_net;
+
+	opt.family = par.family;
 	opt.dim = IPSET_DIM_THREE;
 	opt.flags = IPSET_DIM_ONE_SRC;
 	opt.cmdflags = 0;
@@ -166,14 +171,14 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 		indev = dev_get_by_index_rcu(dev_net(dev), skb->skb_iif);
 
 	/* conntrack init (pre routing) */
-	act.in      = indev ? indev : dev;
-	act.out     = dev;
+	par.in      = indev ? indev : dev;
+	par.out     = dev;
 
 	/* find addr & do match */
 	for (i = 0; i < conf->num_rules; ++i) {
 		auth_rule_t *rule = &conf->rules[i];
 		for (j = 0; j < rule->num_idx; ++j) {
-			ret = ip_set_test(rule->uset_idx[j], skb, &act, &opt);
+			ret = ip_set_test(rule->uset_idx[j], skb, &par, &opt);
 			if (ret) {
 				ui->hdr.group_id = -1; /* set user mark for group identity */
 				ui->hdr.rule_idx = i;

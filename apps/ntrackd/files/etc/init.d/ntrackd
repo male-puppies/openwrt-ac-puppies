@@ -23,7 +23,8 @@ bridge_init()
 }
 
 boot() {
-	modprobe ntrack	
+	modprobe klog
+	modprobe ntrack
 	bridge_init
 	ipset_init
 }

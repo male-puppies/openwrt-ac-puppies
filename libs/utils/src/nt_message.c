@@ -89,7 +89,7 @@ static int shm_init(void **ui_base, uint32_t *ui_cnt, void ** fi_base, uint32_t 
 	}
 
 	shm_base_addr = mmap(0, SIZE_RESERVE_MEM, PROT_READ | PROT_WRITE, MAP_SHARED, fd, START_RESERVE_MEM);
-	if (!shm_base_addr) {
+	if (shm_base_addr == MAP_FAILED) {
 		nt_error("mem map.\n");
 		return -ENOMEM;
 	}
