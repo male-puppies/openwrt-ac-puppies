@@ -28,6 +28,16 @@ test $version -lt 1 && {
 		}
 	}
 	uci commit firewall
+	[ "x`uci get fstab.@mount[2].target`" = "x/mnt/sda3" ] && {
+		uci set fstab.@mount[2].target='/overlay'
+		uci set fstab.@mount[2].enabled='1'
+	}
+	[ "x`uci get fstab.@mount[3].target`" = "x/mnt/sda4" ] && {
+		uci set fstab.@mount[3].target='/data'
+		uci set fstab.@mount[3].enabled='1'
+		uci set fstab.@mount[3].options='rw,errors=remount-ro'
+	}
+	uci commit fstab
 	version=1
 }
 
