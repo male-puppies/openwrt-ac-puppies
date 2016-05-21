@@ -55,7 +55,6 @@ endif
 ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
 	$(INSTALL_DATA) ./files/x86_64.defaults $(1)/etc/uci-defaults/95-base-config
 	$(INSTALL_DIR) $(1)/etc/init.d
-	touch $(1)/etc/base_reset
 	$(INSTALL_BIN) ./files/base-init.init $(1)/etc/init.d/base-init
 endif
 endef
