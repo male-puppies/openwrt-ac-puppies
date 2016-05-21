@@ -8,14 +8,15 @@ boot() {
 	[ "x$diskpart" = "x4" ] || {
 		disksize="`fdisk -l /dev/sda | grep '/dev/sda:' | head -n1 | awk '{print $5}'`"
 		test -n "$disksize" || return
-		test $disksize -lt 2147483648 || return
+		# <= 2GiB && return
+		test $disksize -le 2147483648 && return
 
 		echo -ne 'd\n4\nw\n' | fdisk /dev/sda
 		echo -ne 'd\n3\nw\n' | fdisk /dev/sda
 		echo -ne 'n\np\n3\n1835008\n3932160\nn\np\n3932672\n\nw\n' | fdisk /dev/sda
 		partx -a /dev/sda
-		echo -ne 'n\n' | mkfs.ext4 /dev/sda3
-		echo -ne 'n\n' | mkfs.ext4 /dev/sda4
+		echo -ne 'y\n' | mkfs.ext4 /dev/sda3
+		echo -ne 'y\n' | mkfs.ext4 /dev/sda4
 	}
 	test -f /etc/config/fstab || {
 		[ ! -f /etc/config/fstab ] && ( block detect > /etc/config/fstab )
