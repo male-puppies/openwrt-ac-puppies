@@ -1,19 +1,16 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006-2011 OpenWrt.org
 
-START=11
+START=09
 
 boot() {
-	mount -t ext4 -o rw,noatime /dev/sda3 /overlay || {
+	test -f /etc/base_reset && {
+		echo -ne 'd\n4\nw\n' | fdisk /dev/sda
+		echo -ne 'd\n3\nw\n' | fdisk /dev/sda
 		echo -ne 'n\np\n3\n1835008\n3932160\nn\np\n3932672\n\nw\n' | fdisk /dev/sda
 		partx -a /dev/sda
 		echo -ne 'n\n' | mkfs.ext4 /dev/sda3
 		echo -ne 'n\n' | mkfs.ext4 /dev/sda4
-		mount -t ext4 -o rw,noatime /dev/sda3 /overlay
-	}
-	df /overlay | grep -q sda3 && {
-		mkdir -p /overlay/etc/upper
-		mkdir -p /overlay/etc/work
-		mount -t overlay -o rw,noatime,lowerdir=/etc,upperdir=/overlay/etc/upper,workdir=/overlay/etc/work overlayfs:/etc /etc
+		rm -f /etc/base_reset
 	}
 }
