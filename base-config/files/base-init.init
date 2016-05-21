@@ -30,6 +30,6 @@ boot() {
 		}
 		uci commit fstab
 		uci get fstab.@mount[3].target || mkdir /data
-		reboot
 	}
+	mount | grep -q /overlay || PREINIT=1 mount_root
 }
