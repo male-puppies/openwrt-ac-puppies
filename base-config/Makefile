@@ -54,10 +54,10 @@ ifeq ($(CONFIG_TARGET_ramips_mt7621_PUPPIES),y)
 endif
 ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
 	$(INSTALL_DATA) ./files/x86_64.defaults $(1)/etc/uci-defaults/95-base-config
-	$(INSTALL_DIR) $(1)/lib/preinit
-	$(INSTALL_DATA) ./files/disk_ready.preinit $(1)/lib/preinit/79_disk_ready
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/fstab.config $(1)/etc/config/fstab
+	$(INSTALL_DIR) $(1)/lib/preinit
+	$(INSTALL_DATA) ./files/disk_ready.preinit $(1)/lib/preinit/79_disk_ready
 endif
 endef
 
