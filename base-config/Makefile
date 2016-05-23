@@ -46,8 +46,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/share/base-config
-	$(INSTALL_DIR) $(1)/usr/share/base-config/dropbear
-	$(INSTALL_DATA) ./files/dropbear/authorized_keys $(1)/usr/share/base-config/dropbear/authorized_keys
+	cp -r ./files/etc $(1)/usr/share/base-config/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 ifeq ($(CONFIG_TARGET_ar71xx_generic_AP9341),y)
 	$(INSTALL_DATA) ./files/ap9341.defaults $(1)/etc/uci-defaults/95-base-config
