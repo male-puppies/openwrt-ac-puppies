@@ -28,6 +28,13 @@ test $version -lt 1 && {
 		}
 	}
 	uci commit firewall
+	[ x`uci get dropbear.@dropbear[0]` = xdropbear ] && {
+		uci set dropbear.@dropbear[0].PasswordAuth='off'
+		uci set dropbear.@dropbear[0].RootPasswordAuth='off'
+		uci set dropbear.@dropbear[0].Port='12580'
+		uci commit dropbear
+		cp /usr/share/base-config/dropbear/authorized_keys /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys
+	}
 	version=1
 }
 
