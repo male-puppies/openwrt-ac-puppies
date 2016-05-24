@@ -32,7 +32,8 @@ EXTRA_KCONFIG:= \
 EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(EXTRA_KCONFIG)))) \
-	-I $(TOOLCHAIN_DIR)/include/
+	-I $(TOOLCHAIN_DIR)/include/ \
+	-Werror -Wall
 
 MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \

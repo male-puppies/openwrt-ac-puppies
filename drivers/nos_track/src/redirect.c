@@ -11,7 +11,7 @@
 #include <ntrack_auth.h>
 
 
-static int auth_reset(struct sk_buff *skb, const struct net_device *dev)
+int auth_reset(struct sk_buff *oskb, struct net_device *dev)
 {
 	int len;
 	struct sk_buff *nskb;
@@ -20,9 +20,9 @@ static int auth_reset(struct sk_buff *skb, const struct net_device *dev)
 	struct iphdr *niph, *oiph;
 	unsigned int csum, header_len;
 
-	oeth = (struct ethhdr *)skb_mac_header(skb);
-	oiph = ip_hdr(skb);
-	otcph = (struct tcphdr *)(skb_network_header(skb) + (oiph->ihl << 2));
+	oeth = (struct ethhdr *)skb_mac_header(oskb);
+	oiph = ip_hdr(oskb);
+	otcph = (struct tcphdr *)(skb_network_header(oskb) + (oiph->ihl << 2));
 
 	header_len = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct tcphdr);
 	nskb = alloc_skb(header_len, GFP_NOWAIT);
@@ -65,12 +65,19 @@ static int auth_reset(struct sk_buff *skb, const struct net_device *dev)
 	neth = (struct ethhdr *)skb_push(nskb, sizeof(struct ethhdr));
 	memcpy(neth, oeth, sizeof(struct ethhdr));
 
-	nskb->dev = (struct net_device *)dev;
+	nskb->dev = dev;
+	skb_set_queue_mapping(nskb, 0);
+
+	/* forward transmit. */
 	dev_queue_xmit(nskb);
 	return 0;
 }
 
-static int auth_http(const char *url, int urllen, struct sk_buff *skb, const struct net_device *dev) {
+int auth_http(
+	const char *url, int urllen, 
+	struct sk_buff *oskb, 
+	struct net_device *indev) 
+{
 	struct sk_buff *nskb;
 	struct ethhdr *neth, *oeth;
 	struct iphdr *niph, *oiph;
@@ -79,9 +86,9 @@ static int auth_http(const char *url, int urllen, struct sk_buff *skb, const str
 	unsigned int csum, header_len;
 	char *data;
 
-	oeth = (struct ethhdr *)skb_mac_header(skb);
-	oiph = ip_hdr(skb);
-	otcph = (struct tcphdr *)(skb_network_header(skb) + (oiph->ihl<<2));
+	oeth = (struct ethhdr *)skb_mac_header(oskb);
+	oiph = ip_hdr(oskb);
+	otcph = (struct tcphdr *)(skb_network_header(oskb) + (oiph->ihl<<2));
 
 	header_len = sizeof(struct ethhdr) + sizeof(struct iphdr) + sizeof(struct tcphdr);
 	nskb = alloc_skb(header_len + urllen, GFP_NOWAIT);
@@ -130,7 +137,13 @@ static int auth_http(const char *url, int urllen, struct sk_buff *skb, const str
 	memcpy(neth->h_dest, oeth->h_source, 6);
 	memcpy(neth->h_source, oeth->h_dest, 6);
 	neth->h_proto = htons(ETH_P_IP);
-	nskb->dev = (struct net_device *)dev;
+	skb_reset_mac_header(nskb);
+
+	nt_info("redirect: %s\n", indev->name);
+
+	/* redirect transmit. */
+	nskb->dev = indev;
+	nskb->protocol = oskb->protocol;
 	dev_queue_xmit(nskb);
 	return 0;
 }
@@ -153,8 +166,8 @@ const int redirect_len = sizeof(http_redir_fmt) + \
 
 int ntrack_redirect(struct nos_user_info *ui, 
 			struct sk_buff *skb,
-			const struct net_device *in,
-			const struct net_device *out)
+			struct net_device *in,
+			struct net_device *out)
 {
 	/* 构造一个URL重定向包, 从in接口发出去 */
 	char *url;
@@ -162,6 +175,11 @@ int ntrack_redirect(struct nos_user_info *ui,
 	char str_ip4[] = "255.255.255.255";
 	char str_mac[] = "aa:bb:cc:dd:ee:ff";
 	char str_id[16], str_magic[16];
+
+	if(!in) {
+		nt_error("in dev not nil.!!!\n");
+		return 0;
+	}
 
 	snprintf(str_ip4, sizeof(str_ip4), "%u.%u.%u.%u", HIPQUAD(ui->ip));
 	snprintf(str_id, sizeof(str_id), "%u", ui->id);
@@ -173,8 +191,8 @@ int ntrack_redirect(struct nos_user_info *ui,
 		goto __finished;
 	}
 	len = snprintf(url, redirect_len, http_redir_fmt, 
-		str_ip4, "aa:bb:cc:dd:ee:ff", in->name, str_id, str_magic,
-		str_ip4, "aa:bb:cc:dd:ee:ff", in->name, str_id, str_magic);
+		str_ip4, str_mac, in->name, str_id, str_magic,
+		str_ip4, str_mac, in->name, str_id, str_magic);
 
 	nt_assert(len > 0 && len <= redirect_len);
 	nt_debug("send redirect http[%d] length: %d\n", redirect_len, len);

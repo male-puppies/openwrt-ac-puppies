@@ -1,6 +1,7 @@
 #include <linux/module.h>
 #include <linux/netfilter.h>
 #include <linux/ip.h>
+#include <linux/version.h>
 
 #include <linux/netfilter/xt_set.h>
 
@@ -44,12 +45,22 @@ int l3filter(struct iphdr* iph)
 	return 0;
 }
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+static unsigned int ntrack_hook_fw(void *priv, 
+		struct sk_buff *skb,
+		const struct nf_hook_state *state)
+#else
 static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops, 
 		struct sk_buff *skb,
 		const struct net_device *in,
 		const struct net_device *out, 
 		int (*okfn)(struct sk_buff *))
+#endif
 {
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+	struct net_device *in = state->in, *out = state->out;
+#endif
+
 	struct nf_conn *ct;
 	struct iphdr *iph;
 	struct nos_user_info *ui;
@@ -106,11 +117,17 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 	return NF_ACCEPT;
 }
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+static unsigned int ntrack_hook_test(void *priv,
+	struct sk_buff *skb, 
+	const struct nf_hook_state *state)
+#else
 static unsigned int ntrack_hook_test(const struct nf_hook_ops *ops, 
 		struct sk_buff *skb,
 		const struct net_device *in,
 		const struct net_device *out, 
 		int (*okfn)(struct sk_buff *))
+#endif
 {
 	struct nf_conn *ct;
 	enum ip_conntrack_info ctinfo;

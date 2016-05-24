@@ -60,11 +60,11 @@ static inline void dump_user(user_info_t *ui)
 	{
 		Name: Web,
 		IPSets: ["webauth", "default"],
-		RedirectFlags: 0/1
+		Flags: 0/1
 	}, {
 		Name: Auto,
 		IPSets: [],
-		RedirectFlags: 0/1
+		Flags: 0/1
 	}
 ]
 */
@@ -73,9 +73,9 @@ static inline void dump_user(user_info_t *ui)
 #define MAX_USR_SET 4
 #define RULE_NAME_SIZE 64
 typedef struct {
-	uint32_t num_idx;
-	uint32_t flags;
+	uint32_t flags; /* bypass, weixin init bypass, baidu/google bypass... */
 	uint32_t magic; /* conf update the magic changed. */
+	uint32_t num_idx; /* ipset's count */
 	ip_set_id_t uset_idx[MAX_USR_SET];
 	char name[RULE_NAME_SIZE];
 } auth_rule_t; 
@@ -93,8 +93,8 @@ int user_need_redirect(struct nos_user_info *ui,
 			struct sk_buff *skb);
 int ntrack_redirect(struct nos_user_info *ui, 
 			struct sk_buff *skb,
-			const struct net_device *in,
-			const struct net_device *out);
+			struct net_device *in,
+			struct net_device *out);
 
 /* timestamp api */
 static inline utimes_t user_update_timestamp(user_info_t *ui)

@@ -2,6 +2,7 @@
 #include <linux/vmalloc.h>
 #include <linux/netfilter.h>
 #include <linux/ip.h>
+#include <linux/version.h>
 
 #include <linux/netfilter/xt_set.h>
 
@@ -21,29 +22,23 @@ void ntrack_conf_free(G_AUTHCONF_t *conf)
 }
 
 static G_AUTHCONF_t *G_AuthConf = NULL;
-int ntrack_conf_sync(char *conf_str)
+static int conf_parse_auth(const nx_json *rules)
 {
-	int i, j;
+	int i = 0, j;
 	auth_rule_t rule;
-	struct ip_set *set;
 	ip_set_id_t idx;
-	const nx_json *json = NULL, *node;
+	struct ip_set *set;
 	G_AUTHCONF_t *conf_tmp;
+	const nx_json *node;
 
+	/* switch conf mem. */
 	conf_tmp = vmalloc(sizeof(G_AUTHCONF_t));
 	if(!conf_tmp) {
 		nt_error("vmalloc failed.\n");
 	}
 	memset(conf_tmp, 0, sizeof(G_AUTHCONF_t));
 
-	json = nx_json_parse_utf8(conf_str);
-	if (!json || (json && json->type != NX_JSON_ARRAY)) {
-		nt_error("parse json failed or not array.\n");
-		return -EINVAL;
-	}
-
-	i = 0;
-	while((node = nx_json_item(json, i++)) != NULL) {
+	while((node = nx_json_item(rules, i++)) != NULL) {
 		const nx_json *str, *sets, *flags;
 
 		if (node->type == NX_JSON_NULL) {
@@ -122,9 +117,44 @@ int ntrack_conf_sync(char *conf_str)
 		ntrack_conf_free(tmp);
 	}
 	rcu_assign_pointer(G_AuthConf, conf_tmp);
-
-	nx_json_free(json);
 	return 0;
+}
+
+int ntrack_conf_sync(char *conf_str)
+{
+	int ret = 0;
+	const nx_json *json = NULL, *cmd;
+
+	json = nx_json_parse_utf8(conf_str);
+	if (!json || (json && json->type != NX_JSON_OBJECT)) {
+		nt_error("parse json failed or not array.\n");
+		return -EINVAL;
+	}
+
+	cmd = nx_json_get(json, "Type");
+	if(cmd->type != NX_JSON_STRING) {
+		nt_error("unknown conf type.\n");
+		ret = -EINVAL;
+		goto __finished;
+	}
+
+	if(strncmp(cmd->text_value, "AuthRules", 9) == 0) {
+		const nx_json *rules = nx_json_get(json, "Rules");
+		if(rules->type != NX_JSON_ARRAY) {
+			nt_error("auth rules not array.\n");
+			ret = -EINVAL;
+			goto __finished;
+		}
+		nt_info("update web/auto-auth conf.\n");
+		conf_parse_auth(rules);
+	} else if(strncmp(cmd->text_value, "WeiXin", 6) == 0) {
+		nt_info("update weixin conf.\n");
+	}
+
+__finished:
+	if(json)
+		nx_json_free(json);
+	return ret;
 }
 
 /* ipset hash:ip hash:mac check src address from skb. */
@@ -133,7 +163,7 @@ int ntrack_user_match(user_info_t *ui, struct sk_buff *skb)
 	int ret = 0, i, j;
 	struct ip_set_adt_opt opt;
 	struct xt_action_param par;
-	struct net_device *indev, *dev;
+	struct net_device *indev = NULL, *dev;
 	struct iphdr *iph;
 	// const struct xt_set_info *set = (const void *) em->data;
 
@@ -210,7 +240,6 @@ static inline auth_rule_t *user_get_rule(user_info_t *ui, G_AUTHCONF_t *conf)
 
 int user_need_redirect(user_info_t *ui, struct sk_buff *skb)
 {
-	int ret;
 	G_AUTHCONF_t *conf = rcu_dereference(G_AuthConf);
 	auth_rule_t *rule;
 

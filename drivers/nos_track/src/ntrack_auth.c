@@ -16,7 +16,7 @@ int auth_check_http(struct iphdr *iph, struct sk_buff *skb)
 {
 	struct tcphdr *tcph;
 	char *l4data;
-	int len = skb->len, l4len;
+	int l4len;
 
 	if (iph->protocol != IPPROTO_TCP) {
 		return 0;

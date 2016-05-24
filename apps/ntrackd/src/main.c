@@ -21,77 +21,15 @@
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
 
+/* update conf to kernel modules */
+extern int nt_nl_init(void);
+extern int nt_nl_xmit(void *data);
+
+/* kernel user node message delivery to authd. */
+extern int nt_unotify_init(void);
+extern int nt_unotify(void *buff, int len);
+
 ntrack_t ntrack;
-
-int nl_sock = -1;
-static int nl_init(void)
-{
-	struct sockaddr_nl local;
-	nl_sock = socket(PF_NETLINK, SOCK_RAW, NETLINK_NTRACK);
-	if(nl_sock < 0) {
-		nt_error("socket error: %s\n", strerror(errno));
-		exit(-1);
-	}
-	int bufsize = 1 << 18;
-	int ret = setsockopt(nl_sock, SOL_SOCKET, SO_RCVBUF, &bufsize, sizeof(int));
-	if (ret < 0) {
-		nt_error("set buffer size failed: %s\n",strerror(errno));
-		exit(-1);
-	}
-	memset(&local, 0, sizeof(local));
-	local.nl_family = AF_NETLINK;
-	local.nl_pid = getpid();
-	local.nl_groups = 0;
-
-	if(bind(nl_sock, (struct sockaddr*)&local, sizeof(local)) != 0) {
-		nt_error("bind error: %s\n", strerror(errno));
-		exit(-1);
-	}
-
-	return nl_sock;
-}
-
-struct m2k {
-	struct nlmsghdr hdr;
-	char data[4096];
-};
-
-int xmit(char *data)
-{
-	struct sockaddr_nl kpeer;
-	struct m2k message;
-	int ret;
-
-	if(nl_sock<0 || !data) {
-		nt_error("sock closed or data nil\n");
-		return -1;
-	}
-
-	memset(&kpeer, 0, sizeof(kpeer));
-	kpeer.nl_family = AF_NETLINK;
-	kpeer.nl_pid = 0;
-	kpeer.nl_groups = 0;
-
-	memset(&message, 0, sizeof(message));
-	message.hdr.nlmsg_len = NLMSG_LENGTH(strlen(data));
-	message.hdr.nlmsg_flags = 0;
-	message.hdr.nlmsg_type = 0;
-	message.hdr.nlmsg_seq = 0;
-	message.hdr.nlmsg_pid = getpid();
-
-	memcpy(NLMSG_DATA(&message), data, strlen(data));
-	nt_info("message send to kernel: %d bytes.\n", strlen(data));
-	ret = sendto(nl_sock, 
-		&message, 
-		message.hdr.nlmsg_len, 0, 
-		(struct sockaddr*)&kpeer, sizeof(kpeer));
-	if(!ret) {
-		nt_error("send error: %s\n", strerror(errno));
-		return -1;
-	}
-
-	return 0;
-}
 
 static int fn_message_disp(void *p)
 {
@@ -112,6 +50,7 @@ static int fn_message_disp(void *p)
 			ui = nt_get_user_by_id(&ntrack, auth->id, auth->magic);
 			if(ui) {
 				dump_user(ui);
+				nt_unotify((void*)auth, sizeof(auth_msg_t));
 			}else{
 				nt_error("[%u:%u]->not found userinfo.\n", auth->id, auth->magic);
 			}
@@ -127,17 +66,26 @@ static int fn_message_disp(void *p)
 	return 0;
 }
 
-char *conf_str = " \
-	[{\
-		\"Name\": \"Web\", \
-		\"IPSets\": [\"WebAuth\", \"Default\"], \
-		\"Flags\": 1 \
-	}, \
+char *auth_conf = " \
 	{ \
-		\"Name\": \"Auto\", \
-		\"IPSets\": [\"AutoAuth\"], \
-		\"Flags\": 0 \
-	}]";
+		\"Type\": \"AuthRules\", \
+		\"Rules\": [{\
+			\"Name\": \"Web\", \
+			\"IPSets\": [\"WebAuth\", \"Default\"], \
+			\"Flags\": 1 \
+		}, \
+		{ \
+			\"Name\": \"Auto\", \
+			\"IPSets\": [\"AutoAuth\"], \
+			\"Flags\": 0 \
+		}] \
+	}";
+
+char *weix_conf = " \
+	{ \
+		\"Type\": \"WeiXin\", \
+		[] \
+	}";
 
 int main(int argc, char *argv[])
 {
@@ -166,9 +114,10 @@ int main(int argc, char *argv[])
 	nt_dump(ntrack.ui_base, 128, "user base: %p\n", ntrack.ui_base);
 	nt_dump(ntrack.fi_base, 128, "flow base: %p\n", ntrack.fi_base);
 
-	nl_init();
+	nt_nl_init();
+	nt_unotify_init();
 
-	xmit(conf_str);
+	nt_nl_xmit(auth_conf);
 
 	nt_message_process(&running, fn_message_disp);
 

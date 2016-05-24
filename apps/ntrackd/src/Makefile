@@ -1,4 +1,4 @@
-src = main.c
+src = main.c nt_netlink.c nt_unotify.c
 
 all:ntrackd
 
