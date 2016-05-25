@@ -10,6 +10,7 @@ ntrack-y	:= \
 	ntrack_auth.o \
 	nt_firewall.o \
 	nt_mroute.o \
+	nt_redirect.o \
 	context_check.o \
-	nxjson.o redirect.o
+	nxjson.o
 

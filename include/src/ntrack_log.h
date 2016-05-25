@@ -28,6 +28,10 @@
 			(ui)->refcnt, \
 			HIPQUAD((ui)->ip)
 
+#define FMT_MAC_STR "%02x:%02x:%02x:%02x:%02x:%02x"
+#define FMT_MAC(m)  (unsigned char)m[0],(unsigned char)m[1],(unsigned char)m[2],\
+			(unsigned char)m[3],(unsigned char)m[4],(unsigned char)m[5]
+
 #ifdef __KERNEL__
 #include <linux/kernel.h>
 #include <linux/module.h>

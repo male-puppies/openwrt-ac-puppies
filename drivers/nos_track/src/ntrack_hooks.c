@@ -14,25 +14,10 @@
 #include <ntrack_auth.h>
 #include <ntrack_comm.h>
 
+#include "ntrack_kapi.h"
+
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack system driver"
-
-extern int ntrack_conf_init(void);
-extern void ntrack_conf_exit(void);
-extern int ntrack_user_match(user_info_t *ui, struct sk_buff *skb);
-extern int nt_context_check(struct sk_buff *skb, 
-	struct nos_track *nos, 
-	struct net_device *indev);
-extern int nt_mroute_marker(struct sk_buff *skb, 
-	struct nos_track *nos, 
-	struct net_device *indev);
-extern int nt_statistics(struct sk_buff *skb, 
-	struct nos_track *nos, 
-	struct net_device *out);
-extern int nt_firewall(struct sk_buff *skb, 
-	struct nos_track *nos, 
-	struct net_device *indev,
-	struct net_device *outdev);
 
 int l3filter(struct iphdr* iph)
 {

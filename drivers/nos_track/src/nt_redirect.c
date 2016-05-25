@@ -183,21 +183,25 @@ int ntrack_redirect(struct nos_user_info *ui,
 	char str_ip4[] = "255.255.255.255";
 	char str_mac[] = "aa:bb:cc:dd:ee:ff";
 	char str_id[16], str_magic[16];
+	struct ethhdr *eth = (struct ethhdr*)skb_mac_header(skb);
 
 	if(!in) {
 		nt_error("in dev not nil.!!!\n");
 		return -EINVAL;
 	}
 
-	snprintf(str_ip4, sizeof(str_ip4), "%u.%u.%u.%u", HIPQUAD(ui->ip));
-	snprintf(str_id, sizeof(str_id), "%u", ui->id);
-	snprintf(str_magic, sizeof(str_magic), "%u", ui->magic);
-
 	url = kmalloc(redirect_len, GFP_NOWAIT);
 	if(!url) {
 		nt_error("kmalloc failed.\n");
 		ret = -ENOMEM;
 		goto __finished;
+	}
+
+	snprintf(str_ip4, sizeof(str_ip4), "%u.%u.%u.%u", HIPQUAD(ui->ip));
+	snprintf(str_id, sizeof(str_id), "%u", ui->id);
+	snprintf(str_magic, sizeof(str_magic), "%u", ui->magic);
+	if(eth) {
+		snprintf(str_mac, sizeof(str_mac), FMT_MAC_STR, FMT_MAC(eth->h_source));
 	}
 	len = snprintf(url, redirect_len, http_redir_fmt, 
 		str_ip4, str_mac, in->name, str_id, str_magic,
