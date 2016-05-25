@@ -5,13 +5,16 @@ START=95
 ipset_init()
 {
 	ipset -! create WebAuth hash:ip
-	ipset add WebAuth 192.168.1.1/24
+	# ipset add WebAuth 192.168.1.1/24
+	#
+	LAN_NET=`ip addr show dev br-lan | grep inet | awk '{print $2}'`
+	ipset add WebAuth ${LAN_NET}
 }
 
 iptables_init()
 {
 	PORT_REJ="PREROUTING -d 1.0.0.8/32 -p tcp -j REDIRECT --to-port 6680"
-	if iptables -t nat -C ${PORT_REJ}; then
+	if ! iptables -t nat -C ${PORT_REJ} >/dev/null 2>&1; then
 		iptables -t nat -A ${PORT_REJ}
 	fi
 }
@@ -22,22 +25,26 @@ bridge_init()
 	ip addr add 1.0.0.8/32 brd + dev br-lo 
 }
 
-boot() {
+boot() 
+{
 	modprobe klog
 	modprobe ntrack
 	bridge_init
 	ipset_init
 }
 
-start() {
+start() 
+{
 	iptables_init
 }
 
-reload() {
+reload() 
+{
 	echo "restart ntrackd"
 }
 
-stop() {
+stop() 
+{
 	echo "stop ntrackd" 
 }
 

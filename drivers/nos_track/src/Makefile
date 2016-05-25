@@ -8,5 +8,8 @@ ntrack-y	:= \
 	ntrack_msg.o \
 	ntrack_conf.o \
 	ntrack_auth.o \
+	nt_firewall.o \
+	nt_mroute.o \
+	context_check.o \
 	nxjson.o redirect.o
 

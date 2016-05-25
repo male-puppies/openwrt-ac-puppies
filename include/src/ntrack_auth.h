@@ -107,7 +107,10 @@ static inline utimes_t user_update_timestamp(user_info_t *ui)
 
 static inline utimes_t user_timeout(user_info_t *ui)
 {
-	return time_after(jiffies, (ui->hdr.time_stamp + USR_TS_KEEP_ALIVE));
+	if(nt_auth_status(ui) > AUTH_UNKNOWN) {
+		return time_after(jiffies, (ui->hdr.time_stamp + USR_TS_KEEP_ALIVE));
+	}
+	return 0;
 }
 
 #endif //__KERNEL__

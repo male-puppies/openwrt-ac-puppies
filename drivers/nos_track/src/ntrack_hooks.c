@@ -20,6 +20,19 @@
 extern int ntrack_conf_init(void);
 extern void ntrack_conf_exit(void);
 extern int ntrack_user_match(user_info_t *ui, struct sk_buff *skb);
+extern int nt_context_check(struct sk_buff *skb, 
+	struct nos_track *nos, 
+	struct net_device *indev);
+extern int nt_mroute_marker(struct sk_buff *skb, 
+	struct nos_track *nos, 
+	struct net_device *indev);
+extern int nt_statistics(struct sk_buff *skb, 
+	struct nos_track *nos, 
+	struct net_device *out);
+extern int nt_firewall(struct sk_buff *skb, 
+	struct nos_track *nos, 
+	struct net_device *indev,
+	struct net_device *outdev);
 
 int l3filter(struct iphdr* iph)
 {
@@ -61,6 +74,7 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 	struct net_device *in = state->in, *out = state->out;
 #endif
 
+	int ret = NF_ACCEPT;
 	struct nf_conn *ct;
 	struct iphdr *iph;
 	struct nos_user_info *ui;
@@ -94,42 +108,56 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 	ui = nt_user(nos);
 	if (user_need_redirect(ui, skb)) {
 		if(auth_check_http(iph, skb)) {
-			ntrack_redirect(ui, skb, in, out);
+			if(ntrack_redirect(ui, skb, in, out) == 0) {
+				/* success redirect, drop this ori link. */
+				ret = NF_DROP;
+			}
 		}
 	}
 
 	if (user_timeout(ui)) {
 		user_update_timestamp(ui);
-		/* user online message */
+		/* user online message: keepalive... */
 		if(nt_auth_status(ui) >= AUTH_OK) {
 			nmsg_hdr_t hdr;
 			auth_msg_t auth;
 
+			/* id & magic -> for userspace to find the kernel ui node. */
 			auth.id = ui->id;
 			auth.magic = ui->magic;
+
+			/* xmit message to userspace. */
 			nmsg_hdr_init(&hdr, en_MSG_t_AUTH, sizeof(auth));
 			if(nmsg_enqueue(&hdr, &auth, 0)) {
 				nt_debug("skb cap failed.\n");
 			}
 		}
 	}
-	
-	return NF_ACCEPT;
+
+	/* check the l7/users firewall rules. */
+	if(nt_firewall(skb, nos, in, out) == NF_DROP) {
+		ret = NF_DROP;
+	}
+
+	return ret;
 }
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
-static unsigned int ntrack_hook_test(void *priv,
+static unsigned int ntrack_hook_pre(void *priv,
 	struct sk_buff *skb, 
-	const struct nf_hook_state *state)
+	const struct nf_hook_state *state) {
+
+	struct net_device *in = state->in;
 #else
-static unsigned int ntrack_hook_test(const struct nf_hook_ops *ops, 
+static unsigned int ntrack_hook_pre(const struct nf_hook_ops *ops, 
 		struct sk_buff *skb,
 		const struct net_device *in,
 		const struct net_device *out, 
-		int (*okfn)(struct sk_buff *))
+		int (*okfn)(struct sk_buff *)) {
 #endif
-{
+	
 	struct nf_conn *ct;
+	struct nos_track *nos;
 	enum ip_conntrack_info ctinfo;
 
 	ct = nf_ct_get(skb, &ctinfo);
@@ -142,34 +170,92 @@ static unsigned int ntrack_hook_test(const struct nf_hook_ops *ops,
 		return NF_ACCEPT;
 	}
 
-	if(!ct->mark) {
+	if((nos = nf_ct_get_nos(ct)) == NULL) {
+		nt_debug("nos untracked.\n");
 		return NF_ACCEPT;
 	}
-	
-	/* user online message */
-	// nmsg_hdr_t hdr;
-	// nmsg_hdr_init(&hdr, en_MSG_t_NODE, sizeof(uint32_t));
-	// if(nmsg_enqueue(&hdr, &ct->mark, 0)) {
-	// 	nt_debug("skb cap failed.\n");
-	// }
+
+	/* FIXME: context check kernel handle here. */
+	nt_context_check(skb, nos, in);
+
+	/* FIXME: mulit route line marker here. */
+	nt_mroute_marker(skb, nos, in);
+
+	return NF_ACCEPT;
+}
+
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+static unsigned int ntrack_hook_post(void *priv,
+	struct sk_buff *skb, 
+	const struct nf_hook_state *state) {
+
+	struct net_device *out = state->out;
+#else
+static unsigned int ntrack_hook_post(const struct nf_hook_ops *ops, 
+		struct sk_buff *skb,
+		const struct net_device *in,
+		const struct net_device *out, 
+		int (*okfn)(struct sk_buff *)) {
+#endif
+
+	struct nf_conn *ct;
+	struct nos_track *nos;
+	enum ip_conntrack_info ctinfo;
+
+	ct = nf_ct_get(skb, &ctinfo);
+	if (!ct) {
+		// nt_debug("null ct.\n");
+		return NF_ACCEPT;
+	}
+
+	if(nf_ct_is_untracked(ct)) {
+		return NF_ACCEPT;
+	}
+
+	if((nos = nf_ct_get_nos(ct)) == NULL) {
+		nt_debug("nos untracked.\n");
+		return NF_ACCEPT;
+	}
+
+	/* statistics */
+	nt_statistics(skb, nos, out);
 
 	return NF_ACCEPT;
 }
 
 static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	{
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+		.priv = NULL,
+#else
+		.owner = THIS_MODULE,
+#endif
 		.hook = ntrack_hook_fw,
-		// .owner = THIS_MODULE,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_FORWARD,
 		.priority = NF_IP_PRI_LAST,
 	},
 	{
-		.hook = ntrack_hook_test,
-		// .owner = THIS_MODULE,
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+		.priv = NULL,
+#else
+		.owner = THIS_MODULE,
+#endif
+		.hook = ntrack_hook_pre,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_PRE_ROUTING,
-		.priority = NF_IP_PRI_FILTER + 1,
+		.priority = NF_IP_PRI_NAT_DST + 1,
+	},
+	{
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+		.priv = NULL,
+#else
+		.owner = THIS_MODULE,
+#endif
+		.hook = ntrack_hook_post,
+		.pf = NFPROTO_IPV4,
+		.hooknum = NF_INET_POST_ROUTING,
+		.priority = NF_IP_PRI_NAT_SRC - 1,
 	}
 };
 
