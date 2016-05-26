@@ -28,7 +28,8 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-TARGET_LDFLAGS += -lpps
+TARGET_LDFLAGS += -lpps -lpthread
+TARGET_CFLAGS += -pthread
 
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)" \

@@ -281,12 +281,16 @@ int user_need_redirect(user_info_t *ui, struct sk_buff *skb)
 	/* check ui auth status */
 	if (nt_auth_status(ui) <= AUTH_REQ) {
 		if (rule->flags) {
+			/* web auth */
 			nt_auth_set_status(ui, AUTH_REQ);
 			return 1;
 		} else { /* auto auth */
 			nt_auth_set_status(ui, AUTH_OK);
 			return 0;
 		}
+	} else if(nt_auth_status(ui) == AUTH_REJ) {
+		/* notify user the reject reason. */
+		return 1;
 	}
 
 	return 0;

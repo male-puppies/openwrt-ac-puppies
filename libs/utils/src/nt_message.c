@@ -30,7 +30,6 @@ static void* shm_base_flow = NULL;
 static uint32_t shm_user_offset;
 static uint32_t shm_flow_offset;
 static uint32_t nt_cap_block_sz;
-static rbf_t *nt_message_rbf = NULL;
 
 static int proc_uint(uint32_t *out, const char *fname)
 {
@@ -107,17 +106,17 @@ static int shm_init(void **ui_base, uint32_t *ui_cnt, void ** fi_base, uint32_t 
 	return 0;
 }
 
-static int shm_rbf_init(void)
+static int shm_rbf_init(rbf_t **rbfpp)
 {
 	cpu_set_t set;
 	rbf_t *rbp = NULL;
 
 	CPU_ZERO(&set);
-	if(sched_getaffinity(getpid(), sizeof(set), &set) == -1) {
+	if(sched_getaffinity(0, sizeof(set), &set) == -1) {
 		nt_error("get affinity. %s\n", strerror(errno));
 		return errno;
 	}
-	fprintf(stderr, "cpu sets: 0x%x\n", *(unsigned long*)&set);
+	nt_info("cpu sets: 0x%x\n", *(unsigned int*)&set);
 
 	for (int i=0; i<=CPU_COUNT(&set); i++) {
 		if(CPU_ISSET(i, &set)) {
@@ -127,42 +126,46 @@ static int shm_rbf_init(void)
 				continue;
 			}
 			nt_info("on core: %d, %p\n", i, rbp);
-			nt_message_rbf = rbp;
+			*rbfpp = rbp;
 			break;
 		} else {
-			nt_info("not core: %d\n", i);
+			nt_info("ignore core: %d\n", i);
 		}
 	}
 
 	return 0;
 }
 
-int nt_message_init(ntrack_t *nt)
+int nt_message_init(rbf_t **rbfpp)
+{
+	if (shm_rbf_init(rbfpp)) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+int nt_base_init(ntrack_t *nt)
 {
 	if (proc_pars_init()) {
 		return -EINVAL;
 	}
 
 	if (shm_init(
-		&nt->ui_base, &nt->ui_count, 
-		&nt->fi_base, &nt->fi_count)) {
-		return -EINVAL;
-	}
-
-	if (shm_rbf_init()) {
+		(void**)&nt->ui_base, &nt->ui_count, 
+		(void**)&nt->fi_base, &nt->fi_count)) {
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-int nt_message_process(uint32_t *running, nmsg_cb_t cb)
+int nt_message_process(rbf_t *rbfp, uint32_t *running, nmsg_cb_t cb)
 {
 	void *p;
 
-	nt_assert(nt_message_rbf);
+	nt_assert(rbfp);
 	while(*running) {
-		p = rbf_get_data(nt_message_rbf);
+		p = rbf_get_data(rbfp);
 		if (!p) {
 			// nt_debug("read empty.\n");
 			sleep(0.01); //10ms
@@ -172,7 +175,7 @@ int nt_message_process(uint32_t *running, nmsg_cb_t cb)
 		if(cb) {
 			cb(p);
 		}
-		rbf_dump(nt_message_rbf);
-		rbf_release_data(nt_message_rbf);
+		// rbf_dump(rbfp);
+		rbf_release_data(rbfp);
 	}
 }

@@ -16,6 +16,8 @@
 
 #include <linux/netlink.h>
 
+#include <pthread.h>
+
 #include <ntrack_rbf.h>
 #include <ntrack_log.h>
 #include <ntrack_msg.h>
@@ -29,11 +31,25 @@ extern int nt_nl_xmit(void *data);
 extern int nt_unotify_init(void);
 extern int nt_unotify(void *buff, int len);
 
-ntrack_t ntrack;
+static ntrack_t ntrack;
 
 static int fn_message_disp(void *p)
 {
-	// nt_dump(p, 128, "cap:\n");
+#if 0
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	if(sched_getaffinity(0, sizeof(set), &set) == -1) {
+		nt_error("get affinity.\n");
+		return 0;
+	}
+	int i;
+	for(i=0; i<CPU_COUNT(&set); i++) {
+		if(CPU_ISSET(i, &set)) {
+			nt_info("running on core: %d\n", i);
+		}
+	}
+#endif
+
 	nmsg_hdr_t *hdr = p;
 	switch(hdr->type) {
 		case en_MSG_t_PCAP:
@@ -62,7 +78,6 @@ static int fn_message_disp(void *p)
 		}
 		break;
 	}
-	
 	return 0;
 }
 
@@ -87,39 +102,82 @@ char *weix_conf = " \
 		[] \
 	}";
 
-int main(int argc, char *argv[])
-{
-	cpu_set_t set;
-	int running = 1;
+typedef struct {
+	int running;
+	pthread_t tid;
+} nt_thread_t;
 
-	if(argc < 2) {
-		nt_error("ntrackd <core_num>\n");
-		exit(0);
-	}
+void *nt_work_fn(void *d)
+{
+	rbf_t *rbfp;
+	cpu_set_t set;
+	nt_thread_t *nth = (nt_thread_t*)d;
 
 	CPU_ZERO(&set);
-
-	CPU_SET(atoi(argv[1]), &set);
-	if(sched_setaffinity(getpid(), sizeof(set), &set) == -1) {
-		nt_error("set c affinity.\n");
-		exit(EXIT_FAILURE);
+	CPU_SET(nth->running - 1, &set);
+	if(sched_setaffinity(0, sizeof(set), &set) == -1) {
+		nt_error("set [%d] affinity.\n", nth->running);
+		return -1;
 	}
 
-	if (nt_message_init(&ntrack)) {
+	nt_info("nt work thread on core: %d\n", nth->running - 1);
+	if(nt_message_init(&rbfp)){
+		nt_error("ring buff init failed.\n");
+		return -1;
+	}
+
+	nt_message_process(rbfp, &nth->running, fn_message_disp);
+	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	int i;
+
+	/* to kernel */
+	nt_nl_init();
+	/* to user authd. */
+	nt_unotify_init();
+
+	/* test update conf. */
+	nt_nl_xmit(auth_conf);
+
+	/* message crc buffer & user/flow info. */
+	if (nt_base_init(&ntrack)) {
 		nt_error("ntrack message init failed.\n");
 		return 0;
 	}
 
-	/* debug */
-	nt_dump(ntrack.ui_base, 128, "user base: %p\n", ntrack.ui_base);
-	nt_dump(ntrack.fi_base, 128, "flow base: %p\n", ntrack.fi_base);
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	if (sched_getaffinity(0, sizeof(set), &set) == -1) {
+		nt_error("get cpuset error: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 
-	nt_nl_init();
-	nt_unotify_init();
+	nt_info("core total nums[%d]\n", CPU_COUNT(&set));
+	nt_thread_t *threads = malloc(sizeof(nt_thread_t) * CPU_COUNT(&set));
+	for (i=0; i<CPU_COUNT(&set); i++) {
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
 
-	nt_nl_xmit(auth_conf);
+		threads[i].running = i + 1;
+		if(pthread_create(&threads[i].tid, &attr, nt_work_fn, &threads[i]) !=0 ) {
+			nt_error("create [%d] work thread.\n", i);
+			exit(EXIT_FAILURE);
+		}
+		usleep(100);
+	}
 
-	nt_message_process(&running, fn_message_disp);
-
+	for(i=0; i<CPU_COUNT(&set); i++) {
+		void *res;
+		if(pthread_join(threads[i].tid, &res) !=0 ) {
+			nt_error("join thread[%d] error.\n", i);
+			exit(EXIT_FAILURE);
+		}
+		nt_info("join %d: %p\n", i, res);
+		free(res);
+	}
+	free(threads);
 	return 0;
 }

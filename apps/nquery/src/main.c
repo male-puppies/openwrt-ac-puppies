@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	if (nt_message_init(&ntrack)) {
+	if (nt_base_init(&ntrack)) {
 		nt_error("nquery message init failed.\n");
 		return 0;
 	}
