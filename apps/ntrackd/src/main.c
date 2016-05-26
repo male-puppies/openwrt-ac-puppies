@@ -82,27 +82,6 @@ static int fn_message_disp(void *p)
 	return 0;
 }
 
-char *auth_conf = " \
-	{ \
-		\"Type\": \"AuthRules\", \
-		\"Rules\": [{\
-			\"Name\": \"Web\", \
-			\"IPSets\": [\"WebAuth\", \"Default\"], \
-			\"Flags\": 1 \
-		}, \
-		{ \
-			\"Name\": \"Auto\", \
-			\"IPSets\": [\"AutoAuth\"], \
-			\"Flags\": 0 \
-		}] \
-	}";
-
-char *weix_conf = " \
-	{ \
-		\"Type\": \"WeiXin\", \
-		[] \
-	}";
-
 typedef struct {
 	int core_id; /* which core, this thread to run on. */
 	int running;
@@ -143,6 +122,7 @@ int main(int argc, char *argv[])
 	nt_unotify_init();
 
 	/* test update conf. */
+	extern char *auth_conf;
 	nt_nl_xmit(auth_conf);
 
 	/* mmap init & user/flow info. */
