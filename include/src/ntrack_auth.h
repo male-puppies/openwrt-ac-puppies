@@ -50,27 +50,13 @@ static inline uint32_t nt_auth_set_status(user_info_t *ui, uint32_t status)
 
 static inline void dump_user(user_info_t *ui)
 {
-	nt_print("%u.%u.%u.%u - %x\n", HIPQUAD(ui->ip), ui->hdr.flags);
+	nt_print("[%u.%u.%u.%u] gid:%d flags:%x\n", 
+		HIPQUAD(ui->ip), ui->hdr.group_id, ui->hdr.flags);
 }
 /* END Common */
 
 #ifdef __KERNEL__
-/* kernel conf json */
-/*
-[
-	{
-		Name: Web,
-		IPSets: ["webauth", "default"],
-		Flags: 0/1
-	}, {
-		Name: Auto,
-		IPSets: [],
-		Flags: 0/1
-	}
-]
-*/
 /* KERNEL use for parse json */
-
 /* ipset hash:ip hash:mac check src address from skb. */
 #define MAX_USR_SET 4
 #define RULE_NAME_SIZE 64

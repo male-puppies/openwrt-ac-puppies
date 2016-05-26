@@ -21,3 +21,4 @@ char *weix_conf = " \
 		\"Type\": \"WeiXin\", \
 		[] \
 	}";
+	
