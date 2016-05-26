@@ -61,7 +61,7 @@ static void dump_flowinfo(void)
 	}
 }
 
-static void dump_userinfo(void)
+static void dump_userinfo(int id, int magic)
 {
 	int i;
 
@@ -70,7 +70,11 @@ static void dump_userinfo(void)
 		if (!magic_valid(ui->magic)) {
 			continue;
 		}
-		nt_print(FMT_USER_STR"\n", FMT_USER(ui));
+		if(id >= 0 && (uint32_t)id == ui->id) {
+			nt_dump(&ui->hdr, sizeof(ui->hdr), FMT_USER_STR"\n", FMT_USER(ui));
+		} else {
+			nt_print(FMT_USER_STR"\n", FMT_USER(ui));
+		}
 	}
 }
 
@@ -95,7 +99,11 @@ int main(int argc, char *argv[])
 	}
 
 	if(strcmp(argv[1], "user") == 0) {
-		dump_userinfo();
+		if(argc >= 4){
+			dump_userinfo(atoi(argv[2]), atoi(argv[3]));
+		} else {
+			dump_userinfo(-1, -1);
+		}
 	}
 
 	if(strcmp(argv[1], "set") == 0) {

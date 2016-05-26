@@ -13,9 +13,9 @@
 * ntrack message system defines.
 */
 enum {
-	en_MSG_t_PCAP = 1,
-	en_MSG_t_NODE,
-	en_MSG_t_AUTH,
+	en_MSG_PCAP = 1,
+	en_MSG_NODE,
+	en_MSG_AUTH,
 };
 
 typedef struct {

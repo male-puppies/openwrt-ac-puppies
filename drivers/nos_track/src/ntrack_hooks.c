@@ -112,7 +112,7 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 			auth.magic = ui->magic;
 
 			/* xmit message to userspace. */
-			nmsg_hdr_init(&hdr, en_MSG_t_AUTH, sizeof(auth));
+			nmsg_hdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
 			if(nmsg_enqueue(&hdr, &auth, 0)) {
 				nt_debug("skb cap failed.\n");
 			}

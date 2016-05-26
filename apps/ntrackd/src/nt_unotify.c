@@ -70,7 +70,7 @@ int nt_unotify(void *buff, int len)
 		nt_error("xmit[%p,%d] failed.\n", buff, len);
 		return errno;
 	}
-	nt_info("%d bytes xmit.\n", size);
+	nt_debug("%d bytes xmit.\n", size);
 
 	return 0;
 }

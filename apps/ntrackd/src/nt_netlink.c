@@ -78,7 +78,7 @@ int nt_nl_xmit(void *data)
 	message.hdr.nlmsg_pid = getpid();
 
 	memcpy(NLMSG_DATA(&message), data, strlen(data));
-	nt_info("message send to kernel: %d bytes.\n", strlen(data));
+	nt_info("message send to kernel: %d bytes.\n", (int)strlen(data));
 	ret = sendto(nl_sock, 
 		&message, 
 		message.hdr.nlmsg_len, 0, 

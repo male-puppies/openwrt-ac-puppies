@@ -25,9 +25,10 @@ typedef enum {
 #define AUTH_STATUS_MASK (0x000000ff)
 #define AUTH_STATUS(flags) (flags & AUTH_STATUS_MASK)
 
+/* authd user notify message */
 typedef struct {
 	uint32_t magic, id;
-	/* contents */
+	/* FIXME: contents */
 } auth_msg_t;
 
 /*
@@ -69,6 +70,7 @@ static inline void dump_user(user_info_t *ui)
 ]
 */
 /* KERNEL use for parse json */
+
 /* ipset hash:ip hash:mac check src address from skb. */
 #define MAX_USR_SET 4
 #define RULE_NAME_SIZE 64

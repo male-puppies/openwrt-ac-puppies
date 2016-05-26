@@ -65,10 +65,14 @@ extern void *ntrack_klog_fd;
 #define nt_print printf
 void hexdump(FILE *fp, const void *data, int size);
 
+#ifdef __DEBUG
 #define nt_debug(fmt...) 	do{ \
 		fprintf(stderr, "[dbg] %s: ", __FUNCTION__); \
 		fprintf(stderr, ##fmt); \
 	}while(0)
+#else
+#define nt_debug(fmt...) do{}while(0)
+#endif
 
 #define nt_info(fmt...) 	do{ \
 		fprintf(stderr, "[inf] %s: ", __FUNCTION__); \
