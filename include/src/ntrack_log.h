@@ -24,7 +24,7 @@
 #define FMT_USER(ui) \
 			(ui)->id, (ui)->magic, \
 			(ui)->hdr.group_id, \
-			nt_auth_status(ui), \
+			(ui)->hdr.flags, \
 			(ui)->refcnt, \
 			HIPQUAD((ui)->ip)
 

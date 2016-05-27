@@ -104,7 +104,7 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 		user_update_timestamp(ui);
 		/* user online message: keepalive... */
 		if(nt_auth_status(ui) >= AUTH_OK) {
-			nmsg_hdr_t hdr;
+			nt_msghdr_t hdr;
 			auth_msg_t auth;
 
 			/* id & magic -> for userspace to find the kernel ui node. */
@@ -112,8 +112,8 @@ static unsigned int ntrack_hook_fw(const struct nf_hook_ops *ops,
 			auth.magic = ui->magic;
 
 			/* xmit message to userspace. */
-			nmsg_hdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
-			if(nmsg_enqueue(&hdr, &auth, 0)) {
+			nt_msghdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
+			if(nt_msg_enqueue(&hdr, &auth, 0)) {
 				nt_debug("skb cap failed.\n");
 			}
 		}
@@ -261,7 +261,7 @@ static int __init ntrack_modules_init(void)
 	}
 
 	nt_info("ntrack cap init.\n");
-	ret = nmsg_init();
+	ret = nt_msg_init();
 	if(ret) {
 		goto __err;
 	}
@@ -277,7 +277,7 @@ static int __init ntrack_modules_init(void)
 	return 0;
 
 __err:
-	nmsg_cleanup();
+	nt_msg_cleanup();
 	if(ntrack_klog_fd) {
 		klog_fini(ntrack_klog_fd);
 	}
@@ -293,7 +293,7 @@ static void __exit ntrack_modules_exit(void)
 	rcu_assign_pointer(nos_user_match_fn, NULL);
 
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
-	nmsg_cleanup();
+	nt_msg_cleanup();
 	ntrack_conf_exit();
 	klog_fini(ntrack_klog_fd);
 

@@ -23,24 +23,24 @@ typedef struct {
 	uint16_t prio;
 	uint16_t data_len;
 	uint16_t crc;
-} nmsg_hdr_t;
+} nt_msghdr_t;
 
-static inline void* nmsg_data(nmsg_hdr_t *hdr)
+static inline void* nt_msg_data(nt_msghdr_t *hdr)
 {
-	return (void*)((char*)hdr + sizeof(nmsg_hdr_t));
+	return (void*)((char*)hdr + sizeof(nt_msghdr_t));
 }
 
 #ifdef __KERNEL__
 /* 
 * ntrack message queue init/fini.
 */
-int nmsg_init(void);
-void nmsg_cleanup(void);
+int nt_msg_init(void);
+void nt_msg_cleanup(void);
 
 /* 
 * init the message header, setup type & content length.
 */
-static inline nmsg_hdr_t *nmsg_hdr_init(nmsg_hdr_t *hdr, int type, uint16_t data_len)
+static inline nt_msghdr_t *nt_msghdr_init(nt_msghdr_t *hdr, int type, uint16_t data_len)
 {
 	memset(hdr, 0, sizeof(*hdr));
 	hdr->type = type;
@@ -54,7 +54,7 @@ static inline nmsg_hdr_t *nmsg_hdr_init(nmsg_hdr_t *hdr, int type, uint16_t data
 * @key 	hash key for SMP delivery.
 * @return success 0, -num failed.
 */
-int nmsg_enqueue(nmsg_hdr_t *hdr, void *buff, uint32_t key);
+int nt_msg_enqueue(nt_msghdr_t *hdr, void *buff, uint32_t key);
 
 #else /* __KERNEL__ */
 

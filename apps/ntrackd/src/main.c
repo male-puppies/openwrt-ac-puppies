@@ -52,7 +52,7 @@ static int fn_message_disp(void *p)
 	}
 #endif
 
-	nmsg_hdr_t *hdr = p;
+	nt_msghdr_t *hdr = p;
 	switch(hdr->type) {
 		case en_MSG_PCAP:
 		break;
@@ -61,7 +61,7 @@ static int fn_message_disp(void *p)
 		case en_MSG_AUTH:
 		{
 			user_info_t *ui;
-			auth_msg_t *auth = nmsg_data(hdr);
+			auth_msg_t *auth = nt_msg_data(hdr);
 			
 			nt_debug("message uid: %u, magic: %u\n", auth->id, auth->magic);
 			ui = nt_get_user_by_id(&ntrack, auth->id, auth->magic);

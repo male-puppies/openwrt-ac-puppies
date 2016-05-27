@@ -25,12 +25,12 @@ typedef struct {
 	uint64_t count;
 	struct work_struct wq_msg;
 	rbf_t* rbfp;
-} nmsg_cpu_t;
+} nt_mqueue_t;
 
 static struct workqueue_struct *nmsg_wq = NULL;
-static nmsg_cpu_t nmsg_cpus[NR_CPUS];
+static nt_mqueue_t nmsg_cpus[NR_CPUS];
 
-static inline nmsg_cpu_t * nmsg_target_cpu(uint32_t cpu)
+static inline nt_mqueue_t * nmsg_target_cpu(uint32_t cpu)
 {
 	/* FIXME: hash user node. */
 	return &nmsg_cpus[cpu];
@@ -41,7 +41,7 @@ static void nmsg_wq_dequeue_func(struct work_struct *wq);
 /* save in kernel sysctl par */
 extern uint32_t nt_cap_block_sz;
 
-int nmsg_init(void)
+int nt_msg_init(void)
 {
 	uint32_t size, i;
 
@@ -59,7 +59,7 @@ int nmsg_init(void)
 	/* sizeof percpu's message buffer */
 	size = nos_track_cap_size / nr_cpu_ids;
 	for(i=0; i<nr_cpu_ids; i++) {
-		nmsg_cpu_t *nmsg = nmsg_target_cpu(i);
+		nt_mqueue_t *nmsg = nmsg_target_cpu(i);
 		nmsg->count = 0;
 		spin_lock_init(&nmsg->lock);
 		INIT_LIST_HEAD(&nmsg->list);
@@ -73,18 +73,18 @@ int nmsg_init(void)
 	return 0;
 }
 
-void nmsg_cleanup(void)
+void nt_msg_cleanup(void)
 {
 	if(nmsg_wq) {
 		destroy_workqueue(nmsg_wq);
 	}
 }
 
-int nmsg_enqueue(nmsg_hdr_t *hdr, void *buf_in, uint32_t key)
+int nt_msg_enqueue(nt_msghdr_t *hdr, void *buf_in, uint32_t key)
 {
 	uint32_t size = hdr->data_len;
 	nmsg_node_t *node;
-	nmsg_cpu_t *cur_msgq = nmsg_target_cpu(KEY_TO_CORE(key));
+	nt_mqueue_t *cur_msgq = nmsg_target_cpu(KEY_TO_CORE(key));
 
 	nt_assert(cur_msgq);
 	if(cur_msgq->count > NCAP_MAX_COUNT) {
@@ -132,7 +132,7 @@ static int nmsg_fill_buffer(rbf_t *rbfp, nmsg_node_t *node)
 
 static int nmsg_dequeue(void)
 {
-	nmsg_cpu_t *cur_msgq = nmsg_target_cpu(smp_processor_id());
+	nt_mqueue_t *cur_msgq = nmsg_target_cpu(smp_processor_id());
 	nmsg_node_t *node;
 
 	if (list_empty(&cur_msgq->list)) {

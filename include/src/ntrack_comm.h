@@ -3,12 +3,9 @@
 #include <linux/nos_track.h>
 #include <ntrack_log.h>
 
-#define flow_info_count 	NOS_FLOW_TRACK_MAX
-#define user_info_count 	NOS_USER_TRACK_MAX
-
 /* KERNEL & USER comm use. */
-#define USER_PRIV_SZ 		sizeof((user_info_t*)(void*(0))->private)
-#define FLOW_PRIV_SZ 		sizeof((flow_info_t*)(void*(0))->private)
+#define USER_PRIV_SIZE 		sizeof((user_info_t*)(void*(0))->private)
+#define FLOW_PRIV_SIZE 		sizeof((flow_info_t*)(void*(0))->private)
 static inline void *nt_user_priv(user_info_t *ui)
 {
 	return ui->private;
@@ -30,7 +27,7 @@ static inline flow_info_t * nt_flow(struct nos_track *nt)
 {
 	flow_info_t *fi = nt->flow;
 	nt_assert(fi);
-	nt_assert(fi->id >= 0 && fi->id < NOS_FLOW_TRACK_MAX);
+	nt_assert(fi->id >= 0 && fi->id < nos_flow_info_max);
 	return fi;
 }
 
@@ -38,7 +35,7 @@ static inline user_info_t * nt_user(struct nos_track *nt)
 {
 	user_info_t *ui = nt->user;
 	nt_assert(ui);
-	nt_assert(ui->id >= 0 && ui->id < NOS_USER_TRACK_MAX);
+	nt_assert(ui->id >= 0 && ui->id < nos_user_info_max);
 	return ui;
 }
 
@@ -46,7 +43,7 @@ static inline user_info_t * nt_peer(struct nos_track *nt)
 {
 	user_info_t *ui = nt->peer;
 	nt_assert(ui);
-	nt_assert(ui->id >= 0 && ui->id < NOS_USER_TRACK_MAX);
+	nt_assert(ui->id >= 0 && ui->id < nos_user_info_max);
 	return ui;
 }
 #else /* __KERNEL__ */
@@ -63,7 +60,7 @@ static inline flow_info_t * nt_get_flow_by_id(ntrack_t *nt, uint32_t id, uint32_
 {
 	flow_info_t *fi = &nt->fi_base[id];
 
-	nt_assert(id >= 0 && id < NOS_FLOW_TRACK_MAX);
+	nt_assert(id >= 0 && id < nt->fi_count);
 	/* check magic */
 	if (fi->magic != magic) {
 		nt_warn("fid: %u, magic inv: %u-%u\n", id, magic, fi->magic);
@@ -76,7 +73,7 @@ static inline user_info_t * nt_get_user_by_id(ntrack_t *nt, uint32_t id, uint32_
 {
 	user_info_t *ui = &nt->ui_base[id];
 
-	nt_assert(id >= 0 && id < NOS_USER_TRACK_MAX);
+	nt_assert(id >= 0 && id < nt->ui_count);
 	/* check magic */
 	if (ui->magic != magic) {
 		nt_warn("uid: %u, magic inv: %u-%u\n", id, magic, ui->magic);
@@ -89,7 +86,7 @@ static inline user_info_t * nt_get_user_by_flow(ntrack_t *nt, flow_info_t *fi)
 {
 	uint32_t uid = fi->user_id;
 
-	nt_assert(uid >=0 && uid < NOS_USER_TRACK_MAX);
+	nt_assert(uid >=0 && uid < nt->ui_count);
 	return &nt->ui_base[uid];
 }
 /* end node track */
