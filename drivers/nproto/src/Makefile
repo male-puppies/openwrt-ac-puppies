@@ -3,5 +3,6 @@
 #
 
 obj-${CONFIG_NPROTO} += nproto.o
-nproto-y	:= main.o 
+nproto-y	:= main.o \
+	wu-manber.o
 

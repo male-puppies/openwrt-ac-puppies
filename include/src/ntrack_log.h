@@ -38,8 +38,8 @@
 
 #include <linux/klog.h>
 
-#define nt_print printk
 extern void *ntrack_klog_fd;
+#define nt_print printk
 #define nt_debug(fmt...) 	klog_debug(ntrack_klog_fd, ##fmt)
 #define nt_info(fmt...) 	klog_info(ntrack_klog_fd, ##fmt)
 #define nt_warn(fmt...) 	klog_warn(ntrack_klog_fd, ##fmt)
@@ -47,6 +47,15 @@ extern void *ntrack_klog_fd;
 #define nt_dump(buf, size, fmt, args...) 	klog_dumpbuf(ntrack_klog_fd, buf, size, fmt, ##args)
 #define nt_trace(level, fmt...) 	klog_trace(ntrack_klog_fd, level, ##fmt)
 #define nt_assert(x, fmt...) 	BUG_ON(!(x))
+
+extern void *nproto_klog_fd;
+#define np_print printk
+#define np_debug(fmt...) 	klog_debug(nproto_klog_fd, ##fmt)
+#define np_info(fmt...) 	klog_info(nproto_klog_fd, ##fmt)
+#define np_warn(fmt...) 	klog_warn(nproto_klog_fd, ##fmt)
+#define np_error(fmt...) 	klog_error(nproto_klog_fd, ##fmt)
+#define np_dump(buf, size, fmt, args...) 	klog_dumpbuf(nproto_klog_fd, buf, size, fmt, ##args)
+#define np_trace(level, fmt...) 	klog_trace(nproto_klog_fd, level, ##fmt)
 
 #else /* end kernel */
 

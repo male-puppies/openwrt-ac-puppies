@@ -16,13 +16,19 @@ int nt_context_chk_fn(struct sk_buff *skb,
 	flow_info_t *fi = nt_flow(nt);
 	user_info_t *ui = nt_user(nt);
 
-	nt_info(FMT_FLOW_STR"\n", FMT_FLOW(fi));
-	nt_print("\t"FMT_USER_STR"\n", FMT_USER(ui));
+	np_info(FMT_FLOW_STR"\n", FMT_FLOW(fi));
+	np_print("\t"FMT_USER_STR"\n", FMT_USER(ui));
 	return 0;
 }
 
+void *nproto_klog_fd = NULL;
 static int __init nproto_module_init(void)
 {
+	nproto_klog_fd = klog_init("nproto", 0x0e, 0);
+	if(!nproto_klog_fd) {
+		return -ENOMEM;
+	}
+
 	rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
 
 	return 0;
