@@ -14,7 +14,8 @@ PKG_RELEASE:=3
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/nproto
-  SUBMENU:=Other modules
+  CATEGORY:=Puppies
+  SUBMENU:=Nos kernel modules
   TITLE:=nos track proto identify kernel driver
   FILES:=$(PKG_BUILD_DIR)/nproto.ko
   DEPENDS:=+kmod-klog +kmod-ipt-ipset +kmod-ntrack +pps_comm

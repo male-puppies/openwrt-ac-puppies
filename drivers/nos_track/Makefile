@@ -14,7 +14,8 @@ PKG_RELEASE:=3
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ntrack
-  SUBMENU:=Other modules
+  CATEGORY:=Puppies
+  SUBMENU:=Nos kernel modules
   TITLE:=nos track kernel driver
   FILES:=$(PKG_BUILD_DIR)/ntrack.ko
   DEPENDS:=+kmod-klog +kmod-ipt-ipset +pps_comm

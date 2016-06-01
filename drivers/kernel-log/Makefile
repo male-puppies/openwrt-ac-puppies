@@ -14,7 +14,8 @@ PKG_RELEASE:=3
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/klog
-  SUBMENU:=Other modules
+  CATEGORY:=Puppies
+  SUBMENU:=Nos kernel modules
   TITLE:=nos kernel debug log driver
   FILES:=$(PKG_BUILD_DIR)/klog.ko
   AUTOLOAD:=$(call AutoProbe,klog)
