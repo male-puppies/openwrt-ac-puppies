@@ -1,25 +1,44 @@
 #pragma once
 
 #include <linux/nos_track.h>
+#include <ntrack_flow.h>
+#include <ntrack_auth.h>
 #include <ntrack_log.h>
 
 /* KERNEL & USER comm use. */
 #define USER_PRIV_SIZE 		sizeof((user_info_t*)(void*(0))->private)
 #define FLOW_PRIV_SIZE 		sizeof((flow_info_t*)(void*(0))->private)
-static inline void *nt_user_priv(user_info_t *ui)
-{
-	return ui->private;
-}
-
-static inline void *nt_flow_priv(flow_info_t *fi)
-{
-	return fi->private;
-}
 
 static inline uint32_t magic_valid(uint32_t m)
 {
 	return m % 2 == 0;
 }
+
+/*
+* [-- nt_authd_t --+-- priv --]
+*/
+static inline void *nt_user_priv(user_info_t *ui)
+{
+	return &ui->private[NT_USR_AUTH_OFFSET];
+}
+
+static inline nt_authd_t *nt_user_authd(user_info_t *ui)
+{
+	return (nt_authd_t*)ui->private;
+}
+
+static inline void *nt_flow_priv(flow_info_t *fi)
+{
+	return &fi->private[
+		sizeof(nt_flow_nproto_t) + 
+		sizeof(nt_flow_authd_t)];
+}
+
+static inline nt_flow_nproto_t *nt_flow_nproto(flow_info_t *fi)
+{
+	return (nt_flow_nproto_t*)fi->private;
+}
+
 
 #ifdef __KERNEL__
 /* kernel node opt apis */

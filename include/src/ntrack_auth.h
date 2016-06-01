@@ -22,14 +22,16 @@ typedef enum {
 	AUTH_REJ,
 	AUTH_OK,
 } auth_status_t;
-#define AUTH_STATUS_MASK (0x000000ff)
-#define AUTH_STATUS(flags) (flags & AUTH_STATUS_MASK)
 
-/* authd user notify message */
+/* authd user keepalive message */
 typedef struct {
 	uint32_t magic, id;
 	/* FIXME: contents */
 } auth_msg_t;
+
+typedef struct {
+	/* auth data store in user node. */
+} nt_authd_t;
 
 /*
 * AUTH_UNKNOWN -> AUTH_REQ 	-> AUTH_REJ 
@@ -37,14 +39,14 @@ typedef struct {
 */
 static inline uint32_t nt_auth_status(user_info_t *ui)
 {
-	return AUTH_STATUS(ui->hdr.flags);
+	return ui->hdr.status;
 }
 
-static inline uint32_t nt_auth_set_status(user_info_t *ui, uint32_t status)
+static inline uint32_t nt_auth_set_status(user_info_t *ui, uint8_t status)
 {
-	uint32_t s_priv = AUTH_STATUS(ui->hdr.flags);
-	ui->hdr.flags &= ~ AUTH_STATUS_MASK;
-	ui->hdr.flags |= AUTH_STATUS(status);
+	uint8_t s_priv = ui->hdr.status;
+
+	ui->hdr.status = status;
 	return s_priv;
 }
 
