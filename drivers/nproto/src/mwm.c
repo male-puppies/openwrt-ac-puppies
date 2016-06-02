@@ -26,7 +26,7 @@ int mwmSysInit(const char * szInstName)
 	strcpy(mwmInstName, szInstName);
 
 	hmwm_cache = kmem_cache_create(mwmInstName, \
-		sizeof(MWM_STRUCT), 0, SLAB_HWCACHE_ALIGN, NULL);
+		sizeof(mwm_t), 0, SLAB_HWCACHE_ALIGN, NULL);
 	if (hmwm_cache == NULL)
 	{
 		np_error("kmem cache create failed.\n");
@@ -64,16 +64,16 @@ __err:
 	return -1;
 }
 
-static inline MWM_PATTERN_STRUCT* mwmPatsAlloc(int m)
+static inline mwm_patt_t* mwmPatsAlloc(int m)
 {
-	MWM_PATTERN_STRUCT* p ;
-	p = kmalloc(sizeof(MWM_PATTERN_STRUCT), GFP_KERNEL);
+	mwm_patt_t* p ;
+	p = kmalloc(sizeof(mwm_patt_t), GFP_KERNEL);
 	if(p ==NULL)
 	{
 		np_error("malloc failed.\n");
 		goto __err;
 	}
-	memset(p,0,sizeof(MWM_PATTERN_STRUCT));
+	memset(p,0,sizeof(mwm_patt_t));
 
 	/* Allocate and store the Pattern 'P' with NO CASE info*/
 	p->psPat = (unsigned char*) kmalloc (m+1, GFP_KERNEL) ;
@@ -100,7 +100,7 @@ __err:
 }
 
 
-static inline void mwmPatsFree(MWM_PATTERN_STRUCT *p)
+static inline void mwmPatsFree(mwm_patt_t *p)
 {
 
 	if(p ==NULL)
@@ -128,15 +128,15 @@ static inline void mwmPatsFree(MWM_PATTERN_STRUCT *p)
 ** mwmAlloc:: Allocate and Init Big hash Table Verions
 ** maxpats - max number of patterns to support
 */
-MWM_STRUCT * mwmNew()
+mwm_t * mwmNew()
 {
-	MWM_STRUCT * p = kmem_cache_alloc(hmwm_cache, GFP_ATOMIC);
+	mwm_t * p = kmem_cache_alloc(hmwm_cache, GFP_ATOMIC);
 	if( !p )
 	{ 
 		np_error("kmem create failed!\n");
 		return 0;
 	}
-	memset(p,0,sizeof(MWM_STRUCT));
+	memset(p,0,sizeof(mwm_t));
 
 	p->msSmallest = MAX_PAT_LEN; 
 
@@ -146,21 +146,21 @@ MWM_STRUCT * mwmNew()
 /*
 ** Release a mwm
 */
-void mwmFree(MWM_STRUCT *pv )
+void mwmFree(mwm_t *pv )
 {
-	MWM_STRUCT * p = pv;
-	MWM_PATTERN_STRUCT * list=0;
-	MWM_PATTERN_STRUCT * next=0;
+	mwm_t * p = pv;
+	mwm_patt_t * list=0;
+	mwm_patt_t * next=0;
 
 	if(!p)
 	{
-		np_error("MWM_STRUCT is null!\n");
+		np_error("mwm_t is null!\n");
 		return;
 	}
 
 	if( p->msPatArray )
 	{
-		if ((p->msNumPatterns * sizeof(MWM_PATTERN_STRUCT)) < KMALLOC_MAX_SIZE)
+		if ((p->msNumPatterns * sizeof(mwm_patt_t)) < KMALLOC_MAX_SIZE)
 		{
 			kfree(p->msPatArray );
 		}
@@ -219,11 +219,11 @@ void mwmFree(MWM_STRUCT *pv )
 ** 0: already present, uniqueness compiled in
 ** 1: added
 */
-int mwmAddPatternEx( MWM_STRUCT *pv, unsigned char *patt, int len, int offset, int deep, long user_data)
+int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, long user_data)
 {
-	MWM_STRUCT *ps = pv;
-	MWM_PATTERN_STRUCT *plist=0;
-	MWM_PATTERN_STRUCT *p = NULL;
+	mwm_t *ps = pv;
+	mwm_patt_t *plist=0;
+	mwm_patt_t *p = NULL;
 
 	if ( !patt || len < 2 )
 	{
@@ -237,7 +237,7 @@ int mwmAddPatternEx( MWM_STRUCT *pv, unsigned char *patt, int len, int offset, i
 		return -1;
 	}
 
-	p = (MWM_PATTERN_STRUCT*)mwmPatsAlloc(len); 
+	p = (mwm_patt_t*)mwmPatsAlloc(len); 
 	if(!p )
 	{
 		np_error("error alloc mem for pattern!\n");
@@ -294,7 +294,7 @@ int mwmAddPatternEx( MWM_STRUCT *pv, unsigned char *patt, int len, int offset, i
 /*
 ** Calc some pattern length stats
 */
-static void mwmAnalyzePattens( MWM_STRUCT * ps )
+static void mwmAnalyzePattens( mwm_t * ps )
 {
 	int i;
 
@@ -322,7 +322,7 @@ static unsigned HASH16( unsigned char * T )
 ** CHAR prefix hash.
 ** Build the hash table, and pattern groups
 */
-static void mwmPrepHashedPatternGroupsC(MWM_STRUCT * ps)
+static void mwmPrepHashedPatternGroupsC(mwm_t * ps)
 {
 	unsigned sindex = 0, hindex, ningroup;
 	int i;
@@ -361,7 +361,7 @@ static void mwmPrepHashedPatternGroupsC(MWM_STRUCT * ps)
 ** SHORT prefix hash.
 ** Build the hash table, and pattern groups
 */
-static void mwmPrepHashedPatternGroupsW(MWM_STRUCT * ps)
+static void mwmPrepHashedPatternGroupsW(mwm_t * ps)
 {
 	unsigned sindex = 0, hindex, ningroup;
 	int i;
@@ -400,7 +400,7 @@ static void mwmPrepHashedPatternGroupsW(MWM_STRUCT * ps)
 ** CHAR shift table.
 ** Standard Bad Character Multi-Pattern Skip Table
 */
-static void mwmPrepBadCharTable(MWM_STRUCT * ps)
+static void mwmPrepBadCharTable(mwm_t * ps)
 {
 	unsigned short i, k, m, cindex, shift;
 	unsigned small_value=MAX_PAT_LEN, large_value=0;
@@ -447,7 +447,7 @@ static void mwmPrepBadCharTable(MWM_STRUCT * ps)
 ** SHORT shift table.
 ** Prep and Build a Bad Word Shift table
 */
-static void mwmPrepBadWordTable(MWM_STRUCT * ps)
+static void mwmPrepBadWordTable(mwm_t * ps)
 {
 	int i;
 	unsigned short k, m, cindex;
@@ -502,7 +502,7 @@ static void mwmPrepBadWordTable(MWM_STRUCT * ps)
 * with minimal differences at the end of the strings.
 *
 */
-static int mwmGroupMatch2( MWM_STRUCT * ps, 
+static int mwmGroupMatch2( mwm_t * ps, 
 						  int index,
 						  unsigned char * Tx, 
 						  unsigned char * T, 
@@ -511,8 +511,8 @@ static int mwmGroupMatch2( MWM_STRUCT * ps,
 						  int (*match)(void *,void* in, void * out) )
 {
 	int k, sp, ep, st, len, nfound=0;
-	MWM_PATTERN_STRUCT * patrn; 
-	MWM_PATTERN_STRUCT * patrnEnd; 
+	mwm_patt_t * patrn; 
+	mwm_patt_t * patrnEnd; 
 
 	/* Process the Hash Group Patterns against the current Text Suffix */
 	patrn = &ps->msPatArray[index]; 
@@ -563,7 +563,7 @@ static int mwmGroupMatch2( MWM_STRUCT * ps,
 /*
 ** [CHAR] hash, [CHAR] shifts.
 */
-static int mwmSearchExCC( MWM_STRUCT *ps, 
+static int mwmSearchExCC( mwm_t *ps, 
 						 unsigned char * Tx, int n, 
 						 void *in, void *out,
 						 int(*match)( void * par, void *in, void *out ))
@@ -572,7 +572,7 @@ static int mwmSearchExCC( MWM_STRUCT *ps,
 	unsigned char *T, *Tend, *B;
 	unsigned char *pshift = ps->msShift;
 	HASH_TYPE *phash = ps->msHash1;
-	/*MWM_PATTERN_STRUCT *patrn, *patrnEnd;*/
+	/*mwm_patt_t *patrn, *patrnEnd;*/
 
 	nfound = 0;
 
@@ -622,7 +622,7 @@ static int mwmSearchExCC( MWM_STRUCT *ps,
 /*
 ** [CHAR] hash, [SHORT] shifts.
 */
-static int mwmSearchExBC( MWM_STRUCT *ps, 
+static int mwmSearchExBC( mwm_t *ps, 
 						 unsigned char * Tx, int n, 
 						 void *in, void *out,
 						 int(*match)( void * par, void *in, void *out ))
@@ -631,7 +631,7 @@ static int mwmSearchExBC( MWM_STRUCT *ps,
 	unsigned char *T, *Tend, *B;
 	unsigned char *pshift = ps->msShift;
 	HASH_TYPE *phash = ps->msHash;
-	/*MWM_PATTERN_STRUCT *patrn, *patrnEnd;*/
+	/*mwm_patt_t *patrn, *patrnEnd;*/
 
 	nfound = 0;
 
@@ -677,7 +677,7 @@ static int mwmSearchExBC( MWM_STRUCT *ps,
 /*
 ** [SHORT] hash, [SHORT] shifts.
 */
-static int mwmSearchExBW( MWM_STRUCT *ps, 
+static int mwmSearchExBW( mwm_t *ps, 
 						 unsigned char * Tx, int n,
 						 void * in, void * out,
 						 int(*match)( void * par, void * in, void * out ))
@@ -734,7 +734,7 @@ static int mwmSearchExBW( MWM_STRUCT *ps,
 * Scan and Match Loops are unrolled and separated
 * Optimized for 1 byte patterns as well
 */
-static inline unsigned char * bmhSearch(HBM_STRUCT * px, unsigned char * text, int n)
+static inline unsigned char * bmhSearch(hbm_t * px, unsigned char * text, int n)
 {
 	unsigned char *pat, *t, *et, *q;
 	int m1, k;
@@ -803,14 +803,14 @@ NoMatch:
 /*
 ** Search a body of text or data for paterns 
 */
-int mwmSearch(MWM_STRUCT *pv,
+int mwmSearch(mwm_t *pv,
 			  unsigned char * T, int n,
 			  void *in, void *out,
 			  int(*match)(void *par, void *in, void *out))
 {
 	int i,nfound=0;
 	int pats, pate, plen;
-	MWM_STRUCT * ps = pv;
+	mwm_t * ps = pv;
 
 	if (ps->msNumPatterns<1)
 		return 0;//no found
@@ -822,7 +822,7 @@ int mwmSearch(MWM_STRUCT *pv,
 
 		for( i=0; i<ps->msNumPatterns; i++ )
 		{
-			MWM_PATTERN_STRUCT *patt = &ps->msPatArray[i];
+			mwm_patt_t *patt = &ps->msPatArray[i];
 			Tx = bmhSearch( patt->psBmh, T, n ); 
 			if( Tx )
 			{
@@ -883,8 +883,8 @@ static int bcompare( unsigned char *a, int alen, unsigned char * b, int blen )
 */
 static int sortcmp( const void * e1, const void * e2 )
 {
-	MWM_PATTERN_STRUCT *r1= (MWM_PATTERN_STRUCT*)e1;
-	MWM_PATTERN_STRUCT *r2= (MWM_PATTERN_STRUCT*)e2;
+	mwm_patt_t *r1= (mwm_patt_t*)e1;
+	mwm_patt_t *r2= (mwm_patt_t*)e2;
 	return bcompare( r1->psPat, r1->psLen, r2->psPat, r2->psLen ); 
 }
 
@@ -894,16 +894,16 @@ return : 0 suc <0 error
 
 int mwmPrepMem(void * pv)
 {
-	MWM_STRUCT * ps = (MWM_STRUCT *) pv;
+	mwm_t * ps = (mwm_t *) pv;
 
 	/* Build an array of pointers to the list of Pattern nodes */
-	if ((ps->msNumPatterns * sizeof(MWM_PATTERN_STRUCT)) < KMALLOC_MAX_SIZE)
+	if ((ps->msNumPatterns * sizeof(mwm_patt_t)) < KMALLOC_MAX_SIZE)
 	{
-		ps->msPatArray = (MWM_PATTERN_STRUCT*)kmalloc( sizeof(MWM_PATTERN_STRUCT)*ps->msNumPatterns, GFP_KERNEL);
+		ps->msPatArray = (mwm_patt_t*)kmalloc( sizeof(mwm_patt_t)*ps->msNumPatterns, GFP_KERNEL);
 	}
 	else
 	{
-		ps->msPatArray = (MWM_PATTERN_STRUCT*)vmalloc( sizeof(MWM_PATTERN_STRUCT)*ps->msNumPatterns);
+		ps->msPatArray = (mwm_patt_t*)vmalloc( sizeof(mwm_patt_t)*ps->msNumPatterns);
 	}
 	
 	if( !ps->msPatArray ) 
@@ -911,7 +911,7 @@ int mwmPrepMem(void * pv)
 		np_error("kmalloc %d pattern nodes failed!\n", ps->msNumPatterns);
 		goto __err;
 	}
-	memset(ps->msPatArray, 0, sizeof(MWM_PATTERN_STRUCT) * ps->msNumPatterns);
+	memset(ps->msPatArray, 0, sizeof(mwm_patt_t) * ps->msNumPatterns);
 
 	if ((sizeof(HASH_TYPE)* ps->msNumPatterns) < KMALLOC_MAX_SIZE)
 	{
@@ -968,7 +968,7 @@ __err:
 
 	if( ps->msPatArray )
 	{
-		if ((ps->msNumPatterns * sizeof(MWM_PATTERN_STRUCT)) < KMALLOC_MAX_SIZE)
+		if ((ps->msNumPatterns * sizeof(mwm_patt_t)) < KMALLOC_MAX_SIZE)
 		{
 			kfree(ps->msPatArray );
 		}
@@ -1008,7 +1008,7 @@ __err:
 	return -1;
 }
 
-HBM_STRUCT * bmhPrepBmh(HBM_STRUCT *p, unsigned char * pat, int m)
+hbm_t * bmhPrepBmh(hbm_t *p, unsigned char * pat, int m)
 {
 	int k;
 
@@ -1029,11 +1029,11 @@ HBM_STRUCT * bmhPrepBmh(HBM_STRUCT *p, unsigned char * pat, int m)
 /*
 * BMH for less patts.
 */
-HBM_STRUCT *bmhPrepEx(unsigned char * pat, int m)
+hbm_t *bmhPrepEx(unsigned char * pat, int m)
 {
-	HBM_STRUCT *p;
+	hbm_t *p;
 
-	p = (HBM_STRUCT*)kmalloc( sizeof(HBM_STRUCT), GFP_KERNEL);
+	p = (hbm_t*)kmalloc( sizeof(hbm_t), GFP_KERNEL);
 	if( !p )
 	{
 		np_error("bmh malloc failed!\n");
@@ -1049,12 +1049,12 @@ HBM_STRUCT *bmhPrepEx(unsigned char * pat, int m)
 ** mwmPrepPatterns:: Prepare the pattern group for searching
 **
 */
-int mwmPrepPatterns( MWM_STRUCT * pv )
+int mwmPrepPatterns( mwm_t * pv )
 {
 
 	int k;
-	MWM_STRUCT * ps = pv;
-	MWM_PATTERN_STRUCT * plist;
+	mwm_t * ps = pv;
+	mwm_patt_t * plist;
 
 	if (!pv)
 	{
@@ -1081,14 +1081,14 @@ int mwmPrepPatterns( MWM_STRUCT * pv )
 	/* Copy the list node info into the Array */
 	for( k=0, plist = ps->plist; plist!=NULL && k < ps->msNumPatterns; plist=plist->next )
 	{
-		memcpy( &ps->msPatArray[k++], plist, sizeof(MWM_PATTERN_STRUCT) );
+		memcpy( &ps->msPatArray[k++], plist, sizeof(mwm_patt_t) );
 	}
 
 	/* Initialize the MWM or Boyer-Moore Pattern data */
 	if( ps->msMethod == MTH_MWM )
 	{
 		/* Sort the patterns */
-		qsort( ps->msPatArray, ps->msNumPatterns, sizeof(MWM_PATTERN_STRUCT), sortcmp); 
+		qsort( ps->msPatArray, ps->msNumPatterns, sizeof(mwm_patt_t), sortcmp); 
 
 		/* Build the Hash table, and pattern groups, per Wu & Manber */
 #if HASH_CHAR
@@ -1141,7 +1141,7 @@ __err:
 */
 int mwmGetNumPatterns( void * pv )
 {
-	MWM_STRUCT *p = (MWM_STRUCT*)pv;
+	mwm_t *p = (mwm_t*)pv;
 	return p->msNumPatterns;
 }
 
@@ -1150,7 +1150,7 @@ int mwmGetNumPatterns( void * pv )
 */
 void mwmShowStats( void * pv )
 {
-	MWM_STRUCT * ps = (MWM_STRUCT*)pv;
+	mwm_t * ps = (mwm_t*)pv;
 
 	int i;
 	printf("Pattern Stats\n");
@@ -1189,12 +1189,12 @@ static void ShowBytes(unsigned n, unsigned char *p)
 /*
 ** Display patterns in this group
 */
-void mwmGroupDetails(MWM_STRUCT *pv)
+void mwmGroupDetails(mwm_t *pv)
 {
-	MWM_STRUCT * ps = pv;
+	mwm_t * ps = pv;
 	int index,i, m, gmax=0, total=0,gavg=0,subgroups;
 	static int k=0;
-	MWM_PATTERN_STRUCT *patrn, *patrnEnd;
+	mwm_patt_t *patrn, *patrnEnd;
 	if (!ps)
 	{
 		printf("mwm: null mwm struct for group info.\n");

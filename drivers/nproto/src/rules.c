@@ -1,4 +1,5 @@
 
+#include "mwm.h"
 
 #define MAX_REF_RULES 8
 #define MAX_L4_ADDRS 8
@@ -64,3 +65,18 @@ typedef struct {
 	/* payload data match */
 	l7_match_t l7;
 } nproto_rule_t;
+
+/* 
+** rule set:
+** 	UDP
+**	TCP ->
+		HTTP
+		Not-HTTP
+	Others
+*/
+typedef struct {
+	uint16_t num_rules;
+	uint16_t num_capacity; /* the capacity of this set */
+	nproto_rule_t *rules[]; /* the dmalloc array pointer */
+	mwm_t *pmwm; /* rules with 4 char search patterns. */
+} np_rule_set_t;

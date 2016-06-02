@@ -95,11 +95,13 @@ static int proc_pars_init(void)
 	}	
 
 	nt_info("nt proc: 0x%x-0x%x\n"
-		"\tuser offset: 0x%x\n" 
-		"\tflow offset: 0x%x\n" 
+		"\tuser offset: 0x%x, count: %d\n" 
+		"\tflow offset: 0x%x, count: %d\n" 
 		"\tcapblk size: 0x%x\n", 
 		nt_shm_base, nt_shm_size, 
-		shm_user_offset, shm_flow_offset, nt_cap_block_sz);
+		shm_user_offset, nt_user_max, 
+		shm_flow_offset, nt_flow_max,
+		nt_cap_block_sz);
 
 	return 0;
 }

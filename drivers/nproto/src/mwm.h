@@ -111,12 +111,12 @@ typedef struct {
 	short  bcShift[256];
 	int M;
 	unsigned char *P;
-}HBM_STRUCT;
+} hbm_t;
 
 /*
 **  This struct is used internally my mwm.c
 */
-typedef struct _mwm_pattern_struct  {
+typedef struct __mwm_patt {
 
 	unsigned int    psLen;   // length of pattern in bytes
 	unsigned char   *psPat;   // pattern array, no case
@@ -124,14 +124,14 @@ typedef struct _mwm_pattern_struct  {
 	int    psDepth;   // number of bytes after offset to search
 	long  ps_data;    //internal ID, used by the pattern matcher
 	
-	HBM_STRUCT     * psBmh;	
-	struct _mwm_pattern_struct * next;
-} MWM_PATTERN_STRUCT;
+	hbm_t     * psBmh;	
+	struct __mwm_patt * next;
+} mwm_patt_t;
 
 /*
 ** Pattern GROUP Structure, this struct is is used publicly, but by reference only
 */
-typedef struct _mwm_struct {
+typedef struct __mwm_st {
   
   /* Bad Character Shift Table */
   HASH_TYPE msHash1[256];
@@ -139,13 +139,13 @@ typedef struct _mwm_struct {
   unsigned msShiftLen;
   
   /* search function */
-  int (*search)( struct _mwm_struct * ps, 
+  int (*search)( struct __mwm_st * ps, 
                  unsigned char * T, int n, 
                  void  * in, void *out ,
                  int(*match)( void *  par, void * in, void * out ) );
   
   /* Array of Group Counts, # of patterns in each hash group */
-  MWM_PATTERN_STRUCT   *msPatArray;
+  mwm_patt_t   *msPatArray;
   HASH_TYPE   *msNumArray;
   
   /* Number of Patterns loaded */
@@ -172,9 +172,9 @@ typedef struct _mwm_struct {
   int    msMethod;  /* MTH_BM, MTH_MWM */
   int    is_ok;
   
-  MWM_PATTERN_STRUCT * plist;
+  mwm_patt_t * plist;
   
-} MWM_STRUCT;
+} mwm_t;
 
 /*
 return value 
@@ -196,14 +196,14 @@ int  mwm_sysclean(const char * szInstName);
 /*
 ** PROTOTYPES
 */
-MWM_STRUCT * mwmNew( void );
-void   mwmFree(MWM_STRUCT *pv );
+mwm_t * mwmNew( void );
+void   mwmFree(mwm_t *pv );
 #define MWM_INITED(pv) ((pv)->is_ok==1)
 
-int mwmAddPatternEx( MWM_STRUCT *pv, unsigned char * P, int len, int off, int deep,  long ud );
-int  mwmPrepPatterns  ( MWM_STRUCT *pv );
+int mwmAddPatternEx( mwm_t *pv, unsigned char * P, int len, int off, int deep,  long ud );
+int  mwmPrepPatterns  ( mwm_t *pv );
 
-int  mwmSearch( MWM_STRUCT *pv,
+int  mwmSearch( mwm_t *pv,
 			   unsigned char * T, int n, 
 			   void *in, void *out,
 			   int ( *action )(void *par, void * in, void *out)); 
@@ -212,7 +212,7 @@ int  mwmSearch( MWM_STRUCT *pv,
 int   mwmGetNumPatterns( void * pv );
 void  mwmFeatures( void );
 void  mwmShowStats( void * pv );
-void  mwmGroupDetails( MWM_STRUCT *pv );
+void  mwmGroupDetails( mwm_t *pv );
 
 #endif
 
