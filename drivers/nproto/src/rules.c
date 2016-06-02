@@ -1,82 +1,99 @@
 
 #include "mwm.h"
+#include "rules.h"
 
-#define MAX_REF_RULES 8
-#define MAX_L4_ADDRS 8
-#define MAX_L4_PORTS 31
+/* inner data struct's */
+np_rule_set_t rule_sets_base[NP_SET_BASE_MAX];
+np_rule_set_t rule_sets_refs[NP_SET_REFs_MAX];
+nproto_rule_t *inner_rules[NP_INNER_RULE_MAX];
 
-#define MAX_L7_LEN_LIST 15
-#define MAX_L7_LEN_RANGE 16
+static int rule_compile(nproto_rule_t *rule)
+{
+	/* init bmh/regexp struct. */
 
-#define MAX_CT_MATCH_NUM 16
+	/* setup callback's */
 
-typedef struct {
-	uint32_t addrs[MAX_L4_ADDRS];
-	uint16_t ports[MAX_L4_PORTS];
-	uint16_t proto;
-} l4_match_t;
+	return 0;
+}
 
-typedef struct {
-	int16_t offset;
-	int16_t fixed;
-	uint8_t width; //byte, short, int -> 1,2,4
-} len_match_t;
+static int hash_refs(nproto_rule_t *rule)
+{
+	int i;
+	int x = 0;
 
-typedef struct {
+	for(i=0; i<rule->MAX_REF_IDs; i++) {
+		if(!rule->ID_REFs[i]) 
+			break;
+		x += rule->ID_REFs[i];
+	}
+	/* error rule. */
+	if(x == 0) {
+		return -EINVAL;
+	}
 
-} content_match_t;
+	return x % NP_SET_REFs_MAX;
+}
 
-typedef struct {
-	uint8_t dir;
-	
-	/* length info */
-	uint8_t len_type;
-	uint16_t len_list[MAX_L7_LEN_LIST];
-	uint16_t len_range[MAX_L7_LEN_RANGE][2];
-	len_match_t len_match;
+static int rule_insert(np_rule_set_t *set, nproto_rule_t *rule)
+{
+	return 0;
+}
 
-	/* content info */
-	uint8_t ct_match_num;
-	uint8_t ct_match_relation; /* or|and */
-	content_match_t ct_match[MAX_CT_MATCH_NUM];
-} l7_match_t;
+static int np_rule_register(nproto_rule_t *rule)
+{
+	/* compile */
+	if(rule_compile(rule)){
+		np_error("compile %d: %s\n", rule->ID, rule->name_rule);
+		return -EINVAL;
+	}
 
-typedef struct {
-	/* rule name, app name(xunlei, web-chrome), service: http, mail, game. */
-	char *name_rule, *name_app, *name_service;
+	/* insert in-to correct set's */
+	if(!rule->base_rule) {
+		/* ref other base rule. */
+		int idx = hash_refs(rule);
+		if(idx < 0 || idx >= NP_SET_REFs_MAX) {
+			np_error("not base rule, but ref is nil. %d\n", idx);
+			return -EINVAL;
+		}
+		return rule_insert(&rule_sets_refs[idx], rule);
+	}
 
-	uint16_t ID;
-	/* this rule ref to other/base rules. */
-	uint16_t ID_REFs[MAX_REF_RULES];
-	/* 
-	* base: start match as unknown, or ref to someone.
-	* ref: 0: current-package/1: cross-package-in-session. 
-	* 		bit-map: 0/1/2/3.
-	*/
-	uint8_t base_rule;
-	uint8_t ref_type;
+	/* base rule && http */
+	if(rule->enalbe_http) {
+		return rule_insert(&rule_sets_base[NP_SET_BASE_HTTP], rule);
+	}
 
-	/* enable the l4/l7 match process */
-	uint8_t enable_l4, enable_l7;
+	/* base rule, to inner set's */
+	if (rule->enalbe_l4) {
+		l4_match_t *l4 = &rule->l4;
+		if(l4->proto == IPPROTO_UDP) {
+			return rule_insert(&rule_sets_base[NP_SET_BASE_UDP], rule);
+		} else if(l4->proto == IPPROTO_TCP) {
+			return rule_insert(&rule_sets_base[NP_SET_BASE_TCP], rule);
+		} else {
+			return rule_insert(&rule_sets_base[NP_SET_BASE_OTHER], rule);
+		}
+	}
 
-	/* l4 header match */
-	l4_match_t l4;
+	return 0;
+}
 
-	/* payload data match */
-	l7_match_t l7;
-} nproto_rule_t;
+static int init_inner(void)
+{
+	extern nproto_rule_t \
+		inner_http, \
+		inner_smtp, \
+		inner_pop;
 
-/* 
-** rule set:
-** 	UDP
-**	TCP ->
-		HTTP
-		Not-HTTP
-	Others
-*/
-typedef struct {
-	uint16_t num_rules;
-	uint16_t num_capacity; /* the capacity of this set */
-	nproto_rule_t *rules[]; /* the dmalloc array pointer */
-	mwm_t *pmwm; /* rules with 4 char search patterns. */
-} np_rule_set_t;
+	np_rule_register(&inner_http);
+}
+
+int np_rules_init(void)
+{
+	memset(&rule_sets_base, 0, sizeof(rule_sets_base));
+	memset(&inner_rules, 0, sizeof(inner_rules));
+
+	init_inner();
+	return 0;
+}
+

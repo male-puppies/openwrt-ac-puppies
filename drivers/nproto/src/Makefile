@@ -3,7 +3,9 @@
 #
 
 obj-${CONFIG_NPROTO} += nproto.o
-nproto-y	:= main.o \
+nproto-y	+= main.o \
 	wu-manber.o mwm.o \
 	QSORT.o
 
+# rules build-in.
+nproto-y 	+= rules/http.o
