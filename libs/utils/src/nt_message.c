@@ -24,6 +24,8 @@ const char *fn_base_loff = "/proc/sys/kernel/nt_shm_base";
 const char *fn_mem_size = "/proc/sys/kernel/nt_shm_size";
 const char *fn_shm_uoff = "/proc/sys/kernel/nt_user_offset";
 const char *fn_shm_foff = "/proc/sys/kernel/nt_flow_offset";
+const char *fn_flow_max = "/proc/sys/kernel/nt_flow_max";
+const char *fn_user_max = "/proc/sys/kernel/nt_user_max";
 const char *fn_shm_cap_sz = "/proc/sys/kernel/nt_cap_block_sz";
 
 static void* shm_base_addr = NULL;
@@ -34,9 +36,10 @@ static void* nt_shm_base;
 static uint32_t nt_shm_size;
 static uint32_t shm_user_offset;
 static uint32_t shm_flow_offset;
+static uint32_t nt_flow_max, nt_user_max;
 static uint32_t nt_cap_block_sz;
 
-static int proc_uint(uint32_t *out, const char *fname)
+static int proc_uint(void *out, const char *fname)
 {
 	int fd = open(fname, O_RDONLY);
 	if(fd < 0) {
@@ -50,7 +53,7 @@ static int proc_uint(uint32_t *out, const char *fname)
 	close(fd);
 
 	if(c > 0) {
-		*out = atoi(buff);
+		*(int*)out = atoi(buff);
 		return 0;
 	} else {
 		nt_error("%s\n", strerror(errno));
@@ -82,6 +85,14 @@ static int proc_pars_init(void)
 		nt_error("read nt flow offset failed: %d\n", res);
 		return res;
 	}
+	if((res=proc_uint(&nt_flow_max, fn_flow_max))) {
+		nt_error("read nt flow max failed.\n");
+		return res;
+	}
+	if((res=proc_uint(&nt_user_max, fn_user_max))) {
+		nt_error("read nt user max failed.\n");
+		return res;
+	}	
 
 	nt_info("nt proc: 0x%x-0x%x\n"
 		"\tuser offset: 0x%x\n" 
@@ -101,7 +112,7 @@ static int shm_init(void **ui_base, uint32_t *ui_cnt, void ** fi_base, uint32_t 
 		return -EINVAL;
 	}
 
-	shm_base_addr = mmap(0, nt_shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, nt_shm_base);
+	shm_base_addr = mmap(0, nt_shm_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)nt_shm_base);
 	if (shm_base_addr == MAP_FAILED) {
 		nt_error("mem map.\n");
 		return -ENOMEM;
@@ -114,8 +125,8 @@ static int shm_init(void **ui_base, uint32_t *ui_cnt, void ** fi_base, uint32_t 
 
 	*fi_base = shm_base_flow;
 	*ui_base = shm_base_user;
-	*fi_cnt = flow_info_count;
-	*ui_cnt = user_info_count;
+	*fi_cnt = nt_flow_max;
+	*ui_cnt = nt_user_max;
 
 	return 0;
 }
