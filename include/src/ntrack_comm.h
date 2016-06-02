@@ -19,7 +19,7 @@ static inline uint32_t magic_valid(uint32_t m)
 */
 static inline void *nt_user_priv(user_info_t *ui)
 {
-	return &ui->private[NT_USR_AUTH_OFFSET];
+	return &ui->private[sizeof(nt_authd_t)];
 }
 
 static inline nt_authd_t *nt_user_authd(user_info_t *ui)

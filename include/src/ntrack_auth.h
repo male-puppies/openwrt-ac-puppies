@@ -1,7 +1,6 @@
 #pragma once
 
 #include <linux/nos_track.h>
-#include <ntrack_comm.h>
 #include <ntrack_log.h>
 
 #ifdef __KERNEL__
@@ -31,6 +30,7 @@ typedef struct {
 
 typedef struct {
 	/* auth data store in user node. */
+	void *p;
 } nt_authd_t;
 
 /*
