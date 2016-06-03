@@ -117,8 +117,8 @@ typedef struct {
 	mwm_t *pmwm; /* rules with 4 char search patterns. */
 
 	uint16_t num_rules;
-	uint16_t num_capacity; /* the capacity of this set */
-	np_rule_t *rules[]; /* the dmalloc array pointer */
+	uint16_t capacity; /* the capacity of this set */
+	np_rule_t **rules; /* the dmalloc array pointer */
 } np_rule_set_t;
 
 struct nproto_rule {

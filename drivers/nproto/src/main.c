@@ -16,11 +16,11 @@ int nt_context_chk_fn(struct sk_buff *skb,
 	struct nos_track *nt, 
 	struct net_device *indev)
 {
-	flow_info_t *fi = nt_flow(nt);
-	user_info_t *ui = nt_user(nt);
+	// flow_info_t *fi = nt_flow(nt);
+	// user_info_t *ui = nt_user(nt);
 
-	np_info(FMT_FLOW_STR"\n", FMT_FLOW(fi));
-	np_print("\t"FMT_USER_STR"\n", FMT_USER(ui));
+	// np_info(FMT_FLOW_STR"\n", FMT_FLOW(fi));
+	// np_print("\t"FMT_USER_STR"\n", FMT_USER(ui));
 	return 0;
 }
 
@@ -43,16 +43,19 @@ static int __init nproto_module_init(void)
 	rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
 
 __error:
-	klog_fini(nproto_klog_fd);
+	nproto_cleanup();
+	if(nproto_klog_fd)
+		klog_fini(nproto_klog_fd);
 	return r;
 }
 
 static void __exit nproto_module_exit(void)
 {
 	rcu_assign_pointer(nt_cck_fn, NULL);
+
 	nproto_cleanup();
-	
-	klog_fini(nproto_klog_fd);
+	if(nproto_klog_fd)
+		klog_fini(nproto_klog_fd);
 }
 
 module_init(nproto_module_init);

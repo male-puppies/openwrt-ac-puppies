@@ -219,7 +219,7 @@ void mwmFree(mwm_t *pv )
 ** 0: already present, uniqueness compiled in
 ** 1: added
 */
-int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, long user_data)
+int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, void* user_data)
 {
 	mwm_t *ps = pv;
 	mwm_patt_t *plist=0;
@@ -286,7 +286,7 @@ int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int de
 	ps->msTotal += p->psLen;
 	ps->msAvg = ps->msTotal / ps->msNumPatterns;
 
-	np_debug("add pattern len:%d, pt:%p, userd:%lx, '%s' finished.\n", p->psLen, p, p->ps_data, p->psPat);
+	np_debug("add pattern len:%d, pt:%p, userd:%lx, '%s' finished.\n", p->psLen, p, (long)p->ps_data, p->psPat);
 	return 1;
 }
 
@@ -1129,7 +1129,7 @@ int mwmPrepPatterns( mwm_t * pv )
 	smp_wmb();
 	ps->is_ok =1;
 
-	nt_info("finished: %d patts.\n", ps->msNumPatterns);
+	np_info("finished: %d patts.\n", ps->msNumPatterns);
 	return 1;
 
 __err:
@@ -1178,10 +1178,10 @@ static void ShowBytes(unsigned n, unsigned char *p)
 	{
 		if( p[i] >=32 && p[i]<=127 )
 		{
-			nt_print("%c",p[i]);
+			np_print("%c",p[i]);
 		}
 		else 
-			nt_print("\\x%2.2X",p[i]);
+			np_print("\\x%2.2X",p[i]);
 	}
 
 }
@@ -1202,11 +1202,11 @@ void mwmGroupDetails(mwm_t *pv)
 	}
 	if (ps->msMethod == MTH_BM)
 	{
-		nt_print("mwm: bmh used.\n");
+		np_print("mwm: bmh used.\n");
 		return;
 	}
 
-	nt_print("*** MWM-Pattern-STURCT: %d ***\n", k++); 	
+	np_print("*** MWM-Pattern-STURCT: %d ***\n", k++); 	
 
 	subgroups=0;
 	for(i=0; i<HASH_TABLE_SIZE; i++)
@@ -1222,16 +1222,16 @@ void mwmGroupDetails(mwm_t *pv)
 		patrn = &ps->msPatArray[index]; /* 1st pattern of hash group is here */
 		patrnEnd = patrn + ps->msNumArray[index];/* never go here... */
 
-		nt_print("  mwm: Sub-Pattern-Group: %d-%d:%d, patn:%d\n",\
+		np_print("  mwm: Sub-Pattern-Group: %d-%d:%d, patn:%d\n",\
 			subgroups, i, index, ps->msNumArray[index]);
 
 		subgroups++;
 
 		for( m=0; patrn < patrnEnd; m++, patrn++ ) /* Test all patterns in the group */
 		{
-			nt_print("\tmwm: Pattern[%d]: ",m); 
+			np_print("\tmwm: Pattern[%d]: ",m); 
 			ShowBytes(patrn->psLen,patrn->psPat);
-			nt_print("\n");
+			np_print("\n");
 		} 
 
 		if(m > gmax )
@@ -1240,10 +1240,10 @@ void mwmGroupDetails(mwm_t *pv)
 		gavg = total / subgroups;
 	}
 
-	nt_print("Total Group Patterns: %d\n",total);
-	nt_print(" Number of Sub-Groups: %d\n",subgroups);
-	nt_print(" Sub-Group Max Patterns: %d\n",gmax);
-	nt_print(" Sub-Group Avg Patterns: %d\n",gavg);
+	np_print("Total Group Patterns: %d\n",total);
+	np_print(" Number of Sub-Groups: %d\n",subgroups);
+	np_print(" Sub-Group Max Patterns: %d\n",gmax);
+	np_print(" Sub-Group Avg Patterns: %d\n",gavg);
 
 } 
 

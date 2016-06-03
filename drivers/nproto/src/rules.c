@@ -1,6 +1,11 @@
 
+#include <linux/udp.h>
+#include <linux/tcp.h>
+
 #include "mwm.h"
 #include "rules.h"
+
+#define np_assert(x) BUG_ON(!(x))
 
 #define NP_MWM_STR "nproto"
 
@@ -24,11 +29,11 @@ static void rule_release(np_rule_t *rule)
 static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 {
 	if(rule->priority == NP_RULE_PRI_MIN) {
-		set->rules[set->num_rules] = *rule;
+		set->rules[set->num_rules] = rule;
 	} else if(rule->priority == NP_RULE_PRI_MAX) {
 		if(set->num_rules > 0)
-			memmove(&set->rules[1], set->rules, sizeof(np_rule_t) * set->num_rules);
-		set->rules[0] = *rule;
+			memmove(&set->rules[1], set->rules, sizeof(set->rules[0]) * set->num_rules);
+		set->rules[0] = rule;
 	} else {
 		/* find the insert position */
 		int L = 0;
@@ -36,11 +41,11 @@ static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 		int M, C;
 		while(L <= H) {
 			M = (L + H) / 2;
-			if(set->rules[M].priority == rule->priority) {
+			if(set->rules[M]->priority == rule->priority) {
 				H = M;
 				break;
 			} else {
-				if(set->rules[M].priority < rule->priority) {
+				if(set->rules[M]->priority < rule->priority) {
 					H = M - 1; /* < */
 				} else {
 					L = M + 1; /* > */
@@ -50,9 +55,9 @@ static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 		/* move [H],([H+1]),[H+2]... */
 		C = set->num_rules - (H + 1);
 		if(C > 0) {
-			memmove(&set->rules[H + 2], &set->rules[H + 1], sizeof(np_rule_t) * C);
+			memmove(&set->rules[H + 2], &set->rules[H + 1], sizeof(set->rules[0]) * C);
 		}
-		set->rules[H + 1] = *rule;
+		set->rules[H + 1] = rule;
 	}
 	set->num_rules ++;
 	return 0;
@@ -62,14 +67,14 @@ static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 static int set_add_rule_normal(np_rule_set_t *set, np_rule_t *rule)
 {
 	if(set->num_rules >= set->capacity) {
-		uint32_t nsize = (set->capacity + NP_SET_GROW_COUNT) * sizeof(np_rule_t);
-		np_rule_t *po[] = set->rules;
-		np_rule_t *pn[] = (np_rule_t *[])vmalloc(nsize);
+		uint32_t nsize = (set->capacity + NP_SET_GROW_COUNT) * sizeof(set->rules[0]);
+		np_rule_t **po = set->rules;
+		np_rule_t **pn = (np_rule_t **)vmalloc(nsize);
 		if (!pn) {
 			np_error("re-alloc mem failed: %d\n", nsize);
 			return -ENOMEM;
 		}
-		memcpy(pn, po, set->capacity * sizeof(np_rule_t));
+		memcpy(pn, po, set->capacity * sizeof(set->rules[0]));
 		set->rules = pn;
 		set->capacity += NP_SET_GROW_COUNT;
 		vfree(po);
@@ -86,13 +91,13 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 	np_assert(rule);
 
 	/* check l7 search && patt len > 4 */
-	if(!rule->enalbe_l7) {
+	if(!rule->enable_l7) {
 		set_add_rule_normal(set, rule);
 	}
 
 	for(i=0; i<rule->l7.ctm_num; i++) {
-		mwm_t *mwm = rule->pmwm;
-		content_match_t *ct = &l7->ctm[i];
+		mwm_t *mwm = set->pmwm;
+		content_match_t *ct = &rule->l7.ctm[i];
 
 		/* search & patt length >= 4 */
 		if(!(ct->type == MHTP_SEARCH && ct->patt_len >= 4))
@@ -105,15 +110,15 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 				np_error("create mwm failed.\n");
 				return set_add_rule_normal(set, rule);
 			}
-			rule->pmwm = mwm;
+			set->pmwm = mwm;
 		}
 		/* add patters & rule to mwm. */
 		n = mwmAddPatternEx(mwm, ct->patt, ct->patt_len, ct->offset, ct->deep, rule);
 		if(n<0) {
-			np_error("mwm prepare %s error.\n", rule->name_rule, rule->ID);
+			np_error("mwm prepare %s:%d error.\n", rule->name_rule, rule->ID);
 			return set_add_rule_normal(set, rule);
 		} else {
-			np_info("mwm add rule[%d:%s] ct[%d]\n", rule->name_rule, rule->ID, i);
+			np_info("mwm add rule[%s:%d] ct[%d]\n", rule->name_rule, rule->ID, i);
 		}
 	}
 
@@ -137,7 +142,7 @@ static int np_rule_register(np_rule_t *rule)
 	}
 
 	/* base rule, to inner set's */
-	if (rule->enalbe_l4) {
+	if (rule->enable_l4) {
 		l4_match_t *l4 = &rule->l4;
 		if(l4->proto == IPPROTO_UDP) {
 			proto = NP_SET_BASE_UDP;
@@ -148,7 +153,7 @@ static int np_rule_register(np_rule_t *rule)
 		}
 	}
 
-	if(rule->enalbe_l7) {
+	if(rule->enable_l7) {
 		dir = rule->l7.dir;
 	}
 
@@ -162,22 +167,27 @@ static int np_rule_register(np_rule_t *rule)
 
 static void set_clean(np_rule_set_t *set)
 {
-	mwmFree(set->pmwm);
+	if(set->pmwm) {
+		mwmFree(set->pmwm);
+	}
 }
 
 static int set_init(np_rule_set_t *set)
 {
-	int ret = mwmPrepPatterns(set->pmwm);
-	if(ret < 0) {
-		np_error("init mwm - set[%d]\n", i);
-		return -EINVAL;
-	} else if(ret == 0) {
-		mwmFree(set->pmwm);
-		set->pmwm = NULL;
-	} else {
-		mwmGroupDetails(set->pmwm);
-	}
+	int ret;
 
+	if(set->pmwm) {
+		ret = mwmPrepPatterns(set->pmwm);
+		if(ret < 0) {
+			np_error("init mwm - failed.\n");
+			return -EINVAL;
+		} else if(ret == 0) {
+			mwmFree(set->pmwm);
+			set->pmwm = NULL;
+		} else {
+			mwmGroupDetails(set->pmwm);
+		}
+	}
 	return 0;
 }
 
@@ -235,23 +245,16 @@ static int rules_build(void)
 		set_init(&rule_sets_base[i][j]);
 	}
 	list_for_each(itr1, &all_rules) {
-		np_rule_t *rule = list_entry(itr, np_rule_t, list);
+		np_rule_t *rule = list_entry(itr1, np_rule_t, list);
 		set_init(&rule->ref_set);
 	}
-
-__error_exit:
-	rules_cleanup();
 
 	return 0;
 }
 
 static int inner_rules_init(void)
 {
-	extern np_rule_t \
-		inner_http_req, \
-		inner_http_rep, \
-		inner_smtp, \
-		inner_pop;
+	extern np_rule_t inner_http_req, inner_http_rep;
 
 	np_rule_register(&inner_http_req);
 	np_rule_register(&inner_http_rep);
@@ -271,20 +274,15 @@ int nproto_init(void)
 	ret = inner_rules_init();
 	if(ret) {
 		np_error("inner rules init failed.\n");
-		goto __error;
+		return ret;
 	}
 
 	ret = rules_build();
 	if(ret){
 		np_error("rules build.\n");
-		goto __error;
+		return ret;
 	}
-
 	return 0;
-
-__error:
-	rules_cleanup();
-	return ret;
 }
 
 void nproto_cleanup(void)

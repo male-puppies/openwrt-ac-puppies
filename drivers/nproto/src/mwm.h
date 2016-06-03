@@ -122,7 +122,7 @@ typedef struct __mwm_patt {
 	unsigned char   *psPat;   // pattern array, no case
 	int    psOffset;  // pos where to start searching in data
 	int    psDepth;   // number of bytes after offset to search
-	long  ps_data;    //internal ID, used by the pattern matcher
+	void * ps_data;   //internal ID, used by the pattern matcher
 	
 	hbm_t     * psBmh;	
 	struct __mwm_patt * next;
@@ -182,16 +182,16 @@ return value
 -1:error
 note:call exact once every driver
 */
-int mwm_sysinit(const char * szInstName);
+int mwmSysInit(const char * szInstName);
 
 /*
-if  mwm_sysinit suc, you must to call mwm_sysclean exact once when you 
+if  mwmSysInit suc, you must to call mwmSysClean exact once when you 
 unload your driver
 ret:
 0  suc
 -1 error
 */
-int  mwm_sysclean(const char * szInstName);
+int  mwmSysClean(const char * szInstName);
 
 /*
 ** PROTOTYPES
@@ -200,7 +200,7 @@ mwm_t * mwmNew( void );
 void   mwmFree(mwm_t *pv );
 #define MWM_INITED(pv) ((pv)->is_ok==1)
 
-int mwmAddPatternEx( mwm_t *pv, unsigned char * P, int len, int off, int deep,  long ud );
+int mwmAddPatternEx( mwm_t *pv, unsigned char * P, int len, int off, int deep,  void* ud );
 int  mwmPrepPatterns  ( mwm_t *pv );
 
 int  mwmSearch( mwm_t *pv,
