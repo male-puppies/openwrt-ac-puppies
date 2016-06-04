@@ -23,17 +23,16 @@ define Package/pps_comm/description
 endef
 
 define Build/Prepare
-	$(CP) ./src/*.h $(TOOLCHAIN_DIR)/include/
+	$(CP) -a ./src/* $(TOOLCHAIN_DIR)/include/
 endef
 
 define Build/Compile
 	true
 endef
 
-define Build/InstallDev
-	# echo ---$(TOOLCHAIN_DIR)----
-	$(CP) ./src/*.h $(TOOLCHAIN_DIR)/include/
-endef
+# define Build/InstallDev
+# 	$(CP) -a ./src/* $(TOOLCHAIN_DIR)/include/
+# endef
 
 $(eval $(call BuildPackage,pps_comm))
 

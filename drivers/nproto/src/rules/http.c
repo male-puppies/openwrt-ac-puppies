@@ -1,7 +1,20 @@
 
 #include <linux/tcp.h>
 
+#include <nproto/http.h>
+#include <ntrack_flow.h>
+
 #include "../rules.h"
+
+static int on_http(void *inv, void *rule)
+{
+	match_cb_in_t *in = (match_cb_in_t*)inv;
+	nproto_http_t *http = nt_flow_nproto(fi)->du;
+
+	/* do line parse. store the result into flow private union -> nproto_t. */
+
+	return 0;
+}
 
 np_rule_t inner_http_req = {
 	.name_rule = "http_req",
@@ -54,6 +67,8 @@ np_rule_t inner_http_req = {
 			},
 		},
 	},
+
+	.match_cb = on_http,
 };
 
 np_rule_t inner_http_rep = {

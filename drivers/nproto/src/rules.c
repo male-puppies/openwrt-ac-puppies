@@ -1,6 +1,10 @@
+#define __DEBUG
 
 #include <linux/udp.h>
 #include <linux/tcp.h>
+#include <linux/skbuff.h>
+
+#include <linux/nos_track.h>
 
 #include "mwm.h"
 #include "rules.h"
@@ -24,6 +28,26 @@ static int rule_compile(np_rule_t *rule)
 static void rule_release(np_rule_t *rule)
 {
 	/* release the dmalloc mem. */
+}
+
+static void rule_dump(np_rule_t *rule)
+{
+	int i;
+
+	np_print("Rule[%s] Proto[%s] Service[%s]:\n", 
+		rule->name_rule, rule->name_app, rule->name_service);
+	np_print("\tID: [%d]\n", rule->ID);
+	for(i=0; i<MAX_REF_IDs; i++){
+		if(rule->ID_REFs[i]) {
+			if(i==0) {
+				np_print("\tID_REFs:");
+			}
+			np_print(" %d", rule->ID_REFs[i]);
+		} else {
+			if(i)np_print("\n");
+			break;
+		}
+	}
 }
 
 static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
@@ -85,7 +109,7 @@ static int set_add_rule_normal(np_rule_set_t *set, np_rule_t *rule)
 
 static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 {
-	int i, n;
+	int i, n, rule_in_mwm = 0;
 
 	np_assert(set);
 	np_assert(rule);
@@ -118,8 +142,14 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 			np_error("mwm prepare %s:%d error.\n", rule->name_rule, rule->ID);
 			return set_add_rule_normal(set, rule);
 		} else {
+			rule_in_mwm = 1;
 			np_info("mwm add rule[%s:%d] ct[%d]\n", rule->name_rule, rule->ID, i);
 		}
+	}
+
+	/* default add to normal set */
+	if(!rule_in_mwm) {
+		return set_add_rule_normal(set, rule);
 	}
 
 	return 0;
@@ -143,14 +173,7 @@ static int np_rule_register(np_rule_t *rule)
 
 	/* base rule, to inner set's */
 	if (rule->enable_l4) {
-		l4_match_t *l4 = &rule->l4;
-		if(l4->proto == IPPROTO_UDP) {
-			proto = NP_SET_BASE_UDP;
-		} else if(l4->proto == IPPROTO_TCP) {
-			proto = NP_SET_BASE_TCP;
-		} else {
-			proto = NP_SET_BASE_OTHER;
-		}
+		proto = np_proto_to_set(rule->l4.proto);
 	}
 
 	if(rule->enable_l7) {
@@ -172,10 +195,11 @@ static void set_clean(np_rule_set_t *set)
 	}
 }
 
-static int set_init(np_rule_set_t *set)
+static int set_init(np_rule_set_t *set, char *name)
 {
 	int ret;
 
+	snprintf(set->name, sizeof(set->name), "%s", name);
 	if(set->pmwm) {
 		ret = mwmPrepPatterns(set->pmwm);
 		if(ret < 0) {
@@ -189,6 +213,26 @@ static int set_init(np_rule_set_t *set)
 		}
 	}
 	return 0;
+}
+
+static void set_dump(np_rule_set_t *set)
+{
+	int i;
+
+	if(!set->num_rules && !set->pmwm) {
+		/* empty */
+		return;
+	}
+
+	np_print(" ---- rule-set [%s] ---- \n", set->name);
+	if(set->pmwm) {
+		mwmGroupDetails(set->pmwm);
+	}
+	for(i=0; i<set->num_rules; i++) {
+		np_rule_t *rule = set->rules[i];
+		rule_dump(rule);
+	}
+	return;
 }
 
 static void rules_cleanup(void)
@@ -214,6 +258,7 @@ static void rules_cleanup(void)
 static int rules_build(void)
 {
 	int i, j;
+	char name[64];
 	struct list_head *itr1, *itr2;
 
 	/* build each ref's */
@@ -241,13 +286,24 @@ static int rules_build(void)
 
 	/* init all set's */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
-		for(j=0; j<NP_SET_BASE_MAX; j++)
-		set_init(&rule_sets_base[i][j]);
+		for(j=0; j<NP_SET_BASE_MAX; j++) {
+			snprintf(name, sizeof(name), "base: %s,%d", i?"c2s":"s2c", j);
+			set_init(&rule_sets_base[i][j], name);
+		}
 	}
 	list_for_each(itr1, &all_rules) {
 		np_rule_t *rule = list_entry(itr1, np_rule_t, list);
-		set_init(&rule->ref_set);
+		snprintf(name, sizeof(name), "ref: %s", rule->name_rule);
+		set_init(&rule->ref_set, name);
 	}
+
+	#if 1
+	/* dump rules */
+	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
+		for(j=0; j<NP_SET_BASE_MAX; j++)
+		 set_dump(&rule_sets_base[i][j]);
+	}
+	#endif
 
 	return 0;
 }
@@ -258,6 +314,86 @@ static int inner_rules_init(void)
 
 	np_rule_register(&inner_http_req);
 	np_rule_register(&inner_http_rep);
+
+	return 0;
+}
+
+static int rule_matched(void *in, void *rule)
+{
+	return 1;
+}
+
+static int rule_one_match(np_rule_t *rule, 
+	struct nos_track *nt, 
+	struct sk_buff *skb, 
+	uint8_t *data, int dlen, 
+	int(*cb)(void *in, void *rule))
+{
+
+	/* rule all matched. */
+	if(rule->match_cb) {
+		rule->match_cb(nt, rule);
+	}
+	if(cb) {
+		return cb(nt, rule);
+	}
+	return 1;
+}
+
+/* mwm transmit par in-to sub-function's... */
+typedef struct {
+	struct nos_track *nt;
+	struct sk_buff *skb;
+	uint8_t *data;
+	int dlen;
+} mwmIn_t;
+
+/*
+** @return: !=0 -> ture, 0:false -> try next.
+*/
+static int mwmOnMatch(void* rule, void *inv, void *out)
+{
+	mwmIn_t *in = (mwmIn_t*)inv;
+
+	if(rule_one_match(rule, in->nt, in->skb, in->data, in->dlen, rule_matched)) {
+		out = rule;
+		return 1;
+	}
+	return 0;
+}
+
+int rules_match(struct nos_track* nt,
+	struct sk_buff *skb, int fdir, uint8_t proto, 
+	uint8_t *data, int dlen)
+{
+	int i;
+	np_rule_set_t *base_set = &rule_sets_base[fdir][np_proto_to_set(proto)];
+	mwm_t *pmwm = base_set->pmwm;
+
+	for (i = 0; i <base_set->num_rules; i++) {
+		np_rule_t *rule = base_set->rules[i];
+		if(rule_one_match(rule, nt, skb, data, dlen, rule_matched)) {
+			/* direct matched. */
+			np_debug("direct matched: %s\n", rule->name_rule);
+			return 1;
+		}
+	}
+
+	if(pmwm) {
+		void* out = NULL;
+		mwmIn_t in;
+
+		in.nt = nt;
+		in.skb = skb;
+		in.data = data;
+		in.dlen = dlen;
+		mwmSearch(pmwm, data, dlen, &in, &out, mwmOnMatch);
+		if(out) {
+			np_rule_t *o = out;
+			np_debug("mwm matched: %s\n", o->name_rule);
+			return 1;
+		}
+	}
 
 	return 0;
 }

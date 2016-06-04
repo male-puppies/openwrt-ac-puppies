@@ -142,7 +142,7 @@ typedef struct __mwm_st {
   int (*search)( struct __mwm_st * ps, 
                  unsigned char * T, int n, 
                  void  * in, void *out ,
-                 int(*match)( void *  par, void * in, void * out ) );
+                 int(*match)( void *  par, void * in, void *out));
   
   /* Array of Group Counts, # of patterns in each hash group */
   mwm_patt_t   *msPatArray;

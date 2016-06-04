@@ -2,6 +2,11 @@
 
 #include <linux/types.h>
 #include <linux/list.h>
+#include <linux/skbuff.h>
+
+#include <linux/nos_track.h>
+
+#include <ntrack_flow.h>
 
 #include "mwm.h"
 
@@ -46,6 +51,11 @@ typedef struct {
 	uint16_t range[MAX_L7_LEN_RANGE][2];
 } len_match_t;
 
+typedef struct {
+	struct nos_track *nt;
+	struct sk_buff *skb;
+} match_cb_in_t;
+
 /* rule matched callback. */
 typedef int (*nproto_match_cb_t)(void *in, void *rule);
 typedef struct {
@@ -80,8 +90,6 @@ typedef struct {
 	/* regexp */
 
 	/* bmh */
-
-	nproto_match_cb_t *cb;
 } content_match_t;
 
 typedef struct {
@@ -114,6 +122,7 @@ typedef struct nproto_rule np_rule_t;
 	REF_Rules
 */
 typedef struct {
+	char name[64];
 	mwm_t *pmwm; /* rules with 4 char search patterns. */
 
 	uint16_t num_rules;
@@ -153,16 +162,29 @@ struct nproto_rule {
 
 	/* ref sets */
 	np_rule_set_t ref_set;
+
+	/* rule match callback... */
+	nproto_match_cb_t match_cb;
 };
 
-
 enum __em_inner_sets {
-	NP_SET_BASE_UDP,
+	NP_SET_BASE_UDP = 0,
 	NP_SET_BASE_TCP,
-	NP_SET_BASE_HTTP,
 	NP_SET_BASE_OTHER,
 	NP_SET_BASE_MAX,
 };
+
+static inline uint8_t np_proto_to_set(uint8_t proto)
+{
+	switch(proto){
+		case IPPROTO_TCP:
+		return NP_SET_BASE_TCP;
+		case IPPROTO_UDP:
+		return NP_SET_BASE_UDP;
+		default:
+		return NP_SET_BASE_OTHER;
+	}
+}
 
 enum __em_inner_proto {
 	NP_INNER_RULE_HTTP_REQ = 0,
@@ -171,13 +193,6 @@ enum __em_inner_proto {
 	NP_INNER_RULE_POP3,
 	NP_INNER_RULE_SSH,
 	NP_INNER_RULE_MAX,
-};
-
-enum __em_flow_dir {
-	NP_FLOW_DIR_C2S = 0,
-	NP_FLOW_DIR_S2C,
-	NP_FLOW_DIR_ANY,
-	NP_FLOW_DIR_MAX,
 };
 
 enum __em_ctm_relation {
