@@ -318,7 +318,7 @@ static int inner_rules_init(void)
 	return 0;
 }
 
-static int rule_matched(void *in, void *rule)
+static int rule_matched(void *nt, void *rule)
 {
 	return 1;
 }
@@ -327,15 +327,17 @@ static int rule_one_match(np_rule_t *rule,
 	struct nos_track *nt, 
 	struct sk_buff *skb, 
 	uint8_t *data, int dlen, 
-	int(*cb)(void *in, void *rule))
+	int(*matched_cb)(void *nt, void *rule))
 {
+	/* do match process. */
+
 
 	/* rule all matched. */
-	if(rule->match_cb) {
-		rule->match_cb(nt, rule);
+	if(rule->proto_cb) {
+		rule->proto_cb(nt, skb, rule);
 	}
-	if(cb) {
-		return cb(nt, rule);
+	if(matched_cb) {
+		return matched_cb(nt, rule);
 	}
 	return 1;
 }

@@ -50,6 +50,19 @@ static inline uint32_t nt_auth_set_status(user_info_t *ui, uint8_t status)
 	return s_priv;
 }
 
+/*
+* [-- nt_authd_t --+-- priv --]
+*/
+static inline void *nt_user_priv(user_info_t *ui)
+{
+	return &ui->private[sizeof(nt_authd_t)];
+}
+
+static inline nt_authd_t *nt_user_authd(user_info_t *ui)
+{
+	return (nt_authd_t*)ui->private;
+}
+
 static inline void dump_user(user_info_t *ui)
 {
 	nt_print("[%u.%u.%u.%u] gid:%d flags:%x\n", 

@@ -5,12 +5,11 @@
 #endif
 
 #include <linux/nos_track.h>
+#include <ntrack_comm.h>
+#include <ntrack_log.h>
 
 /* ########################## */
 /* nproto identify in Flow node. */
-#include <nproto/comm.h>
-#include <nproto/http.h>
-#include <nproto/tencent_qq.h>
 
 typedef struct {
 	/* 
@@ -18,18 +17,7 @@ typedef struct {
 	** PS_UNKNOWN, PS_PORT, PS_ADDR_PORT, PS_FINISH.
 	*/
 	uint8_t wrap_type:4, wrap_status:4;
-
-	/* 
-	** data union of this proto type,
-	** example: http, this is the results of line parser.
-				QQ, this is the qq number & others.
-	*/
-	uint8_t du_type;
-	union {
-		/* HTTP GET/POST header line parser. */
-		nproto_http_t http;
-		nproto_qq_t qq;
-	} du;
+	
 } nt_flow_nproto_t;
 /* END nproto identify. */
 
@@ -39,6 +27,7 @@ typedef struct {
 	/*
 	** auth data stored in flow private area.
 	*/
+	void *p;
 } nt_flow_authd_t;
 /* END USER AUTHD */
 
@@ -56,10 +45,10 @@ static inline void nt_flow_update_proto(
 	fi->hdr.proto = proto;
 }
 
-static inline void* nt_flow_priv(flow_info_t *fi, int *size)
+static inline void* nt_flow_priv(flow_info_t *fi, size_t *size)
 {
 	/* assert size */
-	assert(sizeof(fi->private) > (NT_FLOW_CMM_HDR_SIZE));
+	STATIC_ASSERT(sizeof(fi->private) > (NT_FLOW_CMM_HDR_SIZE));
 
 	*size = sizeof(fi->private) - (NT_FLOW_CMM_HDR_SIZE);
 	return (void*)&fi->private[NT_FLOW_CMM_HDR_SIZE];

@@ -2,17 +2,22 @@
 #include <linux/tcp.h>
 
 #include <nproto/http.h>
+#include <ntrack_comm.h>
 #include <ntrack_flow.h>
+#include <ntrack_packet.h>
 
 #include "../rules.h"
 
-static int on_http(void *inv, void *rule)
+static int on_http_req(void *pnt, void *pskb, void *rule)
 {
-	match_cb_in_t *in = (match_cb_in_t*)inv;
-	nproto_http_t *http = nt_flow_nproto(fi)->du;
+	struct nos_track *nt = pnt;
+	struct sk_buff *skb = pskb;
+	nt_pkt_nproto_t *pkt_proto = nt_pkt_nproto(skb);
 
+	pkt_proto->du_type = NP_DUT_HTTP_REQ;
 	/* do line parse. store the result into flow private union -> nproto_t. */
 
+	np_print(FMT_FLOW_STR"\n", FMT_FLOW(nt_flow(nt)));
 	return 0;
 }
 
@@ -68,7 +73,7 @@ np_rule_t inner_http_req = {
 		},
 	},
 
-	.match_cb = on_http,
+	.proto_cb = on_http_req,
 };
 
 np_rule_t inner_http_rep = {

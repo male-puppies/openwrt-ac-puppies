@@ -1,7 +1,7 @@
 #pragma once
 
 typedef struct {
-	const char *url;
-	const char *host;
-	const char *context_type;
+	int16_t url;
+	int16_t host;
+	int16_t context_type;
 } nproto_http_t;

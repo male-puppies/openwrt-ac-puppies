@@ -51,13 +51,8 @@ typedef struct {
 	uint16_t range[MAX_L7_LEN_RANGE][2];
 } len_match_t;
 
-typedef struct {
-	struct nos_track *nt;
-	struct sk_buff *skb;
-} match_cb_in_t;
-
 /* rule matched callback. */
-typedef int (*nproto_match_cb_t)(void *in, void *rule);
+typedef int (*nproto_cb_t)(void *nt, void *pkt, void *rule);
 typedef struct {
 	/* 0: offset match, 1: http body, 2: regexp, 3: search */
 	uint8_t type;
@@ -164,7 +159,7 @@ struct nproto_rule {
 	np_rule_set_t ref_set;
 
 	/* rule match callback... */
-	nproto_match_cb_t match_cb;
+	nproto_cb_t proto_cb;
 };
 
 enum __em_inner_sets {

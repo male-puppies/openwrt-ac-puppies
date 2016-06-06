@@ -1,8 +1,8 @@
 #pragma once
 
 enum __em_flow_proto_type {
-	NP_FLOW_DU_HTTP_REQ = 0,
-	NP_FLOW_DU_HTTP_REP,
-	NP_FLOW_DU_QQ,
-	NP_FLOW_DU_MAX,
+	NP_DUT_HTTP_REQ = 0,
+	NP_DUT_HTTP_REP,
+	NP_DUT_QQ,
+	NP_DUT_MAX,
 };

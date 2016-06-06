@@ -30,9 +30,9 @@ define Build/Compile
 	true
 endef
 
-# define Build/InstallDev
-# 	$(CP) -a ./src/* $(TOOLCHAIN_DIR)/include/
-# endef
+define Build/InstallDev
+	$(CP) -a ./src/* $(TOOLCHAIN_DIR)/include/
+endef
 
 $(eval $(call BuildPackage,pps_comm))
 
