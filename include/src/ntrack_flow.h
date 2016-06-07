@@ -1,9 +1,6 @@
 #pragma once
 
-#ifdef __KERNEL__
 #include <linux/ip.h>
-#endif
-
 #include <linux/nos_track.h>
 #include <ntrack_comm.h>
 #include <ntrack_log.h>
