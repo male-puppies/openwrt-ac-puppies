@@ -2,42 +2,50 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/list.h>
+#include <linux/skbuff.h>
 #include <asm/smp.h>
 
 #include <linux/nos_track.h>
 #include <ntrack_comm.h>
+#include <ntrack_packet.h>
 #include <ntrack_nproto.h>
 #include <ntrack_log.h>
 
 extern int nproto_init(void);
 extern void nproto_cleanup(void);
-extern int rules_match(struct nos_track* nt,
-	struct sk_buff *skb, int fdir, uint8_t proto, 
-	uint8_t *data, int dlen);
+extern int rules_match(nt_packet_t *pkt);
 
-int nt_context_chk_fn(struct sk_buff *skb, 
-	struct nos_track *nt, 
-	struct net_device *indev)
+static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_t *pkt)
 {
-	int fdir, n, dlen;
-	uint8_t *data;
 	struct iphdr *iph = ip_hdr(skb);
 	flow_info_t *fi = nt_flow(nt);
-	// user_info_t *ui = nt_user(nt);
+	user_info_t *ui = nt_user(nt);
+	user_info_t *pi = nt_peer(nt);
 
-	// np_info(FMT_FLOW_STR"\n", FMT_FLOW(fi));
-	// np_print("\t"FMT_USER_STR"\n", FMT_USER(ui));
+	pkt->fi = fi;
+	pkt->ui = ui;
+	pkt->pi = pi;
 
 	/* C->S, S->C. */
-	fdir = nt_flow_dir(&fi->tuple, iph);
+	pkt->l4_proto = iph->protocol;
+	pkt->dir = nt_flow_dir(&fi->tuple, iph);
+	return 0;
+}
+
+int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_device *indev)
+{
+	int n;
+	nt_packet_t pkt;
 
 	/* FIXME: tackoff-fixup the sock4/5/http proxy header. */
-	data = skb->data;
-	dlen = skb->len;
+	n = nproto_pkt_init(skb, nt, &pkt);
+	if(n) {
+		np_error("packet init failed: %d\n", n);
+		return n;
+	}
 
-	n = 0;
-	if(!nproto_finished(fi)) {
-		n = rules_match(nt, skb, fdir, iph->protocol, data, dlen);
+	if(!nproto_finished(nt_flow(nt))) {
+		n = rules_match(&pkt);
 	}
 	return n;
 }

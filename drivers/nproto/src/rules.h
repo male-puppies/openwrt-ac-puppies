@@ -2,10 +2,10 @@
 
 #include <linux/types.h>
 #include <linux/list.h>
-#include <linux/skbuff.h>
 
 #include <linux/nos_track.h>
 
+#include <ntrack_packet.h>
 #include <ntrack_flow.h>
 
 #include "mwm.h"
@@ -52,7 +52,9 @@ typedef struct {
 } len_match_t;
 
 /* rule matched callback. */
-typedef int (*nproto_cb_t)(void *nt, void *pkt, void *rule);
+typedef int (*nproto_cb_t)(nt_packet_t *np, void *rule);
+typedef int (*nproto_init_t)(void);
+typedef void (*nproto_clean_t)(void);
 typedef struct {
 	/* 0: offset match, 1: http body, 2: regexp, 3: search */
 	uint8_t type;
@@ -157,6 +159,10 @@ struct nproto_rule {
 
 	/* ref sets */
 	np_rule_set_t ref_set;
+
+	/* rule init/cleanup callback */
+	nproto_init_t 	proto_init;
+	nproto_clean_t 	proto_clean;
 
 	/* rule match callback... */
 	nproto_cb_t proto_cb;

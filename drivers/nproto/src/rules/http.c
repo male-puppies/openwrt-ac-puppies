@@ -7,17 +7,89 @@
 #include <ntrack_packet.h>
 
 #include "../rules.h"
+#include "../mwm.h"
 
-static int on_http_req(void *pnt, void *pskb, void *rule)
+static mwm_t *mwmParser = NULL;
+
+/* header need parsered. */
+const char *http_headers[] = {
+	[NP_HTTP_END] = "\r\n\r\n",
+	[NP_HTTP_URL] = NULL,
+	[NP_HTTP_Host] = "Host:",
+	[NP_HTTP_Referer] =  "Referer:",
+	[NP_HTTP_Content] =  "Content:",
+	[NP_HTTP_Accept] =  "Accept:",
+	[NP_HTTP_User_Agent] =  "User-Agent:",
+	[NP_HTTP_Http_Encoding] =  "Http-Encoding:",
+	[NP_HTTP_Transfer_Encoding] =  "Transfer-Encoding:",
+	[NP_HTTP_Content_Len] =  "Content-Len:",
+	[NP_HTTP_Cookie] =  "Cookie:",
+	[NP_HTTP_X_Session_Type] =  "X-Session-Type:",
+	[NP_HTTP_Method] =  "Method:",
+	[NP_HTTP_Response] =  "Response:",
+	[NP_HTTP_Server] =  "Server:",
+	[NP_HTTP_End_Header] =  "End-Header:",
+	[NP_HTTP_MAX] = NULL,
+};
+
+static int http_init(void)
 {
-	struct nos_track *nt = pnt;
-	struct sk_buff *skb = pskb;
-	nt_pkt_nproto_t *pkt_proto = nt_pkt_nproto(skb);
+	int i, n;
+
+	/* init proto vars */
+	if(!mwmParser) {
+		mwmParser = mwmNew();
+		if(!mwmParser) {
+			np_error("mwm malloc failed.\n");
+			return -ENOMEM;
+		}
+	}
+	/* mwmAddPatternEx,mwmPrepPatterns */
+	for(i=0; i<NP_HTTP_MAX; i++) {
+		const char *x = http_headers[i];
+		if(!(x && strlen(x) >= 4)) {
+			continue;
+		}
+		n = mwmAddPatternEx(mwmParser, (unsigned char*)x, strlen(x), 0, 0, 0);
+		if(n<=0) {
+			np_error("add patt: %s failed - %d.\n", x, n);
+			continue;
+		}
+	}
+	n = mwmPrepPatterns(mwmParser);
+	if(n<=0) {
+		np_error("compile patts failed: %d\n", n);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void http_clean(void)
+{
+	if(mwmParser) {
+		mwmFree(mwmParser);
+		mwmParser = NULL;
+	}
+}
+
+static int mwm_http_match(void *par, void *in, void *out)
+{
+	return 1;
+}
+
+static int on_http_req(nt_packet_t *npt, void *rule)
+{
+	nt_pkt_nproto_t *pkt_proto = nt_pkt_nproto(npt);
 
 	pkt_proto->du_type = NP_DUT_HTTP_REQ;
 	/* do line parse. store the result into flow private union -> nproto_t. */
 
-	np_print(FMT_FLOW_STR"\n", FMT_FLOW(nt_flow(nt)));
+	np_print(FMT_FLOW_STR"\n", FMT_FLOW(npt->fi));
+
+	if(mwmParser) {
+		mwmSearch(mwmParser, npt->l7_ptr, npt->l7_len, NULL, NULL, mwm_http_match);
+	}
 	return 0;
 }
 
@@ -73,6 +145,9 @@ np_rule_t inner_http_req = {
 		},
 	},
 
+	/* callback's. */
+	.proto_init = http_init,
+	.proto_clean = http_clean,
 	.proto_cb = on_http_req,
 };
 

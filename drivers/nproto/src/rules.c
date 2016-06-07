@@ -2,7 +2,6 @@
 
 #include <linux/udp.h>
 #include <linux/tcp.h>
-#include <linux/skbuff.h>
 
 #include <linux/nos_track.h>
 
@@ -21,6 +20,12 @@ static LIST_HEAD(all_rules);
 
 static int rule_compile(np_rule_t *rule)
 {
+	/* init rule callback ok. */
+	if(rule->proto_init && rule->proto_init()) {
+		np_error("init proto callback failed.\n");
+		return -EINVAL;
+	}
+
 	/* init bmh/regexp struct. */
 	return 0;
 }
@@ -28,6 +33,9 @@ static int rule_compile(np_rule_t *rule)
 static void rule_release(np_rule_t *rule)
 {
 	/* release the dmalloc mem. */
+	if(rule->proto_clean) {
+		rule->proto_clean();
+	}
 }
 
 static void rule_dump(np_rule_t *rule)
@@ -318,63 +326,47 @@ static int inner_rules_init(void)
 	return 0;
 }
 
-static int rule_matched(void *nt, void *rule)
+static int rule_matched(void *np, void *rule)
 {
 	return 1;
 }
 
-static int rule_one_match(np_rule_t *rule, 
-	struct nos_track *nt, 
-	struct sk_buff *skb, 
-	uint8_t *data, int dlen, 
+static int rule_one_match(np_rule_t *rule, nt_packet_t *npt, 
 	int(*matched_cb)(void *nt, void *rule))
 {
 	/* do match process. */
 
-
 	/* rule all matched. */
 	if(rule->proto_cb) {
-		rule->proto_cb(nt, skb, rule);
+		rule->proto_cb(npt, rule);
 	}
 	if(matched_cb) {
-		return matched_cb(nt, rule);
+		return matched_cb(npt, rule);
 	}
 	return 1;
 }
 
-/* mwm transmit par in-to sub-function's... */
-typedef struct {
-	struct nos_track *nt;
-	struct sk_buff *skb;
-	uint8_t *data;
-	int dlen;
-} mwmIn_t;
-
 /*
 ** @return: !=0 -> ture, 0:false -> try next.
 */
-static int mwmOnMatch(void* rule, void *inv, void *out)
+static int mwmOnMatch(void* rule, void *npt, void *out)
 {
-	mwmIn_t *in = (mwmIn_t*)inv;
-
-	if(rule_one_match(rule, in->nt, in->skb, in->data, in->dlen, rule_matched)) {
+	if(rule_one_match(rule, npt, rule_matched)) {
 		out = rule;
 		return 1;
 	}
 	return 0;
 }
 
-int rules_match(struct nos_track* nt,
-	struct sk_buff *skb, int fdir, uint8_t proto, 
-	uint8_t *data, int dlen)
+int rules_match(nt_packet_t *npt)
 {
 	int i;
-	np_rule_set_t *base_set = &rule_sets_base[fdir][np_proto_to_set(proto)];
+	np_rule_set_t *base_set = &rule_sets_base[npt->dir][np_proto_to_set(npt->l4_proto)];
 	mwm_t *pmwm = base_set->pmwm;
 
 	for (i = 0; i <base_set->num_rules; i++) {
 		np_rule_t *rule = base_set->rules[i];
-		if(rule_one_match(rule, nt, skb, data, dlen, rule_matched)) {
+		if(rule_one_match(rule, npt, rule_matched)) {
 			/* direct matched. */
 			np_debug("direct matched: %s\n", rule->name_rule);
 			return 1;
@@ -383,13 +375,7 @@ int rules_match(struct nos_track* nt,
 
 	if(pmwm) {
 		void* out = NULL;
-		mwmIn_t in;
-
-		in.nt = nt;
-		in.skb = skb;
-		in.data = data;
-		in.dlen = dlen;
-		mwmSearch(pmwm, data, dlen, &in, &out, mwmOnMatch);
+		mwmSearch(pmwm, npt->l7_ptr, npt->l7_len, npt, &out, mwmOnMatch);
 		if(out) {
 			np_rule_t *o = out;
 			np_debug("mwm matched: %s\n", o->name_rule);
