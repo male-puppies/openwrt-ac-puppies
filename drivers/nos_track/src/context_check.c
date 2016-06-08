@@ -5,7 +5,7 @@
 #include <asm/smp.h>
 
 #include <linux/nos_track.h>
-#include <ntrack_context.h>
+#include <ntrack_nproto.h>
 #include <ntrack_log.h>
 
 context_chk_t nt_cck_fn = NULL;
