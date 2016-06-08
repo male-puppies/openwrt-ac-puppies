@@ -273,7 +273,7 @@ int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int de
 
 	p->psLen = len;
 	p->psOffset = offset;
-	p->psDepth = deep;
+	p->psDepth = deep ? deep : 32767;
 	p->ps_data = user_data;
 
 	ps->msNumPatterns++;
@@ -546,6 +546,8 @@ static int mwmGroupMatch2( mwm_t * ps,
 		if( k < 0 ) 
 		{
 			nfound++; 
+			if(!in) in = T;
+			if(!out) out = T + len;
 			//printf("mwm: matched %lx %lx, pat: %d '%s'\n", patrn, patrn->ps_data, patrn->psLen, patrn->psPat);
 			if(match( (void *)patrn->ps_data, in, out))
 			{
@@ -1125,9 +1127,7 @@ int mwmPrepPatterns( mwm_t * pv )
 			ps->msPatArray[k].psBmh = bmhPrepEx( ps->msPatArray[ k ].psPat, ps->msPatArray[k].psLen );
 		}
 	}
-
 	smp_wmb();
-	ps->is_ok =1;
 
 	np_info("finished: %d patts.\n", ps->msNumPatterns);
 	return 1;

@@ -22,5 +22,6 @@ enum __em_http_headers {
 
 
 typedef struct {
-	uint16_t hdrs_off[NP_HTTP_MAX];
+	/* header value, index offset form [0]->[1] */
+	uint8_t headers_range[NP_HTTP_MAX][2];
 } nproto_http_t;

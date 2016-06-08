@@ -63,6 +63,11 @@ static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_
 		break;
 	}
 
+	if(l7len<=0) {
+		// np_debug("no l7 payload data.\n");
+		return -EINVAL;
+	}
+
 	/* data length & ptr's */
 	pkt->iph = iph;
 	pkt->l3_len = dlen;
@@ -93,7 +98,7 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 	/* FIXME: tackoff-fixup the sock4/5/http proxy header. */
 	n = nproto_pkt_init(skb, nt, &pkt);
 	if(n) {
-		np_error("packet init failed: %d\n", n);
+		// np_debug("packet init failed: %d\n", n);
 		return n;
 	}
 
@@ -110,8 +115,10 @@ static int __init nproto_module_init(void)
 
 	nproto_klog_fd = klog_init("nproto", 0x0e, 0);
 	if(!nproto_klog_fd) {
+		printk("klog init failed.\n");
 		return -ENOMEM;
 	}
+	np_info("klog init ok.\n");
 
 	r = nproto_init();
 	if(r) {
@@ -120,6 +127,7 @@ static int __init nproto_module_init(void)
 	}
 
 	rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
+	return 0;
 
 __error:
 	nproto_cleanup();

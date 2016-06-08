@@ -1,4 +1,4 @@
-#define __DEBUG
+// #define __DEBUG
 
 #include <linux/udp.h>
 #include <linux/tcp.h>
@@ -295,7 +295,7 @@ static int rules_build(void)
 	/* init all set's */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		for(j=0; j<NP_SET_BASE_MAX; j++) {
-			snprintf(name, sizeof(name), "base: %s,%d", i?"c2s":"s2c", j);
+			snprintf(name, sizeof(name), "base: %d-%d", i, j);
 			set_init(&rule_sets_base[i][j], name);
 		}
 	}
@@ -584,8 +584,11 @@ static int l7_match(l7_match_t *l7, nt_packet_t *npt)
 	return NP_FALSE;
 }
 
-static int rule_matched_cb(void *np, void *rule)
+static int rule_matched_cb(void *np, void *prule)
 {
+	np_rule_t *rule = prule;
+	
+	np_debug("rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
@@ -599,7 +602,7 @@ static int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 		n = l4_match(&rule->l4, npt);
 		if(!n) {
 			/* miss match. */
-			np_debug("l4: miss match.\n");
+			// np_debug("l4: miss match.\n");
 			return NP_FALSE;
 		}
 	}
@@ -607,7 +610,7 @@ static int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(rule->enable_l7) {
 		n = l7_match(&rule->l7, npt);
 		if(!n) {
-			np_debug("l7: miss match.\n");
+			// np_debug("l7: miss match.\n");
 			return NP_FALSE;
 		}
 	}

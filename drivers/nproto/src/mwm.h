@@ -54,8 +54,6 @@
 ** Enables display of pattern group stats
 */
 //#define SHOW_STATS
-#define dump_fucker(x) do{*(long*)(__LINE__)=(x);}while(0)
-
 #define MWM_FEATURES "MWM:BC/BW-SHIFT + 2-BYTE-HASH"  
 
 #define HASH_CHAR 0
@@ -170,7 +168,6 @@ typedef struct __mwm_st {
   int *msLengths;
   
   int    msMethod;  /* MTH_BM, MTH_MWM */
-  int    is_ok;
   
   mwm_patt_t * plist;
   
@@ -198,7 +195,6 @@ int  mwmSysClean(const char * szInstName);
 */
 mwm_t * mwmNew( void );
 void   mwmFree(mwm_t *pv );
-#define MWM_INITED(pv) ((pv)->is_ok==1)
 
 int mwmAddPatternEx( mwm_t *pv, unsigned char * P, int len, int off, int deep,  void* ud );
 int  mwmPrepPatterns  ( mwm_t *pv );

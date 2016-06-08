@@ -50,7 +50,7 @@ static int http_init(void)
 		if(!(x && strlen(x) >= 4)) {
 			continue;
 		}
-		n = mwmAddPatternEx(mwmParser, (unsigned char*)x, strlen(x), 0, 0, 0);
+		n = mwmAddPatternEx(mwmParser, (unsigned char*)x, strlen(x), 0, 0, &http_headers[i]);
 		if(n<=0) {
 			np_error("add patt: %s failed - %d.\n", x, n);
 			continue;
@@ -62,6 +62,7 @@ static int http_init(void)
 		return -EINVAL;
 	}
 
+	mwmGroupDetails(mwmParser);
 	return 0;
 }
 
@@ -75,20 +76,30 @@ static void http_clean(void)
 
 static int mwm_http_match(void *par, void *in, void *out)
 {
+	// nt_pkt_nproto_t *pkt_proto = in;
+	uint8_t idx = ((void*)par - (void*)&http_headers[0])/sizeof(void*);
+
+	np_print("%d:%s\n", idx, http_headers[idx]);
+	np_dump(out, 16, "dump: ");
+
+	// pkt_proto[idx][0] = out;
+	// pkt_proto[idx][1] = line_end;
 	return 1;
 }
 
-static int on_http_req(nt_packet_t *npt, void *rule)
+static int on_http_req(nt_packet_t *npt, void *prule)
 {
+	// np_rule_t *rule = prule;
 	nt_pkt_nproto_t *pkt_proto = nt_pkt_nproto(npt);
 
 	pkt_proto->du_type = NP_DUT_HTTP_REQ;
 	/* do line parse. store the result into flow private union -> nproto_t. */
 
-	np_print(FMT_FLOW_STR"\n", FMT_FLOW(npt->fi));
+	// np_print("%s: " FMT_FLOW_STR"\n", rule->name_rule, FMT_FLOW(npt->fi));
+	// np_dump(npt->l7_ptr, 64, "dump");
 
 	if(mwmParser) {
-		mwmSearch(mwmParser, npt->l7_ptr, npt->l7_len, NULL, NULL, mwm_http_match);
+		mwmSearch(mwmParser, npt->l7_ptr, npt->l7_len, npt, NULL, mwm_http_match);
 	}
 	return 0;
 }
