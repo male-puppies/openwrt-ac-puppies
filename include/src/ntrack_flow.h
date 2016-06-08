@@ -62,9 +62,9 @@ static inline nt_flow_authd_t* nt_flow_authd(flow_info_t *fi)
 }
 
 enum __em_flow_dir {
-	NP_FLOW_DIR_C2S = 0,
+	NP_FLOW_DIR_ANY = 0,
+	NP_FLOW_DIR_C2S,
 	NP_FLOW_DIR_S2C,
-	NP_FLOW_DIR_ANY,
 	NP_FLOW_DIR_MAX,
 };
 

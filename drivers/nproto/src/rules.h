@@ -33,6 +33,12 @@ enum __em_match_t {
 	MHTP_HTTP_CTX,
 	MHTP_REGEXP,
 	MHTP_SEARCH,
+	MHTP_MAX,
+};
+
+enum __em_match_wrap_t {
+	MWTP_SEARCH = 0,
+	MWTP_REGEXP,
 };
 
 enum __em_lnm_t {
@@ -40,6 +46,7 @@ enum __em_lnm_t {
 	NP_LNM_LIST,
 	NP_LNM_MATCH,
 	NP_LNM_RANGE,
+	NP_LNM_MAX,
 };
 
 typedef struct {
@@ -56,8 +63,8 @@ typedef int (*nproto_cb_t)(nt_packet_t *np, void *rule);
 typedef int (*nproto_init_t)(void);
 typedef void (*nproto_clean_t)(void);
 typedef struct {
-	/* 0: offset match, 1: http body, 2: regexp, 3: search */
-	uint8_t type;
+	/* 0: offset match, 1: http body, 2: regexp, 3: search, 4: search-offset */
+	uint8_t type_wrap:2, type_match:6;
 
 	/* only match the len == spec_len. */
 	uint16_t spec_len;
@@ -69,11 +76,12 @@ typedef struct {
 	** n,m: search +/- n->m 
 	** 
 	** this find the realy proto payload, 
-			such as http->hdr->body (FLV-...).
+			such as http->hdr->body (http-proxy-...).
 	*/
-	int16_t begin, end;
-	uint16_t search_len;
-	uint8_t search[NP_PATT_LEN_MAX];
+	int16_t wrap_begin, wrap_end;
+	uint16_t wrap_len;
+	uint8_t wrap[NP_PATT_LEN_MAX];
+	void *wrap_rex, *wrap_bmh;
 
 	/*
 	** ++++++offset[x]++***patt***+++++++++++
@@ -83,9 +91,10 @@ typedef struct {
 	uint16_t deep;
 	uint16_t patt_len;
 	uint8_t patt[NP_PATT_LEN_MAX];
-
+	void *rex, *bmh;
 	/* regexp */
-
+	//cre2_regexp_t *rex;
+	//cre2_options_t *opt;
 	/* bmh */
 } content_match_t;
 
@@ -199,4 +208,9 @@ enum __em_inner_proto {
 enum __em_ctm_relation {
 	NP_CTM_OR = 0,
 	NP_CTM_AND,
+};
+
+enum __em_result_bool {
+	NP_FALSE = 0,
+	NP_TRUE,
 };

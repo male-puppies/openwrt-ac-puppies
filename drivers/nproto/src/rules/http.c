@@ -122,22 +122,22 @@ np_rule_t inner_http_req = {
 		.ctm_relation = NP_CTM_OR,
 		.ctm = {
 			{
-				.type = MHTP_OFFSET,
+				.type_match = MHTP_OFFSET,
 				.offset = 0,
 				.patt_len = 4,
 				.patt = "GET ",
 			},{
-				.type = MHTP_OFFSET,
+				.type_match = MHTP_OFFSET,
 				.offset = 0,
 				.patt_len = 5,
 				.patt = "POST ",
 			},{
-				.type = MHTP_OFFSET,
+				.type_match = MHTP_OFFSET,
 				.offset = 0,
 				.patt_len = 8,
 				.patt = "CONNECT ",
 			},{
-				.type = MHTP_OFFSET,
+				.type_match = MHTP_OFFSET,
 				.offset = 0,
 				.patt_len = 5,
 				.patt = "HEAD ",
@@ -180,7 +180,7 @@ np_rule_t inner_http_rep = {
 		.ctm_relation = NP_CTM_OR,
 		.ctm = {
 			{
-				.type = MHTP_OFFSET,
+				.type_match = MHTP_OFFSET,
 				.offset = 0,
 				.patt_len = 5,
 				.patt = "HTTP ",

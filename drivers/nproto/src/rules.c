@@ -132,7 +132,7 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 		content_match_t *ct = &rule->l7.ctm[i];
 
 		/* search & patt length >= 4 */
-		if(!(ct->type == MHTP_SEARCH && ct->patt_len >= 4))
+		if(!(ct->type_match == MHTP_SEARCH && ct->patt_len >= 4))
 			continue;
 
 		/* init mwm st.. */
@@ -326,15 +326,291 @@ static int inner_rules_init(void)
 	return 0;
 }
 
-static int rule_matched(void *np, void *rule)
+static int l4_match(l4_match_t *l4, nt_packet_t *npt)
 {
-	return 1;
+	uint32_t saddr, daddr;
+	uint16_t sport, dport, proto;
+
+	saddr = npt->iph->saddr;
+	daddr = npt->iph->daddr;
+	proto = npt->l4_proto;
+
+	/* check proto */
+	if(l4->proto && l4->proto != proto) {
+		return NP_FALSE;
+	}
+	switch(proto) {
+		case IPPROTO_TCP: {
+			sport = npt->tcp->source;
+			dport = npt->tcp->dest;
+		} break;
+		case IPPROTO_UDP: {
+			sport = npt->udp->source;
+			dport = npt->udp->dest;
+		} break;
+		default: {
+			sport = dport = 0;
+		} break;
+	}
+
+	/* must check addrs. */
+	if(l4->addrs[0]) {
+		int i=0, m = 0;
+		while(l4->addrs[i++]) {
+			if((ntohl(saddr) == l4->addrs[i]) || 
+				(ntohl(daddr) == l4->addrs[i])) 
+			{
+				m = 1; break;
+			}
+		}
+		if(!m) {
+			return NP_FALSE;
+		}
+	}
+
+	/* must check ports. */
+	if(l4->ports[0]) {
+		int i=0, m=0;
+		while(l4->ports[i++]) {
+			if((ntohs(sport) == l4->ports[i]) || 
+				(ntohs(dport) == l4->ports[i])) 
+			{
+				m = 1; break;
+			}
+		}
+		if(!m) {
+			return NP_FALSE;
+		}
+	}
+
+	return NP_TRUE;
+}
+
+static int lnm_match(len_match_t *lnm, nt_packet_t *npt)
+{
+	switch(lnm->type) {
+		case NP_LNM_LIST:{
+			int i=0;
+			while(lnm->list[i]) {
+				if(lnm->list[i] == npt->l7_len) {
+					return NP_TRUE;
+				}
+				i++;
+			}
+			if(i) {
+				return NP_FALSE;
+			}
+		} break;
+		case NP_LNM_RANGE:{
+			int i=0;
+			while(lnm->range[i][0] && lnm->range[i][1]) {
+				if(npt->l7_len >= lnm->range[i][0] && 
+					npt->l7_len <= lnm->range[i][1]) 
+				{
+					return NP_TRUE;
+				}
+				i++;
+			}
+			if(i) {
+				return NP_FALSE;
+			}
+		} break;
+		case NP_LNM_MATCH:{
+			uint32_t n;
+			switch(lnm->width) {
+				case 1: {
+					n = npt->l7_ptr[lnm->offset];
+					n += lnm->fixed;
+					if(n == npt->l7_len) {
+						return NP_TRUE;
+					}
+				}break;
+				case 2: {
+					n = (((uint16_t)(npt->l7_ptr[lnm->offset])<<8 & 0xff00) |
+						     ((uint16_t)(npt->l7_ptr[lnm->offset+1]) & 0x00ff));
+					if((ntohs(n) + lnm->fixed == npt->l7_len) ||
+						(n+lnm->fixed == npt->l7_len)) 
+					{
+						return NP_TRUE;
+					}
+				}break;
+				case 4: {
+					n = (((uint32_t)(npt->l7_ptr[lnm->offset])<<24 & 0xff000000) | 
+					((uint32_t)(npt->l7_ptr[lnm->offset+1])<<16 & 0x00ff0000) |
+					((uint32_t)(npt->l7_ptr[lnm->offset+2])<<8 & 0x0000ff00) |
+					((uint32_t)(npt->l7_ptr[lnm->offset+3]) & 0x000000ff));
+					if((ntohl(n) + lnm->fixed == npt->l7_len) || 
+						(n+lnm->fixed == npt->l7_len)) 
+					{
+						return NP_TRUE;
+					}
+				}break;
+				default: {
+					np_error("l7 len info width error type: %d\n", lnm->width);
+					return NP_FALSE;
+				}break;
+			}
+		} break;
+		default:{
+			np_error("unknown len info type: %d\n", lnm->type);
+			return NP_FALSE;
+		} break;
+	}
+
+	return NP_FALSE;
+}
+
+static int cont_match(content_match_t *cont, nt_packet_t *npt)
+{
+	int start = 0, end = 0, offset = 0, l7dlen;
+	uint8_t *l7data = NULL, *wrapper = NULL;
+
+	l7data = npt->l7_ptr;
+	l7dlen = npt->l7_len;
+
+	if(cont->spec_len && cont->spec_len != l7dlen) {
+		np_debug("l7: cont length miss match.\n");
+		return NP_FALSE;
+	}
+	if(cont->wrap_len > 0) {
+		if(l7dlen < (cont->wrap_begin + cont->wrap_len)) {
+			np_debug("l7: cont fake wrapper dlen.\n");
+			return NP_FALSE;
+		}
+		start = cont->wrap_begin;
+		end = l7dlen;
+		if(cont->wrap_end) {
+			end = l7dlen > cont->wrap_end ? cont->wrap_end : l7dlen;
+		}
+		if(start <= end) {
+			np_debug("l7: cont fake wrapper len.\n");
+			return NP_FALSE;
+		}
+		if(cont->wrap_rex) {
+			/* regexp match */
+			if(wrapper) {
+				offset = wrapper - l7data;
+			}
+		}
+		if(cont->wrap_bmh) {
+			/* BMH wrapper single string. */
+			if(wrapper) {
+				offset = wrapper - l7data;
+			}
+		}
+	}
+
+	if(cont->patt_len > 0) {
+		switch(cont->type_match) {
+			case MHTP_OFFSET: {
+				offset += cont->offset;
+				/* compare offset. */
+				if(offset < 0) {
+					/* revert match. */
+					if(l7dlen + offset < 0) {
+						np_debug("l7: cont offset fixed faild: %d-%d\n", offset, l7dlen);
+						return NP_FALSE;
+					}
+					offset += l7dlen;
+				}
+				/* fixed match */
+				if(l7dlen < offset + cont->patt_len) {
+					np_debug("l7: cont fixed length miss match.\n");
+					return NP_FALSE;
+				}
+				return memcmp(l7data + offset, cont->patt, cont->patt_len) == 0 ? NP_TRUE : NP_FALSE;
+			}break;
+			case MHTP_REGEXP: {
+				if(!cont->rex) {
+					np_error("l7: cont rex nil.\n");
+					return NP_FALSE;
+				}
+				return NP_TRUE;
+			}break;
+			case MHTP_SEARCH: {
+				if(!cont->bmh) {
+					np_error("l7: cont bmh nil.\n");
+					return NP_FALSE;
+				}
+				return NP_TRUE;
+			}break;
+			case MHTP_HTTP_CTX: {
+				return NP_TRUE;
+			}break;
+			default: {
+				np_error("l7: cont not supported type: %d\n", cont->type_match);
+				return NP_FALSE;
+			}break;
+		}
+	}
+
+	return NP_TRUE;
+}
+
+static int l7_match(l7_match_t *l7, nt_packet_t *npt)
+{
+	len_match_t *lnm = &l7->lnm;
+
+	if(npt->l7_len == 0) {
+		np_debug("l7: zero data len.\n");
+		return NP_FALSE;
+	}
+	if(l7->dir && npt->dir != l7->dir) {
+		np_debug("l7: pkt in flow dir miss match.\n");
+		return NP_FALSE;
+	}
+	if(lnm->type != NP_LNM_NONE && !lnm_match(lnm, npt)) {
+		np_debug("l7: length info miss match.\n");
+		return NP_FALSE;
+	}
+	if(l7->ctm_num > 0) {
+		int i, m = 0;
+		for(i=0; i<l7->ctm_num; i++) {
+			m = cont_match(&l7->ctm[i], npt);
+			if(m && l7->ctm_relation == NP_CTM_OR) {
+				np_debug("l7 ctm OR matched.\n");
+				return NP_TRUE;
+			}
+			if(!m && l7->ctm_relation == NP_CTM_AND) {
+				np_debug("l7 ctm AND miss matched.\n");
+				return NP_FALSE;
+			}
+		}
+		if(m && l7->ctm_relation == NP_CTM_AND) {
+			np_debug("l7 ctm AND matched.\n");
+			return NP_TRUE;
+		}
+	}
+	return NP_FALSE;
+}
+
+static int rule_matched_cb(void *np, void *rule)
+{
+	return NP_TRUE;
 }
 
 static int rule_one_match(np_rule_t *rule, nt_packet_t *npt, 
 	int(*matched_cb)(void *nt, void *rule))
 {
+	int n;
+
 	/* do match process. */
+	if(rule->enable_l4) {
+		n = l4_match(&rule->l4, npt);
+		if(!n) {
+			/* miss match. */
+			np_debug("l4: miss match.\n");
+			return NP_FALSE;
+		}
+	}
+	/* do match l7 */
+	if(rule->enable_l7) {
+		n = l7_match(&rule->l7, npt);
+		if(!n) {
+			np_debug("l7: miss match.\n");
+			return NP_FALSE;
+		}
+	}
 
 	/* rule all matched. */
 	if(rule->proto_cb) {
@@ -343,7 +619,7 @@ static int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(matched_cb) {
 		return matched_cb(npt, rule);
 	}
-	return 1;
+	return NP_TRUE;
 }
 
 /*
@@ -351,38 +627,52 @@ static int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 */
 static int mwmOnMatch(void* rule, void *npt, void *out)
 {
-	if(rule_one_match(rule, npt, rule_matched)) {
+	if(rule_one_match(rule, npt, rule_matched_cb)) {
 		out = rule;
-		return 1;
+		return NP_TRUE;
 	}
-	return 0;
+	return NP_FALSE;
 }
 
-int rules_match(nt_packet_t *npt)
+static np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 {
 	int i;
-	np_rule_set_t *base_set = &rule_sets_base[npt->dir][np_proto_to_set(npt->l4_proto)];
-	mwm_t *pmwm = base_set->pmwm;
+	mwm_t *pmwm = set->pmwm;
 
-	for (i = 0; i <base_set->num_rules; i++) {
-		np_rule_t *rule = base_set->rules[i];
-		if(rule_one_match(rule, npt, rule_matched)) {
+	for (i = 0; i <set->num_rules; i++) {
+		np_rule_t* rule = set->rules[i];
+		if(rule_one_match(rule, npt, rule_matched_cb)) {
 			/* direct matched. */
 			np_debug("direct matched: %s\n", rule->name_rule);
-			return 1;
+			return rule;
 		}
 	}
-
 	if(pmwm) {
 		void* out = NULL;
 		mwmSearch(pmwm, npt->l7_ptr, npt->l7_len, npt, &out, mwmOnMatch);
 		if(out) {
-			np_rule_t *o = out;
-			np_debug("mwm matched: %s\n", o->name_rule);
-			return 1;
+			np_rule_t* rule = out;
+			np_debug("mwm matched: %s\n", rule->name_rule);
+			return rule;
 		}
 	}
 
+	return NULL;
+}
+
+int rules_match(nt_packet_t *npt)
+{
+	np_rule_t *rule;
+	np_rule_set_t *base_set = &rule_sets_base[npt->dir][np_proto_to_set(npt->l4_proto)];
+
+	rule = rules_set_match(base_set, npt);
+	if(!rule) {
+		return 0;
+	}
+	rule = rules_set_match(&rule->ref_set, npt);
+	if(!rule) {
+		return 1;
+	}
 	return 0;
 }
 

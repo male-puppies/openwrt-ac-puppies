@@ -20,16 +20,16 @@ typedef struct {
 		const struct udphdr *udp;
 		const uint8_t *generic_l4_ptr;	/* is set only for non tcp-udp traffic */
     };
-	uint8_t *l7_ptr;
-
+    
 	/* upper proto */
-	uint8_t dir: 4, parser_ok: 1; /* dir: C2S, S2C; */
 	uint8_t l4_proto;
-	uint8_t tcp_retransmission;
+	uint8_t dir: 4, parser_ok: 1; /* dir: C2S, S2C; */
+	// uint8_t tcp_retransmission;
 
 	uint16_t l3_len;
 	uint16_t l4_len;
 	uint16_t l7_len;
+	uint8_t *l7_ptr;
 	uint64_t timestamps;
 
 	/* userspace this point to ntrack_priv, kernel -> skb->ntrack_priv */

@@ -17,18 +17,71 @@ extern int rules_match(nt_packet_t *pkt);
 
 static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_t *pkt)
 {
+	int l4len, l7len;
+	int dlen = skb->len;
+	uint8_t *l4ptr = NULL, *l7ptr = NULL;
 	struct iphdr *iph = ip_hdr(skb);
+	nt_pkt_nproto_t *np = nt_skb_nproto(skb, pkt);
+
 	flow_info_t *fi = nt_flow(nt);
 	user_info_t *ui = nt_user(nt);
 	user_info_t *pi = nt_peer(nt);
 
+	/* check skb length > (iphdr+udp/tcp) */
+	if(!(iph->version == 4 && iph->ihl >= 5)) {
+		np_debug("not ip proto, or length < 20.\n");
+		return -EINVAL;
+	}
+
+	if((dlen < (iph->ihl * 4)) || 
+		(dlen < ntohs(iph->tot_len)) || 
+		(ntohs(iph->tot_len) < (iph->ihl * 4)) || 
+		((iph->frag_off & htons(0x1FFF)) != 0)) 
+	{
+		np_debug("frame length error: %d\n", dlen);
+		return -EINVAL;
+	}
+
+	l4ptr = (((uint8_t *)iph) + iph->ihl * 4);
+	l4len = ntohs(iph->tot_len) - (iph->ihl * 4);
+	switch(iph->protocol) {
+		case IPPROTO_TCP:
+			pkt->tcp = (const struct tcphdr*)l4ptr;
+			l7len = l4len - (pkt->tcp->doff * 4);
+			l7ptr = l4ptr + (pkt->tcp->doff * 4);
+		break;
+		case IPPROTO_UDP:
+			pkt->udp = (const struct udphdr*)l4ptr;
+			l7len = l4len - sizeof(struct udphdr);
+			l7ptr = l4ptr + sizeof(struct udphdr);
+		break;
+		default:
+			/* icmp ... */
+			pkt->generic_l4_ptr = l4ptr;
+			l7len = 0;
+			l7ptr = l4ptr;
+		break;
+	}
+
+	/* data length & ptr's */
+	pkt->iph = iph;
+	pkt->l3_len = dlen;
+	pkt->l4_proto = iph->protocol;
+	pkt->l4_len = l4len;
+
+	/* payload */
+	pkt->l7_len = l7len;
+	pkt->l7_ptr = l7ptr;
+
+	/* ntrack nodes. */
 	pkt->fi = fi;
 	pkt->ui = ui;
 	pkt->pi = pi;
 
 	/* C->S, S->C. */
-	pkt->l4_proto = iph->protocol;
 	pkt->dir = nt_flow_dir(&fi->tuple, iph);
+	/* init the packet parser. */
+	memset(np, 0, sizeof(nt_pkt_nproto_t));
 	return 0;
 }
 
