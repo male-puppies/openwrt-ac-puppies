@@ -8,8 +8,10 @@
 
 #include "../rules.h"
 #include "../mwm.h"
+#include "../bmh.h"
 
 static mwm_t *mwmParser = NULL;
+static bmh_t *bmhLine = NULL;
 
 /* header need parsered. */
 const char *http_headers[] = {
@@ -37,6 +39,16 @@ static int http_init(void)
 {
 	int i, n;
 
+	/* init bmh line end finder. */
+	if(!bmhLine) {
+		bmhLine = kmalloc(sizeof(bmh_t), GFP_KERNEL);
+		if(!bmhLine) {
+			np_error("bmh malloc failed.\n");
+			return -ENOMEM;
+		}
+		BMHInit(bmhLine, "\r\n", 2);
+	}
+
 	/* init proto vars */
 	if(!mwmParser) {
 		mwmParser = mwmNew();
@@ -45,16 +57,15 @@ static int http_init(void)
 			return -ENOMEM;
 		}
 	}
-	/* mwmAddPatternEx,mwmPrepPatterns */
+	/* mwmAddPatternUnique, mwmPrepPatterns */
 	for(i=0; i<NP_HTTP_MAX; i++) {
 		const char *x = http_headers[i];
 		if(!(x && strlen(x) >= 4)) {
 			continue;
 		}
-		n = mwmAddPatternEx(mwmParser, (unsigned char*)x, strlen(x), 0, 0, &http_headers[i]);
-		if(n<=0) {
+		n = mwmAddPatternUnique(mwmParser, (unsigned char*)x, strlen(x), 0, 0, &http_headers[i]);
+		if(n<0) {
 			np_error("add patt: %s failed - %d.\n", x, n);
-			continue;
 		}
 	}
 	n = mwmPrepPatterns(mwmParser);
@@ -73,32 +84,58 @@ static void http_clean(void)
 		mwmFree(mwmParser);
 		mwmParser = NULL;
 	}
+	if(bmhLine) {
+		kfree(bmhLine);
+		bmhLine = NULL;
+	}
 }
 
 static int mwm_http_match(void *par, void *in, void *out)
 {
-	// nt_pkt_nproto_t *pkt_proto = in;
+	nt_packet_t *npt = in;
+	nt_pkt_nproto_t *nproto = nt_pkt_nproto(npt);
+	uint8_t *end_ptr;
+	int16_t start, end = 0, lasted;
 	uint8_t idx = ((void*)par - (void*)&http_headers[0])/sizeof(void*);
 
-	np_print("%d:%s\n", idx, http_headers[idx]);
-	np_dump(out, 16, "dump: ");
+	if(idx == NP_HTTP_END) {
+		end = (uint8_t*)out - npt->l7_ptr + 4;
+		nproto->du.http.headers_range[idx][0] = end;
+		nproto->du.http.headers_range[idx][1] = end;
+		/* finished parse & exit. */
+		np_debug("found http header end.\n");
+		np_dump(out, 16, "dump: ");
+		return -1;
+	}
 
-	// pkt_proto[idx][0] = out;
-	// pkt_proto[idx][1] = line_end;
+	start = (uint8_t*)out - npt->l7_ptr + 1;
+	lasted = npt->l7_len - start;
+	end_ptr = BMHChr(bmhLine, out+1, lasted);
+	if(!end_ptr) {
+		np_error("[%s] line end not found.\n", http_headers[idx]);
+		np_dump(out, 16, "dump: ");
+		return 1;
+	}
+	end = end_ptr - npt->l7_ptr;
+
+	np_print("%4d:[%4d-%4d]: %s\n", idx, start, end, http_headers[idx]);
+	np_dump((uint8_t*)out + 1, end-start, "dump:");
+
+	nproto->du.http.headers_range[idx][0] = start;
+	nproto->du.http.headers_range[idx][1] = end;
 	return 1;
 }
 
+/* do line parse. store the result into flow private union -> nproto_t. */
 static int on_http_req(nt_packet_t *npt, void *prule)
 {
 	// np_rule_t *rule = prule;
-	nt_pkt_nproto_t *pkt_proto = nt_pkt_nproto(npt);
-
-	pkt_proto->du_type = NP_DUT_HTTP_REQ;
-	/* do line parse. store the result into flow private union -> nproto_t. */
+	nt_pkt_nproto_t *nproto = nt_pkt_nproto(npt);
 
 	// np_print("%s: " FMT_FLOW_STR"\n", rule->name_rule, FMT_FLOW(npt->fi));
 	// np_dump(npt->l7_ptr, 64, "dump");
 
+	nproto->du_type = NP_DUT_HTTP_REQ;
 	if(mwmParser) {
 		mwmSearch(mwmParser, npt->l7_ptr, npt->l7_len, npt, NULL, mwm_http_match);
 	}
@@ -115,16 +152,16 @@ np_rule_t inner_http_req = {
 	.base_rule = 1,
 	.ref_type = 0,
 
-	.enable_l4 = 1,
-	.enable_l7 = 1,
 	.enable_http = 0,
 
 	/* layer 4 match. */
+	.enable_l4 = 1,
 	.l4 = {
 		.proto = IPPROTO_TCP,
 	},
 
 	/* layer 7 context. */
+	.enable_l7 = 1,
 	.l7 = {
 		.dir = NP_FLOW_DIR_C2S,
 		.lnm = {

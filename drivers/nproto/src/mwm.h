@@ -197,6 +197,7 @@ mwm_t * mwmNew( void );
 void   mwmFree(mwm_t *pv );
 
 int mwmAddPatternEx( mwm_t *pv, unsigned char * P, int len, int off, int deep,  void* ud );
+int mwmAddPatternUnique( mwm_t *pv, unsigned char * P, int len, int off, int deep,  void* ud );
 int  mwmPrepPatterns  ( mwm_t *pv );
 
 int  mwmSearch( mwm_t *pv,

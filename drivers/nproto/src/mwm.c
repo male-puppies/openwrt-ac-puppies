@@ -219,7 +219,7 @@ void mwmFree(mwm_t *pv )
 ** 0: already present, uniqueness compiled in
 ** 1: added
 */
-int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, void* user_data)
+int mwmAddPattern( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, void* user_data, int unique)
 {
 	mwm_t *ps = pv;
 	mwm_patt_t *plist=0;
@@ -244,30 +244,31 @@ int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int de
 		return -1;
 	}
 
-#if REQUIRE_UNIQUE_PATTERNS
 	/* de-repeat's */
-	for( plist=ps->plist; plist!=NULL; plist=plist->next )
+	if(unique) 
 	{
-		if( plist->psLen == (unsigned)m )
+		for( plist=ps->plist; plist!=NULL; plist=plist->next )
 		{
-			if( memcmp(patt, plist->psPat, m) == 0 ) 
+			if( plist->psLen == len )
 			{
-				np_warn("repeat: %s\n", patt);
-				mwmPatsFree(p);
-				return 0; /*already added */
+				if( memcmp(patt, plist->psPat, len) == 0 ) 
+				{
+					// np_debug("unique but repeat: %s\n", patt);
+					mwmPatsFree(p);
+					return 0; /*already added */
+				}
 			}
 		}
-	} 
-#endif //REQ UNIQ PATS
+	}
 
 	if( ps->plist )
 	{
-		for( plist=ps->plist; plist->next!=NULL; plist=plist->next )
+		for( plist=ps->plist; plist->next!=NULL; plist=plist->next)
 			;
 		plist->next = p;
-	}
-	else
+	} else {
 		ps->plist = p;
+	}
 
 	memcpy(p->psPat, patt, len);
 
@@ -290,6 +291,23 @@ int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int de
 	return 1;
 }
 
+
+/*
+**
+** returns -1: max patterns exceeded
+** -----------offset(start)++**++**++**+deep(end)---------------
+** 0: already present, uniqueness compiled in
+** 1: added
+*/
+int mwmAddPatternEx( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, void* user_data)
+{
+	return mwmAddPattern(pv, patt, len, offset, deep, user_data, 0);
+}
+
+int mwmAddPatternUnique( mwm_t *pv, unsigned char *patt, int len, int offset, int deep, void* user_data)
+{
+	return mwmAddPattern(pv, patt, len, offset, deep, user_data, 1);
+}
 
 /*
 ** Calc some pattern length stats
@@ -545,19 +563,27 @@ static int mwmGroupMatch2( mwm_t * ps,
 		/* We have a content match - call the match routine for further processing */
 		if( k < 0 ) 
 		{
+			int cbr = 0;
 			nfound++; 
 			if(!in) in = T;
 			if(!out) out = T + len;
 			//printf("mwm: matched %lx %lx, pat: %d '%s'\n", patrn, patrn->ps_data, patrn->psLen, patrn->psPat);
-			if(match( (void *)patrn->ps_data, in, out))
-			{
+			cbr = match( (void *)patrn->ps_data, in, out);
+			if( cbr == 0 ) {
+				/* callback miss match. */
+				return 0;
+			} else if(cbr > 0) {
+				/* callback matched & go-on. */
 				return nfound;
+			} else {
+				/* callback matched & exit search. */
+				return -nfound;
 			}
 		}
 	}
 
 	/* not found or not matched */
-	return -nfound;
+	return 0;
 }
 
 
@@ -610,10 +636,10 @@ static int mwmSearchExCC( mwm_t *ps,
 
 		/* Match this group against the current suffix */
 		nfound = mwmGroupMatch2( ps, index, Tx, T, Tleft, in, out, match );
-		if (nfound > 0)
-			return nfound;
-		else 
-			nfound = 0;
+		if (nfound < 0) {
+			/* found & exit. */
+			return -nfound;
+		}
 	}
 
 	return nfound;
@@ -669,8 +695,10 @@ static int mwmSearchExBC( mwm_t *ps,
 
 		/* Match this group against the current suffix */
 		nfound = mwmGroupMatch2( ps, index,Tx, T, Tleft, in, out, match );
-		if( nfound > 0 )
-			return nfound;
+		if( nfound < 0 ) {
+			/* found & exit */
+			return -nfound;
+		}
 	}
 
 	return nfound;
@@ -684,7 +712,7 @@ static int mwmSearchExBW( mwm_t *ps,
 						 void * in, void * out,
 						 int(*match)( void * par, void * in, void * out ))
 {
-	int Tleft, index, nfound, tshift, ng;
+	int Tleft, index, nfound, tshift;
 	unsigned char *T, *Tend, *B;
 	unsigned char *pshift2 = ps->msShift2;
 	HASH_TYPE *phash = ps->msHash;
@@ -721,9 +749,11 @@ static int mwmSearchExBW( mwm_t *ps,
 		}
 
 		/* Match this group against the current suffix */
-		ng = mwmGroupMatch2( ps, index, Tx, T, Tleft, in, out, match );
-		if( nfound > 0 )
-			return nfound;
+		nfound = mwmGroupMatch2( ps, index, Tx, T, Tleft, in, out, match );
+		if( nfound < 0 ) {
+			/* found & exit */
+			return -nfound;
+		}
 	}
 
 	return nfound;

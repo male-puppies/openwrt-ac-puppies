@@ -4,7 +4,7 @@
 
 obj-${CONFIG_NPROTO} += nproto.o
 nproto-y	+= main.o rules.o rules-inner.o \
-	wu-manber.o mwm.o \
+	wu-manber.o mwm.o bmh.o \
 	QSORT.o
 
 # rules build-in.

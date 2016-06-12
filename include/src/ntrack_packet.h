@@ -28,9 +28,9 @@ typedef struct {
 	uint8_t dir: 4, parser_ok: 1; /* dir: C2S, S2C; */
 	// uint8_t tcp_retransmission;
 
-	uint16_t l3_len;
-	uint16_t l4_len;
-	uint16_t l7_len;
+	int16_t l3_len;
+	int16_t l4_len;
+	int16_t l7_len;
 	uint8_t *l7_ptr;
 	uint64_t timestamps;
 
