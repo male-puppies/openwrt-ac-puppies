@@ -29,6 +29,7 @@ const char *http_headers[] = {
 	[NP_HTTP_Response] =  "Response:",
 	[NP_HTTP_Server] =  "Server:",
 	[NP_HTTP_End_Header] =  "End-Header:",
+	[NP_HTTP_Content_Type] = "Content-Type:",
 	[NP_HTTP_MAX] = NULL,
 };
 
@@ -172,30 +173,40 @@ np_rule_t inner_http_rep = {
 	.base_rule = 1,
 	.ref_type = 0,
 
-	.enable_l4 = 1,
-	.enable_l7 = 1,
 	.enable_http = 0,
 
 	/* layer 4 match. */
+	.enable_l4 = 1,
 	.l4 = {
 		.proto = IPPROTO_TCP,
 	},
 
 	/* layer 7 context. */
+	.enable_l7 = 1,
 	.l7 = {
 		.dir = NP_FLOW_DIR_S2C,
 		.lnm = {
 			.type = NP_LNM_NONE,
 		},
-		.ctm_num = 1, /* GET,POST,CONNECT,HEAD */
+		.ctm_num = 2, /* GET,POST,CONNECT,HEAD */
 		.ctm_relation = NP_CTM_OR,
 		.ctm = {
 			{
 				.type_match = MHTP_OFFSET,
 				.offset = 0,
-				.patt_len = 5,
-				.patt = "HTTP ",
+				.patt_len = 7,
+				.patt = "HTTP/1.",
+			},{
+				.type_match = MHTP_OFFSET,
+				.offset = 0,
+				.patt_len = 7,
+				.patt = "HTTP/2.",
 			},
 		},
 	},
+
+	/* proto callback's */
+	.proto_init = http_init,
+	.proto_clean = http_clean,
+	.proto_cb = on_http_req,
 };

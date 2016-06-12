@@ -17,6 +17,7 @@ enum __em_http_headers {
 	NP_HTTP_Response, 
 	NP_HTTP_Server, 
 	NP_HTTP_End_Header, 
+	NP_HTTP_Content_Type,
 	NP_HTTP_MAX,
 };
 

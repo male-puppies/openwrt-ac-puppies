@@ -9,6 +9,7 @@
 #include <ntrack_flow.h>
 
 #include "mwm.h"
+#include "rules/build-in.h"
 
 #define MAX_REF_IDs 8
 #define MAX_L4_ADDRS 8
@@ -196,15 +197,6 @@ static inline uint8_t np_proto_to_set(uint8_t proto)
 	}
 }
 
-enum __em_inner_proto {
-	NP_INNER_RULE_HTTP_REQ = 0,
-	NP_INNER_RULE_HTTP_REP,
-	NP_INNER_RULE_SMTP,
-	NP_INNER_RULE_POP3,
-	NP_INNER_RULE_SSH,
-	NP_INNER_RULE_MAX,
-};
-
 enum __em_ctm_relation {
 	NP_CTM_OR = 0,
 	NP_CTM_AND,
@@ -214,3 +206,13 @@ enum __em_result_bool {
 	NP_FALSE = 0,
 	NP_TRUE,
 };
+
+/* 
+** register one rule to match system. 
+*/
+int np_rule_register(np_rule_t *rule);
+
+/*
+** build-in inner rules init, called by modules init.
+*/
+int inner_rules_init(void);

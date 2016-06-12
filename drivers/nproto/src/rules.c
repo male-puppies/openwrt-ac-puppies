@@ -8,6 +8,15 @@
 #include "mwm.h"
 #include "rules.h"
 
+#if 0
+#define RULE_DBG(rule, fmt...)  do { \
+		if(rule->ID == NP_INNER_RULE_HTTP_REP){ \
+			np_debug(fmt); \
+		} \
+	}while(0)
+#else
+#define RULE_DBG(rule, fmt...) do{}while(0)
+#endif
 #define np_assert(x) BUG_ON(!(x))
 
 #define NP_MWM_STR "nproto"
@@ -163,7 +172,7 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 	return 0;
 }
 
-static int np_rule_register(np_rule_t *rule)
+int np_rule_register(np_rule_t *rule)
 {
 	int dir = 0, proto = NP_SET_BASE_OTHER;
 	/* compile && check valid */
@@ -312,16 +321,6 @@ static int rules_build(void)
 		 set_dump(&rule_sets_base[i][j]);
 	}
 	#endif
-
-	return 0;
-}
-
-static int inner_rules_init(void)
-{
-	extern np_rule_t inner_http_req, inner_http_rep;
-
-	np_rule_register(&inner_http_req);
-	np_rule_register(&inner_http_rep);
 
 	return 0;
 }
@@ -597,12 +596,14 @@ static int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 {
 	int n;
 
+	RULE_DBG(rule, "dir: %d rule: %s\n", npt->dir, rule->name_rule);
+
 	/* do match process. */
 	if(rule->enable_l4) {
 		n = l4_match(&rule->l4, npt);
 		if(!n) {
 			/* miss match. */
-			// np_debug("l4: miss match.\n");
+			RULE_DBG(rule, "l4: miss match.\n");
 			return NP_FALSE;
 		}
 	}
@@ -610,7 +611,7 @@ static int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(rule->enable_l7) {
 		n = l7_match(&rule->l7, npt);
 		if(!n) {
-			// np_debug("l7: miss match.\n");
+			RULE_DBG(rule, "l7: miss match.\n");
 			return NP_FALSE;
 		}
 	}

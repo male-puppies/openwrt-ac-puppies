@@ -3,7 +3,7 @@
 #
 
 obj-${CONFIG_NPROTO} += nproto.o
-nproto-y	+= main.o rules.o \
+nproto-y	+= main.o rules.o rules-inner.o \
 	wu-manber.o mwm.o \
 	QSORT.o
 

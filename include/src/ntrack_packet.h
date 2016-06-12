@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ntrack_log.h>
+
 #include <nproto/comm.h>
 #include <nproto/http.h>
 #include <nproto/tencent_qq.h>
