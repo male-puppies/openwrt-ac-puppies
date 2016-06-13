@@ -14,7 +14,7 @@ PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Chen Minqiang <ptpt52@gmail.com>
 PKG_LICENSE:=GPL-2.0
-
+ 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)/Default
@@ -46,7 +46,7 @@ fi
 
 exit 0
 endef
-
+#xx
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/userauth.defaults $(1)/etc/uci-defaults/95-userauth
