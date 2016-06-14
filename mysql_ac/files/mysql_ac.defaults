@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cp -a /usr/share/mysql_ac/my.conf /etc/
+
+exit 0
