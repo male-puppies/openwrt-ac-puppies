@@ -149,11 +149,16 @@ struct nproto_rule {
 	/* this rule ref to other/base rules. */
 	uint16_t ID_REFs[MAX_REF_IDs];
 	/* 
-	* base: start match as unknown, or ref to someone.
-	* ref: 0: current-package/1: cross-package-in-session. 
+	* rule_type:
+	* 		base: start match as unknown, or ref to someone.
+	*		ref-base: need be-refed first matched.
+	* 
+	* refs_type:
+	*		0: current-package/; 1: cross-package-in-session;
+	*		2: corss-session-in-users; 4: cross-session-in-peers;
 	* 		bit-map: 0/1/2/3.
 	*/
-	uint8_t base_rule: 4, ref_type: 4;
+	uint8_t rule_type: 4, refs_type: 4;
 
 	/* enable the l4/l7 match process */
 	uint8_t enable_l4:1, enable_l7:1, enable_http:1;
@@ -168,7 +173,7 @@ struct nproto_rule {
 	http_match_t http;
 
 	/* ref sets */
-	np_rule_set_t ref_set;
+	np_rule_set_t *ref_set;
 
 	/* rule init/cleanup callback */
 	nproto_init_t 	proto_init;
@@ -196,6 +201,25 @@ static inline uint8_t np_proto_to_set(uint8_t proto)
 		return NP_SET_BASE_OTHER;
 	}
 }
+
+enum __em_np_rule_type {
+	TP_RULE_BASE = 0,
+	TP_RULE_MID = 1<<0,
+	TP_RULE_FIN = 1<<1,
+	TP_RULE_MAX,
+};
+#define RULE_IS_BASE(rule) (rule->rule_type == TP_RULE_BASE)
+#define RULE_IS_MID(rule) (rule->rule_type & TP_RULE_MID)
+#define RULE_IS_FIN(rule) (rule->rule_type & TP_RULE_FIN)
+
+enum __em_np_rule_relation {
+	NP_REF_NONE = 0,
+	NP_REF_MATCH = 1<<0,
+	NP_REF_RULES = 1<<1,
+	NP_REF_USERS = 1<<2,
+};
+#define RULE_REF_MATCH(rule) (rule->refs_type & NP_REF_MATCH)
+#define RULE_REF_RULES(rule) (rule->refs_type & NP_REF_RULES)
 
 enum __em_ctm_relation {
 	NP_CTM_OR = 0,

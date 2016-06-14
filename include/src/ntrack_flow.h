@@ -42,6 +42,11 @@ static inline void nt_flow_update_proto(
 	fi->hdr.proto = proto;
 }
 
+static inline uint16_t nt_flow_proto(const flow_info_t *fi)
+{
+	return fi->hdr.proto;
+}
+
 static inline void* nt_flow_priv(flow_info_t *fi, size_t *size)
 {
 	/* assert size */

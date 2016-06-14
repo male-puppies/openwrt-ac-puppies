@@ -149,8 +149,9 @@ np_rule_t inner_http_req = {
 
 	.ID = NP_INNER_RULE_HTTP_REQ,
 	.priority = NP_RULE_PRI_MAX,
-	.base_rule = 1,
-	.ref_type = 0,
+	
+	.rule_type = TP_RULE_BASE,
+	.refs_type = NP_REF_NONE,
 
 	.enable_http = 0,
 
@@ -207,8 +208,9 @@ np_rule_t inner_http_rep = {
 
 	.ID = NP_INNER_RULE_HTTP_REP,
 	.priority = NP_RULE_PRI_MAX,
-	.base_rule = 1,
-	.ref_type = 0,
+
+	.rule_type = TP_RULE_BASE,
+	.refs_type = NP_REF_NONE,
 
 	.enable_http = 0,
 

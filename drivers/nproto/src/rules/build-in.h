@@ -1,7 +1,7 @@
 #pragma once
 
 enum __em_inner_proto {
-	NP_INNER_RULE_HTTP_REQ = 0,
+	NP_INNER_RULE_HTTP_REQ = 1,
 	NP_INNER_RULE_HTTP_REP,
 	NP_INNER_RULE_SMTP,
 	NP_INNER_RULE_POP3,
