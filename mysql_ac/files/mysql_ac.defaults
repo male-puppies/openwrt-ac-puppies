@@ -1,5 +1,5 @@
 #!/bin/sh
 
-cp -a /usr/share/mysql_ac/my.conf /etc/
-
+cp -a /usr/share/mysql_ac/my.cnf /etc/
+cp -a /usr/share/mysql_ac/mysqld /etc/init.d/
 exit 0
