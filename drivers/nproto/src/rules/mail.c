@@ -17,8 +17,9 @@ np_rule_t inner_pop3 = {
 
 	.ID = NP_INNER_RULE_POP3,
 	.priority = NP_RULE_PRI_MAX,
-	.base_rule = 1,
-	.ref_type = 0,
+
+	.rule_type = TP_RULE_BASE,
+	.refs_type = NP_REF_NONE,
 
 	.enable_http = 0,
 
@@ -35,11 +36,16 @@ np_rule_t inner_pop3 = {
 		.lnm = {
 			.type = NP_LNM_NONE,
 		},
-		.ctm_num = 1, /* GET,POST,CONNECT,HEAD */
-		.ctm_relation = NP_CTM_OR,
+		.ctm_num = 2, /*  */
+		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
 				.type_match = MHTP_OFFSET,
+				.offset = 0,
+				.patt_len = 3,
+				.patt = "+OK",
+			},{
+				.type_match = MHTP_REGEXP,
 				.offset = 0,
 				.patt_len = 3,
 				.patt = "+OK",

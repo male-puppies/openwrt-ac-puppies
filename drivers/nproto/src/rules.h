@@ -9,6 +9,7 @@
 #include <ntrack_flow.h>
 
 #include "mwm.h"
+#include "pcre.h"
 #include "rules/build-in.h"
 
 #define MAX_REF_IDs 8
@@ -82,7 +83,8 @@ typedef struct {
 	int16_t wrap_begin, wrap_end;
 	uint16_t wrap_len;
 	uint8_t wrap[NP_PATT_LEN_MAX];
-	void *wrap_rex, *wrap_bmh;
+	pcre_t *wrap_rex;
+	void *wrap_bmh;
 
 	/*
 	** ++++++offset[x]++***patt***+++++++++++

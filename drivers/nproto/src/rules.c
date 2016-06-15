@@ -7,6 +7,7 @@
 
 #include "mwm.h"
 #include "rules.h"
+#include "pcre.h"
 
 #if 0
 #define RULE_DBG(rule, fmt...)  do { \
@@ -31,6 +32,8 @@ static LIST_HEAD(all_rules);
 
 static int rule_compile(np_rule_t *rule)
 {
+	int i;
+
 	/* init rule callback ok. */
 	if(rule->proto_init && rule->proto_init()) {
 		np_error("init proto callback failed.\n");
@@ -38,14 +41,50 @@ static int rule_compile(np_rule_t *rule)
 	}
 
 	/* init bmh/regexp struct. */
+	if(rule->enable_l7) {
+		for(i=0; i<rule->l7.ctm_num; i++) {
+			content_match_t *ctm = &rule->l7.ctm[i];
+			if(ctm->type_wrap == MHTP_REGEXP && !ctm->wrap_rex) {
+				pcre_t *rex = pcre_create(ctm->wrap, ctm->wrap_len);
+				if(!rex) {
+					np_error("rex wrap create failed.\n");
+					return -ENOMEM;
+				}
+				ctm->wrap_rex = rex;
+			}
+			if(ctm->type_match == MHTP_REGEXP && !ctm->rex) {
+				pcre_t *rex = pcre_create(ctm->patt, ctm->patt_len);
+				if(!rex) {
+					np_error("rex match create failed.\n");
+					return -ENOMEM;
+				}
+				ctm->rex = rex;
+			}
+		}
+	}
 	return 0;
 }
 
 static void rule_release(np_rule_t *rule)
 {
+	int i;
+
 	/* release the dmalloc mem. */
 	if(rule->proto_clean) {
 		rule->proto_clean();
+	}
+	if(rule->enable_l7) {
+		for(i=0; i<rule->l7.ctm_num; i++) {
+			content_match_t *ctm = &rule->l7.ctm[i];
+			if(ctm->wrap_rex) {
+				pcre_destroy(ctm->wrap_rex);
+				ctm->wrap_rex = NULL;
+			}
+			if(ctm->rex) {
+				pcre_destroy(ctm->rex);
+				ctm->rex = NULL;
+			}
+		}
 	}
 }
 
@@ -543,8 +582,10 @@ static int cont_match(content_match_t *cont, nt_packet_t *npt)
 		}
 		if(cont->wrap_rex) {
 			/* regexp match */
-			if(wrapper) {
-				offset = wrapper - l7data;
+			offset = pcre_find(cont->wrap_rex, l7data, l7dlen);
+			if(offset>=0) {
+				/* deubg */
+				wrapper = l7data + offset;
 			}
 		}
 		if(cont->wrap_bmh) {
@@ -576,11 +617,21 @@ static int cont_match(content_match_t *cont, nt_packet_t *npt)
 				return memcmp(l7data + offset, cont->patt, cont->patt_len) == 0 ? NP_TRUE : NP_FALSE;
 			}break;
 			case MHTP_REGEXP: {
+				int m = 0;
 				if(!cont->rex) {
 					np_error("l7: cont rex nil.\n");
 					return NP_FALSE;
 				}
-				return NP_TRUE;
+				if(l7dlen - offset < cont->patt_len) {
+					np_debug("l7: rex len miss match[%d->%d:%d]d.\n", l7dlen, offset, cont->patt_len);
+					return NP_FALSE;
+				}
+				m = pcre_find(cont->rex, l7data + offset, l7dlen - offset);
+				if(m>=0) {
+					np_debug("l7: rex match at: %d\n", m);
+					return NP_TRUE;
+				}
+				return NP_FALSE;
 			}break;
 			case MHTP_SEARCH: {
 				if(!cont->bmh) {
