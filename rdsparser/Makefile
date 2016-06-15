@@ -31,10 +31,10 @@ endef
 MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)"
 
-define Package/$(PKG_NAME)/install
-	#$(CP) -a ./files/* $(1)/
-	#$(INSTALL_DIR) $(1)/usr/sbin
-	#$(INSTALL_BIN) $(PKG_BUILD_DIR)/nquery $(1)/usr/sbin/nquery
+define Package/$(PKG_NAME)/install 
+	$(INSTALL_DIR) $(1)/usr/lib/lua/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/rdsparser.so $(1)/usr/lib/lua/
+	ls $(PKG_BUILD_DIR)/rdsparser.so $(1)/usr/lib/lua/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

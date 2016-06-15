@@ -1,4 +1,4 @@
-src = dump.c luawrap.c main.c rdsparser.c
+src = dump.c luawrap.c rdsparser.c
 
 all:rdsparser.so
 

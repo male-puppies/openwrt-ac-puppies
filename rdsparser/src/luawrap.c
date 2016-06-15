@@ -44,7 +44,7 @@ struct rds_parser {
 static int l_rds_encode(lua_State *L) {
 	luaL_checktype(L, 1, LUA_TTABLE);
 	
-	size_t count = lua_rawlen(L, 1);
+	size_t count = lua_objlen(L, 1); 	//lua_rawlen(L, 1);
 	if (count == 0) {
 		luaL_error(L, "empty table");
 	}
@@ -176,7 +176,7 @@ static void create_metatable(lua_State *L, luaL_Reg *reg, const char *mt_name) {
 	luaL_newmetatable(L, mt_name);
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -2, "__index");
-	luaL_setfuncs(L, reg, 0);
+	luaL_openlib(L, NULL, reg, 0); 	//luaL_setfuncs(L, reg, 0);
 }
 
 LUALIB_API int luaopen_rdsparser(lua_State *L) {
