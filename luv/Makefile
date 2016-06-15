@@ -1,82 +1,60 @@
 #
-# Copyright (C) 2014-2015 OpenWrt.org
+# Copyright (C) 2012-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=luv
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.9.0-3
 PKG_RELEASE:=1
 
-PKG_MAINTAINER:=Chen Minqiang <ptpt52@gmail.com>
+#https://github.com/luvit/luv/releases/download/1.9.0-3/luv-1.9.0-3.tar.gz
+PKG_SOURCE:=luv-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/luvit/luv/releases/download/1.9.0-3/
+PKG_MD5SUM:=171d5ac227d4a4e36190c56f35f15f9d
+PKG_MAINTAINER:=JinShou Ye <aquariusye@163.com>
 PKG_LICENSE:=GPL-2.0
- 
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+
+PKG_BUILD_PARALLEL:=1
+PKG_INSTALL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +nginx +ebtables +iptables-mod-extra
+  DEPENDS:= +libuv +liblua
 endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:=User authentication
+  TITLE:=lua binding for libuv
 endef
 
+
 define Package/$(PKG_NAME)/description
-  Web access user authentication app
+	lua binding for libuv
 endef
 
 define Package/$(PKG_NAME)/conffiles
-/etc/config/userauth
-endef
-
-define Package/$(PKG_NAME)/postinst
-#!/bin/sh
-
-if [ -z "$$IPKG_INSTROOT" ]; then
-  ( . /etc/uci-defaults/95-userauth )
-  rm -f /etc/uci-defaults/95-userauth
-fi
-
-exit 0
-endef
-#xx
-define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/userauth.defaults $(1)/etc/uci-defaults/95-userauth
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/userauthd.init $(1)/etc/init.d/userauthd
-	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/userauth.config $(1)/etc/config/userauth
-	$(INSTALL_DIR) $(1)/usr/share/userauth
-	$(INSTALL_DATA) ./files/firewall.include $(1)/usr/share/userauth/firewall.include
-	$(INSTALL_DATA) ./files/nginx.conf $(1)/usr/share/userauth/nginx.conf
-	$(INSTALL_BIN) ./files/nginx.init $(1)/usr/share/userauth/nginx
-	$(INSTALL_DIR) $(1)/usr/share/userauth/www
-	cp -r ./files/www/* $(1)/usr/share/userauth/www/ || true
-	$(INSTALL_DIR) $(1)/usr/share/userauth/lua
-	cp -r ./files/lua/* $(1)/usr/share/userauth/lua || true
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/userauthd.sh $(1)/usr/sbin/userauthd
 endef
 
 define Build/Configure
-  true
+	
+endef
+
+define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/usr/lib/lua/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/lua/luv.so $(1)/usr/lib/lua
 endef
 
 define Build/Prepare
-  true
-endef
-
-define Build/Compile
-  true
+	$(call Build/Prepare/Default)
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
-
