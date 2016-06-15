@@ -55,6 +55,9 @@ endef
 
 define Build/Prepare
 	$(call Build/Prepare/Default)
+	cp -r patch/* $(PKG_BUILD_DIR)/
+	pwd
+	echo $(PKG_BUILD_DIR)
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
