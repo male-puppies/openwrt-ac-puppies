@@ -1,0 +1,43 @@
+ski.run(func, ...)
+ski.go(func, ...)
+ski.time()
+ski.new_chan(num) 		类似go channel
+ski.sleep(num)
+ski.yield()
+
+ski.tcp.listen(host, port)
+ski.tcp.connect(host, port)
+tcp_server:accept()
+tcp_server:close()
+tcp_client:read(size, timeout)
+tcp_client:read2()
+tcp_client:write(data)
+tcp_client:close()
+
+ski.fs.stat(path)
+ski.fs.rename(old, new)
+ski.fs.mkdir(path, mode)
+ski.fs.rmdir(path)
+ski.fs.unlink(path)
+ski.fs.scandir(path)
+ski.fs.access(path, mode)
+ski.fs.open(path, flags, mode) 	-- flags:r/rs/r+/rs+/w/wx/w+/wx+/a/ax/ax+ mode: "0644"
+fp:read(size[,offset])
+fp:write(size[,offset])
+fp:fsync()
+fp:fstat()
+fp:close()
+
+ski.misc.rss()
+ski.misc.cwd()
+ski.misc.chdir()
+ski.misc.getpid()
+ski.misc.loadavg()
+ski.misc.exepath()
+ski.misc.cpu_info()
+ski.misc.getrusage()
+ski.misc.total_memory()
+ski.misc.interface_addresses()
+ski.misc.spawn(path, ...) 			-- 类似io.popen，多行命令可以使用spawn("sh", "-c", "sleep 4; date")
+
+TODO udp
