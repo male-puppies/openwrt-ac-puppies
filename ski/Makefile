@@ -20,16 +20,16 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:=
+  DEPENDS:= +luv +liblua +libuv
 endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:= ski
+  TITLE:= lua coroutine library
 endef
 
 define Package/$(PKG_NAME)/description
-	ski
+	lua coroutine library
 endef
 
 define Package/$(PKG_NAME)/conffiles
