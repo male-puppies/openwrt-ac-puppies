@@ -51,7 +51,7 @@ static inline int pattern_parse(const char *pattern, PCRE2_UCHAR ** pcre, PCRE2_
 
 	res = pcre2_match(parse_regex, pattern, -1, 0, 0, match_data, NULL);
 	if (res <= 0) {
-		np_error("invalid pattern");
+		np_error("invalid pattern[%s] ec: %d\n", pattern, res);
 		pcre2_match_data_free(match_data);
 		return -EINVAL;
 	}
@@ -61,24 +61,24 @@ static inline int pattern_parse(const char *pattern, PCRE2_UCHAR ** pcre, PCRE2_
 
 	rc = pcre2_substring_get_bynumber(match_data, 1, pcre, &relen);
 	if (rc < 0) {
-		np_error("pcre2_substring_get_bynumber(pcre) failed");
+		np_error("pcre2_substring_get_bynumber(pcre) failed\n");
 		return -EINVAL;
 	}
 
 	if (res > 2) {
 		rc = pcre2_substring_get_bynumber(match_data, 2, op_str, &oplen);
 		if (rc < 0) {
-			np_error("pcre2_substring_get_bynumber(opts) failed");
+			np_error("pcre2_substring_get_bynumber(opts) failed\n");
 			return -EINVAL;
 		}
 	}
 
 	if (relen > 0) {
-		np_debug("pcre: %lu|%s|", relen, *pcre);
+		np_debug("pcre: %lu|%s|\n", relen, *pcre);
 	}
 
 	if (oplen > 0) {
-		np_debug("opts: %lu|%s|", oplen, *op_str);
+		np_debug("opts: %lu|%s|\n", oplen, *op_str);
 	}
 
 	pcre2_match_data_free(match_data);
@@ -120,7 +120,7 @@ static inline void opts_parse(char *op_str, int *_opts)
 				break;
 
 			default:
-				np_error("unknown regex modifier '%c'", *op);
+				np_error("unknown regex modifier '%c'\n", *op);
 				break;
 			}
 			op++;
@@ -134,9 +134,9 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
 {
 	pcre_t *pcre;
 	PCRE2_SIZE erroffset;
-	int errorcode, rc;
+	int ec, rc;
 	// size_t priv_size = sizeof(pcre_t);
-	int save = offsetof(pcre_t, patlen);
+	// int save = offsetof(pcre_t, patlen);
 
 	pcre = kmalloc(sizeof(pcre_t), GFP_KERNEL);
 	pcre->patlen = len;
@@ -153,8 +153,8 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
 
 	opts_parse(pcre->op_str, &pcre->opts);
 
-	pcre->re = pcre2_compile(pcre->pcre, PCRE2_ZERO_TERMINATED, pcre->opts,
-				 &errorcode, &erroffset, NULL);
+	pcre->re = pcre2_compile(pcre->pcre, PCRE2_ZERO_TERMINATED, 
+		pcre->opts, &ec, &erroffset, NULL);
 	if (IS_ERR_OR_NULL(pcre->re))
 		goto err_code;
 
@@ -183,26 +183,27 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
 	return pcre;
 
  err_match_data:
-	np_debug("%s", "err_match_data");
+	np_debug("err_match_data\n");
 	if (sysctl_jit_enable)
 		pcre2_jit_stack_free(pcre->jit_stack);
 
  err_jit_stack:
-	np_debug("%s", "err_jit_stack");
+	np_debug("err_jit_stack\n");
 	if (sysctl_jit_enable)
 		pcre2_match_context_free(pcre->mcontext);
 
  err_match_context:
-	np_debug("%s", "err_match_context");
+	np_debug("err_match_context\n");
 	pcre2_code_free(pcre->re);
 
  err_code:
-	np_debug("%s", "err_code");
+	np_debug("err_code\n");
 	free(pcre->pattern);
 
  err_pattern:
-	memset(pcre + save, 0, sizeof(pcre_t) - save);
-	return pcre;
+ 	np_debug("err pattern compile.\n");
+ 	free(pcre);
+	return NULL;
 }
 
 void pcre_destroy(pcre_t *pcre)
@@ -298,24 +299,24 @@ int pcre_init(void)
 {
 	extern int pcre2_init(void);
 	PCRE2_SIZE erroffset;
-	int errorcode;
+	int ec;
 
-	errorcode = pcre2_init();
-	if(errorcode) {
-		np_error("pcre2 init failed.\n");
-		return errorcode;
+	ec = pcre2_init();
+	if(ec) {
+		np_error("pcre2 init failed: %d.\n", ec);
+		return ec;
 	}
 
 	parse_regex = pcre2_compile(PARSE_REGEX,
-				    PCRE2_ZERO_TERMINATED, 0, &errorcode,
+				    PCRE2_ZERO_TERMINATED, 0, &ec,
 				    &erroffset, NULL);
 
 	if (IS_ERR_OR_NULL(parse_regex)) {
 #ifdef DEBUG
 		PCRE2_UCHAR8 buffer[120];
-		(void)pcre2_get_error_message(errorcode, buffer, 120);
-		pr_debug("%s: %s", __func__, buffer);
+		(void)pcre2_get_error_message(ec, buffer, 120);
 #endif
+		np_error("valid regex compile error.\n");
 		return -ENOMEM;
 	}
 

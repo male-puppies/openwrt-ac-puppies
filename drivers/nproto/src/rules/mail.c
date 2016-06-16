@@ -36,19 +36,14 @@ np_rule_t inner_pop3 = {
 		.lnm = {
 			.type = NP_LNM_NONE,
 		},
-		.ctm_num = 2, /*  */
+		.ctm_num = 1, /*  */
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_OFFSET,
-				.offset = 0,
-				.patt_len = 3,
-				.patt = "+OK",
-			},{
 				.type_match = MHTP_REGEXP,
 				.offset = 0,
-				.patt_len = 3,
-				.patt = "+OK",
+				.deep = 32,
+				.patt = "/^\\+ok\\b.*pop3\\b/i",
 			},
 		},
 	},

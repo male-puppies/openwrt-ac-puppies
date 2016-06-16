@@ -44,21 +44,31 @@ static int rule_compile(np_rule_t *rule)
 	if(rule->enable_l7) {
 		for(i=0; i<rule->l7.ctm_num; i++) {
 			content_match_t *ctm = &rule->l7.ctm[i];
-			if(ctm->type_wrap == MHTP_REGEXP && !ctm->wrap_rex) {
-				pcre_t *rex = pcre_create(ctm->wrap, ctm->wrap_len);
-				if(!rex) {
-					np_error("rex wrap create failed.\n");
-					return -ENOMEM;
+			if(ctm->type_wrap == MHTP_REGEXP) {
+				if(!ctm->wrap_len) {
+					ctm->wrap_len = strlen(ctm->wrap);
 				}
-				ctm->wrap_rex = rex;
+				if(ctm->wrap_len && !ctm->wrap_rex) {
+					pcre_t *rex = pcre_create(ctm->wrap, ctm->wrap_len);
+					if(!rex) {
+						np_error("[%s] rex wrap create failed.\n", rule->name_rule);
+						continue;
+					}
+					ctm->wrap_rex = rex;
+				}
 			}
-			if(ctm->type_match == MHTP_REGEXP && !ctm->rex) {
-				pcre_t *rex = pcre_create(ctm->patt, ctm->patt_len);
-				if(!rex) {
-					np_error("rex match create failed.\n");
-					return -ENOMEM;
+			if(ctm->type_match == MHTP_REGEXP) {
+				if(!ctm->patt_len) {
+					ctm->patt_len = strlen(ctm->patt);
 				}
-				ctm->rex = rex;
+				if(ctm->patt_len && !ctm->rex) {
+					pcre_t *rex = pcre_create(ctm->patt, ctm->patt_len);
+					if(!rex) {
+						np_error("[%s] rex match create failed.\n", rule->name_rule);
+						continue;
+					}
+					ctm->rex = rex;
+				}	
 			}
 		}
 	}
@@ -76,11 +86,18 @@ static void rule_release(np_rule_t *rule)
 	if(rule->enable_l7) {
 		for(i=0; i<rule->l7.ctm_num; i++) {
 			content_match_t *ctm = &rule->l7.ctm[i];
+			if(ctm->type_wrap != MHTP_REGEXP &&
+				ctm->type_match != MHTP_REGEXP) 
+			{
+				continue;
+			}
 			if(ctm->wrap_rex) {
+				np_debug("[%s] destroy rex wrap.\n", rule->name_rule);
 				pcre_destroy(ctm->wrap_rex);
 				ctm->wrap_rex = NULL;
 			}
 			if(ctm->rex) {
+				np_debug("[%s] destroy rex match.\n", rule->name_rule);
 				pcre_destroy(ctm->rex);
 				ctm->rex = NULL;
 			}
@@ -808,7 +825,16 @@ int nproto_init(void)
 {
 	int ret;
 
-	mwmSysInit(NP_MWM_STR);
+	ret = mwmSysInit(NP_MWM_STR);
+	if(ret) {
+		np_error("mwm init failed.\n");
+		return -ENOMEM;
+	}
+	ret = pcre_init();
+	if(ret) {
+		np_error("pcre init failed. %d\n", ret);
+		goto __erro_pcre;
+	}
 
 	memset(&inner_rules, 0, sizeof(inner_rules));
 	memset(&rule_sets_base, 0, sizeof(rule_sets_base));
@@ -817,19 +843,28 @@ int nproto_init(void)
 	ret = inner_rules_init();
 	if(ret) {
 		np_error("inner rules init failed.\n");
-		return ret;
+		goto __erro_rules;
 	}
 
 	ret = rules_build();
 	if(ret){
 		np_error("rules build.\n");
-		return ret;
+		goto __erro_compile;
 	}
 	return 0;
+
+__erro_compile:
+	rules_cleanup();
+__erro_rules:
+	pcre_cleanup();
+__erro_pcre:
+	mwmSysClean(NP_MWM_STR);
+	return ret;
 }
 
 void nproto_cleanup(void)
 {
 	rules_cleanup();
+	pcre_cleanup();
 	mwmSysClean(NP_MWM_STR);
 }
