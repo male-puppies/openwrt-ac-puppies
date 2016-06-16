@@ -7,11 +7,11 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=luajit
+PKG_NAME:=LuaJIT
 PKG_VERSION:=2.1.0-beta2
 PKG_RELEASE:=2
 
-PKG_SOURCE:=luv-$(PKG_VERSION).tar.gz
+PKG_SOURCE:=LuaJIT-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://luajit.org/download/
 PKG_MD5SUM:=fa14598d0d775a7ffefb138a606e0d7b
 PKG_MAINTAINER:=JinShou Ye <aquariusye@163.com>
@@ -53,7 +53,7 @@ define Package/$(PKG_NAME)/install
 endef
 
 define Build/Prepare
-	#$(call Build/Prepare/Default)
+	$(call Build/Prepare/Default)
 	#cp -r patch/* $(PKG_BUILD_DIR)/ 
 	#echo $(PKG_BUILD_DIR)
 endef
