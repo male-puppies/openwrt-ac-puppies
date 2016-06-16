@@ -2,7 +2,7 @@
 #EXTRA_CFLAGS = -Wall
 obj-m += nos.o
 
-nos-y += nos_main.o nos_auth.o nos_zone.o nos_ipgrp.o
+nos-y += nos_main.o nos_auth.o nos_zone.o nos_ipgrp.o nos_log.o
 
 EXTRA_CFLAGS += -Wall -Werror
 

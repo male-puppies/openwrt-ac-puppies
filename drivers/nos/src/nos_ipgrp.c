@@ -122,8 +122,8 @@ static void *nos_ipgrp_start(struct seq_file *m, loff_t *pos)
 				"#    clean -- remove all existing ipgrp(s)\n"
 				"#\n"
 				"# Info: "
-				" VALID IPGRP ID RANGE: 0~%u\n"
-				" MAX IPGRP: %u\n"
+				"#  VALID IPGRP ID RANGE: 0~%u\n"
+				"#  MAX IPGRP: %u\n"
 				"#\n"
 				"# Reload cmd:\n"
 				"\n"
@@ -243,7 +243,7 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 				goto done;
 			printk("nos_ipgrp_set() failed ret=%d\n", err);
 		}
-	} else if (strncmp(data, "delete", 6) == 0) {
+	} else if (strncmp(data, "delete ", 7) == 0) {
 		printk("delete <idx>\n");
 		n = sscanf(data, "delete %u\n", &ipgrp.id);
 		if (n == 1) {

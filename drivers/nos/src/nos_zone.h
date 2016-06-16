@@ -7,13 +7,15 @@
 #include <linux/netdevice.h>
 
 #define MAX_IF_INDEX 256
-#define INVALID_ZONE_ID 0xFF
-#define ZONE_ID_MASK 0xFF
-extern unsigned int get_if_zone(const struct net_device *dev);
-extern void set_if_zone(const struct net_device *dev, unsigned int zone_id);
-extern void reset_if_zone(void);
+#define INVALID_ZONE_ID 255
+#define ZONE_ID_MASK 255
 
-extern int nos_zone_init(void);
-extern void nos_zone_exit(void);
+struct zone_t {
+	int id;
+	char if_name[IFNAMSIZ];
+};
+
+int nos_zone_init(void);
+void nos_zone_exit(void);
 
 #endif /* _NOS_ZONE_H_ */
