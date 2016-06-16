@@ -41,7 +41,10 @@ nproto-y += pcre2/pcre2_auto_possess.o
 nproto-y += pcre2/pcre2_find_bracket.o
 nproto-y += pcre2/pcre2_substring.o
 nproto-y += pcre2/pcre2_error.o
+# end pcre2
 
 # rules build-in.
 nproto-y 	+= rules/http.o
 nproto-y    += rules/mail.o
+nproto-y 	+= rules/ssh.o
+# end rules built-in

@@ -7,10 +7,10 @@
 
 #include <ntrack_packet.h>
 #include <ntrack_flow.h>
+#include <nproto/build-in.h>
 
 #include "mwm.h"
 #include "pcre.h"
-#include "rules/build-in.h"
 
 #define MAX_REF_IDs 8
 #define MAX_L4_ADDRS 8
