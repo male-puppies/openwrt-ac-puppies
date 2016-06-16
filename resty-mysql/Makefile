@@ -18,7 +18,7 @@ PKG_MD5SUM:=07528b833a2b2190cebe2fe6a9aa4d12
 PKG_MAINTAINER:=JinShou Ye <aquariusye@163.com>
 PKG_LICENSE:=GPL-2.0
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(BUILD_DIR)/lua-$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +nginx +mysql
+  DEPENDS:= +nginx +luabitop +mysql
 endef
 
 define Package/$(PKG_NAME)
@@ -48,13 +48,12 @@ define Build/Configure
 	
 endef
 
-define Package/$(PKG_NAME)/install
-	echo "---install"
-	#$(INSTALL_DIR) $(1)/usr/lib/lua/
-	#$(CP) $(PKG_INSTALL_DIR)/usr/lib/lua/luv.so $(1)/usr/lib/lua
+define Package/$(PKG_NAME)/install 
+	$(INSTALL_DIR) $(1)/usr/lib/lua/resty
+	$(CP) $(PKG_INSTALL_DIR)/usr/local/lib/lua/resty/mysql.lua $(1)/usr/lib/lua/resty
 endef
 
-define Build/Prepare
+define Build/Prepare 
 	$(call Build/Prepare/Default) 
 endef
 
