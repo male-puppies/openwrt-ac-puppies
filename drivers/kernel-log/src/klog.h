@@ -20,7 +20,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_debug(logfd, fmt...) \
         do { \
             if(klog_debug_check(logfd)) { \
-                printk("[dbug] (%s, %d): ", __FUNCTION__,  __LINE__);  \
+                printk("[dbg] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)
@@ -61,7 +61,7 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
 #define klog_trace(logfd, level, fmt...) \
         do { \
             if(klog_trace_check(logfd, level)) { \
-                printk("[trac] (%s, %d): ", __FUNCTION__,  __LINE__);  \
+                printk("[TRC] (%s, %d): ", __FUNCTION__,  __LINE__);  \
                 printk(fmt); \
             } \
         } while(0)

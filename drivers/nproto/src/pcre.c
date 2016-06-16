@@ -37,6 +37,7 @@ int pcre_find(pcre_t *pcre, const u8 *text, unsigned int text_len)
 
 	return rc;
 }
+EXPORT_SYMBOL(pcre_find);
 
 static inline int pattern_parse(const char *pattern, PCRE2_UCHAR ** pcre, PCRE2_UCHAR ** op_str)
 {
@@ -61,24 +62,24 @@ static inline int pattern_parse(const char *pattern, PCRE2_UCHAR ** pcre, PCRE2_
 
 	rc = pcre2_substring_get_bynumber(match_data, 1, pcre, &relen);
 	if (rc < 0) {
-		np_error("pcre2_substring_get_bynumber(pcre) failed\n");
+		np_error("/regexp/ign extra exp failed[%s]\n", pattern);
 		return -EINVAL;
 	}
 
 	if (res > 2) {
 		rc = pcre2_substring_get_bynumber(match_data, 2, op_str, &oplen);
 		if (rc < 0) {
-			np_error("pcre2_substring_get_bynumber(opts) failed\n");
+			np_error("/regexp/ign extra opts failed[%s]\n", pattern);
 			return -EINVAL;
 		}
 	}
 
 	if (relen > 0) {
-		np_debug("pcre: %lu|%s|\n", relen, *pcre);
+		np_info("\tpcre: %lu|%s|\n", relen, *pcre);
 	}
 
 	if (oplen > 0) {
-		np_debug("opts: %lu|%s|\n", oplen, *op_str);
+		np_info("\topts: %lu|%s|\n", oplen, *op_str);
 	}
 
 	pcre2_match_data_free(match_data);
@@ -205,6 +206,7 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
  	free(pcre);
 	return NULL;
 }
+EXPORT_SYMBOL(pcre_create);
 
 void pcre_destroy(pcre_t *pcre)
 {
@@ -229,6 +231,7 @@ void pcre_destroy(pcre_t *pcre)
 	if (pcre->op_str)
 		pcre2_substring_free(pcre->op_str);
 }
+EXPORT_SYMBOL(pcre_destroy);
 
 void *pcre_get_pattern(pcre_t *pcre)
 {
@@ -310,12 +313,9 @@ int pcre_init(void)
 	parse_regex = pcre2_compile(PARSE_REGEX,
 				    PCRE2_ZERO_TERMINATED, 0, &ec,
 				    &erroffset, NULL);
-
 	if (IS_ERR_OR_NULL(parse_regex)) {
-#ifdef DEBUG
 		PCRE2_UCHAR8 buffer[120];
 		(void)pcre2_get_error_message(ec, buffer, 120);
-#endif
 		np_error("valid regex compile error.\n");
 		return -ENOMEM;
 	}

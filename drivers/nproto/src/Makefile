@@ -40,6 +40,7 @@ nproto-y += pcre2/pcre2_chartables.o
 nproto-y += pcre2/pcre2_auto_possess.o
 nproto-y += pcre2/pcre2_find_bracket.o
 nproto-y += pcre2/pcre2_substring.o
+nproto-y += pcre2/pcre2_error.o
 
 # rules build-in.
 nproto-y 	+= rules/http.o
