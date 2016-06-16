@@ -9,7 +9,7 @@
 	exit 0
 }
 
-dir=/usr/share/sands/ 
+dir=/usr/share/sands
 cd $dir
 lua $dir/main.lua
 

@@ -8,5 +8,5 @@ start() {
 }
 
 stop() {
-	/usr/sbin/sands stop
+	 ps | grep -E "sands/main|/sands" | grep -v grep  | awk '{print $1}' | xargs kill
 }

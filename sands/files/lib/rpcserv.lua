@@ -24,7 +24,7 @@ function method:execute(rpc)
 			return 
 		end 
 
-		local f, e = load(bt, nil, "bt", _G)
+		local f, e = loadstring(bt, nil, "bt", _G)
 		if not f then 
 			return reply({d = e, e = 1})
 		end
@@ -32,7 +32,7 @@ function method:execute(rpc)
 	end
 	
 	if bt then 
-		local f, e = load(bt, nil, "bt", _G)
+		local f, e = loadstring(bt, nil, "bt", _G)
 		if not f then 
 			return reply({d = e, e = 1})
 		end

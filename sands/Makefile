@@ -25,11 +25,11 @@ endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:=User authentication
+  TITLE:=lua mqtt
 endef
 
 define Package/$(PKG_NAME)/description
-  Web access user authentication app
+  lua mqtt
 endef
 
 define Package/$(PKG_NAME)/conffiles 
