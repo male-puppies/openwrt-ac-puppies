@@ -53,8 +53,16 @@ static inline void auth_conf_init(void)
 
 static inline void nos_auth_cleanup(void)
 {
+	int i;
 	nos_hook_disable = 1;
 	synchronize_rcu();
+	for (i = 0; i < auth_conf.num; i++)
+	{
+		if (auth_conf.auth[i].ip_white_list_set)
+			ip_set_put_byindex(&init_net, auth_conf.auth[i].ip_white_list_id);
+		if (auth_conf.auth[i].mac_white_list_set)
+			ip_set_put_byindex(&init_net, auth_conf.auth[i].mac_white_list_id);
+	}
 	memset(&auth_conf, 0, sizeof(auth_conf));
 	g_conf_magic++;
 	nos_hook_disable = 0;
@@ -76,19 +84,19 @@ static inline int nos_auth_set(const struct auth_rule_t *auth)
 	if (auth->src_ipgrp_id >= MAX_IPGRP)
 		return -EINVAL;
 
-	if (auth_conf.num == MAX_AUTH)
-		return -ENOSPC;
 	for (i = 0; i < auth_conf.num; i++)
 	{
 		if (auth_conf.auth[i].id == auth->id)
-			break;
+			return -EEXIST;
 	}
+	if (auth_conf.num == MAX_AUTH)
+		return -ENOSPC;
 
 	nos_hook_disable = 1;
 	synchronize_rcu();
+	i = auth_conf.num;
 	memcpy(&auth_conf.auth[i], auth, sizeof(struct auth_rule_t));
-	if (i == auth_conf.num)
-		auth_conf.num = i + 1;
+	auth_conf.num = i + 1;
 	g_conf_magic++;
 	nos_hook_disable = 0;
 
@@ -103,6 +111,10 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 		if (auth_conf.auth[i].id == auth->id) {
 			nos_hook_disable = 1;
 			synchronize_rcu();
+			if (auth_conf.auth[i].ip_white_list_set)
+				ip_set_put_byindex(&init_net, auth_conf.auth[i].ip_white_list_id);
+			if (auth_conf.auth[i].mac_white_list_set)
+				ip_set_put_byindex(&init_net, auth_conf.auth[i].mac_white_list_id);
 			if (i + 1 < auth_conf.num) {
 				memmove(&auth_conf.auth[i], &auth_conf.auth[i+1], sizeof(struct auth_rule_t) * (auth_conf.num - 1 - i));
 			}
@@ -132,7 +144,7 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 		n = snprintf(nos_auth_ctl_buffer,
 				sizeof(nos_auth_ctl_buffer) - 1,
 				"# Usage:\n"
-				"#    id=<idx>,szone=<idx>,sip=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>] -- set one auth\n"
+				"#    auth id=<idx>,szone=<idx>,sipgrp=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>] -- set one auth\n"
 				"#    delete auth_id=<idx> -- delete one auth\n"
 				"#    clean -- remove all existing auth(s)\n"
 				"#    redirect_ip=a.b.c.d -- set the redirect ip\n"
@@ -155,8 +167,10 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 		if (auth) {
 			n = snprintf(nos_auth_ctl_buffer,
 					sizeof(nos_auth_ctl_buffer) - 1,
-					"auth_id=%u,src_zone=%u,src_ipgrp=%u,auth_type=%s\n",
-					auth->id, auth->src_zone_id, auth->src_ipgrp_id, auth->auth_type == AUTH_TYPE_AUTO ? "auto" : "web");
+					"auth id=%u,szone=%u,sipgrp=%u,type=%s%s%s%s%s\n",
+					auth->id, auth->src_zone_id, auth->src_ipgrp_id, auth->auth_type == AUTH_TYPE_AUTO ? "auto" : "web",
+					auth->ip_white_list_set ? ",ipwhite=" : "", auth->ip_white_list_set ? ip_set_name_byindex(&init_net, auth->ip_white_list_id) :"",
+					auth->mac_white_list_set ? ",macwhite=" : "", auth->mac_white_list_set ? ip_set_name_byindex(&init_net, auth->mac_white_list_id) :"");
 			nos_auth_ctl_buffer[n] = 0;
 			return nos_auth_ctl_buffer;
 		}
@@ -176,8 +190,10 @@ static void *nos_auth_next(struct seq_file *m, void *v, loff_t *pos)
 		if (auth) {
 			n = snprintf(nos_auth_ctl_buffer,
 					sizeof(nos_auth_ctl_buffer) - 1,
-					"auth_id=%u,src_zone=%u,src_ipgrp=%u,auth_type=%s\n",
-					auth->id, auth->src_zone_id, auth->src_ipgrp_id, auth->auth_type == 0 ? "auto" : "web");
+					"auth id=%u,szone=%u,sipgrp=%u,type=%s%s%s%s%s\n",
+					auth->id, auth->src_zone_id, auth->src_ipgrp_id, auth->auth_type == AUTH_TYPE_AUTO ? "auto" : "web",
+					auth->ip_white_list_set ? ",ipwhite=" : "", auth->ip_white_list_set ? ip_set_name_byindex(&init_net, auth->ip_white_list_id) :"",
+					auth->mac_white_list_set ? ",macwhite=" : "", auth->mac_white_list_set ? ip_set_name_byindex(&init_net, auth->mac_white_list_id) :"");
 			nos_auth_ctl_buffer[n] = 0;
 			return nos_auth_ctl_buffer;
 		}
@@ -252,10 +268,10 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 		printk("nos_auth_cleanup\n");
 		nos_auth_cleanup();
 		goto done;
-	} else if (strncmp(data, "auth_id=", 8) == 0) {
-		printk("id=<idx>,szone=<idx>,sip=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>]\n");
+	} else if (strncmp(data, "auth id=", 8) == 0) {
+		printk("auth id=<idx>,szone=<idx>,sipgrp=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>]\n");
 		memset(&auth, 0, sizeof(auth));
-		n = sscanf(data, "id=%u,szone=%u,sip=%u",
+		n = sscanf(data, "auth id=%u,szone=%u,sipgrp=%u",
 				&auth.id,
 				&auth.src_zone_id,
 				&auth.src_ipgrp_id);
