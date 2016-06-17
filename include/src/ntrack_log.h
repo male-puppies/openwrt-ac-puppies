@@ -12,14 +12,7 @@
 	((unsigned char *)&addr)[2], \
 	((unsigned char *)&addr)[1], \
 	((unsigned char *)&addr)[0]
-
-#define FMT_FLOW_STR "fid: %u-%u [%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u-%u]"
-#define FMT_FLOW(fi) \
-			(fi)->id, (fi)->magic, \
-			HIPQUAD((fi)->tuple.ip_src), (fi)->tuple.port_src, \
-			HIPQUAD((fi)->tuple.ip_dst), (fi)->tuple.port_dst, \
-			(fi)->tuple.proto
-
+	
 #define FMT_USER_STR "uid:%8u magic:%8u gid:%4d statu:%3d ref:%4u - %u.%u.%u.%u"
 #define FMT_USER(ui) \
 			(ui)->id, (ui)->magic, \

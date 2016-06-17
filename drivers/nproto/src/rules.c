@@ -9,14 +9,15 @@
 #include "rules.h"
 #include "pcre.h"
 
-#if 0
-#define RULE_DBG(rule, fmt...)  do { \
-		if(rule->ID == NP_INNER_RULE_HTTP_REP){ \
-			np_debug(fmt); \
+#if 1
+#define RULE_DBG(rule, npt, fmt...)  do { \
+		if(rule->ID == NP_INNER_RULE_FTP){ \
+			np_debug(FMT_PKT_STR"\n\t", FMT_PKT(npt)); \
+			np_print(fmt); \
 		} \
 	}while(0)
 #else
-#define RULE_DBG(rule, fmt...) do{}while(0)
+#define RULE_DBG(rule, npt, fmt...) do{}while(0)
 #endif
 #define np_assert(x) BUG_ON(!(x))
 
@@ -442,54 +443,59 @@ static int l4_match(l4_match_t *l4, nt_packet_t *npt)
 	uint32_t saddr, daddr;
 	uint16_t sport, dport, proto;
 
-	saddr = npt->iph->saddr;
-	daddr = npt->iph->daddr;
+	saddr = ntohl(npt->iph->saddr);
+	daddr = ntohl(npt->iph->daddr);
 	proto = npt->l4_proto;
 
 	/* check proto */
 	if(l4->proto && l4->proto != proto) {
+		np_debug("l4: proto miss match.\n");
 		return NP_FALSE;
 	}
 	switch(proto) {
 		case IPPROTO_TCP: {
-			sport = npt->tcp->source;
-			dport = npt->tcp->dest;
+			sport = ntohs(npt->tcp->source);
+			dport = ntohs(npt->tcp->dest);
 		} break;
 		case IPPROTO_UDP: {
-			sport = npt->udp->source;
-			dport = npt->udp->dest;
+			sport = ntohs(npt->udp->source);
+			dport = ntohs(npt->udp->dest);
 		} break;
 		default: {
 			sport = dport = 0;
 		} break;
 	}
 
-	/* must check addrs. */
-	if(l4->addrs[0]) {
-		int i=0, m = 0;
-		while(l4->addrs[i++]) {
-			if((ntohl(saddr) == l4->addrs[i]) || 
-				(ntohl(daddr) == l4->addrs[i])) 
+	/* must check ports. */
+	if(l4->ports[0]) {
+		int i=0, m=0;
+		while(l4->ports[i]) {
+			if((sport == l4->ports[i]) || 
+				(dport == l4->ports[i])) 
 			{
-				m = 1; break;
+				m = l4->ports[i]; break;
 			}
+			i ++;
 		}
 		if(!m) {
+			np_debug("l4: ports miss match[%d:%d->%d].\n", i, sport, dport);
 			return NP_FALSE;
 		}
 	}
 
-	/* must check ports. */
-	if(l4->ports[0]) {
-		int i=0, m=0;
-		while(l4->ports[i++]) {
-			if((ntohs(sport) == l4->ports[i]) || 
-				(ntohs(dport) == l4->ports[i])) 
+	/* must check addrs. */
+	if(l4->addrs[0]) {
+		int i=0, m = 0;
+		while(l4->addrs[i]) {
+			if((saddr == l4->addrs[i]) || 
+				(daddr == l4->addrs[i])) 
 			{
-				m = 1; break;
+				m = l4->addrs[i]; break;
 			}
+			i ++;
 		}
 		if(!m) {
+			np_debug("l4: addr miss match[%d:%x->%x].\n", i, saddr, daddr);
 			return NP_FALSE;
 		}
 	}
@@ -720,14 +726,14 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 {
 	int n;
 
-	RULE_DBG(rule, "dir: %d rule: %s\n", npt->dir, rule->name_rule);
+	RULE_DBG(rule, npt, "dir: %d rule: %s\n", npt->dir, rule->name_rule);
 
 	/* do match process. */
 	if(rule->enable_l4) {
 		n = l4_match(&rule->l4, npt);
 		if(!n) {
 			/* miss match. */
-			RULE_DBG(rule, "l4: miss match.\n");
+			RULE_DBG(rule, npt, "l4: miss match.\n");
 			return NP_FALSE;
 		}
 	}
@@ -735,7 +741,7 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(rule->enable_l7) {
 		n = l7_match(&rule->l7, npt);
 		if(!n) {
-			RULE_DBG(rule, "l7: miss match.\n");
+			RULE_DBG(rule, npt, "l7: miss match.\n");
 			return NP_FALSE;
 		}
 	}

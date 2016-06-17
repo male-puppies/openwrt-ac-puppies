@@ -5,6 +5,13 @@
 #include <ntrack_comm.h>
 #include <ntrack_log.h>
 
+#define FMT_FLOW_STR "fid: %u-%u [%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u-%u]"
+#define FMT_FLOW(fi) \
+			(fi)->id, (fi)->magic, \
+			HIPQUAD((fi)->tuple.ip_src), (fi)->tuple.port_src, \
+			HIPQUAD((fi)->tuple.ip_dst), (fi)->tuple.port_dst, \
+			(fi)->tuple.proto
+			
 /* ########################## */
 /* nproto identify in Flow node. */
 

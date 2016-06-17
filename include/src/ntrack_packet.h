@@ -46,6 +46,13 @@ typedef struct {
 	uint8_t data[0]; /* dynamic buffer. */
 } nt_packet_t;
 
+#define FMT_PKT_STR "FID:%4u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u"
+#define FMT_PKT(p) 	((p)->fi->id), \
+					NIPQUAD((p)->iph->saddr), \
+			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->source):ntohs((p)->udp->source)), \
+					NIPQUAD((p)->iph->daddr), \
+			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest))
+
 typedef struct {
 	/* 
 	** data union of this proto type,

@@ -42,25 +42,25 @@ static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_
 		return -EINVAL;
 	}
 
-	l4ptr = (((uint8_t *)iph) + iph->ihl * 4);
+	l4ptr = (((uint8_t *)iph) + (iph->ihl * 4));
 	l4len = ntohs(iph->tot_len) - (iph->ihl * 4);
 	switch(iph->protocol) {
-		case IPPROTO_TCP:
+		case IPPROTO_TCP: {
 			pkt->tcp = (const struct tcphdr*)l4ptr;
 			l7len = l4len - (pkt->tcp->doff * 4);
 			l7ptr = l4ptr + (pkt->tcp->doff * 4);
-		break;
-		case IPPROTO_UDP:
+		} break;
+		case IPPROTO_UDP: {
 			pkt->udp = (const struct udphdr*)l4ptr;
 			l7len = l4len - sizeof(struct udphdr);
 			l7ptr = l4ptr + sizeof(struct udphdr);
-		break;
-		default:
+		} break;
+		default: {
 			/* icmp ... */
 			pkt->generic_l4_ptr = l4ptr;
 			l7len = 0;
 			l7ptr = l4ptr;
-		break;
+		} break;
 	}
 
 	if(l7len<=0) {
