@@ -7,6 +7,8 @@
 #include <linux/ctype.h>
 #include <asm/types.h>
 
+extern unsigned int redirect_ip;
+
 struct auth_rule_t {
 	unsigned int id;
 	unsigned int src_zone_id;

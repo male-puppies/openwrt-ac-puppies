@@ -33,6 +33,9 @@
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
 
+/*XXX: default redirect_ip 1.0.0.8 */
+unsigned int redirect_ip = __constant_htonl((1<<24)|(0<<16)|(0<<8)|(8<<0));
+
 static int nos_auth_major = 0;
 static int nos_auth_minor = 0;
 static int number_of_devices = 1;
@@ -119,13 +122,18 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 				"#    auth_id=<idx>,src_zone=<idx>,src_ipgrp=<idx>,auth_type=web/auto -- set one auth\n"
 				"#    delete auth_id=<idx> -- delete one auth\n"
 				"#    clean -- remove all existing auth(s)\n"
+				"#    redirect_ip=a.b.c.d -- set the redirect ip\n"
 				"#\n"
-				"# Info: "
+				"# Info:\n"
+				"#    redirect_ip=%pI4\n"
 				"#\n"
 				"# Reload cmd:\n"
 				"\n"
 				"clean\n"
-				"\n");
+				"\n"
+				"redirect_ip=%pI4\n",
+				&redirect_ip,
+				&redirect_ip);
 		nos_auth_ctl_buffer[n] = 0;
 		return nos_auth_ctl_buffer;
 	} else if ((*pos) > 0) {
@@ -256,6 +264,16 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 			if ((err = nos_auth_delete(&auth)) == 0)
 				goto done;
 			printk("nos_auth_delete() failed ret=%d\n", err);
+		}
+	} else if (strncmp(data, "redirect_ip=", 12) == 0) {
+		unsigned int a, b, c ,d;
+		n = sscanf(data, "redirect_ip=%u.%u.%u.%u", &a, &b, &c, &d);
+		if ( n == 4 &&
+				(((a & 0xff) == a) &&
+				 ((b & 0xff) == b) &&
+				 ((c & 0xff) == c) &&
+				 ((d & 0xff) == d)) ) {
+			redirect_ip = htonl((a<<24)|(b<<16)|(c<<8)|(d<<0));
 		}
 	}
 
