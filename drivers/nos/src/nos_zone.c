@@ -22,6 +22,7 @@
 #include <linux/spinlock.h>
 #include <linux/rcupdate.h>
 #include <linux/highmem.h>
+#include "nos.h"
 #include "nos_zone.h"
 
 static int nos_zone_major = 0;
@@ -44,9 +45,13 @@ static inline void zone_conf_init(void)
 static inline void nos_zone_cleanup(void)
 {
 	int i;
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	for (i = 0; i < MAX_IF_INDEX; i++) {
 		if_zone_map[i] = INVALID_ZONE_ID;
 	}
+	g_conf_magic++;
+	nos_hook_disable = 0;
 }
 
 static inline void zone_conf_exit(void)
@@ -67,7 +72,11 @@ static inline int nos_zone_set(const struct zone_t *zone)
 		dev_put(dev);
 		return -EINVAL;
 	}
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	if_zone_map[dev->ifindex] = zone->id;
+	g_conf_magic++;
+	nos_hook_disable = 0;
 	dev_put(dev);
 
 	return 0;
@@ -77,13 +86,18 @@ static inline int nos_zone_delete(const struct zone_t *zone)
 {
 	int i;
 	int found = 0;
+
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	for (i = 0; i < MAX_IF_INDEX; i++)
 	{
 		if (if_zone_map[i] == zone->id) {
 			if_zone_map[i] = INVALID_ZONE_ID;
 			found = 1;
+			g_conf_magic++;
 		}
 	}
+	nos_hook_disable = 0;
 
 	if (found == 0)
 		return -ENOENT;

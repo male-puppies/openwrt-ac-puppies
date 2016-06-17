@@ -29,6 +29,7 @@
 #include <linux/rcupdate.h>
 #include <linux/highmem.h>
 #include <linux/netfilter/ipset/ip_set.h>
+#include "nos.h"
 #include "nos_auth.h"
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
@@ -52,7 +53,11 @@ static inline void auth_conf_init(void)
 
 static inline void nos_auth_cleanup(void)
 {
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	memset(&auth_conf, 0, sizeof(auth_conf));
+	g_conf_magic++;
+	nos_hook_disable = 0;
 }
 
 static inline void auth_conf_exit(void)
@@ -79,9 +84,13 @@ static inline int nos_auth_set(const struct auth_rule_t *auth)
 			break;
 	}
 
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	memcpy(&auth_conf.auth[i], auth, sizeof(struct auth_rule_t));
 	if (i == auth_conf.num)
 		auth_conf.num = i + 1;
+	g_conf_magic++;
+	nos_hook_disable = 0;
 
 	return 0;
 }
@@ -92,10 +101,14 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 	for (i = 0; i < auth_conf.num; i++)
 	{
 		if (auth_conf.auth[i].id == auth->id) {
+			nos_hook_disable = 1;
+			synchronize_rcu();
 			if (i + 1 < auth_conf.num) {
 				memmove(&auth_conf.auth[i], &auth_conf.auth[i+1], sizeof(struct auth_rule_t) * (auth_conf.num - 1 - i));
 			}
 			auth_conf.num = auth_conf.num - 1;
+			g_conf_magic++;
+			nos_hook_disable = 0;
 			return 0;
 		}
 	}

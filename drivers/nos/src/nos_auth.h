@@ -9,6 +9,12 @@
 
 extern unsigned int redirect_ip;
 
+enum auth_status_t {
+	AUTH_NONE = 0,
+	AUTH_OK = 1,
+	AUTH_BYPASS = 2,
+};
+
 struct auth_rule_t {
 	unsigned int id;
 	unsigned int src_zone_id;

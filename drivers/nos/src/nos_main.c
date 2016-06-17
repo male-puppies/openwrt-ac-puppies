@@ -28,6 +28,9 @@
 #include "nos_ipgrp.h"
 #include "nos_auth.h"
 
+unsigned int g_conf_magic = 0;
+unsigned int nos_hook_disable = 0;
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
 static unsigned nos_pre_hook(unsigned int hooknum,
 		struct sk_buff *skb,

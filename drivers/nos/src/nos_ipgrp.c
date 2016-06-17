@@ -23,6 +23,7 @@
 #include <linux/rcupdate.h>
 #include <linux/highmem.h>
 #include <linux/netfilter/ipset/ip_set.h>
+#include "nos.h"
 #include "nos_ipgrp.h"
 
 static int nos_ipgrp_major = 0;
@@ -42,11 +43,15 @@ static inline void ipgrp_conf_init(void)
 static inline void nos_ipgrp_cleanup(void)
 {
 	int i;
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
 		ip_set_put_byindex(&init_net, ipgrp_conf.ipgrp[i].ipset_id);
 	}
 	memset(&ipgrp_conf, 0, sizeof(ipgrp_conf));
+	g_conf_magic++;
+	nos_hook_disable = 0;
 }
 
 static inline void ipgrp_conf_exit(void)
@@ -75,10 +80,15 @@ static inline int nos_ipgrp_set(const struct ip_grp_t *ipgrp)
 		printk("ip_set '%s' not found\n", ipgrp->ipset_name);
 		return -EINVAL;
 	}
+
+	nos_hook_disable = 1;
+	synchronize_rcu();
 	i = ipgrp_conf.num;
 	memcpy(&ipgrp_conf.ipgrp[i], ipgrp, sizeof(struct ip_grp_t));
 	ipgrp_conf.ipgrp[i].ipset_id = id;
 	ipgrp_conf.num = i + 1;
+	g_conf_magic++;
+	nos_hook_disable = 0;
 
 	return 0;
 }
@@ -89,11 +99,15 @@ static inline int nos_ipgrp_delete(const struct ip_grp_t *ipgrp)
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
 		if (ipgrp_conf.ipgrp[i].id == ipgrp->id) {
+			nos_hook_disable = 1;
+			synchronize_rcu();
 			ip_set_put_byindex(&init_net, ipgrp_conf.ipgrp[i].ipset_id);
 			if (i + 1 < ipgrp_conf.num) {
 				memmove(&ipgrp_conf.ipgrp[i], &ipgrp_conf.ipgrp[i+1], sizeof(struct ip_grp_t) * (ipgrp_conf.num - 1 - i));
 			}
 			ipgrp_conf.num = ipgrp_conf.num - 1;
+			g_conf_magic++;
+			nos_hook_disable = 0;
 			return 0;
 		}
 	}
