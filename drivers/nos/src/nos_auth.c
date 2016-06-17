@@ -30,6 +30,8 @@
 #include <linux/highmem.h>
 #include <linux/netfilter/ipset/ip_set.h>
 #include "nos_auth.h"
+#include "nos_zone.h"
+#include "nos_ipgrp.h"
 
 static int nos_auth_major = 0;
 static int nos_auth_minor = 0;
@@ -60,6 +62,10 @@ static inline int nos_auth_set(const struct auth_rule_t *auth)
 	int i;
 
 	if (auth->id >= MAX_AUTH)
+		return -EINVAL;
+	if (auth->src_zone_id >= INVALID_ZONE_ID)
+		return -EINVAL;
+	if (auth->src_ipgrp_id >= MAX_IPGRP)
 		return -EINVAL;
 
 	if (auth_conf.num == MAX_AUTH)
@@ -129,7 +135,7 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 			n = snprintf(nos_auth_ctl_buffer,
 					sizeof(nos_auth_ctl_buffer) - 1,
 					"auth_id=%u,src_zone=%u,src_ipgrp=%u,auth_type=%s\n",
-					auth->id, auth->src_zone_id, auth->src_ipgrp_id, auth->auth_type == 0 ? "auto" : "web");
+					auth->id, auth->src_zone_id, auth->src_ipgrp_id, auth->auth_type == AUTH_TYPE_AUTO ? "auto" : "web");
 			nos_auth_ctl_buffer[n] = 0;
 			return nos_auth_ctl_buffer;
 		}
@@ -235,9 +241,9 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 				buf);
 		if (n == 4) {
 			if (memcmp(buf, "web", 3) == 0) {
-				auth.auth_type = 1;
+				auth.auth_type = AUTH_TYPE_WEB;
 			} else {
-				auth.auth_type = 0;
+				auth.auth_type = AUTH_TYPE_AUTO;
 			}
 			if ((err = nos_auth_set(&auth)) == 0)
 				goto done;

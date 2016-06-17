@@ -11,7 +11,7 @@
 #define ZONE_ID_MASK 255
 
 struct zone_t {
-	int id;
+	unsigned int id;
 	char if_name[IFNAMSIZ];
 };
 

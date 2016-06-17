@@ -8,15 +8,15 @@
 #include <asm/types.h>
 
 struct ip_grp_t {
-	int id;
-	int ipset_id;
+	unsigned int id;
+	unsigned int ipset_id;
 #define MAX_IPSET_NAME 64
 	char ipset_name[MAX_IPSET_NAME];
 };
 
 struct ipgrp_conf {
 #define MAX_IPGRP 64
-	int num;
+	unsigned int num;
 	struct ip_grp_t ipgrp[MAX_IPGRP];
 };
 

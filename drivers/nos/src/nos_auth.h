@@ -8,14 +8,16 @@
 #include <asm/types.h>
 
 struct auth_rule_t {
-	int id;
-	int src_zone_id;
-	int src_ipgrp_id;
-	int auth_type;
+	unsigned int id;
+	unsigned int src_zone_id;
+	unsigned int src_ipgrp_id;
+#define AUTH_TYPE_AUTO 0
+#define AUTH_TYPE_WEB 1
+	unsigned int auth_type;
 };
 
 struct auth_conf {
-	int num;
+	unsigned int num;
 #define MAX_AUTH 16
 	struct auth_rule_t auth[MAX_AUTH];
 };
