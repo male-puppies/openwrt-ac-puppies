@@ -26,6 +26,7 @@
 #include "nos_auth.h"
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
+#include "nos_auth.h"
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
 static unsigned nos_pre_hook(unsigned int hooknum,
@@ -209,10 +210,13 @@ static int __init nos_init(void)
 	ret = nos_zone_init();
 	if (ret != 0)
 		return ret;
-
 	ret = nos_ipgrp_init();
 	if (ret != 0)
 		goto nos_ipgrp_init_failed;
+	ret = nos_auth_init();
+	if (ret != 0)
+		goto nos_auth_init_failed;
+
 	need_conntrack();
 	ret = nf_register_hooks(nos_hooks, ARRAY_SIZE(nos_hooks));
 	if (ret != 0)
@@ -221,6 +225,8 @@ static int __init nos_init(void)
 	return 0;
 
 nf_register_hooks_failed:
+	nos_auth_exit();
+nos_auth_init_failed:
 	nos_ipgrp_exit();
 nos_ipgrp_init_failed:
 	nos_zone_exit();
@@ -230,6 +236,7 @@ nos_ipgrp_init_failed:
 static void __exit nos_exit(void)
 {
 	nf_unregister_hooks(nos_hooks, ARRAY_SIZE(nos_hooks));
+	nos_auth_exit();
 	nos_ipgrp_exit();
 	nos_zone_exit();
 }
