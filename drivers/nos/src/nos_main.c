@@ -20,7 +20,7 @@
 #include <linux/udp.h>
 #include <linux/version.h>
 #include <net/netfilter/nf_conntrack.h>
-//#include <linux/nos_track.h>
+#include <linux/nos_track.h>
 #include "nos.h"
 #include "nos_log.h"
 #include "nos_auth.h"
@@ -63,6 +63,27 @@ static unsigned int nos_pre_hook(void *priv,
 	//const struct net_device *in = state->in;
 	//const struct net_device *out = state->out;
 #endif
+	enum ip_conntrack_info ctinfo;
+	struct nf_conn *ct;
+
+	if (nos_hook_disable) {
+		return NF_ACCEPT;
+	}
+	ct = nf_ct_get(skb, &ctinfo);
+	if (!ct) {
+		return NF_ACCEPT;
+	}
+	if (nf_ct_is_untracked(ct)) {
+		return NF_ACCEPT;
+	}
+	if (test_bit(IPS_NOS_DROP_BIT, &ct->status)) {
+		//XXX drop? redirect? reset?
+		return NF_DROP;
+	}
+	if (test_bit(IPS_NOS_BYPASS_BIT, &ct->status)) {
+		return NF_ACCEPT;
+	}
+
 	return NF_ACCEPT;
 }
 
@@ -99,29 +120,51 @@ static unsigned int nos_fw_hook(void *priv,
 	//const struct net_device *out = state->out;
 #endif
 	//int ret = NF_ACCEPT;
+	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
 	//struct iphdr *iph;
 	//struct nos_user_info *ui;
-	enum ip_conntrack_info ctinfo;
+	struct nos_track* nos;
 
-	//struct nos_track* nos;
-
+	if (nos_hook_disable) {
+		return NF_ACCEPT;
+	}
 	ct = nf_ct_get(skb, &ctinfo);
 	if (!ct) {
 		return NF_ACCEPT;
 	}
-	if(nf_ct_is_untracked(ct)) {
+	if (nf_ct_is_untracked(ct)) {
 		return NF_ACCEPT;
 	}
-#if 0
-	if((nos = nf_ct_get_nos(ct)) == NULL) {
-		return NF_ACCEPT;
-	}
-	if (CTINFO2DIR(ctinfo) != IP_CT_DIR_ORIGINAL) {
+	if (test_bit(IPS_NOS_BYPASS_BIT, &ct->status)) {
 		return NF_ACCEPT;
 	}
 
+	if (CTINFO2DIR(ctinfo) != IP_CT_DIR_ORIGINAL) {
+		return NF_ACCEPT;
+	}
+	if ((nos = nf_ct_get_nos(ct)) == NULL) {
+		return NF_ACCEPT;
+	}
+#if 0
 	ui = nt_user(nos);
+
+	if (ui->hdr.rule_magic != g_conf_magic) {
+		//slow path
+		struct iphdr *iph;
+		const struct net_device *dev;
+		
+		dev = in;
+		ui->hdr.src_zone_id = nos_zone_match(dev);
+		
+		iph = ip_hdr(skb);
+		ui->hdr.src_ipgrp_bits = nos_ipgrp_match(iph->saddr);
+
+		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = nos_auth_match(ui->hdr.src_zone_id, ui->hdr.src_ipgrp_bits)
+
+		ui->hdr.rule_magic = g_conf_magic;
+	}
+
 	if (ui->hdr.flags == 0) {
 		ui->hdr.zone_id = get_if_zone(in);
 		set_bit(0, &ui->hdr.ip_grp_bitmap);

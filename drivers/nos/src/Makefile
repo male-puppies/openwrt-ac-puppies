@@ -12,8 +12,8 @@ ifndef KERNELRELEASE
 KERNELRELEASE := $(shell uname -r)
 endif
     
-#KERNELDIR = /home/terminator/Sources/openwrt/linux-stable
-KERNELDIR ?= /lib/modules/$(KERNELRELEASE)/build
+KERNELDIR = /home/terminator/Sources/openwrt/linux-stable
+#KERNELDIR ?= /lib/modules/$(KERNELRELEASE)/build
 KMAKE := $(MAKE) -C $(KERNELDIR) M=$(PWD)
 
 all: modules

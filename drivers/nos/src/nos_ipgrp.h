@@ -10,8 +10,7 @@
 struct ip_grp_t {
 	unsigned int id;
 	unsigned int ipset_id;
-#define MAX_IPSET_NAME 64
-	char ipset_name[MAX_IPSET_NAME];
+	struct ip_set *ipset_set;
 };
 
 struct ipgrp_conf {

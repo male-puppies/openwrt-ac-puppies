@@ -22,6 +22,10 @@ struct auth_rule_t {
 #define AUTH_TYPE_AUTO 0
 #define AUTH_TYPE_WEB 1
 	unsigned int auth_type;
+	unsigned int ip_white_list_id;
+	unsigned int mac_white_list_id;
+	struct ip_set *ip_white_list_set;
+	struct ip_set *mac_white_list_set;
 };
 
 struct auth_conf {
