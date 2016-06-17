@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=95
+PROGRAM=redis
+start() {
+	SERVICE_DAEMONIZE=1 service_start /usr/sbin/$PROGRAM start
+}
+
+stop() {
+	 ps | grep -E "$PROGRAM/main|/$PROGRAM" | grep -v grep  | awk '{print $1}' | xargs kill
+}
