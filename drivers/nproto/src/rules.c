@@ -9,7 +9,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-#if 1
+#if 0
 #define RULE_DBG(rule, npt, fmt...)  do { \
 		if(rule->ID == NP_INNER_RULE_FTP){ \
 			np_debug(FMT_PKT_STR"\n\t", FMT_PKT(npt)); \
@@ -136,28 +136,28 @@ static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 		set->rules[0] = rule;
 	} else {
 		/* find the insert position */
-		int L = 0;
-		int H = set->num_rules - 1;
-		int M, C;
-		while(L <= H) {
-			M = (L + H) / 2;
-			if(set->rules[M]->priority == rule->priority) {
-				H = M;
+		int lo = 0;
+		int hi = set->num_rules - 1;
+		int mid, count;
+		while(lo <= hi) {
+			mid = (lo + hi) / 2;
+			if(set->rules[mid]->priority == rule->priority) {
+				hi = mid;
 				break;
 			} else {
-				if(set->rules[M]->priority < rule->priority) {
-					H = M - 1; /* < */
+				if(set->rules[mid]->priority < rule->priority) {
+					hi = mid - 1; /* < */
 				} else {
-					L = M + 1; /* > */
+					lo = mid + 1; /* > */
 				}
 			}
 		}
-		/* move [H],([H+1]),[H+2]... */
-		C = set->num_rules - (H + 1);
-		if(C > 0) {
-			memmove(&set->rules[H + 2], &set->rules[H + 1], sizeof(set->rules[0]) * C);
+		/* move [hi],([hi+1]),[hi+2]... */
+		count = set->num_rules - (hi + 1);
+		if(count > 0) {
+			memmove(&set->rules[hi + 2], &set->rules[hi + 1], sizeof(set->rules[0]) * count);
 		}
-		set->rules[H + 1] = rule;
+		set->rules[hi + 1] = rule;
 	}
 	set->num_rules ++;
 	return 0;
@@ -620,56 +620,57 @@ static int cont_match(content_match_t *cont, nt_packet_t *npt)
 	}
 
 	if(cont->patt_len > 0) {
+		int mlen;
+		/* fixup & compare offset. */
+		offset += cont->offset;
+		if(offset < 0) {
+			/* revert match. */
+			if(l7dlen + offset < 0) {
+				np_debug("l7: cont offset fixed faild: %d-%d\n", offset, l7dlen);
+				return NP_FALSE;
+			}
+			offset += l7dlen;
+		}
+		mlen = l7dlen - offset;
+		if(mlen < cont->patt_len) {
+			np_debug("l7: cont fixed length miss match.[%d->%d:%d]\n", l7dlen, offset, cont->patt_len);
+			return NP_FALSE;
+		}
 		switch(cont->type_match) {
 			case MHTP_OFFSET: {
-				offset += cont->offset;
-				/* compare offset. */
-				if(offset < 0) {
-					/* revert match. */
-					if(l7dlen + offset < 0) {
-						np_debug("l7: cont offset fixed faild: %d-%d\n", offset, l7dlen);
-						return NP_FALSE;
-					}
-					offset += l7dlen;
-				}
 				/* fixed match */
-				if(l7dlen < offset + cont->patt_len) {
-					np_debug("l7: cont fixed length miss match.\n");
-					return NP_FALSE;
-				}
 				return memcmp(l7data + offset, cont->patt, cont->patt_len) == 0 ? NP_TRUE : NP_FALSE;
-			}break;
+			} break;
 			case MHTP_REGEXP: {
 				int m = 0;
 				if(!cont->rex) {
 					np_error("l7: cont rex nil.\n");
 					return NP_FALSE;
 				}
-				if(l7dlen - offset < cont->patt_len) {
-					np_debug("l7: rex len miss match[%d->%d:%d]d.\n", l7dlen, offset, cont->patt_len);
-					return NP_FALSE;
+				if(cont->deep && mlen > cont->deep) {
+					mlen = cont->deep;
 				}
-				m = pcre_find(cont->rex, l7data + offset, l7dlen - offset);
+				m = pcre_find(cont->rex, l7data + offset, mlen);
 				if(m>=0) {
 					np_debug("l7: rex match at: %d\n", m);
 					return NP_TRUE;
 				}
 				return NP_FALSE;
-			}break;
+			} break;
 			case MHTP_SEARCH: {
 				if(!cont->bmh) {
 					np_error("l7: cont bmh nil.\n");
 					return NP_FALSE;
 				}
 				return NP_TRUE;
-			}break;
+			} break;
 			case MHTP_HTTP_CTX: {
 				return NP_TRUE;
-			}break;
+			} break;
 			default: {
 				np_error("l7: cont not supported type: %d\n", cont->type_match);
 				return NP_FALSE;
-			}break;
+			} break;
 		}
 	}
 

@@ -11,6 +11,8 @@
 #include <ntrack_nproto.h>
 #include <ntrack_log.h>
 
+extern int test_init(void);
+extern void test_exit(void);
 extern int nproto_init(void);
 extern void nproto_cleanup(void);
 extern int rules_match(nt_packet_t *pkt);
@@ -42,7 +44,7 @@ static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_
 		return -EINVAL;
 	}
 
-	l4ptr = (((uint8_t *)iph) + (iph->ihl * 4));
+	l4ptr = ((uint8_t *)iph + (iph->ihl * 4));
 	l4len = ntohs(iph->tot_len) - (iph->ihl * 4);
 	switch(iph->protocol) {
 		case IPPROTO_TCP: {
@@ -126,10 +128,17 @@ static int __init nproto_module_init(void)
 		goto __error;
 	}
 
+	r = test_init();
+	if(r) {
+		np_error("test init failed.\n");
+		goto __error;
+	}
+
 	rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
 	return 0;
 
 __error:
+	test_exit();
 	nproto_cleanup();
 	if(nproto_klog_fd)
 		klog_fini(nproto_klog_fd);
@@ -140,6 +149,7 @@ static void __exit nproto_module_exit(void)
 {
 	rcu_assign_pointer(nt_cck_fn, NULL);
 
+	test_exit();
 	nproto_cleanup();
 	if(nproto_klog_fd)
 		klog_fini(nproto_klog_fd);

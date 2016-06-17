@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/nquery
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:=+pps_comm +libpps
+  DEPENDS:=+pps_comm +libpps +libpcap
   TITLE:=Generic ntrack query user space tools 
 endef
 
@@ -28,7 +28,7 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-TARGET_LDFLAGS += -lpps
+TARGET_LDFLAGS += -lpps -lpcap
 
 MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)"

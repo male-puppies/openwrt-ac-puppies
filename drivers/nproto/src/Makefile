@@ -4,8 +4,8 @@
 
 obj-${CONFIG_NPROTO} += nproto.o
 nproto-y	+= main.o rules.o rules-inner.o \
-	wu-manber.o mwm.o bmh.o \
-	QSORT.o
+	wu-manber.o mwm.o bmh.o QSORT.o \
+	test.o
 
 # pcre2 in kernel
 KLIBS_DEBUG ?= 0
@@ -44,8 +44,9 @@ nproto-y += pcre2/pcre2_error.o
 # end pcre2
 
 # rules build-in.
-nproto-y 	+= rules/http.o
-nproto-y    += rules/mail.o
-nproto-y 	+= rules/ssh.o
-nproto-y 	+= rules/ftp.o
+nproto-y += rules/http.o
+nproto-y += rules/mail.o
+nproto-y += rules/ssh.o
+nproto-y += rules/ftp.o
+nproto-y += rules/dhcp.o
 # end rules built-in

@@ -85,6 +85,20 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
+	if(strcmp(argv[1], "pcap") == 0) {
+		extern int pcap_run(char *);
+		extern int pcap_init(void);
+		if(argc < 3) {
+			nt_error("nquery pcap file.pcap\n");
+			exit(0);
+		}
+		if(pcap_init()) {
+			nt_error("pcap init failed.\n");
+			exit(0);
+		}
+		return pcap_run(argv[2]);
+	}
+
 	if (nt_base_init(&ntrack)) {
 		nt_error("nquery message init failed.\n");
 		return 0;
@@ -111,8 +125,7 @@ int main(int argc, char *argv[])
 			nt_error("nquery set uid magic status\n");
 			exit(0);
 		}
-		set_user_status(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
+		return set_user_status(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
 	}
-
 	return 0;
 }
