@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=mysql_ac
+PKG_NAME:=nginx-ac
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
@@ -20,38 +20,33 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +mysql
+  DEPENDS:= +nignx +ski
 endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:= mysql config for ac
+  TITLE:= nginx config and ngxrpc lib
 endef
 
 define Package/$(PKG_NAME)/description
-	mysql config for ac 
+	nginx config and ngxrpc lib
 endef
 
 define Package/$(PKG_NAME)/conffiles
 endef
 
 define Package/$(PKG_NAME)/postinst
-#!/bin/sh
-
-if [ -z "$$IPKG_INSTROOT" ]; then
-  ( . /etc/uci-defaults/95-mysql_ac )
-  rm -f /etc/uci-defaults/95-mysql_ac
-fi
-
-exit 0
 endef
-#xx
+
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/mysql_ac.defaults $(1)/etc/uci-defaults/95-mysql_ac
-	$(INSTALL_DIR) $(1)/usr/share/mysql_ac
-	$(INSTALL_DATA) ./files/my.cnf $(1)/usr/share/mysql_ac/my.cnf
-	$(INSTALL_BIN) ./files/mysqld $(1)/usr/share/mysql_ac/ 
+	$(INSTALL_DIR) $(1)/usr/share/nignx
+	$(CP) -r ./files/demo $(1)/usr/share/
+	$(INSTALL_DATA) ./files/nginx.conf $(1)/usr/share/nignx
+	
+	$(INSTALL_DIR) $(1)/usr/lib/lua
+	$(CP) -r ./files/lib/* $(1)/usr/lib/lua
+	
+	$(CP) -r ./files/nginx $(1)/usr/share/
 endef
 
 define Build/Configure
