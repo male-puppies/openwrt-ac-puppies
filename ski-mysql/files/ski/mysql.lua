@@ -1,22 +1,24 @@
 -- Copyright (C) 2012 Yichun Zhang (agentzh)
-
+local ski = require("ski")
+local tcp = require("ski.tcp")
+local luasha1 = require("luasha1")
 
 local bit = require "bit"
 local sub = string.sub
-local tcp = ngx.socket.tcp
+--local tcp = ngx.socket.tcp
 local strbyte = string.byte
 local strchar = string.char
 local strfind = string.find
 local format = string.format
 local strrep = string.rep
-local null = ngx.null
+--local null = ngx.null
 local band = bit.band
 local bxor = bit.bxor
 local bor = bit.bor
 local lshift = bit.lshift
 local rshift = bit.rshift
 local tohex = bit.tohex
-local sha1 = ngx.sha1_bin
+local sha1 = luasha1.sha1
 local concat = table.concat
 local unpack = unpack
 local setmetatable = setmetatable
@@ -24,12 +26,12 @@ local error = error
 local tonumber = tonumber
 
 
-if not ngx.config
-   or not ngx.config.ngx_lua_version
-   or ngx.config.ngx_lua_version < 9011
-then
-    error("ngx_lua 0.9.11+ required")
-end
+-- if not ngx.config
+--   or not ngx.config.ngx_lua_version
+--   or ngx.config.ngx_lua_version < 9011
+-- then
+--    error("ngx_lua 0.9.11+ required")
+-- end
 
 
 local ok, new_tab = pcall(require, "table.new")
@@ -194,14 +196,14 @@ local function _send_packet(self, req, size)
 
     -- print("sending packet... of size " .. #packet)
 
-    return sock:send(packet)
+    return sock:write(packet)
 end
 
 
 local function _recv_packet(self)
     local sock = self.sock
 
-    local data, err = sock:receive(4) -- packet header
+    local data, err = sock:read(4, self.timeout) -- packet header
     if not data then
         return nil, nil, "failed to receive packet header: " .. err
     end
@@ -226,7 +228,7 @@ local function _recv_packet(self)
 
     self.packet_no = num
 
-    data, err = sock:receive(len)
+    data, err = sock:read(len, self.timeout)
 
     --print("receive returned")
 
@@ -467,31 +469,17 @@ local function _recv_field_packet(self)
 end
 
 
-function _M.new(self)
-    local sock, err = tcp()
-    if not sock then
-        return nil, err
-    end
-    return setmetatable({ sock = sock }, mt)
+function _M.new(self) 
+    return setmetatable({ sock = nil, cols_map = nil}, mt)
 end
 
 
 function _M.set_timeout(self, timeout)
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
-    end
-
-    return sock:settimeout(timeout)
+    self.timeout = timeout
 end
 
 
-function _M.connect(self, opts)
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
-    end
-
+function _M.connect(self, opts) 
     local max_packet_size = opts.max_packet_size
     if not max_packet_size then
         max_packet_size = 1024 * 1024 -- default 1 MB
@@ -507,38 +495,14 @@ function _M.connect(self, opts)
 
     local pool = opts.pool
 
-    local host = opts.host
-    if host then
-        local port = opts.port or 3306
-        if not pool then
-            pool = user .. ":" .. database .. ":" .. host .. ":" .. port
-        end
-
-        ok, err = sock:connect(host, port, { pool = pool })
-
-    else
-        local path = opts.path
-        if not path then
-            return nil, 'neither "host" nor "path" options are specified'
-        end
-
-        if not pool then
-            pool = user .. ":" .. database .. ":" .. path
-        end
-
-        ok, err = sock:connect("unix:" .. path, { pool = pool })
+    local host = opts.host  assert(host)
+    local port = opts.port or 3306
+    if not pool then
+        pool = user .. ":" .. database .. ":" .. host .. ":" .. port
     end
 
-    if not ok then
-        return nil, 'failed to connect: ' .. err
-    end
-
-    local reused = sock:getreusedtimes()
-
-    if reused and reused > 0 then
-        self.state = STATE_CONNECTED
-        return 1
-    end
+    local sock, e = tcp.connect(host, port)  assert(sock, e)
+    self.sock = sock
 
     local packet, typ, err = _recv_packet(self)
     if not packet then
@@ -613,32 +577,6 @@ function _M.connect(self, opts)
 
     local client_flags = 0x3f7cf;
 
-    local ssl_verify = opts.ssl_verify
-    local use_ssl = opts.ssl or ssl_verify
-
-    if use_ssl then
-        if band(capabilities, CLIENT_SSL) == 0 then
-            return nil, "ssl disabled on server"
-        end
-
-        -- send a SSL Request Packet
-        local req = _set_byte4(bor(client_flags, CLIENT_SSL))
-                    .. _set_byte4(self._max_packet_size)
-                    .. "\0" -- TODO: add support for charset encoding
-                    .. strrep("\0", 23)
-
-        local packet_len = 4 + 4 + 1 + 23
-        local bytes, err = _send_packet(self, req, packet_len)
-        if not bytes then
-            return nil, "failed to send client authentication packet: " .. err
-        end
-
-        local ok, err = sock:sslhandshake(false, nil, ssl_verify)
-        if not ok then
-            return nil, "failed to do ssl handshake: " .. (err or "")
-        end
-    end
-
     local password = opts.password or ""
 
     local token = _compute_token(password, scramble)
@@ -690,30 +628,30 @@ function _M.connect(self, opts)
 end
 
 
-function _M.set_keepalive(self, ...)
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
-    end
+-- function _M.set_keepalive(self, ...)
+--     local sock = self.sock
+--     if not sock then
+--         return nil, "not initialized"
+--     end
 
-    if self.state ~= STATE_CONNECTED then
-        return nil, "cannot be reused in the current connection state: "
-                    .. (self.state or "nil")
-    end
+--     if self.state ~= STATE_CONNECTED then
+--         return nil, "cannot be reused in the current connection state: "
+--                     .. (self.state or "nil")
+--     end
 
-    self.state = nil
-    return sock:setkeepalive(...)
-end
+--     self.state = nil
+--     return sock:setkeepalive(...)
+-- end
 
 
-function _M.get_reused_times(self)
-    local sock = self.sock
-    if not sock then
-        return nil, "not initialized"
-    end
+-- function _M.get_reused_times(self)
+--     local sock = self.sock
+--     if not sock then
+--         return nil, "not initialized"
+--     end
 
-    return sock:getreusedtimes()
-end
+--     return sock:getreusedtimes()
+-- end
 
 
 function _M.close(self)
@@ -815,16 +753,17 @@ local function read_result(self, est_nrows)
 
     --print("field count: ", field_count)
 
-    local cols = new_tab(field_count, 0)
+    local cols, cols_map = new_tab(field_count, 0), {}
     for i = 1, field_count do
         local col, err, errno, sqlstate = _recv_field_packet(self)
         if not col then
             return nil, err, errno, sqlstate
-        end
-
+        end 
         cols[i] = col
+        cols_map[col.name] = i
     end
 
+    self.cols_map = cols_map
     local packet, typ, err = _recv_packet(self)
     if not packet then
         return nil, err
@@ -880,6 +819,7 @@ _M.read_result = read_result
 
 
 function _M.query(self, query, est_nrows)
+    self.cols_map = nil
     local bytes, err = send_query(self, query)
     if not bytes then
         return nil, "failed to send query: " .. err
@@ -893,5 +833,29 @@ function _M.set_compact_arrays(self, value)
     self.compact = value
 end
 
+function _M.get_compack_idx(self, field)
+   for k, v in pairs(self.cols_map) do print(k, v) end
+   return self.cols_map[field]
+end
 
 return _M
+
+-- local function main()
+--     local db = _M.new()
+--     local ok, err, errno, sqlstate = db:connect{
+--         host = "127.0.0.1",
+--         port = 3306,
+--         database = "mysql",
+--         user = "root",
+--         password = "wjrc0409",
+--         max_packet_size = 1024 * 1024,
+--         compact_arrays = true,
+--     }
+
+--     assert(ok)
+--     local r, e = db:query("select * from user", true)
+--     print(js.encode({r, e}))
+--     print(db:get_compack_idx("Update_priv"))
+-- end
+
+-- ski.run(main)
