@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +nginx
+  DEPENDS:= +nginx +redis
 endef
 
 define Package/$(PKG_NAME)
