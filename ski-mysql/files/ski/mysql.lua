@@ -38,7 +38,7 @@ if not ok then
 end
 
 
-local _M = { _VERSION = '0.15' }
+local _M = { _VERSION = '0.16' }
 
 
 -- constants
@@ -46,6 +46,7 @@ local _M = { _VERSION = '0.15' }
 local STATE_CONNECTED = 1
 local STATE_COMMAND_SENT = 2
 
+local COM_QUIT = 0x01
 local COM_QUERY = 0x03
 local CLIENT_SSL = 0x0800
 
@@ -723,6 +724,11 @@ function _M.close(self)
 
     self.state = nil
 
+    local bytes, err = _send_packet(self, strchar(COM_QUIT), 1)
+    if not bytes then
+        return nil, err
+    end
+
     return sock:close()
 end
 
@@ -764,7 +770,8 @@ _M.send_query = send_query
 
 local function read_result(self, est_nrows)
     if self.state ~= STATE_COMMAND_SENT then
-        return nil, "cannot read result in the current context: " .. self.state
+        return nil, "cannot read result in the current context: "
+                    .. (self.state or "nil")
     end
 
     local sock = self.sock
