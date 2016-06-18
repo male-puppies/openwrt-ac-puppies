@@ -15,12 +15,12 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:=+lua +ski +libcrypto
-  TITLE:= lua ski library for accessing mysql async 
+  DEPENDS:= +lua +ski
+  TITLE:= lua ski library for mysql
 endef
 
 define Package/$(PKG_NAME)/description
-  lua ski library for accessing mysql  
+  copy from resty.mysql and modify
 endef
 
 define Build/Prepare
@@ -32,9 +32,9 @@ MAKE_FLAGS += CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)"
 
 define Package/$(PKG_NAME)/install 
-	#$(INSTALL_DIR) $(1)/usr/lib/lua/
-	#$(INSTALL_DATA) $(PKG_BUILD_DIR)/rdsparser.so $(1)/usr/lib/lua/
-	#ls $(PKG_BUILD_DIR)/rdsparser.so $(1)/usr/lib/lua/
+	$(INSTALL_DIR) $(1)/usr/lib/lua/ski/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/luasha1.so $(1)/usr/lib/lua/
+	$(CP) -r files/* $(1)/usr/lib/lua/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))

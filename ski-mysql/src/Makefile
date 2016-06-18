@@ -1,13 +1,13 @@
-src = dump.c luawrap.c rdsparser.c
+src = dump.c luawrap.c
 
-all:rdsparser.so
+all:luasha1.so
 
-rdsparser.so: $(src)
-	$(CC) $(src) $(CFLAGS) $(LDFLAGS) -o rdsparser.so -fpic -shared -llua
+luasha1.so: $(src)
+	$(CC) $(src) $(CFLAGS) $(LDFLAGS) -o luasha1.so -fpic -shared -llua -lcrypto
 
 .PHONY: clean all
 
 clean:
 	-rm -f *.o
-	-rm -f rdsparser.so
+	-rm -f luasha1.so
 	
