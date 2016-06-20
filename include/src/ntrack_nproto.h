@@ -1,6 +1,7 @@
 #pragma once
 
 #include <linux/nos_track.h>
+#include <nproto/build-in.h>
 
 #define NETLINK_NPROTO 29
 
@@ -14,7 +15,7 @@ extern context_chk_t nt_cck_fn;
 
 #endif
 
-static inline int nproto_finished(flow_info_t *fi)
+static inline int nproto_finished(const flow_info_t *fi)
 {
-	return 0;
+	return fi->hdr.proto > NP_INNER_RULE_MAX;
 }

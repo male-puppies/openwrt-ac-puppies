@@ -49,4 +49,5 @@ nproto-y += rules/mail.o
 nproto-y += rules/ssh.o
 nproto-y += rules/ftp.o
 nproto-y += rules/dhcp.o
+nproto-y += rules/RDP.o
 # end rules built-in

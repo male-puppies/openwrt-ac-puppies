@@ -84,7 +84,6 @@ int nt_nl_xmit(u_char *data, int dlen)
 	message.hdr.nlmsg_pid = getpid();
 
 	memcpy(NLMSG_DATA(&message), data, dlen);
-	nt_info("message send to kernel: %d bytes.\n", dlen);
 	ret = sendto(nl_sock, 
 		&message, 
 		message.hdr.nlmsg_len, 0, 
@@ -93,6 +92,7 @@ int nt_nl_xmit(u_char *data, int dlen)
 		nt_error("send error: %s\n", strerror(errno));
 		return -1;
 	}
+	nt_print(" %d", dlen);
 
 	return 0;
 }
@@ -131,6 +131,8 @@ static void pkt_hander(u_char *user, const struct pcap_pkthdr *pkthdr, 	const u_
 		if(nt_nl_xmit(data, dlen)) {
 			nt_error("xmit to kernel failed.\n");
 	    	nt_dump(data, dlen, "dump: %d\n", dlen);
+		} else {
+			// usleep(500);
 		}
 	}
 }
@@ -145,6 +147,7 @@ int pcap_run(char *fpcap)
 		return -EINVAL;
 	}
 
+	nt_nl_xmit("init", sizeof("init"));
 	if(pcap_loop(pcap, 0, pkt_hander, NULL) < 0) {
 		nt_error("loop pcap failed.\n");
 		return -EINVAL;

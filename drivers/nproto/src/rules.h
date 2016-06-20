@@ -205,14 +205,14 @@ static inline uint8_t np_proto_to_set(uint8_t proto)
 }
 
 enum __em_np_rule_type {
-	TP_RULE_BASE = 0,
-	TP_RULE_MID = 1<<0,
-	TP_RULE_FIN = 1<<1,
+	TP_RULE_BASE = 1<<0,
+	TP_RULE_MID = 1<<1,
+	TP_RULE_FIN = 1<<2,
 	TP_RULE_MAX,
 };
-#define RULE_IS_BASE(rule) (rule->rule_type == TP_RULE_BASE)
-#define RULE_IS_MID(rule) (rule->rule_type & TP_RULE_MID)
-#define RULE_IS_FIN(rule) (rule->rule_type & TP_RULE_FIN)
+#define RULE_IS_BASE(rule) 	(rule->rule_type & TP_RULE_BASE)
+#define RULE_IS_MID(rule) 	(rule->rule_type & TP_RULE_MID)
+#define RULE_IS_FIN(rule) 	(rule->rule_type & TP_RULE_FIN)
 
 enum __em_np_rule_relation {
 	NP_REF_NONE = 0,

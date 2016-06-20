@@ -38,6 +38,8 @@ static int nt_init(struct nos_track *nt, struct iphdr *iph, void *l4ptr)
 			tuple->port_src = __be16_to_cpu(udp->source);
 			tuple->port_dst = __be16_to_cpu(udp->dest);
 		}
+
+		np_info("reinit flow:"FMT_FLOW_STR"\n", FMT_FLOW(nt->flow));
 	}
 	if(!nt->user) {
 		nt->user = &user;
@@ -143,11 +145,17 @@ int test_run_pkt(const char *data, int dlen)
 
 	n = test_pkt_init(data, dlen, &ntrack, &pkt);
 	if(n) {
-		// np_debug("packet init failed: %d\n", n);
+		np_debug("packet init failed: %d\n", n);
 		// np_dump(data, dlen, "dump: \n");
 		return n;
 	}
-	return rules_match(&pkt);
+	if(!nproto_finished(pkt.fi)) {
+		n = rules_match(&pkt);
+		if(n) {
+			nt_flow_proto_update(pkt.fi, NP_INNER_RULE_MAX + nt_flow_proto(pkt.fi), NULL);
+		}
+	}
+	return nt_flow_proto(pkt.fi);
 }
 
 /* config netlink sockets */
@@ -169,7 +177,7 @@ void test_recv(struct sk_buff *__skb)
         	char *data = (char *)NLMSG_DATA(nlh);
         	int dlen = nlh->nlmsg_len - NLMSG_HDRLEN;
             user_process.pid = nlh->nlmsg_pid;
-            np_debug("pid: %d, dlen=%d\n", user_process.pid, dlen);
+            // np_debug("pid: %d, dlen=%d\n", user_process.pid, dlen);
             if(dlen<20) {
             	/* io commands */
             	if(strcmp(data, "init") == 0) {
