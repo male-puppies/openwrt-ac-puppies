@@ -15,7 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +lua +ski
+  DEPENDS:= +lua +ski +libopenssl
   TITLE:= lua ski library for mysql
 endef
 

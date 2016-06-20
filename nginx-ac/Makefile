@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +nignx +ski
+  DEPENDS:= +nginx +ski
 endef
 
 define Package/$(PKG_NAME)
