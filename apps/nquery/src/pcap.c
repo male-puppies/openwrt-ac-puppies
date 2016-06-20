@@ -137,7 +137,7 @@ static void pkt_hander(u_char *user, const struct pcap_pkthdr *pkthdr, 	const u_
 	}
 }
 
-int pcap_run(char *fpcap)
+int pcap_run(char *fpcap, int count)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
 
@@ -148,7 +148,7 @@ int pcap_run(char *fpcap)
 	}
 
 	nt_nl_xmit("init", sizeof("init"));
-	if(pcap_loop(pcap, 0, pkt_hander, NULL) < 0) {
+	if(pcap_loop(pcap, count, pkt_hander, NULL) < 0) {
 		nt_error("loop pcap failed.\n");
 		return -EINVAL;
 	}

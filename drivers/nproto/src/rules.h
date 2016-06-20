@@ -20,7 +20,7 @@
 #define MAX_L7_LEN_RANGE 16
 #define MAX_CT_MATCH_NUM 16
 
-#define NP_PATT_LEN_MAX  64
+#define NP_PATT_LEN_MAX  256
 #define NP_RULE_PRI_MIN 0
 #define NP_RULE_PRI_MAX 65535
 

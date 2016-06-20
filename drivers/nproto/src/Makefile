@@ -50,4 +50,6 @@ nproto-y += rules/ssh.o
 nproto-y += rules/ftp.o
 nproto-y += rules/dhcp.o
 nproto-y += rules/RDP.o
+nproto-y += rules/SIP.o
+nproto-y += rules/SMB.o
 # end rules built-in
