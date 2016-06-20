@@ -18,7 +18,7 @@ define KernelPackage/nproto
   SUBMENU:=Nos kernel modules
   TITLE:=nos track proto identify kernel driver
   FILES:=$(PKG_BUILD_DIR)/nproto.ko
-  DEPENDS:=+kmod-klog +kmod-ipt-ipset +kmod-ntrack +pps_comm
+  DEPENDS:=+kmod-klog +kmod-ipt-ipset +pps_comm
   AUTOLOAD:=$(call AutoProbe, nproto)
   KCONFIG:=
 endef
