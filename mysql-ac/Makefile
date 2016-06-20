@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +mysql
+  DEPENDS:= +mysql-server
 endef
 
 define Package/$(PKG_NAME)
@@ -48,10 +48,10 @@ endef
 #xx
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_BIN) ./files/mysql_ac.defaults $(1)/etc/uci-defaults/95-mysql_ac
-	$(INSTALL_DIR) $(1)/usr/share/mysql_ac
-	$(INSTALL_DATA) ./files/my.cnf $(1)/usr/share/mysql_ac/my.cnf
-	$(INSTALL_BIN) ./files/mysqld $(1)/usr/share/mysql_ac/ 
+	$(INSTALL_BIN) ./files/mysql-ac.defaults $(1)/etc/uci-defaults/95-mysql-ac
+	$(INSTALL_DIR) $(1)/usr/share/mysql-ac
+	$(INSTALL_DATA) ./files/my.cnf $(1)/usr/share/mysql-ac/my.cnf
+	$(INSTALL_BIN) ./files/mysqld $(1)/usr/share/mysql-ac/ 
 endef
 
 define Build/Configure
