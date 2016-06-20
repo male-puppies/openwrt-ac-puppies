@@ -22,6 +22,7 @@
 #include <linux/spinlock.h>
 #include <linux/rcupdate.h>
 #include <linux/highmem.h>
+#include <ntrack_comm.h>
 #include "nos.h"
 #include "nos_zone.h"
 
@@ -102,6 +103,15 @@ static inline int nos_zone_delete(const struct zone_t *zone)
 	if (found == 0)
 		return -ENOENT;
 	return 0;
+}
+
+
+void nos_zone_match(const struct net_device *dev, struct nos_user_info *ui)
+{
+	if (dev->ifindex < MAX_IF_INDEX)
+		ui->hdr.src_zone_id = if_zone_map[dev->ifindex];
+	else
+		ui->hdr.src_zone_id = INVALID_ZONE_ID;
 }
 
 void *nos_zone_get(loff_t idx)

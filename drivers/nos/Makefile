@@ -18,7 +18,7 @@ define KernelPackage/nos
   SUBMENU:=Nos kernel modules
   TITLE:=nos kernel driver
   FILES:=$(PKG_BUILD_DIR)/nos.ko
-  DEPENDS:=+kmod-klog +kmod-ipt-ipset +pps_comm
+  DEPENDS:=+kmod-nf-conntrack +kmod-klog +kmod-ipt-ipset +pps_comm
   AUTOLOAD:=$(call AutoProbe, nos)
   KCONFIG:=
 endef
@@ -33,6 +33,7 @@ EXTRA_KCONFIG:= \
 EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(EXTRA_KCONFIG)))) \
+	-I $(TOOLCHAIN_DIR)/include/ \
 	-Werror -Wall
 
 MAKE_OPTS:= \

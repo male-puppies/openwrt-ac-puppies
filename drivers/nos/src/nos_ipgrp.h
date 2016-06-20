@@ -6,6 +6,9 @@
 #define _NOS_IPGRP_H_
 #include <linux/ctype.h>
 #include <asm/types.h>
+#include <linux/netdevice.h>
+#include <linux/kernel.h>
+#include <ntrack_comm.h>
 
 struct ip_grp_t {
 	unsigned int id;
@@ -21,5 +24,8 @@ struct ipgrp_conf {
 
 int nos_ipgrp_init(void);
 void nos_ipgrp_exit(void);
+
+
+void nos_ipgrp_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui);
 
 #endif /* _NOS_IPGRP_H_ */

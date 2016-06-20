@@ -28,7 +28,7 @@
 #include <linux/spinlock.h>
 #include <linux/rcupdate.h>
 #include <linux/highmem.h>
-#include <linux/netfilter/ipset/ip_set.h>
+#include <ntrack_comm.h>
 #include "nos.h"
 #include "nos_auth.h"
 #include "nos_zone.h"
@@ -106,8 +106,7 @@ static inline int nos_auth_set(const struct auth_rule_t *auth)
 static inline int nos_auth_delete(const struct auth_rule_t *auth)
 {
 	int i;
-	for (i = 0; i < auth_conf.num; i++)
-	{
+	for (i = 0; i < auth_conf.num; i++) {
 		if (auth_conf.auth[i].id == auth->id) {
 			nos_hook_disable = 1;
 			synchronize_rcu();
@@ -126,6 +125,19 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 	}
 
 	return -ENOENT;
+}
+
+void nos_auth_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui)
+{
+	int i;
+	for (i = 0; i < auth_conf.num; i++) {
+		if (ui->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
+				(ui->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
+			ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = i;
+			return;
+		}
+	}
+	ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = MAX_AUTH;
 }
 
 void *nos_auth_get(loff_t idx)

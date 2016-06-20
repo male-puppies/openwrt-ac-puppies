@@ -2,7 +2,6 @@
 
 #include <linux/nos_track.h>
 #include <ntrack_flow.h>
-#include <ntrack_auth.h>
 #include <ntrack_log.h>
 
 /* KERNEL & USER comm use. */

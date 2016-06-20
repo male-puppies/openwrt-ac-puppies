@@ -6,6 +6,9 @@
 #define _NOS_AUTH_H_
 #include <linux/ctype.h>
 #include <asm/types.h>
+#include <linux/netdevice.h>
+#include <linux/kernel.h>
+#include <ntrack_comm.h>
 
 extern unsigned int redirect_ip;
 
@@ -36,5 +39,7 @@ struct auth_conf {
 
 int nos_auth_init(void);
 void nos_auth_exit(void);
+
+void nos_auth_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui);
 
 #endif /* _NOS_AUTH_H_ */

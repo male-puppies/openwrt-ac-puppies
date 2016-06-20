@@ -5,8 +5,9 @@
 #ifndef _NOS_ZONE_H_
 #define _NOS_ZONE_H_
 #include <linux/netdevice.h>
+#include <ntrack_comm.h>
 
-#define MAX_IF_INDEX 256
+#define MAX_IF_INDEX 4096
 #define INVALID_ZONE_ID 255
 #define ZONE_ID_MASK 255
 
@@ -17,5 +18,7 @@ struct zone_t {
 
 int nos_zone_init(void);
 void nos_zone_exit(void);
+
+void nos_zone_match(const struct net_device *dev, struct nos_user_info *ui);
 
 #endif /* _NOS_ZONE_H_ */

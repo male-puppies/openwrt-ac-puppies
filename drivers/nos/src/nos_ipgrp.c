@@ -22,7 +22,7 @@
 #include <linux/spinlock.h>
 #include <linux/rcupdate.h>
 #include <linux/highmem.h>
-#include <linux/netfilter/ipset/ip_set.h>
+#include <ntrack_comm.h>
 #include "nos.h"
 #include "nos_ipgrp.h"
 
@@ -105,6 +105,20 @@ static inline int nos_ipgrp_delete(const struct ip_grp_t *ipgrp)
 	}
 
 	return -ENOENT;
+}
+
+void nos_ipgrp_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui)
+{
+	int i;
+	unsigned long bits = 0;
+
+	for (i = 0; i < ipgrp_conf.num; i++)
+	{
+		if (ip_set_test_src_ip(in, out, skb, ipgrp_conf.ipgrp[i].ipset_id) > 0)
+			bits |= (1 << i);
+	}
+
+	ui->hdr.src_ipgrp_bits = bits;
 }
 
 void *nos_ipgrp_get(loff_t idx)

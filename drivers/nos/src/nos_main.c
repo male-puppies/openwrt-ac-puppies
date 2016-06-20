@@ -21,6 +21,7 @@
 #include <linux/version.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <linux/nos_track.h>
+#include <ntrack_comm.h>
 #include "nos.h"
 #include "nos_log.h"
 #include "nos_auth.h"
@@ -116,14 +117,14 @@ static unsigned int nos_fw_hook(void *priv,
 		const struct nf_hook_state *state)
 {
 	//unsigned int hooknum = state->hook;
-	//const struct net_device *in = state->in;
-	//const struct net_device *out = state->out;
+	const struct net_device *in = state->in;
+	const struct net_device *out = state->out;
 #endif
 	//int ret = NF_ACCEPT;
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
 	//struct iphdr *iph;
-	//struct nos_user_info *ui;
+	struct nos_user_info *ui;
 	struct nos_track* nos;
 
 	if (nos_hook_disable) {
@@ -146,40 +147,20 @@ static unsigned int nos_fw_hook(void *priv,
 	if ((nos = nf_ct_get_nos(ct)) == NULL) {
 		return NF_ACCEPT;
 	}
-#if 0
 	ui = nt_user(nos);
 
 	if (ui->hdr.rule_magic != g_conf_magic) {
 		//slow path
-		struct iphdr *iph;
-		const struct net_device *dev;
-		
-		dev = in;
-		ui->hdr.src_zone_id = nos_zone_match(dev);
-		
-		iph = ip_hdr(skb);
-		ui->hdr.src_ipgrp_bits = nos_ipgrp_match(iph->saddr);
+		nos_zone_match(in, ui);
+		nos_ipgrp_match(in, out, skb, ui);
 
-		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = nos_auth_match(ui->hdr.src_zone_id, ui->hdr.src_ipgrp_bits)
+		nos_auth_match(in, out, skb, ui);
 
 		ui->hdr.rule_magic = g_conf_magic;
 	}
 
-	if (ui->hdr.flags == 0) {
-		ui->hdr.zone_id = get_if_zone(in);
-		set_bit(0, &ui->hdr.ip_grp_bitmap);
-		ui->hdr.flags = 1;
-		//nos match and get zone, ip_grp_bitmap
-	}
-	//check auth status
-	if (ui->hdr.status != AUTH_OK) {
-		iph = ip_hdr(skb);
-		if (iph->protocol == IPPROTO_TCP) {
-		}
-	}
 	//get and match auth rule
 	//auth action
-#endif
 
 	return NF_ACCEPT;
 }
