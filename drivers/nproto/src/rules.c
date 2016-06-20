@@ -9,9 +9,12 @@
 #include "rules.h"
 #include "pcre.h"
 
-#if 1
+#define RULE_DBG_ID NP_INNER_RULE_SMB
+
+/* ... */
+#ifdef RULE_DBG_ID
 #define RULE_DBG(rule, npt, fmt...)  do { \
-		if(rule->ID == NP_INNER_RULE_RDP){ \
+		if(rule->ID == RULE_DBG_ID){ \
 			if(npt){ \
 				np_print("%d: "FMT_PKT_STR"\n\t", __LINE__, FMT_PKT((nt_packet_t*)npt)); \
 			} \
@@ -508,6 +511,7 @@ static int l4_match(np_rule_t *rule, nt_packet_t *npt)
 
 static int lnm_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 {
+	uint32_t n = 0;
 	switch(lnm->type) {
 		case NP_LNM_LIST:{
 			int i=0;
@@ -536,7 +540,6 @@ static int lnm_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 			}
 		} break;
 		case NP_LNM_MATCH:{
-			uint32_t n;
 			switch(lnm->width) {
 				case 1: {
 					n = npt->l7_ptr[lnm->offset];
@@ -546,21 +549,17 @@ static int lnm_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 					}
 				}break;
 				case 2: {
-					n = (((uint16_t)(npt->l7_ptr[lnm->offset])<<8 & 0xff00) |
-						     ((uint16_t)(npt->l7_ptr[lnm->offset+1]) & 0x00ff));
+					n = (*(uint16_t*)&npt->l7_ptr[lnm->offset]);
 					if((ntohs(n) + lnm->fixed == npt->l7_len) ||
-						(n+lnm->fixed == npt->l7_len)) 
+						(n + lnm->fixed == npt->l7_len))
 					{
 						return NP_TRUE;
 					}
 				}break;
 				case 4: {
-					n = (((uint32_t)(npt->l7_ptr[lnm->offset])<<24 & 0xff000000) | 
-					((uint32_t)(npt->l7_ptr[lnm->offset+1])<<16 & 0x00ff0000) |
-					((uint32_t)(npt->l7_ptr[lnm->offset+2])<<8 & 0x0000ff00) |
-					((uint32_t)(npt->l7_ptr[lnm->offset+3]) & 0x000000ff));
+					n = (*(uint32_t*)&npt->l7_ptr[lnm->offset]);
 					if((ntohl(n) + lnm->fixed == npt->l7_len) || 
-						(n+lnm->fixed == npt->l7_len)) 
+						(n + lnm->fixed == npt->l7_len)) 
 					{
 						return NP_TRUE;
 					}
@@ -577,6 +576,7 @@ static int lnm_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 		} break;
 	}
 
+	// RULE_DBG(rule, NULL, "frame[%u-%u] offset:%d fixed: %d\n", n, ntohl(n), lnm->offset, lnm->fixed);
 	return NP_FALSE;
 }
 
