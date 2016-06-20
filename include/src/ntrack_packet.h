@@ -1,20 +1,20 @@
 #pragma once
 
-#include <ntrack_log.h>
+#include <linux/ip.h>
+#include <linux/tcp.h>
+#include <linux/udp.h>
+#include <linux/nos_track.h>
 
+#include <ntrack_log.h>
 #include <nproto/comm.h>
 #include <nproto/http.h>
 #include <nproto/tencent_qq.h>
 
-#include <linux/ip.h>
-#include <linux/tcp.h>
-#include <linux/udp.h>
-
 typedef struct {
 	/* ntarck */
-	const flow_info_t *fi;
-	const user_info_t *ui;
-	const user_info_t *pi; /* peer info */
+	flow_info_t *fi;
+	user_info_t *ui;
+	user_info_t *pi; /* peer info */
 	/* l3/l4 */
 	const struct iphdr *iph;
 	union {
@@ -46,12 +46,13 @@ typedef struct {
 	uint8_t data[0]; /* dynamic buffer. */
 } nt_packet_t;
 
-#define FMT_PKT_STR "FID:%4u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u"
+#define FMT_PKT_STR "FID:%4u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u,len:%d"
 #define FMT_PKT(p) 	((p)->fi->id), \
 					NIPQUAD((p)->iph->saddr), \
 			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->source):ntohs((p)->udp->source)), \
 					NIPQUAD((p)->iph->daddr), \
-			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest))
+			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest)), \
+			((p)->l7_len)
 
 typedef struct {
 	/* 

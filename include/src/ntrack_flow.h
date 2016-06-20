@@ -37,7 +37,7 @@ typedef struct {
 
 #define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) + sizeof(nt_flow_authd_t)
 
-static inline void nt_flow_update_proto(
+static inline void nt_flow_proto_update(
 	flow_info_t *fi, uint16_t proto, 
 	void (*cb)(flow_info_t *, uint16_t))
 {

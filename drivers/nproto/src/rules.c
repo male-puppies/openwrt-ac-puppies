@@ -9,10 +9,12 @@
 #include "rules.h"
 #include "pcre.h"
 
-#if 0
+#if 1
 #define RULE_DBG(rule, npt, fmt...)  do { \
-		if(rule->ID == NP_INNER_RULE_FTP){ \
-			np_debug(FMT_PKT_STR"\n\t", FMT_PKT(npt)); \
+		if(rule->ID == NP_INNER_RULE_RDP){ \
+			if(npt){ \
+				np_print("%d: "FMT_PKT_STR"\n\t", __LINE__, FMT_PKT((nt_packet_t*)npt)); \
+			} \
 			np_print(fmt); \
 		} \
 	}while(0)
@@ -438,10 +440,11 @@ int rules_build(void)
 	return 0;
 }
 
-static int l4_match(l4_match_t *l4, nt_packet_t *npt)
+static int l4_match(np_rule_t *rule, nt_packet_t *npt)
 {
 	uint32_t saddr, daddr;
 	uint16_t sport, dport, proto;
+	l4_match_t *l4 = &rule->l4;
 
 	saddr = ntohl(npt->iph->saddr);
 	daddr = ntohl(npt->iph->daddr);
@@ -449,7 +452,7 @@ static int l4_match(l4_match_t *l4, nt_packet_t *npt)
 
 	/* check proto */
 	if(l4->proto && l4->proto != proto) {
-		np_debug("l4: proto miss match.\n");
+		RULE_DBG(rule, NULL, "l4: proto miss.\n");
 		return NP_FALSE;
 	}
 	switch(proto) {
@@ -478,7 +481,7 @@ static int l4_match(l4_match_t *l4, nt_packet_t *npt)
 			i ++;
 		}
 		if(!m) {
-			np_debug("l4: ports miss match[%d:%d->%d].\n", i, sport, dport);
+			RULE_DBG(rule, NULL, "l4: ports miss[%d:%d->%d].\n", i, sport, dport);
 			return NP_FALSE;
 		}
 	}
@@ -495,7 +498,7 @@ static int l4_match(l4_match_t *l4, nt_packet_t *npt)
 			i ++;
 		}
 		if(!m) {
-			np_debug("l4: addr miss match[%d:%x->%x].\n", i, saddr, daddr);
+			RULE_DBG(rule, NULL, "l4: addr miss[%d:%x->%x].\n", i, saddr, daddr);
 			return NP_FALSE;
 		}
 	}
@@ -503,7 +506,7 @@ static int l4_match(l4_match_t *l4, nt_packet_t *npt)
 	return NP_TRUE;
 }
 
-static int lnm_match(len_match_t *lnm, nt_packet_t *npt)
+static int lnm_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 {
 	switch(lnm->type) {
 		case NP_LNM_LIST:{
@@ -577,21 +580,22 @@ static int lnm_match(len_match_t *lnm, nt_packet_t *npt)
 	return NP_FALSE;
 }
 
-static int cont_match(content_match_t *cont, nt_packet_t *npt)
+static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 {
 	int start = 0, end = 0, offset = 0, l7dlen;
-	uint8_t *l7data = NULL, *wrapper = NULL;
+	uint8_t *l7data, *wrapper;
 
-	l7data = npt->l7_ptr;
+	l7data = wrapper = npt->l7_ptr;
 	l7dlen = npt->l7_len;
 
 	if(cont->spec_len && cont->spec_len != l7dlen) {
-		np_debug("l7: cont length miss match.\n");
+		RULE_DBG(rule, NULL, "l7: cont length miss.\n");
 		return NP_FALSE;
 	}
 	if(cont->wrap_len > 0) {
+		int wp;
 		if(l7dlen < (cont->wrap_begin + cont->wrap_len)) {
-			np_debug("l7: cont fake wrapper dlen.\n");
+			RULE_DBG(rule, NULL, "l7: cont fake wrapper dlen.\n");
 			return NP_FALSE;
 		}
 		start = cont->wrap_begin;
@@ -600,40 +604,42 @@ static int cont_match(content_match_t *cont, nt_packet_t *npt)
 			end = l7dlen > cont->wrap_end ? cont->wrap_end : l7dlen;
 		}
 		if(start <= end) {
-			np_debug("l7: cont fake wrapper len.\n");
+			RULE_DBG(rule, NULL, "l7: cont fake wrapper len.\n");
 			return NP_FALSE;
 		}
 		if(cont->wrap_rex) {
 			/* regexp match */
-			offset = pcre_find(cont->wrap_rex, l7data, l7dlen);
-			if(offset>=0) {
+			wp = pcre_find(cont->wrap_rex, l7data, l7dlen);
+			if(wp>=0) {
 				/* deubg */
-				wrapper = l7data + offset;
+				l7data += wp;
+				l7dlen -= l7data - wrapper;
+				if(l7dlen <= 0) {
+					RULE_DBG(rule, NULL, "l7: wrapper - short length.\n");
+					return NP_FALSE;
+				}
 			}
 		}
 		if(cont->wrap_bmh) {
-			/* BMH wrapper single string. */
-			if(wrapper) {
-				offset = wrapper - l7data;
-			}
+			/* FIXME: BMH wrapper single string. */
 		}
 	}
 
 	if(cont->patt_len > 0) {
 		int mlen;
 		/* fixup & compare offset. */
-		offset += cont->offset;
+		offset = cont->offset;
 		if(offset < 0) {
 			/* revert match. */
-			if(l7dlen + offset < 0) {
-				np_debug("l7: cont offset fixed faild: %d-%d\n", offset, l7dlen);
+			offset += l7dlen;
+			if(offset <= 0) {
+				RULE_DBG(rule, NULL, "l7: cont offset fixed faild: %d-%d\n", offset, l7dlen);
 				return NP_FALSE;
 			}
-			offset += l7dlen;
 		}
 		mlen = l7dlen - offset;
 		if(mlen < cont->patt_len) {
-			np_debug("l7: cont fixed length miss match.[%d->%d:%d]\n", l7dlen, offset, cont->patt_len);
+			RULE_DBG(rule, NULL, "l7: cont fixed length miss.[%d->%d:%d]\n", l7dlen, offset, cont->patt_len);
 			return NP_FALSE;
 		}
 		switch(cont->type_match) {
@@ -652,7 +658,7 @@ static int cont_match(content_match_t *cont, nt_packet_t *npt)
 				}
 				m = pcre_find(cont->rex, l7data + offset, mlen);
 				if(m>=0) {
-					np_debug("l7: rex match at: %d\n", m);
+					RULE_DBG(rule, NULL, "l7: rex match at: %d\n", m);
 					return NP_TRUE;
 				}
 				return NP_FALSE;
@@ -677,37 +683,41 @@ static int cont_match(content_match_t *cont, nt_packet_t *npt)
 	return NP_TRUE;
 }
 
-static int l7_match(l7_match_t *l7, nt_packet_t *npt)
+static int l7_match(np_rule_t *rule, nt_packet_t *npt)
 {
+	l7_match_t *l7 = &rule->l7;
 	len_match_t *lnm = &l7->lnm;
 
 	if(npt->l7_len == 0) {
-		np_debug("l7: zero data len.\n");
+		RULE_DBG(rule, NULL, "l7: zero data len.\n");
 		return NP_FALSE;
 	}
 	if(l7->dir && npt->dir != l7->dir) {
-		np_debug("l7: pkt in flow dir miss match.\n");
+		RULE_DBG(rule, NULL, "l7: pkt in flow dir[%d] miss.\n", npt->dir);
 		return NP_FALSE;
 	}
-	if(lnm->type != NP_LNM_NONE && !lnm_match(lnm, npt)) {
-		np_debug("l7: length info miss match.\n");
+	if(lnm->type != NP_LNM_NONE && !lnm_match(rule, lnm, npt)) {
+		RULE_DBG(rule, NULL, "l7: length[%d] info miss.\n", npt->l7_len);
 		return NP_FALSE;
 	}
-	if(l7->ctm_num > 0) {
+	if(l7->ctm_num == 0) {
+		/* upper matched ok. */
+		return NP_TRUE;
+	} else {
 		int i, m = 0;
 		for(i=0; i<l7->ctm_num; i++) {
-			m = cont_match(&l7->ctm[i], npt);
+			m = cont_match(rule, &l7->ctm[i], npt);
 			if(m && l7->ctm_relation == NP_CTM_OR) {
-				np_debug("l7 ctm OR matched.\n");
+				RULE_DBG(rule, NULL, "l7: ctm OR matched.\n");
 				return NP_TRUE;
 			}
 			if(!m && l7->ctm_relation == NP_CTM_AND) {
-				np_debug("l7 ctm AND miss matched.\n");
+				RULE_DBG(rule, NULL, "l7: ctm AND miss.\n");
 				return NP_FALSE;
 			}
 		}
 		if(m && l7->ctm_relation == NP_CTM_AND) {
-			np_debug("l7 ctm AND matched.\n");
+			RULE_DBG(rule, NULL, "l7: ctm AND matched.\n");
 			return NP_TRUE;
 		}
 	}
@@ -718,7 +728,7 @@ static int rule_matched_cb(void *np, void *prule)
 {
 	np_rule_t *rule = prule;
 	
-	np_debug("rule: %s, matched.\n", rule->name_rule);
+	RULE_DBG(rule, NULL, "rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
@@ -727,22 +737,22 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 {
 	int n;
 
-	RULE_DBG(rule, npt, "dir: %d rule: %s\n", npt->dir, rule->name_rule);
+	RULE_DBG(rule, npt, "-------- dir: %d rule: %s\n", npt->dir, rule->name_rule);
 
 	/* do match process. */
 	if(rule->enable_l4) {
-		n = l4_match(&rule->l4, npt);
+		n = l4_match(rule, npt);
 		if(!n) {
 			/* miss match. */
-			RULE_DBG(rule, npt, "l4: miss match.\n");
+			RULE_DBG(rule, npt, "l4: miss match. -------- \n");
 			return NP_FALSE;
 		}
 	}
 	/* do match l7 */
 	if(rule->enable_l7) {
-		n = l7_match(&rule->l7, npt);
+		n = l7_match(rule, npt);
 		if(!n) {
-			RULE_DBG(rule, npt, "l7: miss match.\n");
+			RULE_DBG(rule, npt, "l7: miss match. -------- \n");
 			return NP_FALSE;
 		}
 	}
@@ -799,31 +809,41 @@ np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 
 int rules_match(nt_packet_t *npt)
 {
-	uint16_t proto = 0;
-	np_rule_t *rule;
+	np_rule_t *rule, *last_matched = NULL;
+	uint16_t proto = nt_flow_proto(npt->fi);
 	np_rule_set_t *hash_set = NULL;
 	np_rule_set_t *base_set = &rule_sets_base[npt->dir][np_proto_to_set(npt->l4_proto)];
 
 	rule = rules_set_match(base_set, npt);
 	if(rule) {
+		last_matched = rule;
+		nt_flow_proto_update(npt->fi, rule->ID, NULL);
 		np_debug("base match: %s\n", rule->name_rule);
 	}
 
 	if(rule && rule->ref_set) {
 		rule = rules_set_match(rule->ref_set, npt);
 		if(rule) {
+			last_matched = rule;
+			nt_flow_proto_update(npt->fi, rule->ID, NULL);
 			np_debug("inner-ref match: %s\n", rule->name_rule);
 		}
 	}
 
-	proto = nt_flow_proto(npt->fi);
-	// np_assert(proto >= NP_RULE_SETS_HASH);
+	np_assert(proto < NP_RULE_SETS_HASH);
 	hash_set = rule_sets_refs[proto % NP_RULE_SETS_HASH];
 	if(hash_set) {
 		rule = rules_set_match(hash_set, npt);
 		if(rule) {
+			last_matched = rule;
+			nt_flow_proto_update(npt->fi, rule->ID, NULL);
 			np_debug("hash-ref match: %s\n", rule->name_rule);
 		}
+	}
+
+	if(last_matched && RULE_IS_FIN(last_matched)) {
+		RULE_DBG(last_matched, NULL, "--- finished flow. --- \n");
+		return last_matched->ID;
 	}
 	return 0;
 }

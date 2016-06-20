@@ -8,5 +8,6 @@ enum __em_inner_proto {
 	NP_INNER_RULE_SSH,
 	NP_INNER_RULE_FTP,
 	NP_INNER_RULE_DHCP,
+	NP_INNER_RULE_RDP,
 	NP_INNER_RULE_MAX,
 };

@@ -21,7 +21,7 @@ np_rule_t inner_pop3 = {
 	.ID = NP_INNER_RULE_POP3,
 	.priority = NP_RULE_PRI_MAX,
 
-	.rule_type = TP_RULE_BASE,
+	.rule_type = TP_RULE_BASE | TP_RULE_FIN,
 	.refs_type = NP_REF_NONE,
 
 	.enable_http = 0,
