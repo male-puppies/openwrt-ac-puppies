@@ -47,6 +47,7 @@ nproto-y += pcre2/pcre2_error.o
 nproto-y += rules/http.o
 nproto-y += rules/mail.o
 nproto-y += rules/ssh.o
+nproto-y += rules/ssl.o
 nproto-y += rules/ftp.o
 nproto-y += rules/dhcp.o
 nproto-y += rules/RDP.o
