@@ -13,17 +13,18 @@
 extern unsigned int redirect_ip;
 
 enum auth_status_t {
-	AUTH_NONE = 0,
-	AUTH_OK = 1,
-	AUTH_BYPASS = 2,
+	AUTH_BYPASS = 0,
+	AUTH_NONE = 1,
+	AUTH_OK = 2,
 };
 
 struct auth_rule_t {
 	unsigned int id;
 	unsigned int src_zone_id;
 	unsigned int src_ipgrp_id;
-#define AUTH_TYPE_AUTO 0
-#define AUTH_TYPE_WEB 1
+#define AUTH_TYPE_UNKNOWN 0
+#define AUTH_TYPE_AUTO 1
+#define AUTH_TYPE_WEB 2
 	unsigned int auth_type;
 	unsigned int ip_white_list_id;
 	unsigned int mac_white_list_id;

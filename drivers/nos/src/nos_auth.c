@@ -134,6 +134,8 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 void nos_auth_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui)
 {
 	int i;
+	ui->hdr.type = AUTH_TYPE_UNKNOWN;
+	ui->hdr.status = AUTH_BYPASS;
 	for (i = 0; i < auth_conf.num; i++) {
 		if (ui->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
 				(ui->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
@@ -285,8 +287,8 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 		n = snprintf(nos_auth_ctl_buffer,
 				sizeof(nos_auth_ctl_buffer) - 1,
 				"# Usage:\n"
-				"#    auth id=<idx>,szone=<idx>,sipgrp=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>] -- set one auth\n"
-				"#    delete auth_id=<idx> -- delete one auth\n"
+				"#    auth id=<id>,szone=<idx>,sipgrp=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>] -- set one auth\n"
+				"#    delete <id> -- delete one auth\n"
 				"#    clean -- remove all existing auth(s)\n"
 				"#    redirect_ip=a.b.c.d -- set the redirect ip\n"
 				"#\n"
@@ -406,11 +408,9 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 	}
 
 	if (strncmp(data, "clean", 5) == 0) {
-		printk("nos_auth_cleanup\n");
 		nos_auth_cleanup();
 		goto done;
 	} else if (strncmp(data, "auth id=", 8) == 0) {
-		printk("auth id=<idx>,szone=<idx>,sipgrp=<idx>,type=web/auto[,ipwhite=<name>][,macwhite=<name>]\n");
 		memset(&auth, 0, sizeof(auth));
 		n = sscanf(data, "auth id=%u,szone=%u,sipgrp=%u",
 				&auth.id,
@@ -503,7 +503,6 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 			printk("nos_auth_set() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "delete ", 7) == 0) {
-		printk("delete <idx>\n");
 		n = sscanf(data, "delete %u\n", &auth.id);
 		if (n == 1) {
 			if ((err = nos_auth_delete(&auth)) == 0)
@@ -519,6 +518,7 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 				 ((c & 0xff) == c) &&
 				 ((d & 0xff) == d)) ) {
 			redirect_ip = htonl((a<<24)|(b<<16)|(c<<8)|(d<<0));
+			goto done;
 		}
 	}
 

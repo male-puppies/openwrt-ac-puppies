@@ -130,8 +130,8 @@ static void *nos_zone_start(struct seq_file *m, loff_t *pos)
 		n = snprintf(nos_zone_ctl_buffer,
 				sizeof(nos_zone_ctl_buffer) - 1,
 				"# Usage:\n"
-				"#    zone <idx>=<if_name> -- set interface zone\n"
-				"#    delete <idx> -- delete one zone\n"
+				"#    zone <id>=<if_name> -- set interface zone\n"
+				"#    delete <id> -- delete one zone\n"
 				"#    clean -- remove all existing zone(s)\n"
 				"#\n"
 				"# Info: "
@@ -259,11 +259,9 @@ static ssize_t nos_zone_write(struct file *file, const char __user *buf, size_t 
 	}
 
 	if (strncmp(data, "clean", 5) == 0) {
-		printk("nos_zone_cleanup\n");
 		nos_zone_cleanup();
 		goto done;
 	} else if (strncmp(data, "zone ", 5) == 0) {
-		printk("zone <idx>=<ifname>\n");
 		n = sscanf(data, "zone %u=%s\n", &zone.id, zone.if_name);
 		if (n == 2) {
 			if ((err = nos_zone_set(&zone)) == 0)
@@ -271,7 +269,6 @@ static ssize_t nos_zone_write(struct file *file, const char __user *buf, size_t 
 			printk("nos_zone_set() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "delete ", 7) == 0) {
-		printk("delete <idx>\n");
 		n = sscanf(data, "delete %u\n", &zone.id);
 		if (n == 1) {
 			if ((err = nos_zone_delete(&zone)) == 0)

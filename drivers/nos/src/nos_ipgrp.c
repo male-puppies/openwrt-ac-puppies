@@ -137,8 +137,8 @@ static void *nos_ipgrp_start(struct seq_file *m, loff_t *pos)
 		n = snprintf(nos_ipgrp_ctl_buffer,
 				sizeof(nos_ipgrp_ctl_buffer) - 1,
 				"# Usage:\n"
-				"#    ipgrp <idx>=<ipset_name> -- set one ipgrp\n"
-				"#    delete <idx> -- delete one ipgrp\n"
+				"#    ipgrp <id>=<ipset_name> -- set one ipgrp\n"
+				"#    delete <id> -- delete one ipgrp\n"
 				"#    clean -- remove all existing ipgrp(s)\n"
 				"#\n"
 				"# Info: "
@@ -252,12 +252,10 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 	}
 
 	if (strncmp(data, "clean", 5) == 0) {
-		printk("nos_ipgrp_cleanup\n");
 		nos_ipgrp_cleanup();
 		goto done;
 	} else if (strncmp(data, "ipgrp ", 6) == 0) {
 		char buf[256] = {0};
-		printk("ipgrp <idx>=<ipset_name>\n");
 		n = sscanf(data, "ipgrp %u=%s\n", &ipgrp.id, buf);
 		if (n == 2) {
 			ip_set_id_t id;
@@ -277,7 +275,6 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 			printk("nos_ipgrp_set() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "delete ", 7) == 0) {
-		printk("delete <idx>\n");
 		n = sscanf(data, "delete %u\n", &ipgrp.id);
 		if (n == 1) {
 			if ((err = nos_ipgrp_delete(&ipgrp)) == 0)
