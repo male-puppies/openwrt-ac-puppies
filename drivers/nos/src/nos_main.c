@@ -120,7 +120,7 @@ static unsigned int nos_fw_hook(void *priv,
 	const struct net_device *in = state->in;
 	const struct net_device *out = state->out;
 #endif
-	//int ret = NF_ACCEPT;
+	int ret = NF_ACCEPT;
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
 	//struct iphdr *iph;
@@ -159,10 +159,50 @@ static unsigned int nos_fw_hook(void *priv,
 		ui->hdr.rule_magic = g_conf_magic;
 	}
 
+	if (ui->hdr.status == AUTH_NONE) {
+		//need web auth
+		int data_len;
+		unsigned char *data;
+		struct tcphdr *tcph;
+		struct iphdr *iph = ip_hdr(skb);
+		ret = NF_DROP;
+		if (iph->protocol == IPPROTO_UDP) {
+			struct udphdr *udph = (struct udphdr *)((void *)iph + iph->ihl*4);
+			if (udph->dest == __constant_htons(53) ||
+					udph->dest == __constant_htons(67)) {
+				set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
+				ret = NF_ACCEPT;
+				goto out;
+			}
+		}
+		if (iph->protocol != IPPROTO_TCP) {
+			set_bit(IPS_NOS_DROP_BIT, &ct->status);
+			goto out;
+		}
+		//FIXME skb_make_writable
+		tcph = (struct tcphdr *)((void *)iph + iph->ihl * 4);
+		data = skb->data + (iph->ihl << 2) + (tcph->doff << 2);
+		data_len = ntohs(iph->tot_len) - ((iph->ihl << 2) + (tcph->doff << 2));
+		if ((data_len > 4 && strncasecmp(data, "GET ", 4) == 0) ||
+				(data_len > 5 && strncasecmp(data, "POST ", 5) == 0)) {
+			nos_auth_http_302(in, skb, ui);
+			set_bit(IPS_NOS_DROP_BIT, &ct->status);
+			ret = NF_DROP;
+		} else if (data_len > 0) {
+			ret = NF_DROP;
+		} else if (tcph->ack && !tcph->syn) {
+			//nos_auth_convert_tcprst(skb);
+			ret = NF_ACCEPT;
+		} else {
+			ret = NF_ACCEPT;
+		}
+	}
+
 	//get and match auth rule
 	//auth action
 
-	return NF_ACCEPT;
+out:
+	return ret;
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)

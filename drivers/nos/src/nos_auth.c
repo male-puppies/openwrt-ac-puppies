@@ -8,6 +8,10 @@
  * Author: Chen Minqiang <ptpt52@gmail.com>
  *  Date : Thu, 16 Jun 2016 10:32:40 +0800
  */
+#include <net/ip.h>
+#include <net/tcp.h>
+#include <net/protocol.h>
+#include <net/checksum.h>
 #include <linux/ctype.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
@@ -134,10 +138,135 @@ void nos_auth_match(const struct net_device *in, const struct net_device *out, s
 		if (ui->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
 				(ui->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
 			ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = i;
+			if (auth_conf.auth[i].auth_type == AUTH_TYPE_AUTO) {
+				ui->hdr.type = AUTH_TYPE_AUTO;
+				ui->hdr.status = AUTH_OK;
+			} else {
+				ui->hdr.type = AUTH_TYPE_WEB;
+				ui->hdr.status = AUTH_NONE;
+				if (auth_conf.auth[i].ip_white_list_set) {
+					if (ip_set_test_src_ip(in, out, skb, auth_conf.auth[i].ip_white_list_id) > 0) {
+						ui->hdr.status = AUTH_BYPASS;
+					} else if (ip_set_test_src_mac(in, out, skb, auth_conf.auth[i].mac_white_list_id) > 0) {
+						ui->hdr.status = AUTH_BYPASS;
+					}
+				}
+			}
 			return;
 		}
 	}
 	ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = MAX_AUTH;
+}
+
+static inline void nos_auth_reply_payload(const char *payload, int payload_len, struct sk_buff *oskb, const struct net_device *dev)
+{
+	struct sk_buff *nskb;
+	struct ethhdr *neth, *oeth;
+	struct iphdr *niph, *oiph;
+	struct tcphdr *otcph, *ntcph;
+	int len;
+	unsigned int csum;
+	int offset, header_len;
+	char *data;
+
+	oeth = (struct ethhdr *)skb_mac_header(oskb);
+	oiph = ip_hdr(oskb);
+	otcph = (struct tcphdr *)((void *)oiph + oiph->ihl*4);
+
+	offset = sizeof(struct iphdr) + sizeof(struct tcphdr) + payload_len - oskb->len;
+	header_len = offset < 0 ? 0 : offset;
+	nskb = skb_copy_expand(oskb, skb_headroom(oskb), header_len, GFP_ATOMIC);
+	if (!nskb) {
+		printk("alloc_skb fail\n");
+		return;
+	}
+
+	data = (char *)ip_hdr(nskb) + sizeof(struct iphdr) + sizeof(struct tcphdr);
+	memcpy(data, payload, payload_len);
+
+	ntcph = (struct tcphdr *)((char *)ip_hdr(nskb) + sizeof(struct iphdr));
+	memset(ntcph, 0, sizeof(struct tcphdr));
+	ntcph->source = otcph->dest;
+	ntcph->dest = otcph->source;
+	ntcph->seq = otcph->ack_seq;
+	ntcph->ack_seq = htonl(ntohl(otcph->seq) + ntohs(oiph->tot_len) - (oiph->ihl<<2) - (otcph->doff<<2));
+	ntcph->doff = 5;
+	ntcph->ack = 1;
+	ntcph->psh = 1;
+	ntcph->fin = 1;
+	ntcph->window = 65535;
+
+	niph = ip_hdr(nskb);
+	memset(niph, 0, sizeof(struct iphdr));
+	niph->saddr = oiph->daddr;
+	niph->daddr = oiph->saddr;
+	niph->version = oiph->version;
+	niph->ihl = 5;
+	niph->tos = 0;
+	niph->tot_len = htons(sizeof(struct iphdr) + sizeof(struct tcphdr) + payload_len);
+	niph->ttl = 0x80;
+	niph->protocol = oiph->protocol;
+	niph->id = __constant_htons(0xDEAD);
+	niph->frag_off = 0x0;
+	ip_send_check(niph);
+
+	len = ntohs(niph->tot_len) - (niph->ihl<<2);
+	csum = csum_partial((char*)ntcph, len, 0);
+	ntcph->check = tcp_v4_check(len, niph->saddr, niph->daddr, csum);
+
+	neth = eth_hdr(nskb);
+	memcpy(neth->h_dest, oeth->h_source, ETH_ALEN);
+	memcpy(neth->h_source, oeth->h_dest, ETH_ALEN);
+	neth->h_proto = htons(ETH_P_IP);
+	nskb->len += offset;
+	skb_push(nskb, (char *)niph - (char *)neth);
+	nskb->dev = (struct net_device *)dev;
+	nskb->ip_summed = CHECKSUM_NONE;
+
+	dev_queue_xmit(nskb);
+}
+
+void nos_auth_http_302(const struct net_device *dev, struct sk_buff *skb, const struct nos_user_info *ui)
+{
+	const char *http_header_fmt = ""
+		"HTTP/1.1 302 Moved Temporarily\r\n"
+		"Connection: close\r\n"
+		"Cache-Control: no-cache\r\n"
+		"Content-Type: text/html; charset=UTF-8\r\n"
+		"Location: %s\r\n"
+		"Content-Length: %u\r\n"
+		"\r\n";
+	const char *http_data_fmt = ""
+		"<HTML><HEAD><meta http-equiv=\"content-type\" content=\"text/html;charset=utf-8\">\r\n"
+		"<TITLE>302 Moved</TITLE></HEAD><BODY>\r\n"
+		"<H1>302 Moved</H1>\r\n"
+		"The document has moved\r\n"
+		"<A HREF=\"%s\">here</A>.\r\n"
+		"</BODY></HTML>\r\n";
+	int n = 0;
+	struct ethhdr *eth = eth_hdr(skb);
+	struct {
+		char location[128];
+		char data[384];
+		char header[384];
+		char payload[0];
+	} *http = kmalloc(2048, GFP_ATOMIC);
+	if (!http)
+		return;
+
+	snprintf(http->location, sizeof(http->location), "http://%pI4/index.html?ip=%pI4&mac=%02X-%02X-%02X-%02X-%02X-%02X&uid=%u&magic=%u&_t=%lu",
+			&redirect_ip, &ui->ip,
+			eth->h_source[0], eth->h_source[1], eth->h_source[2],
+			eth->h_source[3], eth->h_source[4], eth->h_source[5],
+			ui->id, ui->magic, jiffies);
+	http->location[sizeof(http->location) - 1] = 0;
+	n = snprintf(http->data, sizeof(http->data), http_data_fmt, http->location);
+	http->data[sizeof(http->data) - 1] = 0;
+	snprintf(http->header, sizeof(http->header), http_header_fmt, http->location, n);
+	http->header[sizeof(http->header) - 1] = 0;
+	n = sprintf(http->payload, "%s%s", http->header, http->data);
+
+	nos_auth_reply_payload(http->payload, n, skb, dev);
 }
 
 void *nos_auth_get(loff_t idx)
