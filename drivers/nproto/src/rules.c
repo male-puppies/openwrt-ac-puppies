@@ -9,7 +9,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_SMB
+#define RULE_DBG_ID NP_INNER_RULE_SSL
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -509,7 +509,7 @@ static int l4_match(np_rule_t *rule, nt_packet_t *npt)
 	return NP_TRUE;
 }
 
-static int lnm_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
+static int lnf_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 {
 	uint32_t n = 0;
 	switch(lnm->type) {
@@ -696,7 +696,7 @@ static int l7_match(np_rule_t *rule, nt_packet_t *npt)
 		RULE_DBG(rule, NULL, "l7: pkt in flow dir[%d] miss.\n", npt->dir);
 		return NP_FALSE;
 	}
-	if(lnm->type != NP_LNM_NONE && !lnm_match(rule, lnm, npt)) {
+	if(lnm->type != NP_LNM_NONE && !lnf_match(rule, lnm, npt)) {
 		RULE_DBG(rule, NULL, "l7: length[%d] info miss.\n", npt->l7_len);
 		return NP_FALSE;
 	}
