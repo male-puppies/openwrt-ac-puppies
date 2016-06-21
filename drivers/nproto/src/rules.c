@@ -879,7 +879,7 @@ static int rule_matched_cb(void *np, void *prule)
 {
 	np_rule_t *rule = prule;
 	
-	np_debug("rule: %s, matched.\n", rule->name_rule);
+	RULE_DBG(rule, NULL, "rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
