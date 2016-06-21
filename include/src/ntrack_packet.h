@@ -10,6 +10,14 @@
 #include <nproto/http.h>
 #include <nproto/tencent_qq.h>
 
+#define FMT_PKT_STR "FID:%4u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u,len:%d"
+#define FMT_PKT(p) 	((p)->fi->id), \
+					NIPQUAD((p)->iph->saddr), \
+			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->source):ntohs((p)->udp->source)), \
+					NIPQUAD((p)->iph->daddr), \
+			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest)), \
+			((p)->l7_len)
+
 typedef struct {
 	/* ntarck */
 	flow_info_t *fi;
@@ -46,13 +54,6 @@ typedef struct {
 	uint8_t data[0]; /* dynamic buffer. */
 } nt_packet_t;
 
-#define FMT_PKT_STR "FID:%4u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u,len:%d"
-#define FMT_PKT(p) 	((p)->fi->id), \
-					NIPQUAD((p)->iph->saddr), \
-			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->source):ntohs((p)->udp->source)), \
-					NIPQUAD((p)->iph->daddr), \
-			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest)), \
-			((p)->l7_len)
 
 typedef struct {
 	/* 
@@ -87,3 +88,24 @@ static inline nt_pkt_nproto_t *nt_skb_nproto(struct sk_buff *skb, nt_packet_t *n
 	return (nt_pkt_nproto_t*)skb->ntrack_priv;
 }
 #endif
+
+/* http packet parse apis. */
+static inline char *np_http_hdr(nt_packet_t* pkt, int em_hdr, int *len)
+{
+	int16_t offset, end;
+	nt_pkt_nproto_t *np = nt_pkt_nproto(pkt);
+	nproto_http_t *http = &np->du.http;
+
+	if(em_hdr <= 0 || em_hdr >= NP_HTTP_MAX) {
+		return NULL;
+	}
+
+	offset = http->headers_range[em_hdr][0];
+	end = http->headers_range[em_hdr][1];
+	if(end - offset <= 0) {
+		return NULL;
+	}
+
+	*len = end - offset;
+	return &pkt->l7_ptr[offset];
+}

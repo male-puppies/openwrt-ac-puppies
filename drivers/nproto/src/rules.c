@@ -5,11 +5,13 @@
 
 #include <linux/nos_track.h>
 
+#include <nproto/http.h>
+
 #include "mwm.h"
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_SSL
+#define RULE_DBG_ID NP_INNER_RULE_HTTP_SVN
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -78,6 +80,31 @@ static int rule_compile(np_rule_t *rule)
 			}
 		}
 	}
+
+	/* init http match struct */
+	if(rule->enable_http) {
+		for(i=0; i<ARRAY_SIZE(rule->http); i++) {
+			http_match_t *htpm = &rule->http[i];
+			if(htpm->hdr == 0) {
+				break;
+			}
+			if(!htpm->patt_len) {
+				htpm->patt_len = strlen(htpm->patt);
+				if(htpm->patt_len<=0) {
+					np_error("[%s] rex patt len: %d\n", rule->name_rule, htpm->patt_len);
+					continue;
+				}
+			}
+			if(!htpm->rex) {
+				pcre_t *rex = pcre_create(htpm->patt, htpm->patt_len);
+				if(!rex) {
+					np_error("[%s] rex http match create failed.\n", rule->name_rule);
+					continue;
+				}
+				htpm->rex = rex;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -109,13 +136,24 @@ static void rule_release(np_rule_t *rule)
 			}
 		}
 	}
+	if(rule->enable_http) {
+		for(i=0; i<ARRAY_SIZE(rule->http); i++) {
+			http_match_t *htpm = &rule->http[i];
+			if(htpm->rex) {
+				np_debug("[%s] destroy rex http.\n", rule->name_rule);
+				pcre_destroy(htpm->rex);
+				htpm->rex = NULL;
+			}
+		}
+	}
 }
 
+static void set_dump(np_rule_set_t *, int stage);
 static void rule_dump(np_rule_t *rule)
 {
 	int i;
 
-	np_print("dump rule[%s] Proto[%s] Service[%s]:\n", 
+	np_print("rule[%s] Proto[%s] Service[%s]:\n", 
 		rule->name_rule, rule->name_app, rule->name_service);
 	np_print("\tID: [%d]\n", rule->ID);
 	for(i=0; i<MAX_REF_IDs; i++){
@@ -129,9 +167,13 @@ static void rule_dump(np_rule_t *rule)
 			break;
 		}
 	}
+	if(rule->ref_set) {
+		np_print("-------------- ref-set --------------\n");
+		set_dump(rule->ref_set, 1);
+	}
 }
 
-static int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
+int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 {
 	if(rule->priority == NP_RULE_PRI_MIN) {
 		set->rules[set->num_rules] = rule;
@@ -197,7 +239,7 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 
 	/* check l7 search && patt len > 4 */
 	if(!rule->enable_l7) {
-		set_add_rule_normal(set, rule);
+		return set_add_rule_normal(set, rule);
 	}
 
 	for(i=0; i<rule->l7.ctm_num; i++) {
@@ -270,14 +312,26 @@ int np_rule_register(np_rule_t *rule)
 	return set_add_rule(&rule_sets_base[dir][proto], rule);
 }
 
-void set_clean(np_rule_set_t *set)
+void set_cleanup(np_rule_set_t *set)
 {
 	if(set->pmwm) {
 		mwmFree(set->pmwm);
 	}
 }
 
-int set_init(np_rule_set_t *set, char *name)
+static np_rule_set_t *set_alloc(char *name)
+{
+	np_rule_set_t *set = kmalloc(sizeof(np_rule_set_t), GFP_KERNEL);
+	if(!set) {
+		np_error("alloc set[%s] failed.\n", name);
+		return NULL;
+	}
+	memset(set, 0, sizeof(np_rule_set_t));
+
+	return set;
+}
+
+int set_compile(np_rule_set_t *set, char *name)
 {
 	int ret;
 
@@ -297,7 +351,7 @@ int set_init(np_rule_set_t *set, char *name)
 	return 0;
 }
 
-void set_dump(np_rule_set_t *set)
+static void set_dump(np_rule_set_t *set, int stage)
 {
 	int i;
 
@@ -306,7 +360,10 @@ void set_dump(np_rule_set_t *set)
 		return;
 	}
 
-	np_print(" ---- rule-set [%s] ---- \n", set->name);
+	while(stage--) {
+		np_print("\t\t");
+	}
+	np_print("----[%s:%d]----\n", set->name, set->num_rules);
 	if(set->pmwm) {
 		mwmGroupDetails(set->pmwm);
 	}
@@ -325,13 +382,13 @@ void rules_cleanup(void)
 	/* clean rule set's */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		for(j=0; j<NP_SET_BASE_MAX; j++){
-			set_clean(&rule_sets_base[i][j]);
+			set_cleanup(&rule_sets_base[i][j]);
 		}
 	}
 	for(i=0; i<NP_RULE_SETS_HASH; i++) {
 		np_rule_set_t *hash_set = rule_sets_refs[i];
 		if(hash_set) {
-			set_clean(hash_set);
+			set_cleanup(hash_set);
 		}
 	}
 	list_for_each(itr, &all_rules) {
@@ -340,38 +397,66 @@ void rules_cleanup(void)
 		/* cleanup refs. */
 		rule_release(rule);
 		if(rule->ref_set) {
-			set_clean(rule->ref_set);
+			set_cleanup(rule->ref_set);
 		}
 	}
 }
 
+const char *flow_dir_name[NP_FLOW_DIR_MAX] = {"any", "c2s", "s2c"};
+const char *set_inner_name[NP_SET_BASE_MAX] = {"udp","tcp","others"};
 int rules_build(void)
 {
 	int i, j;
 	char name[64];
 	struct list_head *itr1, *itr2;
 
+	/* build the http ref's */
+	list_for_each(itr1, &all_rules) {
+		np_rule_t *rule1 = list_entry(itr1, np_rule_t, list);
+		if(rule1->ID != NP_INNER_RULE_HTTP_REQ &&
+			rule1->ID != NP_INNER_RULE_HTTP_REP) 
+		{
+			continue;
+		}
+		/* round2 find the http ref rules. */
+		list_for_each(itr2, &all_rules) {
+			np_rule_t *rule2 = list_entry(itr2, np_rule_t, list);
+			if(rule1 == rule2) { /* self */
+				continue;
+			}
+			if(RULE_REF_HTTP(rule2)) {
+				/* assert not base rule. */
+				np_assert(!RULE_IS_BASE(rule2));
+				for(i=0; i<ARRAY_SIZE(rule1->ID_REFs); i++) {
+					if(!rule2->ID_REFs[i]) {
+						break;
+					}
+				}
+				rule2->ID_REFs[i] = rule1->ID;
+			}
+		}
+	}
+
 	/* build each ref's */
 	list_for_each(itr1, &all_rules) {
 		np_rule_t *rule1 = list_entry(itr1, np_rule_t, list);
-		if(RULE_REF_RULES(rule1)) {
+		if(RULE_REF_FLOW(rule1)) {
 			/* cross rule match use hash sets. */
 			uint16_t idx = rule1->ID % NP_RULE_SETS_HASH;
 			np_rule_set_t *hash_set = rule_sets_refs[idx];
 			if(!hash_set) {
-				hash_set = kmalloc(sizeof(np_rule_set_t), GFP_KERNEL);
+				hash_set = set_alloc("hash");
 				if(!hash_set) {
 					np_error("alloc hash set[%d:%s] failed.\n", rule1->ID, rule1->name_rule);
 					continue;
 				}
-				memset(hash_set, 0, sizeof(np_rule_set_t));
 				rule_sets_refs[idx] = hash_set;
 			}
 			set_add_rule(hash_set, rule1);
 		}
-		if(RULE_REF_MATCH(rule1)) {
+		if(RULE_REF_PACKET(rule1)) {
 			/* rule1 in-rule's ref as rule2 matched. */
-			for(i=0; i<sizeof(rule1->ID_REFs)/sizeof(rule1->ID_REFs[0]); i++) {
+			for(i=0; i<ARRAY_SIZE(rule1->ID_REFs); i++) {
 				/* each ref id find the target rule. */
 				uint16_t ref_id = rule1->ID_REFs[i];
 				if(!ref_id) {
@@ -380,21 +465,25 @@ int rules_build(void)
 				/* round2 find the ref target. */
 				list_for_each(itr2, &all_rules) {
 					np_rule_t *rule2 = list_entry(itr2, np_rule_t, list);
-					if(rule1 == rule2) { /* self */
+					if(rule2->ID != ref_id) {
 						continue;
 					}
-					if(!rule1->ref_set) {
-						np_rule_set_t *ref_set = kmalloc(sizeof(np_rule_set_t), GFP_KERNEL);
+					if(rule1 == rule2) {
+						continue;
+					}
+					if(!rule2->ref_set) {
+						np_rule_set_t *ref_set;
+						snprintf(name, sizeof(name), "ref-%s", rule2->name_rule);
+						ref_set = set_alloc(name);
 						if(!ref_set) {
-							np_error("alloc ref set[%s] failed.\n", rule1->name_rule);
+							np_error("alloc ref set[%s] failed.\n", rule2->name_rule);
 							continue;
 						}
-						rule1->ref_set = ref_set;
+						rule2->ref_set = ref_set;
 					}
-					if(rule2->ID == ref_id) {
-						/* got it */
-						set_add_rule(rule1->ref_set, rule2);
-					}
+					/* got it */
+					np_info("[%s] add ref-to [%s]\n", rule1->name_rule, rule2->name_rule);
+					set_add_rule(rule2->ref_set, rule1);
 				}
 			}
 		}
@@ -404,8 +493,8 @@ int rules_build(void)
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		/* base sets */
 		for(j=0; j<NP_SET_BASE_MAX; j++) {
-			snprintf(name, sizeof(name), "base: %d-%d", i, j);
-			set_init(&rule_sets_base[i][j], name);
+			snprintf(name, sizeof(name), "base: %s-%s", SET_DIR_STR(i), SET_BASE_STR(j));
+			set_compile(&rule_sets_base[i][j], name);
 		}
 	}
 	/* rule in-match ref. */
@@ -413,7 +502,7 @@ int rules_build(void)
 		np_rule_t *rule = list_entry(itr1, np_rule_t, list);
 		if(rule->ref_set) {
 			snprintf(name, sizeof(name), "in-ref: %s", rule->name_rule);
-			set_init(rule->ref_set, name);
+			set_compile(rule->ref_set, name);
 		}
 	}
 	/* cross rule matched ref. */
@@ -423,19 +512,19 @@ int rules_build(void)
 			continue;
 		}
 		snprintf(name, sizeof(name), "hash-ref: %d", i);
-		set_init(hash_set, name);
+		set_compile(hash_set, name);
 	}
 
 	#if 1
 	/* dump rules */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		for(j=0; j<NP_SET_BASE_MAX; j++)
-		 set_dump(&rule_sets_base[i][j]);
+		 set_dump(&rule_sets_base[i][j], 0);
 	}
 	for(i=0; i<NP_RULE_SETS_HASH; i++) {
 		np_rule_set_t *hash_set = rule_sets_refs[i];
 		if(hash_set) {
-			set_dump(hash_set);
+			set_dump(hash_set, 0);
 		}
 	}
 	#endif
@@ -724,11 +813,73 @@ static int l7_match(np_rule_t *rule, nt_packet_t *npt)
 	return NP_FALSE;
 }
 
+static int http_do_match(np_rule_t *rule, http_match_t *htpm, nt_packet_t *npt)
+{
+	int len, m;
+	uint8_t *hdr;
+
+	hdr = np_http_hdr(npt, htpm->hdr, &len);
+	if(!hdr) {
+		RULE_DBG(rule, NULL, "http: hdr not found.\n");
+		return NP_FALSE;
+	}
+
+	if(!htpm->rex) {
+		RULE_DBG(rule, NULL, "http: rex not inited.\n");
+		return NP_FALSE;
+	}
+
+	m = pcre_find(htpm->rex, hdr, len);
+	if(m>=0) {
+		RULE_DBG(rule, NULL, "http: rex matched.\n");
+		return NP_TRUE;
+	}
+
+	return NP_FALSE;
+}
+
+static int http_match(np_rule_t *rule, nt_packet_t *npt)
+{
+	nt_pkt_nproto_t *np = nt_pkt_nproto(npt);
+	
+	switch(np->du_type) {
+		case NP_DUT_HTTP_REQ:
+		case NP_DUT_HTTP_REP:
+		{
+			int i, m = NP_TRUE;
+			for (i = 0; i <ARRAY_SIZE(rule->http); ++i) {
+				http_match_t *htpm = &rule->http[i];
+				if(htpm->patt_len<=0) {
+					break;
+				}
+				m = http_do_match(rule, htpm, npt);
+				if(m) {
+					if(htpm->OR) {
+						RULE_DBG(rule, NULL, "http: or matched.\n");
+						return NP_TRUE;
+					}
+				} else {
+					if(!htpm->OR) {
+						RULE_DBG(rule, NULL, "http: and miss match.\n");
+						return NP_FALSE;
+					}
+				}
+			}
+			return m;
+		} break;
+		default:{
+			np_error("ref'ed not http.\n");
+		} break;
+	}
+
+	return NP_FALSE;
+}
+
 static int rule_matched_cb(void *np, void *prule)
 {
 	np_rule_t *rule = prule;
 	
-	RULE_DBG(rule, NULL, "rule: %s, matched.\n", rule->name_rule);
+	np_debug("rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
@@ -753,6 +904,15 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 		n = l7_match(rule, npt);
 		if(!n) {
 			RULE_DBG(rule, npt, "l7: miss match. -------- \n");
+			return NP_FALSE;
+		}
+	}
+
+	/* do http match */
+	if(rule->enable_http) {
+		n = http_match(rule, npt);
+		if(!n) {
+			RULE_DBG(rule, npt, "http: miss match. -------- \n");
 			return NP_FALSE;
 		}
 	}
@@ -841,8 +1001,12 @@ int rules_match(nt_packet_t *npt)
 		}
 	}
 
+	if(last_matched) {
+		np_info("--- [%s] --- matched %s--- \n", 
+			last_matched->name_rule, RULE_IS_FIN(last_matched)?"fin":"min");
+	}
+
 	if(last_matched && RULE_IS_FIN(last_matched)) {
-		RULE_DBG(last_matched, NULL, "--- finished flow. --- \n");
 		return last_matched->ID;
 	}
 	return 0;

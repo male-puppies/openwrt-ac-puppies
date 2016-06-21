@@ -79,6 +79,7 @@ enum __em_flow_dir {
 	NP_FLOW_DIR_S2C,
 	NP_FLOW_DIR_MAX,
 };
+#define SET_DIR_STR(idx) flow_dir_name[idx]
 
 static inline int nt_flow_dir(flow_tuple_t *tuple, struct iphdr *iph)
 {

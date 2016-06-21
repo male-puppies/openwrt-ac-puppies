@@ -45,6 +45,7 @@ nproto-y += pcre2/pcre2_error.o
 
 # rules build-in.
 nproto-y += rules/http.o
+nproto-y += rules/http-svn.o
 nproto-y += rules/mail.o
 nproto-y += rules/ssh.o
 nproto-y += rules/ssl.o
@@ -53,4 +54,5 @@ nproto-y += rules/dhcp.o
 nproto-y += rules/RDP.o
 nproto-y += rules/SIP.o
 nproto-y += rules/SMB.o
+nproto-y += rules/NTP.o
 # end rules built-in

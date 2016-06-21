@@ -37,7 +37,7 @@ const char *http_headers[] = {
 
 static int http_init(void)
 {
-	int i, n;
+	int i, n, create = 0;
 
 	/* init bmh line end finder. */
 	if(!bmhLine) {
@@ -56,6 +56,7 @@ static int http_init(void)
 			np_error("mwm malloc failed.\n");
 			return -ENOMEM;
 		}
+		create = 1;
 	}
 	/* mwmAddPatternUnique, mwmPrepPatterns */
 	for(i=0; i<NP_HTTP_MAX; i++) {
@@ -74,7 +75,10 @@ static int http_init(void)
 		return -EINVAL;
 	}
 
-	mwmGroupDetails(mwmParser);
+	/* debug dump */
+	if(create) {
+		mwmGroupDetails(mwmParser);
+	}
 	return 0;
 }
 
@@ -168,29 +172,13 @@ np_rule_t inner_http_req = {
 		.lnm = {
 			.type = NP_LNM_NONE,
 		},
-		.ctm_num = 4, /* GET,POST,CONNECT,HEAD */
-		.ctm_relation = NP_CTM_OR,
+		.ctm_num = 1, /* GET,POST,CONNECT,HEAD,OPTIONS */
+		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_OFFSET,
+				.type_match = MHTP_REGEXP,
 				.offset = 0,
-				.patt_len = 4,
-				.patt = "GET ",
-			},{
-				.type_match = MHTP_OFFSET,
-				.offset = 0,
-				.patt_len = 5,
-				.patt = "POST ",
-			},{
-				.type_match = MHTP_OFFSET,
-				.offset = 0,
-				.patt_len = 8,
-				.patt = "CONNECT ",
-			},{
-				.type_match = MHTP_OFFSET,
-				.offset = 0,
-				.patt_len = 5,
-				.patt = "HEAD ",
+				.patt = "/^(GET|POST|CONNECT|HEAD|OPTIONS) \\//",
 			},
 		},
 	},
@@ -227,19 +215,13 @@ np_rule_t inner_http_rep = {
 		.lnm = {
 			.type = NP_LNM_NONE,
 		},
-		.ctm_num = 2, /* GET,POST,CONNECT,HEAD */
-		.ctm_relation = NP_CTM_OR,
+		.ctm_num = 1, /* HTTP/1.0|2.0 */
+		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_OFFSET,
+				.type_match = MHTP_REGEXP,
 				.offset = 0,
-				.patt_len = 7,
-				.patt = "HTTP/1.",
-			},{
-				.type_match = MHTP_OFFSET,
-				.offset = 0,
-				.patt_len = 7,
-				.patt = "HTTP/2.",
+				.patt = "/^HTTP\\/[12].0 /",
 			},
 		},
 	},

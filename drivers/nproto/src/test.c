@@ -60,7 +60,10 @@ static int test_pkt_init(const char *data, int dlen, struct nos_track *nt, nt_pa
 	int l4len = 0, l7len = 0;
 	uint8_t *l4ptr = NULL, *l7ptr = NULL;
 	struct iphdr *iph = (struct iphdr*)data;
-	nt_pkt_nproto_t *np = nt_pkt_nproto(pkt);
+
+	/* init the packet parser. */
+	pkt->priv = &npk_proto;
+	memset(nt_pkt_nproto(pkt), 0, sizeof(nt_pkt_nproto_t));
 
 	/* check skb length > (iphdr+udp/tcp) */
 	if(!(iph->version == 4 && iph->ihl >= 5)) {
@@ -124,10 +127,6 @@ static int test_pkt_init(const char *data, int dlen, struct nos_track *nt, nt_pa
 
 	/* C->S, S->C. */
 	pkt->dir = nt_flow_dir(&nt->flow->tuple, iph);
-
-	/* init the packet parser. */
-	np = &npk_proto;
-	memset(np, 0, sizeof(nt_pkt_nproto_t));
 	return 0;
 }
 

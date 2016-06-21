@@ -114,10 +114,19 @@ typedef struct {
 	content_match_t ctm[MAX_CT_MATCH_NUM];
 } l7_match_t;
 
+enum __em_http_match_type {
+	HTP_MTP_HDR = 1,
+	HTP_MTP_CTX = 2,
+	HTP_MTP_ALL = 3,
+};
+
 typedef struct {
 	/* http hdr: URL, Context-type, Host, ... */
-	uint32_t hdr_URL:1, hdr_Host:1, hdr_ContextType:1;
+	uint16_t type:2, OR:1, hdr: 14;
+	uint16_t patt_len;
+	uint8_t patt[NP_PATT_LEN_MAX];
 
+	void *rex;
 } http_match_t;
 
 typedef struct nproto_rule np_rule_t;
@@ -131,7 +140,7 @@ typedef struct nproto_rule np_rule_t;
 	REF_Rules
 */
 typedef struct {
-	char name[64];
+	char name[128];
 	mwm_t *pmwm; /* rules with 4 char search patterns. */
 
 	uint16_t num_rules;
@@ -172,7 +181,7 @@ struct nproto_rule {
 	l7_match_t l7;
 
 	/* match http proto's */
-	http_match_t http;
+	http_match_t http[MAX_CT_MATCH_NUM];
 
 	/* ref sets */
 	np_rule_set_t *ref_set;
@@ -191,6 +200,7 @@ enum __em_inner_sets {
 	NP_SET_BASE_OTHER,
 	NP_SET_BASE_MAX,
 };
+#define SET_BASE_STR(idx) set_inner_name[idx]
 
 static inline uint8_t np_proto_to_set(uint8_t proto)
 {
@@ -216,12 +226,13 @@ enum __em_np_rule_type {
 
 enum __em_np_rule_relation {
 	NP_REF_NONE = 0,
-	NP_REF_MATCH = 1<<0,
-	NP_REF_RULES = 1<<1,
+	NP_REF_FLOW = 1<<0,
+	NP_REF_PACKET = 1<<1,
 	NP_REF_USERS = 1<<2,
 };
-#define RULE_REF_MATCH(rule) (rule->refs_type & NP_REF_MATCH)
-#define RULE_REF_RULES(rule) (rule->refs_type & NP_REF_RULES)
+#define RULE_REF_FLOW(rule) 	(rule->refs_type & NP_REF_FLOW)
+#define RULE_REF_PACKET(rule) 	(rule->refs_type & NP_REF_PACKET)
+#define RULE_REF_HTTP(rule) 	(rule->enable_http)
 
 enum __em_ctm_relation {
 	NP_CTM_OR = 0,
