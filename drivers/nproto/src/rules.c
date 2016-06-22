@@ -8,10 +8,11 @@
 #include <nproto/http.h>
 
 #include "mwm.h"
+#include "bmh.h"
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_HTTP_SVN
+#define RULE_DBG_ID NP_INNER_RULE_GTalk
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -52,31 +53,66 @@ static int rule_compile(np_rule_t *rule)
 	if(rule->enable_l7) {
 		for(i=0; i<rule->l7.ctm_num; i++) {
 			content_match_t *ctm = &rule->l7.ctm[i];
-			if(ctm->type_wrap == MHTP_REGEXP) {
+			if(ctm->type_wrap == MHTP_REGEXP ||
+				ctm->type_wrap == MHTP_SEARCH) {
 				if(!ctm->wrap_len) {
 					ctm->wrap_len = strlen(ctm->wrap);
 				}
-				if(ctm->wrap_len && !ctm->wrap_rex) {
-					pcre_t *rex = pcre_create(ctm->wrap, ctm->wrap_len);
-					if(!rex) {
-						np_error("[%s] rex wrap create failed.\n", rule->name_rule);
-						continue;
-					}
-					ctm->wrap_rex = rex;
+				switch(ctm->type_wrap) {
+					case MHTP_REGEXP: {
+						if(ctm->wrap_len && !ctm->wrap_rex) {
+							pcre_t *rex = pcre_create(ctm->wrap, ctm->wrap_len);
+							if(!rex) {
+								np_error("[%s] rex wrap create failed.\n", rule->name_rule);
+								continue;
+							}
+							ctm->wrap_rex = rex;
+						}
+					} break;
+					case MHTP_SEARCH: {
+						if(ctm->wrap_len && !ctm->wrap_bmh) {
+							bmh_t *bmh = kmalloc(sizeof(bmh_t), GFP_KERNEL);
+							if(!bmh) {
+								np_error("[%s] bmh wrap alloc failed.\n", rule->name_rule);
+								continue;
+							}
+							BMHInit(bmh, ctm->wrap, ctm->wrap_len);
+							ctm->wrap_bmh = bmh;
+						}
+					} break;
+					default: {np_error("error wrap type.\n");} break;
 				}
 			}
-			if(ctm->type_match == MHTP_REGEXP) {
+			if(ctm->type_match == MHTP_REGEXP || 
+				ctm->type_match == MHTP_SEARCH) {
 				if(!ctm->patt_len) {
 					ctm->patt_len = strlen(ctm->patt);
 				}
-				if(ctm->patt_len && !ctm->rex) {
-					pcre_t *rex = pcre_create(ctm->patt, ctm->patt_len);
-					if(!rex) {
-						np_error("[%s] rex match create failed.\n", rule->name_rule);
-						continue;
-					}
-					ctm->rex = rex;
-				}	
+				switch(ctm->type_match) {
+					case MHTP_REGEXP: {
+						if(ctm->patt_len && !ctm->rex) {
+							pcre_t *rex = pcre_create(ctm->patt, ctm->patt_len);
+							if(!rex) {
+								np_error("[%s] rex match create failed.\n", rule->name_rule);
+								continue;
+							}
+							ctm->rex = rex;
+						}
+					} break;
+					case MHTP_SEARCH: {
+						if(ctm->patt_len && !ctm->bmh) {
+							bmh_t *bmh = kmalloc(sizeof(bmh_t), GFP_KERNEL);
+							if(!bmh) {
+								np_error("[%s] bmh match alloc fained.\n", rule->name_rule);
+								continue;
+							}
+							BMHInit(bmh, ctm->patt, ctm->patt_len);
+							ctm->bmh = bmh;
+						}
+					} break;
+					default: {np_error("error match type.\n");} break;
+				}
+				
 			}
 		}
 	}
@@ -726,14 +762,19 @@ static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 				return NP_FALSE;
 			}
 		}
+		/* the last length to match/search. */
 		mlen = l7dlen - offset;
-		if(mlen < cont->patt_len) {
-			RULE_DBG(rule, NULL, "l7: cont fixed length miss.[%d->%d:%d]\n", l7dlen, offset, cont->patt_len);
-			return NP_FALSE;
+		if(cont->deep && mlen > cont->deep) {
+			mlen = cont->deep;
 		}
 		switch(cont->type_match) {
 			case MHTP_OFFSET: {
 				/* fixed match */
+				if(mlen < cont->patt_len) {
+					/* fixed match need check patt len, regexp no need. */
+					RULE_DBG(rule, NULL, "l7: cont fixed length miss.[%d->%d:%d]\n", l7dlen, offset, cont->patt_len);
+					return NP_FALSE;
+				}
 				return memcmp(l7data + offset, cont->patt, cont->patt_len) == 0 ? NP_TRUE : NP_FALSE;
 			} break;
 			case MHTP_REGEXP: {
@@ -741,9 +782,6 @@ static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 				if(!cont->rex) {
 					np_error("l7: cont rex nil.\n");
 					return NP_FALSE;
-				}
-				if(cont->deep && mlen > cont->deep) {
-					mlen = cont->deep;
 				}
 				m = pcre_find(cont->rex, l7data + offset, mlen);
 				if(m>=0) {
@@ -757,10 +795,10 @@ static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 					np_error("l7: cont bmh nil.\n");
 					return NP_FALSE;
 				}
-				return NP_TRUE;
+				return BMHChr(cont->bmh, l7data + offset, mlen) == NULL ? NP_FALSE : NP_TRUE;
 			} break;
 			case MHTP_HTTP_CTX: {
-				return NP_TRUE;
+				return NP_FALSE;
 			} break;
 			default: {
 				np_error("l7: cont not supported type: %d\n", cont->type_match);

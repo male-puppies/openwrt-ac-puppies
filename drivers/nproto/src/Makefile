@@ -55,4 +55,6 @@ nproto-y += rules/RDP.o
 nproto-y += rules/SIP.o
 nproto-y += rules/SMB.o
 nproto-y += rules/NTP.o
+nproto-y += rules/VNC.o
+nproto-y += rules/GTalk.o
 # end rules built-in

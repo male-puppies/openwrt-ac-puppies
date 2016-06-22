@@ -11,7 +11,8 @@ int inner_rules_init(void)
 	inner_ssh, inner_ssl, \
 	inner_ftp, inner_dhcp, \
 	inner_RDP, inner_SIP, \
-	inner_SMB, inner_NTP;
+	inner_SMB, inner_NTP, \
+	inner_VNC, inner_GTalk;
 
 	np_rule_register(&inner_http_req);
 	np_rule_register(&inner_http_rep);
@@ -26,6 +27,8 @@ int inner_rules_init(void)
 	np_rule_register(&inner_RDP);
 	np_rule_register(&inner_SIP);
 	np_rule_register(&inner_NTP);
+	np_rule_register(&inner_VNC);
+	np_rule_register(&inner_GTalk);
 
 	return 0;
 }

@@ -31,16 +31,11 @@ typedef struct {
 } l4_match_t;
 
 enum __em_match_t {
-	MHTP_OFFSET = 0,
-	MHTP_HTTP_CTX,
-	MHTP_REGEXP,
-	MHTP_SEARCH,
+	MHTP_OFFSET = 0, /* direct match l7 ptr + offset. */
+	MHTP_HTTP_CTX, /* search/match http body content. */
+	MHTP_REGEXP, /* search use regexp, advise use for this type: '/^xxx/'. */
+	MHTP_SEARCH, /* search use bmh[char], use for long patt. */
 	MHTP_MAX,
-};
-
-enum __em_match_wrap_t {
-	MWTP_SEARCH = 0,
-	MWTP_REGEXP,
 };
 
 enum __em_lnm_t {
