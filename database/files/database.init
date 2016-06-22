@@ -4,7 +4,7 @@
 START=95
 BIN=/usr/sbin/database
 start() {
-	SERVICE_DAEMONIZE=1 service_start $BIN start
+	SERVICE_DAEMONIZE=1 service_start $BIN start 
 	echo database done > /tmp/debug
 }
 
