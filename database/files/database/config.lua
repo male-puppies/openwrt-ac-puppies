@@ -1,9 +1,12 @@
-local lfs = require("lfs")
-local common = require("common")
-local js = require("cjson.safe")
-
-local read = common.read 
-local config_path = "db.json"
+local dbconfig = {
+	disk_dir = "/data/sqlite3/",
+	work_dir = "/tmp/db",
+	cache_log_count = 1,
+	cache_log_timeout = 1,
+	max_log_size = 102400,
+	host = "127.0.0.1",
+	port = 18883,
+}
 
 local method = {}
 local mt = {__index = method}
@@ -18,38 +21,8 @@ function method:get_workdb() 	return string.format("%s/disk.db", self:work_dir()
 function method:get_memodb() 	return string.format("%s/memo.db", self:work_dir()) end 
 function method:get_logpath() 	return string.format("%s/log.bin", self:disk_dir()) end
 
-local function validate(map)
-	local must_field = {
-		"host",
-		"port",
-		"disk_dir",
-		"work_dir",
-		"max_log_size",
-		"cache_log_count",
-		"cache_log_timeout",
-	}
-
-	for _, k in ipairs(must_field) do 
-		if not map[k] then 
-			return nil, "missing " .. k
-		end
-	end
-	return true
-end
-
 local function load()
-	local map = js.decode((read(config_path)))
-	if not map then
-		return nil, "load config fail " .. config_path
-	end 
-
-	local ret, err = validate(map)
-	if not ret then 
-		return nil, err 
-	end
-
-	local _ = lfs.attributes(map.disk_dir) or lfs.mkdir(map.disk_dir)
-	
+	local map = dbconfig
 	local obj = {kvmap = map}
 	setmetatable(obj, mt)
 	
@@ -57,7 +30,10 @@ local function load()
 end
 
 local g_ins
-local function ins()
+local function ins(cfgpath)
+	if cfgpath then 
+		config_path = cfgpath
+	end
 	if not g_ins then 
 		g_ins, err = load()
 		if not g_ins then 

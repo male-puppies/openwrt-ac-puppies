@@ -1,10 +1,12 @@
 local ski = require("ski")
 local log = require("log")
 local mgr = require("mgr")
+local sync = require("sync")
 local udp = require("ski.udp")
 local dc = require("dbcommon")
 local js = require("cjson.safe")
 local config = require("config")
+local mysql = require("ski.mysql")
 local rpcserv = require("rpcserv")
 local updatelog = require("updatelog")
 local sandcproxy = require("sandcproxy")
@@ -12,7 +14,7 @@ local sandcproxy = require("sandcproxy")
 local dbrpc, proxy, udpsrv
 local cmd_map = {}
 function cmd_map.rpc(cmd, ctx)  
-	local r = dbrpc:execute(cmd)
+	local r = dbrpc:execute(cmd), sync.sync()
 	local _ = r and proxy:publish(ctx.mod, js.encode({seq = ctx.seq, pld = r}))
 end
 
@@ -61,13 +63,30 @@ local function init_config()
 	return cfg
 end
 
+local function connect_mysql()
+	local db = mysql.new()
+    local ok, err, errno, sqlstate = db:connect({
+		host = "127.0.0.1",
+		port = 3306,
+		database = "cnf",
+		user = "root",
+		password = "wjrc0409",
+		max_packet_size = 1024 * 1024,
+		-- compact_arrays = true,
+	})
+   	return db
+end
+
 local function main()
 	local cfg = init_config()
 	local ud = updatelog.new(cfg)
-	local _ = ud:recover(), ud:prepare()
+	ud:prepare()
 	local conn = dc.new(cfg:get_workdb(), {{path = cfg:get_memodb(), alias = "memo"}})
-	mgr.new(conn, ud, cfg)
+	local myconn = connect_mysql() 
+	mgr.new(conn, myconn, ud, cfg)
 	
+	sync.init()
+
 	ski.go(start_udp_server)
 	proxy = start_sand_server()
 	dbrpc = rpcserv.new(proxy)

@@ -1,6 +1,6 @@
 local g_ins
-local function new(conn, ud, cfg)
-	g_ins = {conn = conn, ud = ud, cfg = cfg}
+local function new(conn, myconn, ud, cfg)
+	g_ins = {conn = conn, myconn = myconn, ud = ud, cfg = cfg}
 end
 
 local function ins()

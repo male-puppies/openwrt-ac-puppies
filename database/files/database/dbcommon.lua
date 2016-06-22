@@ -1,4 +1,4 @@
-local log = require("log")
+local sync = require("sync")
 local luasql = require("luasql.sqlite3")
 
 local env = luasql.sqlite3()
@@ -8,7 +8,10 @@ local mt = {__index = method}
 
 function method:escape(sql)	return self.conn:escape(sql) end
 function method:close() self.conn:close() self.conn = nil end 
-function method:execute(sql) return self.conn:execute(sql) end
+function method:execute(sql) 
+	sync.parse(sql)
+	return self.conn:execute(sql)
+end
 
 local function select_cb_common(conn, sql, cb)
 	local cur, err = conn:execute(sql)
@@ -37,7 +40,6 @@ function method:select(sql)
 end
 
 local function rollback(conn, sql, err)
-	log.error("rollback for %s %s", sql or "", err or "")
 	return conn:execute("rollback")
 end
 
@@ -62,14 +64,12 @@ end
 
 
 function new(diskpath, attaches)
-	local conn, err = env:connect(diskpath)
-	local _ = conn or log.fatal("connect %s fail %s", diskpath, err or "")
+	local conn, err = env:connect(diskpath) 	assert(conn, err)
 	
 	for _, item in ipairs(attaches or {}) do 
 		local path, alias = item.path, item.alias 	assert(path and alias)
 		local sql = string.format("attach database '%s' as '%s'", path, alias)
-		local ret, err = conn:execute(sql)
-		local _ = ret or log.fatal("attach fail %s", err)
+		local ret, err = conn:execute(sql) 	assert(ret, err)
 	end
 
 	local obj = {conn = conn}

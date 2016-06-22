@@ -2,7 +2,7 @@
 diskdb_name=disk.db
 
 err_exit() {
-	echo `uptime` " $*"
+	echo `uptime` " $*" 1>&2
 	exit 3
 }
 
