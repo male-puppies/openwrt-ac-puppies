@@ -28,6 +28,7 @@
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
 #include "nos_auth.h"
+#include "ntrack_kapi.h"
 
 unsigned int g_conf_magic = 0;
 unsigned int nos_hook_disable = 0;
@@ -61,11 +62,12 @@ static unsigned int nos_pre_hook(void *priv,
 		const struct nf_hook_state *state)
 {
 	//unsigned int hooknum = state->hook;
-	//const struct net_device *in = state->in;
+	const struct net_device *in = state->in;
 	//const struct net_device *out = state->out;
 #endif
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
+	struct nos_track* nos;
 
 	if (nos_hook_disable) {
 		return NF_ACCEPT;
@@ -84,6 +86,12 @@ static unsigned int nos_pre_hook(void *priv,
 	if (test_bit(IPS_NOS_BYPASS_BIT, &ct->status)) {
 		return NF_ACCEPT;
 	}
+	if ((nos = nf_ct_get_nos(ct)) == NULL) {
+		return NF_ACCEPT;
+	}
+
+	/* FIXME: context check kernel handle here. */
+	nt_context_check(skb, nos, (struct net_device *)in);
 
 	return NF_ACCEPT;
 }
