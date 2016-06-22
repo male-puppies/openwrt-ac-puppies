@@ -25,7 +25,7 @@ static inline flow_info_t * nt_flow(struct nos_track *nt)
 
 static inline user_info_t * nt_user(struct nos_track *nt)
 {
-	user_info_t *ui = nt->user;
+	user_info_t *ui = nt->ui_src;
 	nt_assert(ui);
 	nt_assert(ui->id >= 0 && ui->id < nos_user_info_max);
 	return ui;
@@ -33,7 +33,7 @@ static inline user_info_t * nt_user(struct nos_track *nt)
 
 static inline user_info_t * nt_peer(struct nos_track *nt)
 {
-	user_info_t *ui = nt->peer;
+	user_info_t *ui = nt->ui_dst;
 	nt_assert(ui);
 	nt_assert(ui->id >= 0 && ui->id < nos_user_info_max);
 	return ui;

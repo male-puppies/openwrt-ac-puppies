@@ -41,13 +41,13 @@ static int nt_init(struct nos_track *nt, struct iphdr *iph, void *l4ptr)
 
 		np_info("reinit flow:"FMT_FLOW_STR"\n", FMT_FLOW(nt->flow));
 	}
-	if(!nt->user) {
-		nt->user = &user;
+	if(!nt->ui_src) {
+		nt->ui_src = &user;
 		user.ip = __be32_to_cpu(iph->saddr);
 		user.id = 0xEEDDEEDD;
 	}
-	if(!nt->peer) {
-		nt->peer = &peer;
+	if(!nt->ui_dst) {
+		nt->ui_dst = &peer;
 		peer.ip = __be32_to_cpu(iph->daddr);
 		peer.id = 0xAAEEDDBB;
 	}
@@ -122,8 +122,8 @@ static int test_pkt_init(const char *data, int dlen, struct nos_track *nt, nt_pa
 
 	/* ntrack nodes. */
 	pkt->fi = nt->flow;
-	pkt->ui = nt->user;
-	pkt->pi = nt->peer;
+	pkt->ui = nt->ui_src;
+	pkt->pi = nt->ui_dst;
 
 	/* C->S, S->C. */
 	pkt->dir = nt_flow_dir(&nt->flow->tuple, iph);
