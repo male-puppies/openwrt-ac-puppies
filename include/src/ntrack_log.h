@@ -13,13 +13,14 @@
 	((unsigned char *)&addr)[1], \
 	((unsigned char *)&addr)[0]
 	
-#define FMT_USER_STR "uid:%8u magic:%8u gid:%4d statu:%3d ref:%4u - %u.%u.%u.%u"
+#define FMT_USER_STR "uid:%8u magic:%8u gid:%4d ucrc:%10u status:%3d szone:%3d sipgrp:%llx ref:%4u - %u.%u.%u.%u"
 #define FMT_USER(ui) \
 			(ui)->id, (ui)->magic, \
-			(ui)->hdr.group_id, \
-			(ui)->hdr.flags, \
+			(ui)->hdr.u_grp_id, (ui)->hdr.u_usr_crc, \
+			(ui)->hdr.status, \
+			(ui)->hdr.src_zone_id, (ui)->hdr.src_ipgrp_bits, \
 			(ui)->refcnt, \
-			HIPQUAD((ui)->ip)
+			NIPQUAD((ui)->ip)
 
 #define FMT_MAC_STR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define FMT_MAC(m)  (unsigned char)m[0],(unsigned char)m[1],(unsigned char)m[2],\

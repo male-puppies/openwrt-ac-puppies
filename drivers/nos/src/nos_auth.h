@@ -9,20 +9,9 @@
 #include <linux/netdevice.h>
 #include <linux/kernel.h>
 #include <ntrack_comm.h>
+#include "ntrack_auth.h"
 
 extern unsigned int redirect_ip;
-
-enum auth_status_t {
-	AUTH_BYPASS = 0,
-	AUTH_NONE = 1,
-	AUTH_OK = 2,
-};
-
-/* authd user keepalive message */
-typedef struct {
-	uint32_t magic, id;
-	/* FIXME: contents */
-} auth_msg_t;
 
 struct auth_rule_t {
 	unsigned int id;

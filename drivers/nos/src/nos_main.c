@@ -63,7 +63,7 @@ static unsigned int nos_pre_hook(void *priv,
 		const struct nf_hook_state *state)
 {
 	//unsigned int hooknum = state->hook;
-	const struct net_device *in = state->in;
+	//const struct net_device *in = state->in;
 	//const struct net_device *out = state->out;
 #endif
 	enum ip_conntrack_info ctinfo;
@@ -90,9 +90,6 @@ static unsigned int nos_pre_hook(void *priv,
 	if ((nos = nf_ct_get_nos(ct)) == NULL) {
 		return NF_ACCEPT;
 	}
-
-	/* FIXME: context check kernel handle here. */
-	nt_context_check(skb, nos, (struct net_device *)in);
 
 	return NF_ACCEPT;
 }

@@ -76,7 +76,7 @@ static inline user_info_t * nt_get_user_by_id(ntrack_t *nt, uint32_t id, uint32_
 
 static inline user_info_t * nt_get_user_by_flow(ntrack_t *nt, flow_info_t *fi)
 {
-	uint32_t uid = fi->user_id;
+	uint32_t uid = fi->ui_src_id;
 
 	nt_assert(uid >=0 && uid < nt->ui_count);
 	return &nt->ui_base[uid];
