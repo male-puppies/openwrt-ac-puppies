@@ -13,7 +13,7 @@
 	((unsigned char *)&addr)[1], \
 	((unsigned char *)&addr)[0]
 	
-#define FMT_USER_STR "uid:%8u magic:%8u gid:%4d ucrc:%10u status:%3d szone:%3d sipgrp:%llx ref:%4u - %u.%u.%u.%u"
+#define FMT_USER_STR "uid:%08u magic:%08u gid:%04d ucrc:%010u status:%03d szone:%03d sipgrp:x%016llx ref:%04u - %u.%u.%u.%u"
 #define FMT_USER(ui) \
 			(ui)->id, (ui)->magic, \
 			(ui)->hdr.u_grp_id, (ui)->hdr.u_usr_crc, \
