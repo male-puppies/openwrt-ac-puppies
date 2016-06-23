@@ -13,9 +13,9 @@ error() {
 }
 
 start() {
-	diff /etc/my.cnf /usr/share/mysql_ac/my.cnf >/dev/null 2>&1 
+	diff /etc/my.cnf /usr/share/mysql-ac/my.cnf >/dev/null 2>&1 
 	if [ $? -ne 0 ]; then 
-		cp -a /usr/share/mysql_ac/my.cnf /etc/my.cnf
+		cp -a /usr/share/mysql-ac/my.cnf /etc/my.cnf
 	fi  
 	local datadir=$(sed -n -e "s/^[[:space:]]*datadir[[:space:]]*=[[:space:]\"']*\([^[:space:]\"']*\)[[:space:]\"']*/\1/p" /etc/my.cnf)
 	test -d $datadir || mkdir -p $datadir
