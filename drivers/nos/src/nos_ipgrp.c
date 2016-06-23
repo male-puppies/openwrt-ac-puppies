@@ -115,7 +115,7 @@ void nos_ipgrp_match(const struct net_device *in, const struct net_device *out, 
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
 		if (ip_set_test_src_ip(in, out, skb, ipgrp_conf.ipgrp[i].ipset_id) > 0)
-			bits |= (1 << i);
+			bits |= (1 << ipgrp_conf.ipgrp[i].id);
 	}
 
 	ui->hdr.src_ipgrp_bits = bits;
