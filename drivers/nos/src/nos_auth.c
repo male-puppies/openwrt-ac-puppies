@@ -295,14 +295,14 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 				"#\n"
 				"# Info:\n"
 				"#    redirect_ip=%pI4\n"
+				"#    no_flow_timeout=%u\n"
 				"#\n"
 				"# Reload cmd:\n"
 				"\n"
 				"clean\n"
 				"\n"
-				"redirect_ip=%pI4\n",
 				&redirect_ip,
-				&redirect_ip);
+				nos_auth_no_flow_timeout);
 		nos_auth_ctl_buffer[n] = 0;
 		return nos_auth_ctl_buffer;
 	} else if ((*pos) > 0) {
@@ -519,6 +519,13 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 				 ((c & 0xff) == c) &&
 				 ((d & 0xff) == d)) ) {
 			redirect_ip = htonl((a<<24)|(b<<16)|(c<<8)|(d<<0));
+			goto done;
+		}
+	} else if (strncmp(data, "no_flow_timeout=", 16) == 0) {
+		unsigned int a;
+		n = sscanf(data, "no_flow_timeout=%u", &a);
+		if (n == 1) {
+			nos_auth_no_flow_timeout = a;
 			goto done;
 		}
 	}
