@@ -31,7 +31,7 @@
 #include "ntrack_kapi.h"
 #include "ntrack_msg.h"
 
-unsigned int g_conf_magic = 0;
+unsigned int g_conf_magic = 1315423911;
 unsigned int nos_hook_disable = 0;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
