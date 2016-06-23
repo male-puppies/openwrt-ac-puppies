@@ -55,10 +55,12 @@ np_rule_t inner_ssl = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.deep = 96,
-				.patt = "/^(\\x16\\x03\\0x01|\\x17\\x03\\x01)/m",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.deep = 96,
+					.patt = "/^(\\x16\\x03\\0x01|\\x17\\x03\\x01)/m",
+				},
 			},
 		},
 	},

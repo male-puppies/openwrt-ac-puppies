@@ -96,6 +96,7 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 {
 	int n;
 	nt_packet_t pkt;
+	flow_info_t *fi = nt_flow(nt);
 
 	/* FIXME: tackoff-fixup the sock4/5/http proxy header. */
 	n = nproto_pkt_init(skb, nt, &pkt);
@@ -104,8 +105,13 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 		return n;
 	}
 
-	if(!nproto_finished(nt_flow(nt))) {
+	nt_flow_proto_update(fi, 0, NULL);
+	if(!nproto_finished(fi)) {
 		n = rules_match(&pkt);
+	} else {
+		if(fi->tuple.proto == 6)
+			np_debug("fin: "FMT_FLOW_STR" %d\n", 
+					FMT_FLOW(fi), nt_flow_proto(fi));
 	}
 	return n;
 }

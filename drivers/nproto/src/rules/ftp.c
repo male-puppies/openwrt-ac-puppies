@@ -50,10 +50,12 @@ np_rule_t inner_ftp = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.deep = 32,
-				.patt = "/^220.*ftp/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.deep = 32,
+					.patt = "/^220.*ftp/i",
+				},
 			},
 		},
 	},

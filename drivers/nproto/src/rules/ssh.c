@@ -45,10 +45,12 @@ np_rule_t inner_ssh = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.deep = 16,
-				.patt = "/^SSH-[12]\\.[0-9]-/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.deep = 16,
+					.patt = "/^SSH-[12]\\.[0-9]-/i",
+				},
 			},
 		},
 	},

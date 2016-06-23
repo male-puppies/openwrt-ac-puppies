@@ -144,7 +144,7 @@ int test_run_pkt(const char *data, int dlen)
 
 	n = test_pkt_init(data, dlen, &ntrack, &pkt);
 	if(n) {
-		np_debug("packet init failed: %d\n", n);
+		// np_debug("packet init failed: %d\n", n);
 		// np_dump(data, dlen, "dump: \n");
 		return n;
 	}

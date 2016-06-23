@@ -47,8 +47,10 @@ np_rule_t inner_VNC = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.patt = "/^RFB 00[1-9]\\.00[0-9]\\x0a$/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.patt = "/^RFB 00[1-9]\\.00[0-9]\\x0a$/i",
+				},
 			},
 		},
 	},

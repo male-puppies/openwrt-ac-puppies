@@ -176,9 +176,11 @@ np_rule_t inner_http_req = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.patt = "/^(GET|POST|CONNECT|HEAD|OPTIONS) \\//",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.patt = "/^(GET|POST|CONNECT|HEAD|OPTIONS) \\//",
+				},
 			},
 		},
 	},
@@ -219,9 +221,11 @@ np_rule_t inner_http_rep = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.patt = "/^HTTP\\/[12].0 /",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.patt = "/^HTTP\\/[12].0 /",
+				},
 			},
 		},
 	},

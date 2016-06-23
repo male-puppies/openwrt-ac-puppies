@@ -27,14 +27,12 @@ int pcre_find(pcre_t *pcre, const u8 *text, unsigned int text_len)
 
 	rc = pcre2_match(pcre->re, text, text_len, 0, 0,
 			 pcre->match_data, pcre->mcontext);
-
-	if (unlikely(rc > 0)) {
+	if (unlikely(rc >= 0)) {
 		ovector = pcre2_get_ovector_pointer(pcre->match_data);
 		if(ovector) {
-			np_debug("ovector: %x\n", *(unsigned int*)ovector);
+			return ovector[0];
 		}
 	}
-
 	return rc;
 }
 EXPORT_SYMBOL(pcre_find);

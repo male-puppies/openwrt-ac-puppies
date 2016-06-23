@@ -32,7 +32,6 @@ typedef struct {
 
 enum __em_match_t {
 	MHTP_OFFSET = 0, /* direct match l7 ptr + offset. */
-	MHTP_HTTP_CTX, /* search/match http body content. */
 	MHTP_REGEXP, /* search use regexp, advise use for this type: '/^xxx/'. */
 	MHTP_SEARCH, /* search use bmh[char], use for long patt. */
 	MHTP_MAX,
@@ -59,13 +58,22 @@ typedef struct {
 typedef int (*nproto_cb_t)(nt_packet_t *np, void *rule);
 typedef int (*nproto_init_t)(void);
 typedef void (*nproto_clean_t)(void);
+
 typedef struct {
-	/* 0: offset match, 1: http body, 2: regexp, 3: search, 4: search-offset */
-	uint8_t type_wrap:2, type_match:6;
+	/* 0: offset match, 1: regexp, 2: search, 3: search-offset */
+	uint8_t type;
 
-	/* only match the len == spec_len. */
-	uint16_t spec_len;
+	int16_t offset;
+	uint16_t deep;
+	uint16_t length;
+	uint8_t patt[NP_PATT_LEN_MAX];
 
+	void *rex, *bmh;
+} match_t;
+
+typedef struct {
+	uint16_t spec_len; /* only match the len == spec_len. */
+	
 	/* 
 	** takeoff the wrapper proto.
 	** 
@@ -74,26 +82,11 @@ typedef struct {
 	** 
 	** this find the realy proto payload, 
 			such as http->hdr->body (http-proxy-...).
-	*/
-	int16_t wrap_begin, wrap_end;
-	uint16_t wrap_len;
-	uint8_t wrap[NP_PATT_LEN_MAX];
-	pcre_t *wrap_rex;
-	void *wrap_bmh;
-
-	/*
+	**
 	** ++++++offset[x]++***patt***+++++++++++
 	** search range: offset -> offset + deep 
 	*/
-	int16_t offset;
-	uint16_t deep;
-	uint16_t patt_len;
-	uint8_t patt[NP_PATT_LEN_MAX];
-	void *rex, *bmh;
-	/* regexp */
-	//cre2_regexp_t *rex;
-	//cre2_options_t *opt;
-	/* bmh */
+	match_t wrap, match;
 } content_match_t;
 
 typedef struct {
@@ -109,19 +102,22 @@ typedef struct {
 	content_match_t ctm[MAX_CT_MATCH_NUM];
 } l7_match_t;
 
-enum __em_http_match_type {
-	HTP_MTP_HDR = 1,
-	HTP_MTP_CTX = 2,
-	HTP_MTP_ALL = 3,
-};
+typedef struct {
+	/* 
+	* http hdr: 
+	*	CTX: 0;
+	*	HDR: URL, Context-type, Host, ... ;
+	*/
+	uint16_t hdr;
+	match_t match;
+} http_match_rule_t;
 
 typedef struct {
-	/* http hdr: URL, Context-type, Host, ... */
-	uint16_t type:2, OR:1, hdr: 14;
-	uint16_t patt_len;
-	uint8_t patt[NP_PATT_LEN_MAX];
-
-	void *rex;
+	/* 
+	* relation: OR/AND,
+	*/
+	uint8_t relation:1;
+	http_match_rule_t htpm[MAX_CT_MATCH_NUM];
 } http_match_t;
 
 typedef struct nproto_rule np_rule_t;
@@ -176,7 +172,7 @@ struct nproto_rule {
 	l7_match_t l7;
 
 	/* match http proto's */
-	http_match_t http[MAX_CT_MATCH_NUM];
+	http_match_t http;
 
 	/* ref sets */
 	np_rule_set_t *ref_set;

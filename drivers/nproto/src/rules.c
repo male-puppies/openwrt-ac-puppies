@@ -12,7 +12,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_GTalk
+// #define RULE_DBG_ID NP_INNER_RULE_HTTP_REQ
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -39,6 +39,57 @@ np_rule_set_t rule_sets_base[NP_FLOW_DIR_MAX][NP_SET_BASE_MAX];
 
 static LIST_HEAD(all_rules);
 
+static int ctm_init(np_rule_t *rule, match_t *ctm)
+{
+	if(!ctm->length) {
+		ctm->length = strlen(ctm->patt);
+	}
+	if(ctm->length <= 0) {
+		return EINVAL;
+	}
+	switch(ctm->type) {
+		case MHTP_REGEXP: {
+			if(!ctm->rex) {
+				pcre_t *rex = pcre_create(ctm->patt, ctm->length);
+				if(!rex) {
+					np_error("[%s] rex patt create failed.\n", rule->name_rule);
+					return -ENOMEM;
+				}
+				ctm->rex = rex;
+			}
+		} break;
+		case MHTP_SEARCH: {
+			if(!ctm->bmh) {
+				bmh_t *bmh = kmalloc(sizeof(bmh_t), GFP_KERNEL);
+				if(!bmh) {
+					np_error("[%s] bmh patt alloc failed.\n", rule->name_rule);
+					return -ENOMEM;
+				}
+				BMHInit(bmh, ctm->patt, ctm->length);
+				ctm->bmh = bmh;
+			}
+		} break;
+		default: {np_error("error ctm type.\n");} break;
+	}
+
+	return 0;
+}
+
+static void ctm_destroy(np_rule_t *rule, match_t *ctm)
+{
+	if(ctm->rex) {
+		np_debug("[%s] destroy rex wrap.\n", rule->name_rule);
+		pcre_destroy(ctm->rex);
+		ctm->rex = NULL;
+	}
+
+	if(ctm->bmh) {
+		np_debug("[%s] destroy bmh http.\n", rule->name_rule);
+		kfree(ctm->bmh);
+		ctm->bmh = NULL;
+	}
+}
+
 static int rule_compile(np_rule_t *rule)
 {
 	int i;
@@ -53,91 +104,17 @@ static int rule_compile(np_rule_t *rule)
 	if(rule->enable_l7) {
 		for(i=0; i<rule->l7.ctm_num; i++) {
 			content_match_t *ctm = &rule->l7.ctm[i];
-			if(ctm->type_wrap == MHTP_REGEXP ||
-				ctm->type_wrap == MHTP_SEARCH) {
-				if(!ctm->wrap_len) {
-					ctm->wrap_len = strlen(ctm->wrap);
-				}
-				switch(ctm->type_wrap) {
-					case MHTP_REGEXP: {
-						if(ctm->wrap_len && !ctm->wrap_rex) {
-							pcre_t *rex = pcre_create(ctm->wrap, ctm->wrap_len);
-							if(!rex) {
-								np_error("[%s] rex wrap create failed.\n", rule->name_rule);
-								continue;
-							}
-							ctm->wrap_rex = rex;
-						}
-					} break;
-					case MHTP_SEARCH: {
-						if(ctm->wrap_len && !ctm->wrap_bmh) {
-							bmh_t *bmh = kmalloc(sizeof(bmh_t), GFP_KERNEL);
-							if(!bmh) {
-								np_error("[%s] bmh wrap alloc failed.\n", rule->name_rule);
-								continue;
-							}
-							BMHInit(bmh, ctm->wrap, ctm->wrap_len);
-							ctm->wrap_bmh = bmh;
-						}
-					} break;
-					default: {np_error("error wrap type.\n");} break;
-				}
-			}
-			if(ctm->type_match == MHTP_REGEXP || 
-				ctm->type_match == MHTP_SEARCH) {
-				if(!ctm->patt_len) {
-					ctm->patt_len = strlen(ctm->patt);
-				}
-				switch(ctm->type_match) {
-					case MHTP_REGEXP: {
-						if(ctm->patt_len && !ctm->rex) {
-							pcre_t *rex = pcre_create(ctm->patt, ctm->patt_len);
-							if(!rex) {
-								np_error("[%s] rex match create failed.\n", rule->name_rule);
-								continue;
-							}
-							ctm->rex = rex;
-						}
-					} break;
-					case MHTP_SEARCH: {
-						if(ctm->patt_len && !ctm->bmh) {
-							bmh_t *bmh = kmalloc(sizeof(bmh_t), GFP_KERNEL);
-							if(!bmh) {
-								np_error("[%s] bmh match alloc fained.\n", rule->name_rule);
-								continue;
-							}
-							BMHInit(bmh, ctm->patt, ctm->patt_len);
-							ctm->bmh = bmh;
-						}
-					} break;
-					default: {np_error("error match type.\n");} break;
-				}
-				
-			}
+			ctm_init(rule, &ctm->wrap);
+			ctm_init(rule, &ctm->match);
 		}
 	}
 
 	/* init http match struct */
-	if(rule->enable_http) {
-		for(i=0; i<ARRAY_SIZE(rule->http); i++) {
-			http_match_t *htpm = &rule->http[i];
-			if(htpm->hdr == 0) {
+	if(RULE_REF_HTTP(rule)) {
+		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
+			http_match_rule_t *htpm = &rule->http.htpm[i];
+			if(ctm_init(rule, &htpm->match) > 0) {
 				break;
-			}
-			if(!htpm->patt_len) {
-				htpm->patt_len = strlen(htpm->patt);
-				if(htpm->patt_len<=0) {
-					np_error("[%s] rex patt len: %d\n", rule->name_rule, htpm->patt_len);
-					continue;
-				}
-			}
-			if(!htpm->rex) {
-				pcre_t *rex = pcre_create(htpm->patt, htpm->patt_len);
-				if(!rex) {
-					np_error("[%s] rex http match create failed.\n", rule->name_rule);
-					continue;
-				}
-				htpm->rex = rex;
 			}
 		}
 	}
@@ -155,31 +132,14 @@ static void rule_release(np_rule_t *rule)
 	if(rule->enable_l7) {
 		for(i=0; i<rule->l7.ctm_num; i++) {
 			content_match_t *ctm = &rule->l7.ctm[i];
-			if(ctm->type_wrap != MHTP_REGEXP &&
-				ctm->type_match != MHTP_REGEXP) 
-			{
-				continue;
-			}
-			if(ctm->wrap_rex) {
-				np_debug("[%s] destroy rex wrap.\n", rule->name_rule);
-				pcre_destroy(ctm->wrap_rex);
-				ctm->wrap_rex = NULL;
-			}
-			if(ctm->rex) {
-				np_debug("[%s] destroy rex match.\n", rule->name_rule);
-				pcre_destroy(ctm->rex);
-				ctm->rex = NULL;
-			}
+			ctm_destroy(rule, &ctm->wrap);
+			ctm_destroy(rule, &ctm->match);
 		}
 	}
 	if(rule->enable_http) {
-		for(i=0; i<ARRAY_SIZE(rule->http); i++) {
-			http_match_t *htpm = &rule->http[i];
-			if(htpm->rex) {
-				np_debug("[%s] destroy rex http.\n", rule->name_rule);
-				pcre_destroy(htpm->rex);
-				htpm->rex = NULL;
-			}
+		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
+			http_match_rule_t *htpm = &rule->http.htpm[i];
+			ctm_destroy(rule, &htpm->match);
 		}
 	}
 }
@@ -266,52 +226,61 @@ static int set_add_rule_normal(np_rule_set_t *set, np_rule_t *rule)
 	return set_add_rule_normal_sorted(set, rule);
 }
 
+static int set_add_rule_mwm(np_rule_set_t *set, np_rule_t *rule, match_t *ctm)
+{
+	int n;
+	mwm_t *mwm = set->pmwm;
+
+	/* init mwm st.. */
+	if(!mwm) {
+		mwm = mwmNew();
+		if(mwm) {
+			np_error("create mwm failed.\n");
+			return set_add_rule_normal(set, rule);
+		}
+		set->pmwm = mwm;
+	}
+	/* add patters & rule to mwm. */
+	n = mwmAddPatternEx(mwm, ctm->patt, ctm->length, ctm->offset, ctm->deep, rule);
+	if(n<0) {
+		np_error("mwm prepare %s:%d error.\n", rule->name_rule, rule->ID);
+		return set_add_rule_normal(set, rule);
+	} else {
+		np_info("mwm add rule[%s:%d].\n", rule->name_rule, rule->ID);
+	}
+	return 0;
+}
+
 static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 {
-	int i, n, rule_in_mwm = 0;
+	int i;
 
 	np_assert(set);
 	np_assert(rule);
 
 	/* check l7 search && patt len > 4 */
-	if(!rule->enable_l7) {
+	if(!rule->enable_l7 && !RULE_REF_HTTP(rule)) {
 		return set_add_rule_normal(set, rule);
 	}
-
-	for(i=0; i<rule->l7.ctm_num; i++) {
-		mwm_t *mwm = set->pmwm;
-		content_match_t *ct = &rule->l7.ctm[i];
-
-		/* search & patt length >= 4 */
-		if(!(ct->type_match == MHTP_SEARCH && ct->patt_len >= 4))
-			continue;
-
-		/* init mwm st.. */
-		if(!mwm) {
-			mwm = mwmNew();
-			if(mwm) {
-				np_error("create mwm failed.\n");
-				return set_add_rule_normal(set, rule);
+	/* http search && length >= 4 */
+	if(RULE_REF_HTTP(rule)) {
+		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
+			match_t *ctm = &rule->http.htpm[i].match;
+			if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
+				return set_add_rule_mwm(set, rule, ctm);
 			}
-			set->pmwm = mwm;
 		}
-		/* add patters & rule to mwm. */
-		n = mwmAddPatternEx(mwm, ct->patt, ct->patt_len, ct->offset, ct->deep, rule);
-		if(n<0) {
-			np_error("mwm prepare %s:%d error.\n", rule->name_rule, rule->ID);
-			return set_add_rule_normal(set, rule);
-		} else {
-			rule_in_mwm = 1;
-			np_info("mwm add rule[%s:%d] ct[%d]\n", rule->name_rule, rule->ID, i);
+	} else {
+		for(i=0; i<rule->l7.ctm_num; i++) {
+			match_t *ctm = &rule->l7.ctm[i].match;
+			if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
+				/* ! search & patt length >= 4 */
+				return set_add_rule_mwm(set, rule, ctm);
+			}
 		}
 	}
-
 	/* default add to normal set */
-	if(!rule_in_mwm) {
-		return set_add_rule_normal(set, rule);
-	}
-
-	return 0;
+	return set_add_rule_normal(set, rule);
 }
 
 int np_rule_register(np_rule_t *rule)
@@ -705,10 +674,80 @@ static int lnf_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 	return NP_FALSE;
 }
 
+static uint8_t* ctm_do(np_rule_t *rule, match_t *ctm, uint8_t *data, int dlen)
+{
+	int mlen, offset;
+	/* fixup & compare offset. */
+	offset = ctm->offset;
+	if(offset < 0) {
+		/* revert ctm. */
+		offset += dlen;
+		if(offset <= 0) {
+			RULE_DBG(rule, NULL, "l7: ctm offset fixed faild: %d-%d\n", offset, dlen);
+			return NULL;
+		}
+	}
+	/* the last length to match/search. */
+	mlen = dlen - offset;
+	if(ctm->deep && mlen > ctm->deep) {
+		mlen = ctm->deep;
+	}
+
+	switch(ctm->type) {
+		case MHTP_OFFSET: {
+			/* fixed match */
+			if(mlen < ctm->length) {
+				/* fixed match need check patt len, regexp no need. */
+				RULE_DBG(rule, NULL, "l7: ctm fixed length miss.[%d->%d:%d]\n", dlen, offset, ctm->length);
+				return NULL;
+			}
+			if(memcmp(data + offset, ctm->patt, ctm->length) == 0) {
+				return data + offset;
+			} 
+			return NULL;
+		} break;
+		case MHTP_REGEXP: {
+			int m = 0;
+			if(!ctm->rex) {
+				np_error("l7: ctm rex nil.\n");
+				return NULL;
+			}
+			m = pcre_find(ctm->rex, data + offset, mlen);
+			if(m>=0) {
+				RULE_DBG(rule, NULL, "l7: rex match at: %d\n", m);
+				return data + offset + m;
+			} else {
+				RULE_DBG(rule, NULL, "l7: rex miss.\n");
+			}
+			return NULL;
+		} break;
+		case MHTP_SEARCH: {
+			uint8_t *mc;
+			if(!ctm->bmh) {
+				np_error("l7: ctm bmh nil.\n");
+				return NP_FALSE;
+			}
+			mc = BMHChr(ctm->bmh, data + offset, mlen);
+			if(mc){
+				RULE_DBG(rule, NULL, "l7: bmh match at: %d\n", (int)((uint8_t*)mc-data));
+				return mc;
+			} else {
+				RULE_DBG(rule, NULL, "l7: bmh miss.\n");
+			}
+			return NULL;
+		} break;
+		default: {
+			np_error("l7: ctm not supported type: %d\n", ctm->type);
+			return NULL;
+		} break;
+	}
+	return NULL;
+}
+
 static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 {
-	int start = 0, end = 0, offset = 0, l7dlen;
-	uint8_t *l7data, *wrapper;
+	int l7dlen;
+	uint8_t *l7data, *wrapper, *mc;
 
 	l7data = wrapper = npt->l7_ptr;
 	l7dlen = npt->l7_len;
@@ -717,96 +756,26 @@ static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 		RULE_DBG(rule, NULL, "l7: cont length miss.\n");
 		return NP_FALSE;
 	}
-	if(cont->wrap_len > 0) {
-		int wp;
-		if(l7dlen < (cont->wrap_begin + cont->wrap_len)) {
-			RULE_DBG(rule, NULL, "l7: cont fake wrapper dlen.\n");
-			return NP_FALSE;
-		}
-		start = cont->wrap_begin;
-		end = l7dlen;
-		if(cont->wrap_end) {
-			end = l7dlen > cont->wrap_end ? cont->wrap_end : l7dlen;
-		}
-		if(start <= end) {
-			RULE_DBG(rule, NULL, "l7: cont fake wrapper len.\n");
-			return NP_FALSE;
-		}
-		if(cont->wrap_rex) {
-			/* regexp match */
-			wp = pcre_find(cont->wrap_rex, l7data, l7dlen);
-			if(wp>=0) {
-				/* deubg */
-				l7data += wp;
-				l7dlen -= l7data - wrapper;
-				if(l7dlen <= 0) {
-					RULE_DBG(rule, NULL, "l7: wrapper - short length.\n");
-					return NP_FALSE;
-				}
-			}
-		}
-		if(cont->wrap_bmh) {
-			/* FIXME: BMH wrapper single string. */
-		}
-	}
 
-	if(cont->patt_len > 0) {
-		int mlen;
-		/* fixup & compare offset. */
-		offset = cont->offset;
-		if(offset < 0) {
-			/* revert match. */
-			offset += l7dlen;
-			if(offset <= 0) {
-				RULE_DBG(rule, NULL, "l7: cont offset fixed faild: %d-%d\n", offset, l7dlen);
+	/* fixup wrapper proto. */
+	if(cont->wrap.type == MHTP_REGEXP || 
+		cont->wrap.type == MHTP_SEARCH) {
+		mc = ctm_do(rule, &cont->wrap, l7data, l7dlen);
+		if(!mc) {
+			l7data = mc;
+			l7dlen -= l7data - wrapper;
+			if(l7dlen <= 0) {
+				RULE_DBG(rule, NULL, "l7: wrapper - short len.\n");
 				return NP_FALSE;
 			}
 		}
-		/* the last length to match/search. */
-		mlen = l7dlen - offset;
-		if(cont->deep && mlen > cont->deep) {
-			mlen = cont->deep;
-		}
-		switch(cont->type_match) {
-			case MHTP_OFFSET: {
-				/* fixed match */
-				if(mlen < cont->patt_len) {
-					/* fixed match need check patt len, regexp no need. */
-					RULE_DBG(rule, NULL, "l7: cont fixed length miss.[%d->%d:%d]\n", l7dlen, offset, cont->patt_len);
-					return NP_FALSE;
-				}
-				return memcmp(l7data + offset, cont->patt, cont->patt_len) == 0 ? NP_TRUE : NP_FALSE;
-			} break;
-			case MHTP_REGEXP: {
-				int m = 0;
-				if(!cont->rex) {
-					np_error("l7: cont rex nil.\n");
-					return NP_FALSE;
-				}
-				m = pcre_find(cont->rex, l7data + offset, mlen);
-				if(m>=0) {
-					RULE_DBG(rule, NULL, "l7: rex match at: %d\n", m);
-					return NP_TRUE;
-				}
-				return NP_FALSE;
-			} break;
-			case MHTP_SEARCH: {
-				if(!cont->bmh) {
-					np_error("l7: cont bmh nil.\n");
-					return NP_FALSE;
-				}
-				return BMHChr(cont->bmh, l7data + offset, mlen) == NULL ? NP_FALSE : NP_TRUE;
-			} break;
-			case MHTP_HTTP_CTX: {
-				return NP_FALSE;
-			} break;
-			default: {
-				np_error("l7: cont not supported type: %d\n", cont->type_match);
-				return NP_FALSE;
-			} break;
-		}
 	}
 
+	mc = ctm_do(rule, &cont->match, l7data, l7dlen);
+	if(!mc) {
+		RULE_DBG(rule, NULL, "l7: ctx miss.\n");
+		return NP_FALSE;
+	}
 	return NP_TRUE;
 }
 
@@ -851,28 +820,39 @@ static int l7_match(np_rule_t *rule, nt_packet_t *npt)
 	return NP_FALSE;
 }
 
-static int http_do_match(np_rule_t *rule, http_match_t *htpm, nt_packet_t *npt)
+static int http_do_match(np_rule_t *rule, http_match_rule_t *htpm, nt_packet_t *npt)
 {
-	int len, m;
-	uint8_t *hdr;
+	int mlen = npt->l7_len, m;
+	uint8_t *hdr, *mdata = npt->l7_ptr, *mc;
 
-	hdr = np_http_hdr(npt, htpm->hdr, &len);
-	if(!hdr) {
-		RULE_DBG(rule, NULL, "http: hdr not found.\n");
-		return NP_FALSE;
+	switch(htpm->hdr) {
+		case 0: {
+			/* context search/regext match. */
+			hdr = np_http_hdr(npt, NP_HTTP_END, &m);
+			if(hdr && m > 0) {
+				mdata = hdr + m;
+				mlen -= (mdata - npt->l7_ptr);
+			}
+			if(mlen <= 0) {
+				RULE_DBG(rule, NULL, "http: nil content.\n");
+				return NP_FALSE;
+			}
+		} break;
+		default: {
+			hdr = np_http_hdr(npt, htpm->hdr, &mlen);
+			if(!hdr) {
+				RULE_DBG(rule, NULL, "http: hdr not found.\n");
+				return NP_FALSE;
+			}
+			mdata = hdr;
+		}break;
 	}
 
-	if(!htpm->rex) {
-		RULE_DBG(rule, NULL, "http: rex not inited.\n");
-		return NP_FALSE;
-	}
-
-	m = pcre_find(htpm->rex, hdr, len);
-	if(m>=0) {
-		RULE_DBG(rule, NULL, "http: rex matched.\n");
+	mc = ctm_do(rule, &htpm->match, mdata, mlen);
+	if(mc) {
+		RULE_DBG(rule, NULL, "http: ctm matched.\n");
 		return NP_TRUE;
 	}
-
 	return NP_FALSE;
 }
 
@@ -884,20 +864,21 @@ static int http_match(np_rule_t *rule, nt_packet_t *npt)
 		case NP_DUT_HTTP_REQ:
 		case NP_DUT_HTTP_REP:
 		{
-			int i, m = NP_TRUE;
-			for (i = 0; i <ARRAY_SIZE(rule->http); ++i) {
-				http_match_t *htpm = &rule->http[i];
-				if(htpm->patt_len<=0) {
+			int i, m = NP_TRUE, relation_OR;
+			relation_OR = (rule->http.relation == NP_CTM_OR ? 1 : 0);
+			for (i = 0; i <ARRAY_SIZE(rule->http.htpm); ++i) {
+				http_match_rule_t *htpm = &rule->http.htpm[i];
+				if(htpm->match.length <= 0) {
 					break;
 				}
 				m = http_do_match(rule, htpm, npt);
 				if(m) {
-					if(htpm->OR) {
+					if(relation_OR) {
 						RULE_DBG(rule, NULL, "http: or matched.\n");
 						return NP_TRUE;
 					}
 				} else {
-					if(!htpm->OR) {
+					if(!relation_OR) {
 						RULE_DBG(rule, NULL, "http: and miss match.\n");
 						return NP_FALSE;
 					}
@@ -915,9 +896,9 @@ static int http_match(np_rule_t *rule, nt_packet_t *npt)
 
 static int rule_matched_cb(void *np, void *prule)
 {
-	np_rule_t *rule = prule;
+	// np_rule_t *rule = prule;
 	
-	RULE_DBG(rule, NULL, "rule: %s, matched.\n", rule->name_rule);
+	RULE_DBG((np_rule_t*)prule, NULL, "rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
@@ -1028,7 +1009,9 @@ int rules_match(nt_packet_t *npt)
 		}
 	}
 
+	/* assert the valid proto index. */
 	np_assert(proto < NP_RULE_SETS_HASH);
+
 	hash_set = rule_sets_refs[proto % NP_RULE_SETS_HASH];
 	if(hash_set) {
 		rule = rules_set_match(hash_set, npt);

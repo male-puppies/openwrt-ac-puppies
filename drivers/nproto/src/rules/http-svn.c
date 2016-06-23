@@ -33,11 +33,15 @@ np_rule_t inner_http_svn = {
 	.enable_http = 1,
 
 	.http = {
-		{
-			.OR = 1,
-			.type = HTP_MTP_HDR,
-			.hdr = NP_HTTP_User_Agent,
-			.patt = "/^SVN\\/[0-9]\\.[0-9]\\.[0-9] /i",
+		.relation = NP_CTM_OR,
+		.htpm = {
+			{
+				.hdr = NP_HTTP_User_Agent,
+				.match = {
+					.type = MHTP_REGEXP,
+					.patt = "/^SVN\\/[0-9]\\.[0-9]\\.[0-9] /i",
+				},
+			},
 		},
 	},
 

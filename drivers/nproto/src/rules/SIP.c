@@ -45,9 +45,11 @@ np_rule_t inner_SIP = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.patt = "/^(invite|register|cancel|message|subscribe|notify) sip[\\x09-\\x0d -~]*sip/[0-2]\\.[0-9]/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.patt = "/^(invite|register|cancel|message|subscribe|notify) sip[\\x09-\\x0d -~]*sip/[0-2]\\.[0-9]/i",
+				},
 			},
 		},
 	},

@@ -52,8 +52,10 @@ np_rule_t inner_GTalk = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.patt = "/^<stream:stream to=[\"']gmail\\.com[\"']/",
+				.match = {
+					.type = MHTP_REGEXP,
+					.patt = "/^<stream:stream to=[\"']gmail\\.com[\"']/",
+				},
 			},
 		},
 	},

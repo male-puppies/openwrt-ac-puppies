@@ -43,10 +43,12 @@ np_rule_t inner_pop3 = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.deep = 48,
-				.patt = "/^\\+ok\\b.*pop3\\b/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.deep = 48,
+					.patt = "/^\\+ok\\b.*pop3\\b/i",
+				},
 			},
 		},
 	},
@@ -87,10 +89,12 @@ np_rule_t inner_smtp = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.deep = 48,
-				.patt = "/^220[\\x09-\\x0d -~]*.*(smtp|mail)/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.deep = 48,
+					.patt = "/^220[\\x09-\\x0d -~]*.*(smtp|mail)/i",
+				},
 			},
 		},
 	},

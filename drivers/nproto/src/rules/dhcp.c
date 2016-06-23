@@ -46,10 +46,12 @@ np_rule_t inner_dhcp = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 0,
-				.deep = 256,
-				.patt = "/^[\\x01\\x02][\\x01- ]\\x06.*c\\x82sc/m",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 0,
+					.deep = 256,
+					.patt = "/^[\\x01\\x02][\\x01- ]\\x06.*c\\x82sc/m",
+				},
 			},
 		},
 	},

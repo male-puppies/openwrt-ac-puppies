@@ -47,9 +47,11 @@ np_rule_t inner_RDP = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = -64,
-				.patt = "/rdpdr.*cliprdr.*rdpsnd/m",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = -64,
+					.patt = "/rdpdr.*cliprdr.*rdpsnd/m",
+				},
 			},
 		},
 	},

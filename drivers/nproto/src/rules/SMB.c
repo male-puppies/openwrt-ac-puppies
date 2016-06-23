@@ -53,9 +53,11 @@ np_rule_t inner_SMB = {
 		.ctm_relation = NP_CTM_AND,
 		.ctm = {
 			{
-				.type_match = MHTP_REGEXP,
-				.offset = 4,
-				.patt = "/^\xffsmb[\x72\x25]/i",
+				.match = {
+					.type = MHTP_REGEXP,
+					.offset = 4,
+					.patt = "/^\xffsmb[\x72\x25]/i",
+				},
 			},
 		},
 	},
