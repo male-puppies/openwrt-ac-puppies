@@ -3,7 +3,11 @@
 #include <linux/slab.h>
 #include <linux/list.h>
 #include <linux/skbuff.h>
+#include <linux/version.h>
+
 #include <asm/smp.h>
+
+#include <net/netfilter/nf_conntrack.h>
 
 #include <linux/nos_track.h>
 #include <ntrack_comm.h>
@@ -116,6 +120,58 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 	return n;
 }
 
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+static unsigned int nproto_hook_fn(void *priv,
+	struct sk_buff *skb, 
+	const struct nf_hook_state *state) {
+
+	struct net_device *in = state->in;
+#else
+static unsigned int nproto_hook_fn(const struct nf_hook_ops *ops, 
+		struct sk_buff *skb,
+		const struct net_device *in,
+		const struct net_device *out, 
+		int (*okfn)(struct sk_buff *)) {
+#endif
+
+	struct nf_conn *ct;
+	struct nos_track *nos;
+	enum ip_conntrack_info ctinfo;
+
+	ct = nf_ct_get(skb, &ctinfo);
+	if (!ct) {
+		// np_debug("null ct.\n");
+		return NF_ACCEPT;
+	}
+
+	if(nf_ct_is_untracked(ct)) {
+		return NF_ACCEPT;
+	}
+
+	if((nos = nf_ct_get_nos(ct)) == NULL) {
+		np_debug("nos untracked.\n");
+		return NF_ACCEPT;
+	}
+
+	/* FIXME: context check kernel handle here. */
+	nt_context_chk_fn(skb, nos, in);
+	return NF_ACCEPT;
+}
+
+static struct nf_hook_ops nproto_nf_hook_ops[] = {
+	{
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
+		.priv = NULL,
+#else
+		.owner = THIS_MODULE,
+#endif
+		.hook = nproto_hook_fn,
+		.pf = NFPROTO_IPV4,
+		.hooknum = NF_INET_FORWARD,
+		.priority = 0,
+	},
+};
+
 void *nproto_klog_fd = NULL;
 static int __init nproto_module_init(void)
 {
@@ -140,7 +196,13 @@ static int __init nproto_module_init(void)
 		goto __error;
 	}
 
-	rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
+	r = nf_register_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
+	if (r) {
+		np_error("nf hook register failed.\n");
+		goto __error;
+	}
+
+	// rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
 	return 0;
 
 __error:
@@ -153,7 +215,8 @@ __error:
 
 static void __exit nproto_module_exit(void)
 {
-	rcu_assign_pointer(nt_cck_fn, NULL);
+	nf_unregister_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
+	// rcu_assign_pointer(nt_cck_fn, NULL);
 
 	test_exit();
 	nproto_cleanup();
