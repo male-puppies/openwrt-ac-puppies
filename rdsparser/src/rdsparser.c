@@ -182,6 +182,10 @@ int static read_param_content(rdsst *rds) {
 		char  *p;
 		int len, ret;
 		
+		if (!rds->cursize) {
+			return 1;
+		}
+		
 		ret = read_rds_len(rds->buff, rds->buff + rds->cursize, '$', &p, &len);
 		if (ret < 0) { 
 			return -1;
@@ -264,7 +268,7 @@ int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *out) {
 	if (ret > 0) {
 		return 1;
 	}
-		
+
 	rds_result *res = &rds->res;			BUG_ON(res->res_idx != res->res_count);
 	memcpy(out, res, sizeof(rds_result));
 	memset(res, 0, sizeof(rds_result));
