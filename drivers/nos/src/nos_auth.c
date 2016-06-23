@@ -154,6 +154,7 @@ void nos_auth_match(const struct net_device *in, const struct net_device *out, s
 					}
 				}
 			}
+			nos_user_info_hold(ui);
 			return;
 		}
 	}

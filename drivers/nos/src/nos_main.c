@@ -29,6 +29,7 @@
 #include "nos_ipgrp.h"
 #include "nos_auth.h"
 #include "ntrack_kapi.h"
+#include "ntrack_msg.h"
 
 unsigned int g_conf_magic = 0;
 unsigned int nos_hook_disable = 0;
@@ -204,6 +205,20 @@ static unsigned int nos_fw_hook(void *priv,
 		} else {
 			ret = NF_ACCEPT;
 		}
+	} else if (ui->hdr.status == AUTH_OK) {
+		if (time_after(jiffies, ui->hdr.time_stamp + 30 * HZ)) {
+			nt_msghdr_t hdr;
+			auth_msg_t auth;
+
+			ui->hdr.time_stamp = jiffies;
+			auth.id = ui->id;
+			auth.magic = ui->magic;
+
+			nt_msghdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
+			if (nt_msg_enqueue(&hdr, &auth, 0)) {
+				nt_debug("skb cap failed.\n");
+			}
+		}
 	}
 
 	//get and match auth rule
@@ -278,13 +293,23 @@ static struct nf_hook_ops nos_hooks[] = {
 	},
 };
 
+void *ntrack_klog_fd = NULL;
+
 static int __init nos_init(void)
 {
 	int ret = 0;
 
+	ntrack_klog_fd = klog_init("ntrack", 0x0e, 0);
+	if(!ntrack_klog_fd) {
+		return -ENOMEM;
+	}
+
+	ret = nt_msg_init();
+	if (ret != 0)
+		goto nt_msg_init_failed;
 	ret = nos_zone_init();
 	if (ret != 0)
-		return ret;
+		goto nos_zone_init_failed;
 	ret = nos_ipgrp_init();
 	if (ret != 0)
 		goto nos_ipgrp_init_failed;
@@ -305,6 +330,11 @@ nos_auth_init_failed:
 	nos_ipgrp_exit();
 nos_ipgrp_init_failed:
 	nos_zone_exit();
+nos_zone_init_failed:
+	nt_msg_cleanup();
+nt_msg_init_failed:
+	klog_fini(ntrack_klog_fd);
+
 	return ret;
 }
 
@@ -314,6 +344,8 @@ static void __exit nos_exit(void)
 	nos_auth_exit();
 	nos_ipgrp_exit();
 	nos_zone_exit();
+	nt_msg_cleanup();
+	klog_fini(ntrack_klog_fd);
 }
 
 module_init(nos_init);

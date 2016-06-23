@@ -18,6 +18,12 @@ enum auth_status_t {
 	AUTH_OK = 2,
 };
 
+/* authd user keepalive message */
+typedef struct {
+	uint32_t magic, id;
+	/* FIXME: contents */
+} auth_msg_t;
+
 struct auth_rule_t {
 	unsigned int id;
 	unsigned int src_zone_id;
