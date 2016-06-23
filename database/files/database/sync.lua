@@ -1,6 +1,7 @@
 local log = require("log")
 local js = require("cjson.safe")
 local user = require("sync.user")
+
 local sync_map = {
 	user = user.sync,
 }
@@ -15,14 +16,14 @@ end
 
 local function init()
 	for _, f in pairs(sync_map) do 
-		f({}, true)
+		f({})
 	end
 end
 
 local patterns = {
 	{key = "update", pattern = "%s+(%w+)%s+set%s", 		action = "set"},
-	{key = "insert", pattern = "%s+into%s+(%w+)%s", 	action = "add"},
-	{key = "replace", pattern = "%s+into%s+(%w+)%s", 	action = "set"},
+	{key = "insert", pattern = "%s+into%s+(%w+)[%s(]", 	action = "add"},
+	{key = "replace", pattern = "%s+into%s+(%w+)[%s(]", action = "set"},
 	{key = "delete", pattern = "delete%s+from%s+(%w+)", action = "del"},	
 }
 

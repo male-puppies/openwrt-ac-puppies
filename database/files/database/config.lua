@@ -3,7 +3,7 @@ local dbconfig = {
 	work_dir = "/tmp/db",
 	cache_log_count = 1,
 	cache_log_timeout = 1,
-	max_log_size = 102400,
+	max_log_size = 102400*3,
 	host = "127.0.0.1",
 	port = 18883,
 }

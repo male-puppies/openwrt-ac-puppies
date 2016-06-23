@@ -85,7 +85,9 @@ local function main()
 	local myconn = connect_mysql() 
 	mgr.new(conn, myconn, ud, cfg)
 	
+	local st = ski.time()
 	sync.init()
+	log.info("sync init spends %ss", ski.time() - st)
 
 	ski.go(start_udp_server)
 	proxy = start_sand_server()
