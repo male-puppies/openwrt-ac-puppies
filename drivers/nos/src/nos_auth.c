@@ -300,7 +300,7 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 				"# Reload cmd:\n"
 				"\n"
 				"clean\n"
-				"\n"
+				"\n",
 				&redirect_ip,
 				nos_auth_no_flow_timeout);
 		nos_auth_ctl_buffer[n] = 0;
