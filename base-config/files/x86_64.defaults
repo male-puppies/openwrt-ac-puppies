@@ -40,6 +40,16 @@ test $version -lt 1 && {
 	version=1
 }
 
+test $version -lt 2 && {
+	uci -q batch <<-EOT
+		delete uhttpd.main.listen_http
+		delete uhttpd.main.listen_https
+		add_list uhttpd.main.listen_http='0.0.0.0:8000'
+	EOT
+	uci commit uhttpd
+	version=2
+}
+
 touch /etc/config/base_config
 uci get base_config.@status[0] || uci add base_config status
 uci set base_config.@status[0].version=$version
