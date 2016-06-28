@@ -33,12 +33,12 @@ endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:=nignx redis module 
+  TITLE:=nginx redis module 
 endef
 
 
 define Package/$(PKG_NAME)/description
-	nignx redis module 
+	nginx redis module 
 endef
 
 define Package/$(PKG_NAME)/conffiles

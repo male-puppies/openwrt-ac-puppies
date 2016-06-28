@@ -33,12 +33,12 @@ endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:=nignx mysql module 
+  TITLE:=nginx mysql module 
 endef
 
 
 define Package/$(PKG_NAME)/description
-	nignx mysql module 
+	nginx mysql module 
 endef
 
 define Package/$(PKG_NAME)/conffiles
