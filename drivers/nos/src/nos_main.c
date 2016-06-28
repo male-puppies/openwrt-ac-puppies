@@ -266,7 +266,7 @@ static struct nf_hook_ops nos_hooks[] = {
 		.owner = THIS_MODULE,
 #endif
 		.hook = nos_pre_hook,
-		.pf = PF_INET,
+		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_PRE_ROUTING,
 		.priority = NF_IP_PRI_CONNTRACK + 1,
 	},
@@ -275,7 +275,7 @@ static struct nf_hook_ops nos_hooks[] = {
 		.owner = THIS_MODULE,
 #endif
 		.hook = nos_fw_hook,
-		.pf = PF_INET,
+		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_FORWARD,
 		.priority = NF_IP_PRI_LAST,
 	},
@@ -284,7 +284,7 @@ static struct nf_hook_ops nos_hooks[] = {
 		.owner = THIS_MODULE,
 #endif
 		.hook = nos_post_hook,
-		.pf = PF_INET,
+		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_POST_ROUTING,
 		.priority = NF_IP_PRI_LAST,
 	},
