@@ -40,4 +40,6 @@ void nos_auth_match(const struct net_device *in, const struct net_device *out, s
 
 void nos_auth_http_302(const struct net_device *dev, struct sk_buff *skb, const struct nos_user_info *ui);
 
+void nos_auth_convert_tcprst(struct sk_buff *skb);
+
 #endif /* _NOS_AUTH_H_ */

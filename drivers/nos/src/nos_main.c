@@ -195,11 +195,10 @@ static unsigned int nos_fw_hook(void *priv,
 			set_bit(IPS_NOS_DROP_BIT, &ct->status);
 			ret = NF_DROP;
 		} else if (data_len > 0) {
+			set_bit(IPS_NOS_DROP_BIT, &ct->status);
 			ret = NF_DROP;
 		} else if (tcph->ack && !tcph->syn) {
-			//nos_auth_convert_tcprst(skb);
-			ret = NF_ACCEPT;
-		} else {
+			nos_auth_convert_tcprst(skb);
 			ret = NF_ACCEPT;
 		}
 	} else if (ui->hdr.status == AUTH_OK) {
