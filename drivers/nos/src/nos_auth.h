@@ -15,6 +15,7 @@
 extern unsigned int redirect_ip;
 
 struct auth_rule_t {
+#define INVALID_AUTH_RULE_ID 255
 	unsigned int id;
 	unsigned int src_zone_id;
 	unsigned int src_ipgrp_id;
@@ -31,7 +32,6 @@ struct auth_rule_t {
 struct auth_conf {
 	unsigned int num;
 #define MAX_AUTH 16
-#define INVALID_AUTH_RULE_ID MAX_AUTH
 	struct auth_rule_t auth[MAX_AUTH];
 };
 

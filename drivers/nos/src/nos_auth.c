@@ -146,7 +146,7 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		for (i = 0; i < auth_conf.num; i++) {
 			if ( flow->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
 					(flow->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
-				ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = i;
+				ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = (uint8_t)auth_conf.auth[i].id;
 				if (auth_conf.auth[i].auth_type == AUTH_TYPE_AUTO) {
 					ui->hdr.type = AUTH_TYPE_AUTO;
 					ui->hdr.status = AUTH_OK;
