@@ -531,6 +531,9 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 			int i = 0;
 			int j = 0;
 			int found = 1;
+#define _STATUS_IPWHITE_ (1<<0)
+#define _STATUS_MACWHITE_ (1<<1)
+			int status = 0;
 			do {
 				if (found && j == 3) {
 					found = 0;
@@ -548,7 +551,14 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 					if (strncmp(data + i, "ipwhite=", 8) == 0) {
 						int k = 0;
 						char buf[256];
-						buf[0] = 0;
+
+						if ((status & _STATUS_IPWHITE_)) {
+							printk("dup ipwhite=...\n");
+							err = -EINVAL;
+							break;
+						}
+						status |= _STATUS_IPWHITE_;
+
 						i += 8;
 						while (i < 256 && data[i] && data[i] != ',' && data[i] != '\n') {
 							buf[k++] = data[i];
@@ -570,6 +580,14 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 					} else if (strncmp(data + i, "macwhite=", 9) == 0) {
 						int k = 0;
 						char buf[256];
+
+						if ((status & _STATUS_MACWHITE_)) {
+							printk("dup macwhite=...\n");
+							err = -EINVAL;
+							break;
+						}
+						status |= _STATUS_MACWHITE_;
+
 						i += 9;
 						while (i < 256 && data[i] && data[i] != ',' && data[i] != '\n') {
 							buf[k++] = data[i];

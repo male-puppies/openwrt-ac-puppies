@@ -20,16 +20,16 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +nginx +ebtables +iptables-mod-extra
+  DEPENDS:= +kmod-nos
 endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:=User authentication
+  TITLE:=User authentication config load script
 endef
 
 define Package/$(PKG_NAME)/description
-  Web access user authentication app
+  Web access user authentication app config script
 endef
 
 define Package/$(PKG_NAME)/conffiles
@@ -37,33 +37,15 @@ define Package/$(PKG_NAME)/conffiles
 endef
 
 define Package/$(PKG_NAME)/postinst
-#!/bin/sh
-
-if [ -z "$$IPKG_INSTROOT" ]; then
-  ( . /etc/uci-defaults/95-userauth )
-  rm -f /etc/uci-defaults/95-userauth
-fi
-
-exit 0
 endef
-#xx
+
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/userauth.defaults $(1)/etc/uci-defaults/95-userauth
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/userauthd.init $(1)/etc/init.d/userauthd
+	$(INSTALL_BIN) ./files/userauth.init $(1)/etc/init.d/userauth
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/userauth.config $(1)/etc/config/userauth
-	$(INSTALL_DIR) $(1)/usr/share/userauth
-	$(INSTALL_DATA) ./files/firewall.include $(1)/usr/share/userauth/firewall.include
-	$(INSTALL_DATA) ./files/nginx.conf $(1)/usr/share/userauth/nginx.conf
-	$(INSTALL_BIN) ./files/nginx.init $(1)/usr/share/userauth/nginx
-	$(INSTALL_DIR) $(1)/usr/share/userauth/www
-	cp -r ./files/www/* $(1)/usr/share/userauth/www/ || true
-	$(INSTALL_DIR) $(1)/usr/share/userauth/lua
-	cp -r ./files/lua/* $(1)/usr/share/userauth/lua || true
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/userauthd.sh $(1)/usr/sbin/userauthd
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) ./files/userauth.sh $(1)/usr/bin/userauth
 endef
 
 define Build/Configure
