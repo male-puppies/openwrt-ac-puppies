@@ -39,7 +39,7 @@
 #include "nos_ipgrp.h"
 #include "ntrack_msg.h"
 
-static unsigned int g_auth_conf_magic = 1315423911;
+static uint16_t g_auth_conf_magic = 50855;
 
 /*XXX: default redirect_ip 1.0.0.8 */
 unsigned int redirect_ip = __constant_htonl((1<<24)|(0<<16)|(0<<8)|(8<<0));
