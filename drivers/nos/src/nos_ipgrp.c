@@ -47,10 +47,12 @@ static inline void nos_ipgrp_cleanup(void)
 	synchronize_rcu();
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
-		ip_set_put_byindex(&init_net, ipgrp_conf.ipgrp[i].ipset_id);
+		if (ipgrp_conf.ipgrp[i].ipset_set) {
+			//it's not @all ipgrp
+			ip_set_put_byindex(&init_net, ipgrp_conf.ipgrp[i].ipset_id);
+		}
 	}
 	memset(&ipgrp_conf, 0, sizeof(ipgrp_conf));
-	g_conf_magic++;
 	nos_hook_disable = 0;
 }
 
@@ -79,7 +81,6 @@ static inline int nos_ipgrp_set(const struct ip_grp_t *ipgrp)
 	i = ipgrp_conf.num;
 	memcpy(&ipgrp_conf.ipgrp[i], ipgrp, sizeof(struct ip_grp_t));
 	ipgrp_conf.num = i + 1;
-	g_conf_magic++;
 	nos_hook_disable = 0;
 
 	return 0;
@@ -93,12 +94,14 @@ static inline int nos_ipgrp_delete(const struct ip_grp_t *ipgrp)
 		if (ipgrp_conf.ipgrp[i].id == ipgrp->id) {
 			nos_hook_disable = 1;
 			synchronize_rcu();
-			ip_set_put_byindex(&init_net, ipgrp_conf.ipgrp[i].ipset_id);
+			if (ipgrp_conf.ipgrp[i].ipset_set) {
+				//it's not @all ipgrp
+				ip_set_put_byindex(&init_net, ipgrp_conf.ipgrp[i].ipset_id);
+			}
 			if (i + 1 < ipgrp_conf.num) {
 				memmove(&ipgrp_conf.ipgrp[i], &ipgrp_conf.ipgrp[i+1], sizeof(struct ip_grp_t) * (ipgrp_conf.num - 1 - i));
 			}
 			ipgrp_conf.num = ipgrp_conf.num - 1;
-			g_conf_magic++;
 			nos_hook_disable = 0;
 			return 0;
 		}
@@ -107,18 +110,36 @@ static inline int nos_ipgrp_delete(const struct ip_grp_t *ipgrp)
 	return -ENOENT;
 }
 
-void nos_ipgrp_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui)
+uint64_t nos_ipgrp_match_src(const struct net_device *in, const struct net_device *out, struct sk_buff *skb)
 {
 	int i;
 	unsigned long bits = 0;
 
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
-		if (ip_set_test_src_ip(in, out, skb, ipgrp_conf.ipgrp[i].ipset_id) > 0)
+		if (ipgrp_conf.ipgrp[i].ipset_set == NULL) //ipgrp is @all
+			bits |= (1 << ipgrp_conf.ipgrp[i].id);
+		else if (ip_set_test_src_ip(in, out, skb, ipgrp_conf.ipgrp[i].ipset_id) > 0)
 			bits |= (1 << ipgrp_conf.ipgrp[i].id);
 	}
 
-	ui->hdr.src_ipgrp_bits = bits;
+	return bits;
+}
+
+uint64_t nos_ipgrp_match_dst(const struct net_device *in, const struct net_device *out, struct sk_buff *skb)
+{
+	int i;
+	unsigned long bits = 0;
+
+	for (i = 0; i < ipgrp_conf.num; i++)
+	{
+		if (ipgrp_conf.ipgrp[i].ipset_set == NULL) //ipgrp is @all
+			bits |= (1 << ipgrp_conf.ipgrp[i].id);
+		else if (ip_set_test_dst_ip(in, out, skb, ipgrp_conf.ipgrp[i].ipset_id) > 0)
+			bits |= (1 << ipgrp_conf.ipgrp[i].id);
+	}
+
+	return bits;
 }
 
 void *nos_ipgrp_get(loff_t idx)
@@ -138,6 +159,7 @@ static void *nos_ipgrp_start(struct seq_file *m, loff_t *pos)
 				sizeof(nos_ipgrp_ctl_buffer) - 1,
 				"# Usage:\n"
 				"#    ipgrp <id>=<ipset_name> -- set one ipgrp\n"
+				"#    ipgrp <id>=@all -- set all range 0.0.0.0~255.255.255.255\n"
 				"#    delete <id> -- delete one ipgrp\n"
 				"#    clean -- remove all existing ipgrp(s)\n"
 				"#\n"
@@ -159,7 +181,7 @@ static void *nos_ipgrp_start(struct seq_file *m, loff_t *pos)
 			n = snprintf(nos_ipgrp_ctl_buffer,
 					sizeof(nos_ipgrp_ctl_buffer) - 1,
 					"ipgrp %u=%s\n",
-					ipgrp->id, ip_set_name_byindex(&init_net, ipgrp->ipset_id));
+					ipgrp->id, ipgrp->ipset_set == NULL? "@all" : ip_set_name_byindex(&init_net, ipgrp->ipset_id));
 			nos_ipgrp_ctl_buffer[n] = 0;
 			return nos_ipgrp_ctl_buffer;
 		}
@@ -180,7 +202,7 @@ static void *nos_ipgrp_next(struct seq_file *m, void *v, loff_t *pos)
 			n = snprintf(nos_ipgrp_ctl_buffer,
 					sizeof(nos_ipgrp_ctl_buffer) - 1,
 					"ipgrp %u=%s\n",
-					ipgrp->id, ip_set_name_byindex(&init_net, ipgrp->ipset_id));
+					ipgrp->id, ipgrp->ipset_set == NULL? "@all" : ip_set_name_byindex(&init_net, ipgrp->ipset_id));
 			nos_ipgrp_ctl_buffer[n] = 0;
 			return nos_ipgrp_ctl_buffer;
 		}
@@ -260,17 +282,24 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 		if (n == 2) {
 			ip_set_id_t id;
 			struct ip_set *set;
-			id = ip_set_get_byname(&init_net, buf, &set);
-			if (id != IPSET_INVALID_ID) {
-				ipgrp.ipset_id = id;
-				ipgrp.ipset_set = set;
+			if (strcmp("@all", buf) == 0) {
+				ipgrp.ipset_id = IPSET_INVALID_ID;
+				ipgrp.ipset_set = NULL;
 				if ((err = nos_ipgrp_set(&ipgrp)) == 0)
 					goto done;
-				else
-					ip_set_put_byindex(&init_net, ipgrp.ipset_id);
 			} else {
-				printk("ip_set '%s' not found\n", buf);
-				err = -EINVAL;
+				id = ip_set_get_byname(&init_net, buf, &set);
+				if (id != IPSET_INVALID_ID) {
+					ipgrp.ipset_id = id;
+					ipgrp.ipset_set = set;
+					if ((err = nos_ipgrp_set(&ipgrp)) == 0)
+						goto done;
+					else
+						ip_set_put_byindex(&init_net, ipgrp.ipset_id);
+				} else {
+					printk("ip_set '%s' not found\n", buf);
+					err = -EINVAL;
+				}
 			}
 			printk("nos_ipgrp_set() failed ret=%d\n", err);
 		}

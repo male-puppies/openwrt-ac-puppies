@@ -25,7 +25,7 @@ struct ipgrp_conf {
 int nos_ipgrp_init(void);
 void nos_ipgrp_exit(void);
 
-
-void nos_ipgrp_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui);
+uint64_t nos_ipgrp_match_src(const struct net_device *in, const struct net_device *out, struct sk_buff *skb);
+uint64_t nos_ipgrp_match_dst(const struct net_device *in, const struct net_device *out, struct sk_buff *skb);
 
 #endif /* _NOS_IPGRP_H_ */

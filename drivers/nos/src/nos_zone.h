@@ -19,6 +19,6 @@ struct zone_t {
 int nos_zone_init(void);
 void nos_zone_exit(void);
 
-void nos_zone_match(const struct net_device *dev, struct nos_user_info *ui);
+unsigned int nos_zone_match(const struct net_device *dev);
 
 #endif /* _NOS_ZONE_H_ */

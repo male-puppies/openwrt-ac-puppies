@@ -31,7 +31,6 @@
 #include "ntrack_kapi.h"
 #include "ntrack_msg.h"
 
-unsigned int g_conf_magic = 1315423911;
 unsigned int nos_hook_disable = 0;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
@@ -129,7 +128,8 @@ static unsigned int nos_fw_hook(void *priv,
 	int ret = NF_ACCEPT;
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
-	//struct iphdr *iph;
+
+	struct nos_flow_info *flow;
 	struct nos_user_info *ui;
 	struct nos_track* nos;
 
@@ -153,74 +153,23 @@ static unsigned int nos_fw_hook(void *priv,
 	if ((nos = nf_ct_get_nos(ct)) == NULL) {
 		return NF_ACCEPT;
 	}
+	flow = nt_flow(nos);
 	ui = nt_user(nos);
 
-	if (ui->hdr.rule_magic != g_conf_magic) {
-		//slow path
-		nos_zone_match(in, ui);
-		nos_ipgrp_match(in, out, skb, ui);
+	if ((flow->hdr.info_status & INFO_STATUS_VALID_BIT)) {
+		//get sipgrp dipgrp szone dzone info
+		flow->hdr.src_zone_id = nos_zone_match(in);
+		flow->hdr.dst_zone_id = nos_zone_match(out);
+		flow->hdr.src_ipgrp_bits = nos_ipgrp_match_src(in, out, skb);
+		flow->hdr.dst_ipgrp_bits = nos_ipgrp_match_dst(in, out, skb);
 
-		nos_auth_match(in, out, skb, ui);
-
-		ui->hdr.rule_magic = g_conf_magic;
+		flow->hdr.info_status |= INFO_STATUS_VALID_BIT;;
 	}
 
-	if (ui->hdr.status == AUTH_NONE) {
-		//need web auth
-		int data_len;
-		unsigned char *data;
-		struct tcphdr *tcph;
-		struct iphdr *iph = ip_hdr(skb);
-		ret = NF_DROP;
-		if (iph->protocol == IPPROTO_UDP) {
-			struct udphdr *udph = (struct udphdr *)((void *)iph + iph->ihl*4);
-			if (udph->dest == __constant_htons(53) ||
-					udph->dest == __constant_htons(67)) {
-				set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
-				ret = NF_ACCEPT;
-				goto out;
-			}
-		}
-		if (iph->protocol != IPPROTO_TCP) {
-			set_bit(IPS_NOS_DROP_BIT, &ct->status);
-			goto out;
-		}
-		//FIXME skb_make_writable
-		tcph = (struct tcphdr *)((void *)iph + iph->ihl * 4);
-		data = skb->data + (iph->ihl << 2) + (tcph->doff << 2);
-		data_len = ntohs(iph->tot_len) - ((iph->ihl << 2) + (tcph->doff << 2));
-		if ((data_len > 4 && strncasecmp(data, "GET ", 4) == 0) ||
-				(data_len > 5 && strncasecmp(data, "POST ", 5) == 0)) {
-			nos_auth_http_302(in, skb, ui);
-			set_bit(IPS_NOS_DROP_BIT, &ct->status);
-			ret = NF_DROP;
-		} else if (data_len > 0) {
-			set_bit(IPS_NOS_DROP_BIT, &ct->status);
-			ret = NF_DROP;
-		} else if (tcph->ack && !tcph->syn) {
-			nos_auth_convert_tcprst(skb);
-			ret = NF_ACCEPT;
-		}
-	} else if (ui->hdr.status == AUTH_OK) {
-		if (time_after(jiffies, ui->hdr.time_stamp + 30 * HZ)) {
-			nt_msghdr_t hdr;
-			auth_msg_t auth;
+	ret = nos_auth_hook(in, out, skb, ct, flow, ui);
+	if (ret != NF_ACCEPT)
+		return ret;
 
-			ui->hdr.time_stamp = jiffies;
-			auth.id = ui->id;
-			auth.magic = ui->magic;
-
-			nt_msghdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
-			if (nt_msg_enqueue(&hdr, &auth, 0)) {
-				nt_debug("skb cap failed.\n");
-			}
-		}
-	}
-
-	//get and match auth rule
-	//auth action
-
-out:
 	return ret;
 }
 

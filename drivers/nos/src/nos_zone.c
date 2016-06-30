@@ -51,7 +51,6 @@ static inline void nos_zone_cleanup(void)
 	for (i = 0; i < MAX_IF_INDEX; i++) {
 		if_zone_map[i] = INVALID_ZONE_ID;
 	}
-	g_conf_magic++;
 	nos_hook_disable = 0;
 }
 
@@ -76,7 +75,6 @@ static inline int nos_zone_set(const struct zone_t *zone)
 	nos_hook_disable = 1;
 	synchronize_rcu();
 	if_zone_map[dev->ifindex] = zone->id;
-	g_conf_magic++;
 	nos_hook_disable = 0;
 	dev_put(dev);
 
@@ -95,7 +93,6 @@ static inline int nos_zone_delete(const struct zone_t *zone)
 		if (if_zone_map[i] == zone->id) {
 			if_zone_map[i] = INVALID_ZONE_ID;
 			found = 1;
-			g_conf_magic++;
 		}
 	}
 	nos_hook_disable = 0;
@@ -105,13 +102,13 @@ static inline int nos_zone_delete(const struct zone_t *zone)
 	return 0;
 }
 
-
-void nos_zone_match(const struct net_device *dev, struct nos_user_info *ui)
+/* @return dev zone id */
+unsigned int nos_zone_match(const struct net_device *dev)
 {
 	if (dev->ifindex < MAX_IF_INDEX)
-		ui->hdr.src_zone_id = if_zone_map[dev->ifindex];
-	else
-		ui->hdr.src_zone_id = INVALID_ZONE_ID;
+		return if_zone_map[dev->ifindex];
+
+	return INVALID_ZONE_ID;
 }
 
 void *nos_zone_get(loff_t idx)

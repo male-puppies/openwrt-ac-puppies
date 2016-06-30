@@ -37,6 +37,9 @@
 #include "nos_auth.h"
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
+#include "ntrack_msg.h"
+
+static unsigned int g_auth_conf_magic = 1315423911;
 
 /*XXX: default redirect_ip 1.0.0.8 */
 unsigned int redirect_ip = __constant_htonl((1<<24)|(0<<16)|(0<<8)|(8<<0));
@@ -68,7 +71,6 @@ static inline void nos_auth_cleanup(void)
 			ip_set_put_byindex(&init_net, auth_conf.auth[i].mac_white_list_id);
 	}
 	memset(&auth_conf, 0, sizeof(auth_conf));
-	g_conf_magic++;
 	nos_hook_disable = 0;
 }
 
@@ -101,7 +103,6 @@ static inline int nos_auth_set(const struct auth_rule_t *auth)
 	i = auth_conf.num;
 	memcpy(&auth_conf.auth[i], auth, sizeof(struct auth_rule_t));
 	auth_conf.num = i + 1;
-	g_conf_magic++;
 	nos_hook_disable = 0;
 
 	return 0;
@@ -122,7 +123,6 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 				memmove(&auth_conf.auth[i], &auth_conf.auth[i+1], sizeof(struct auth_rule_t) * (auth_conf.num - 1 - i));
 			}
 			auth_conf.num = auth_conf.num - 1;
-			g_conf_magic++;
 			nos_hook_disable = 0;
 			return 0;
 		}
@@ -131,34 +131,94 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 	return -ENOENT;
 }
 
-void nos_auth_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui)
+unsigned int nos_auth_hook(const struct net_device *in,
+		const struct net_device *out,
+		struct sk_buff *skb,
+		struct nf_conn *ct,
+		struct nos_flow_info *flow,
+		struct nos_user_info *ui)
 {
-	int i;
-	ui->hdr.type = AUTH_TYPE_UNKNOWN;
-	ui->hdr.status = AUTH_BYPASS;
-	for (i = 0; i < auth_conf.num; i++) {
-		if (ui->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
-				(ui->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
-			ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = i;
-			if (auth_conf.auth[i].auth_type == AUTH_TYPE_AUTO) {
-				ui->hdr.type = AUTH_TYPE_AUTO;
-				ui->hdr.status = AUTH_OK;
-			} else {
-				ui->hdr.type = AUTH_TYPE_WEB;
-				ui->hdr.status = AUTH_NONE;
-				if (auth_conf.auth[i].ip_white_list_set) {
-					if (ip_set_test_src_ip(in, out, skb, auth_conf.auth[i].ip_white_list_id) > 0) {
-						ui->hdr.status = AUTH_BYPASS;
-					} else if (ip_set_test_src_mac(in, out, skb, auth_conf.auth[i].mac_white_list_id) > 0) {
-						ui->hdr.status = AUTH_BYPASS;
+	if (ui->hdr.rule_magic != g_auth_conf_magic) {
+		int i;
+		ui->hdr.type = AUTH_TYPE_UNKNOWN;
+		ui->hdr.status = AUTH_BYPASS;
+		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = INVALID_AUTH_RULE_ID;
+		for (i = 0; i < auth_conf.num; i++) {
+			if ( flow->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
+					(flow->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
+				ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = i;
+				if (auth_conf.auth[i].auth_type == AUTH_TYPE_AUTO) {
+					ui->hdr.type = AUTH_TYPE_AUTO;
+					ui->hdr.status = AUTH_OK;
+				} else {
+					ui->hdr.type = AUTH_TYPE_WEB;
+					ui->hdr.status = AUTH_NONE;
+					if (auth_conf.auth[i].ip_white_list_set &&
+							ip_set_test_src_ip(in, out, skb, auth_conf.auth[i].ip_white_list_id) > 0) {
+							ui->hdr.status = AUTH_BYPASS;
+					} else if (auth_conf.auth[i].mac_white_list_set &&
+							ip_set_test_src_mac(in, out, skb, auth_conf.auth[i].mac_white_list_id) > 0) {
+							ui->hdr.status = AUTH_BYPASS;
 					}
 				}
+				nos_user_info_hold(ui);
 			}
-			nos_user_info_hold(ui);
-			return;
+		}
+		ui->hdr.rule_magic = g_auth_conf_magic;
+	}
+
+	if (ui->hdr.status == AUTH_NONE) {
+		//need web auth
+		int data_len;
+		unsigned char *data;
+		struct tcphdr *tcph;
+		struct iphdr *iph = ip_hdr(skb);
+		if (iph->protocol == IPPROTO_UDP) {
+			//FIXME
+			struct udphdr *udph = (struct udphdr *)((void *)iph + iph->ihl*4);
+			if (udph->dest == __constant_htons(53) ||
+					udph->dest == __constant_htons(67)) {
+				set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
+				return NF_ACCEPT;
+			}
+		}
+		if (iph->protocol != IPPROTO_TCP) {
+			set_bit(IPS_NOS_DROP_BIT, &ct->status);
+			return NF_DROP;
+		}
+		//FIXME skb_make_writable
+		tcph = (struct tcphdr *)((void *)iph + iph->ihl * 4);
+		data = skb->data + (iph->ihl << 2) + (tcph->doff << 2);
+		data_len = ntohs(iph->tot_len) - ((iph->ihl << 2) + (tcph->doff << 2));
+		if ((data_len > 4 && strncasecmp(data, "GET ", 4) == 0) ||
+				(data_len > 5 && strncasecmp(data, "POST ", 5) == 0)) {
+			nos_auth_http_302(in, skb, ui);
+			set_bit(IPS_NOS_DROP_BIT, &ct->status);
+			return NF_DROP;
+		} else if (data_len > 0) {
+			set_bit(IPS_NOS_DROP_BIT, &ct->status);
+			return NF_DROP;
+		} else if (tcph->ack && !tcph->syn) {
+			nos_auth_convert_tcprst(skb);
+			return NF_ACCEPT;
+		}
+	} else if (ui->hdr.status == AUTH_OK) {
+		if (time_after(jiffies, ui->hdr.time_stamp + 30 * HZ)) {
+			nt_msghdr_t hdr;
+			auth_msg_t auth;
+
+			ui->hdr.time_stamp = jiffies;
+			auth.id = ui->id;
+			auth.magic = ui->magic;
+
+			nt_msghdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
+			if (nt_msg_enqueue(&hdr, &auth, 0)) {
+				nt_debug("skb cap failed.\n");
+			}
 		}
 	}
-	ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = MAX_AUTH;
+
+	return NF_ACCEPT;
 }
 
 static inline void nos_auth_reply_payload(const char *payload, int payload_len, struct sk_buff *oskb, const struct net_device *dev)
@@ -339,17 +399,20 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 				"#    delete <id> -- delete one auth\n"
 				"#    clean -- remove all existing auth(s)\n"
 				"#    redirect_ip=a.b.c.d -- set the redirect ip\n"
+				"#    update magic -- update the g_auth_conf_magic\n"
 				"#\n"
 				"# Info:\n"
 				"#    redirect_ip=%pI4\n"
 				"#    no_flow_timeout=%u\n"
+				"#    g_auth_conf_magic=%u\n"
 				"#\n"
 				"# Reload cmd:\n"
 				"\n"
 				"clean\n"
 				"\n",
 				&redirect_ip,
-				nos_auth_no_flow_timeout);
+				nos_auth_no_flow_timeout,
+				g_auth_conf_magic);
 		nos_auth_ctl_buffer[n] = 0;
 		return nos_auth_ctl_buffer;
 	} else if ((*pos) > 0) {
@@ -575,6 +638,9 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 			nos_auth_no_flow_timeout = a;
 			goto done;
 		}
+	} else if (strncmp(data, "update magic", 12) == 0) {
+		g_auth_conf_magic++;
+		goto done;
 	}
 
 	printk("ignoring line[%s]\n", data);

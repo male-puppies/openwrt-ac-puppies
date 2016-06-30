@@ -8,6 +8,7 @@
 #include <asm/types.h>
 #include <linux/netdevice.h>
 #include <linux/kernel.h>
+#include <net/netfilter/nf_conntrack.h>
 #include <ntrack_comm.h>
 #include "ntrack_auth.h"
 
@@ -30,13 +31,19 @@ struct auth_rule_t {
 struct auth_conf {
 	unsigned int num;
 #define MAX_AUTH 16
+#define INVALID_AUTH_RULE_ID MAX_AUTH
 	struct auth_rule_t auth[MAX_AUTH];
 };
 
 int nos_auth_init(void);
 void nos_auth_exit(void);
 
-void nos_auth_match(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, struct nos_user_info *ui);
+unsigned int nos_auth_hook(const struct net_device *in,
+		const struct net_device *out,
+		struct sk_buff *skb,
+		struct nf_conn *ct,
+		struct nos_flow_info *flow,
+		struct nos_user_info *ui);
 
 void nos_auth_http_302(const struct net_device *dev, struct sk_buff *skb, const struct nos_user_info *ui);
 

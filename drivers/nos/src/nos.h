@@ -20,7 +20,6 @@
 #define IPS_NOS_DROP_BIT 31
 #define IPS_NOS_DROP (1 << IPS_NOS_DROP_BIT)
 
-extern unsigned int g_conf_magic;
 extern unsigned int nos_hook_disable;
 
 static inline int ip_set_test_src_ip(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, ip_set_id_t id)
