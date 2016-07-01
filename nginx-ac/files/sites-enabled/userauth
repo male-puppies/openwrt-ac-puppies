@@ -1,4 +1,4 @@
-lua_package_path "/usr/share/nginx-ac/nginx/?.lua;;";
+
 server {
 	listen 80;
 	server_name 1.0.0.8;
@@ -9,12 +9,6 @@ server {
 	location / {
 		root html;
 		index index.html index.htm;
-	}
-
-	location /rpc {
-		internal;
-		chunked_transfer_encoding off;
-		#content_by_lua_file /usr/share/nginx-ac/nginx/rpc/rpc.lua;
 	}
 }
 lua_shared_dict vip 1m;

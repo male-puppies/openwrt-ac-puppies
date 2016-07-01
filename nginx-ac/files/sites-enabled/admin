@@ -1,8 +1,15 @@
+lua_package_path "/usr/share/nginx-ac/lualib/?.lua;;";
 server {
 	listen 80 default_server;
 	server_name _;
 
 	location / {
 		proxy_pass http://127.0.0.1:8000;
+	}
+	
+	location /rpc {
+		#internal;
+		chunked_transfer_encoding off;
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/rpc.lua;
 	}
 }

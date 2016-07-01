@@ -5,7 +5,7 @@ local js = require("cjson.safe")
 local function build_query(key, code, arg)
 	local cmd = {k = key, p = arg, f = code}
 	local s = js.encode(cmd)
-	return string.format("GET /mysql HTTP/1.0\r\nHost: localhost:8080\r\nUser-Agent: curl/7.48.0\r\nAccept: \r\nContent-Length: %s\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n%s", #s, s)
+	return string.format("GET /rpc HTTP/1.0\r\nHost: localhost:80\r\nUser-Agent: curl/7.48.0\r\nAccept: \r\nContent-Length: %s\r\nContent-Type: application/x-www-form-urlencoded\r\n\r\n%s", #s, s)
 end
 
 local function query_aux(host, port, key, code, arg)

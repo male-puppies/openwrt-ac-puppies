@@ -49,12 +49,12 @@ endef
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/nginx-ac.defaults $(1)/etc/uci-defaults/95-nginx-ac
-	$(INSTALL_DIR) $(1)/usr/share/nginx-ac
+	$(INSTALL_DIR) $(1)/usr/share/nginx-ac/
 	$(CP) -r ./files/demo $(1)/usr/share/nginx-ac/
 	$(INSTALL_DATA) ./files/nginx.conf $(1)/usr/share/nginx-ac/
 	$(CP) -r ./files/sites-enabled $(1)/usr/share/nginx-ac/
 	$(INSTALL_BIN) ./files/nginx.init $(1)/usr/share/nginx-ac/nginx.init
-	$(CP) -r ./files/nginx $(1)/usr/share/nginx-ac/
+	$(CP) -r ./files/lualib $(1)/usr/share/nginx-ac/
 	$(INSTALL_DIR) $(1)/usr/lib/lua
 	$(CP) -r ./files/lib/* $(1)/usr/lib/lua/
 endef
