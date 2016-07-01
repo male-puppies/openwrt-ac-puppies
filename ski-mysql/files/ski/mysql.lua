@@ -470,7 +470,7 @@ end
 
 
 function _M.new(self) 
-    return setmetatable({ sock = nil, cols_map = nil}, mt)
+    return setmetatable({ sock = nil, cols_map = nil, timeout = 3600}, mt)
 end
 
 
