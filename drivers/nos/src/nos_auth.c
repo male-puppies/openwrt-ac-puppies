@@ -243,6 +243,10 @@ static inline void nos_auth_reply_payload(const char *payload, int payload_len, 
 		printk("alloc_skb fail\n");
 		return;
 	}
+	if (skb_linearize(nskb) != 0) {
+		printk("skb_linearize fail\n");
+		return;
+	}
 
 	data = (char *)ip_hdr(nskb) + sizeof(struct iphdr) + sizeof(struct tcphdr);
 	memcpy(data, payload, payload_len);
