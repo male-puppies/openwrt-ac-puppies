@@ -1,4 +1,3 @@
-local sync = require("sync")
 local luasql = require("luasql.sqlite3")
 
 local env = luasql.sqlite3()
@@ -8,10 +7,7 @@ local mt = {__index = method}
 
 function method:escape(sql)	return self.conn:escape(sql) end
 function method:close() self.conn:close() self.conn = nil end 
-function method:execute(sql) 
-	sync.parse(sql)
-	return self.conn:execute(sql)
-end
+function method:execute(sql) return self.conn:execute(sql) end
 
 local function select_cb_common(conn, sql, cb)
 	local cur, err = conn:execute(sql)

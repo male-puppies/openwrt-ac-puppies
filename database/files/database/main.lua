@@ -77,6 +77,16 @@ local function connect_mysql()
    	return db
 end
 
+local function test_sync() 
+	while true do 
+		for i = 1, 10 do 
+			ski.sleep(1)
+			print(i)
+		end
+		sync.sync()
+	end 
+end
+
 local function main()
 	local cfg = init_config()
 	local ud = updatelog.new(cfg)
@@ -86,12 +96,13 @@ local function main()
 	mgr.new(conn, myconn, ud, cfg)
 	
 	local st = ski.time()
-	sync.init()
+	sync.sync(true)
 	log.info("sync init spends %ss", ski.time() - st)
 
 	ski.go(start_udp_server)
 	proxy = start_sand_server()
 	dbrpc = rpcserv.new(proxy)
+	-- ski.go(test_sync)
 end
 
 log.setmodule("db")

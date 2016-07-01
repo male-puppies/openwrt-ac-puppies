@@ -1,45 +1,136 @@
 local log = require("log")
+local mgr = require("mgr")
 local js = require("cjson.safe")
-local user = require("sync.user")
 
-local sync_map = {
-	user = user.sync,
-}
+local sync_tables
 
-local cache = {}
-local function sync()
-	for tb, action in pairs(cache) do 
-		sync_map[tb](action)
+local function parse_sync_tables()
+	local conn = mgr.ins().conn 								assert(conn)
+	local rs, e = conn:select("select distinct tbl_name from sqlite_master where type='trigger'")  	assert(rs, e)
+	local arr = {}
+	for _, r in ipairs(rs) do 
+		table.insert(arr, r.tbl_name)
 	end
-	cache = {}
+	return arr 
 end
 
-local function init()
-	for _, f in pairs(sync_map) do 
-		f({})
+local function format_replace(conn, rs, tbname)
+	local fields = {}
+	for k in pairs(rs[1]) do 
+		table.insert(fields, k) 
 	end
+	
+	local narr = {}
+	for _, r in ipairs(rs) do
+		local arr = {}
+		for _, field in ipairs(fields) do 
+			table.insert(arr, string.format("'%s'", conn:escape(r[field])))
+		end
+		table.insert(narr, string.format("(%s)", table.concat(arr, ",")))
+	end
+	
+	return string.format("replace into %s (%s) values %s", tbname, table.concat(fields, ","), table.concat(narr, ","))
 end
 
-local patterns = {
-	{key = "update", pattern = "%s+(%w+)%s+set%s", 		action = "set"},
-	{key = "insert", pattern = "%s+into%s+(%w+)[%s(]", 	action = "add"},
-	{key = "replace", pattern = "%s+into%s+(%w+)[%s(]", action = "set"},
-	{key = "delete", pattern = "delete%s+from%s+(%w+)", action = "del"},	
-}
+local function format_delete(conn, rs, tbname)
+	local field = rs[1].key
+	
+	local map, arr = {}, {}
+	for _, r in ipairs(rs) do
+		map[string.format("'%s'", conn:escape(r.val))] = 1
+	end 
+	for k in pairs(map) do table.insert(arr, k) end 
+	
+	return string.format("delete from %s where %s in (%s)", tbname, field, table.concat(arr, ","))
+end
 
-local function parse(sql)
-	for _, item in ipairs(patterns) do 
-		local key, pattern, action = item.key, item.pattern, item.action
-		if sql:find(key, 1, true) then 
-			local tb = sql:match(pattern)
-			local _ = tb or log.fatal("invalid sql %s %s", key, sql:sub(1, 100))
-			local _ = sync_map[tb] or log.fatal("not register table %s. %s", tb, sql:sub(1, 100))
-			local tmp = cache[tb] or {}
-			tmp[action] = 1 
-			cache[tb] = tmp
-			break
+local function sync_all_tables()
+	local ins = mgr.ins()
+	local conn, myconn = ins.conn, ins.myconn
+
+	local sync_one_table = function(tbname)
+		local sql = "delete from " .. tbname
+		local r, e = myconn:query(sql) 
+		local _ = r or log.fatal("%s %s", sql, e)
+
+		local sql = "select * from " .. tbname 
+		local rs, e = conn:select(sql)
+		local _ = rs or log.fatal("%s %s", sql, e)
+		
+		if #rs == 0 then 
+			return
+		end
+		
+		local sql = format_replace(conn, rs, tbname)
+		local r, e = myconn:query(sql) 	
+		local _ = r or log.fatal("%s %s", sql, e)
+	end
+
+	for _, tbname in ipairs(sync_tables) do
+		sync_one_table(tbname)	
+	end
+
+	local r, e = conn:execute("delete from trigger") 	assert(r, e)
+end
+
+local function sync_trigger()
+	local ins = mgr.ins()
+	local conn, myconn = ins.conn, ins.myconn
+
+	local sql = "select * from trigger order by tid"
+	local rs, e = conn:select(sql)
+	local _ = rs or log.fatal("%s %s", sql, e)
+
+	local tbmap = {}
+	for _, r in ipairs(rs) do  
+		local tbname = r.tb
+		local actions = tbmap[tbname] or {del = {}, set = {}, add = {}}
+		table.insert(actions[r.act], r)
+		tbmap[tbname] = actions 
+	end
+
+	for tbname, actions in pairs(tbmap) do 
+		local arr = actions.del
+		if #arr > 0 then 
+			local sql = format_delete(conn, arr, tbname)
+			local r, e = myconn:query(sql)
+			local _ = r or log.fatal("%s %s", sql, e)
+		end
+
+		arr = actions.add
+		for _, r in ipairs(actions.set) do 
+			table.insert(arr, r)
+		end
+
+		if #arr > 0 then
+			local map = {}
+			for _, r in ipairs(arr) do
+				map[string.format("'%s'", conn:escape(r.val))] = 1
+			end
+
+			local arr = {}
+			for k in pairs(map) do table.insert(arr, k) end 
+
+			local sql = string.format("select * from %s where %s in (%s)", tbname, rs[1].key, table.concat(arr, ","))
+			local rs, e = conn:select(sql)
+			local _ = rs or log.fatal("%s %s", sql, e)
+			local sql = format_replace(conn, rs, tbname)
+			local r, e = myconn:query(sql)
+			local _ = r or log.fatal("%s %s", sql, e)
 		end
 	end
+	
+	local r, e = conn:execute("delete from trigger") 	assert(r, e)
 end
 
-return {sync = sync, init = init, parse = parse}
+local function sync(sync_all)
+	if not sync_tables then 
+		sync_tables = parse_sync_tables() 	assert(sync_tables)
+		
+		return sync_all_tables() 
+	end
+
+	return sync_trigger()
+end
+
+return {sync = sync}
