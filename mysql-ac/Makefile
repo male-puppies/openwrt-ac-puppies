@@ -39,8 +39,8 @@ define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 
 if [ -z "$$IPKG_INSTROOT" ]; then
-  ( . /etc/uci-defaults/95-mysql_ac )
-  rm -f /etc/uci-defaults/95-mysql_ac
+  ( . /etc/uci-defaults/95-mysql-ac )
+  rm -f /etc/uci-defaults/95-mysql-ac
 fi
 
 exit 0
