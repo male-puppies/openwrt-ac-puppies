@@ -68,6 +68,12 @@ function new(diskpath, attaches)
 		local ret, err = conn:execute(sql) 	assert(ret, err)
 	end
 
+	local params = {"PRAGMA journal_mode=memory", "PRAGMA locking_mode=EXCLUSIVE"}
+	for _, sql in ipairs(params) do 
+		print(sql)
+		local r, e = conn:execute(sql) 	assert(r, e)
+	end 
+
 	local obj = {conn = conn}
 	setmetatable(obj, mt)
 	return obj
