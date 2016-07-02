@@ -6,9 +6,8 @@
 #
 
 include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=userauth
+PKG_NAME:=nos-auth
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
@@ -33,7 +32,7 @@ define Package/$(PKG_NAME)/description
 endef
 
 define Package/$(PKG_NAME)/conffiles
-/etc/config/userauth
+/etc/config/nos-auth
 endef
 
 define Package/$(PKG_NAME)/postinst
@@ -41,11 +40,11 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/userauth.init $(1)/etc/init.d/userauth
+	$(INSTALL_BIN) ./files/nos-auth.init $(1)/etc/init.d/nos-auth
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/userauth.config $(1)/etc/config/userauth
+	$(INSTALL_DATA) ./files/nos-auth.config $(1)/etc/config/nos-auth
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) ./files/userauth.sh $(1)/usr/bin/userauth
+	$(INSTALL_BIN) ./files/nos-auth.sh $(1)/usr/bin/nos-auth
 endef
 
 define Build/Configure
