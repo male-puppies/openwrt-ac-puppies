@@ -2,11 +2,11 @@
 # Copyright (C) 2006-2011 OpenWrt.org
 
 START=60
-PROGRAM=redis
+PROGRAM=redis-server
 start() {
-	SERVICE_DAEMONIZE=1 service_start /usr/sbin/$PROGRAM start
+	SERVICE_DAEMONIZE=1 service_start /usr/sbin/redis
 }
 
 stop() {
-	 ps | grep -E "$PROGRAM/main|/$PROGRAM" | grep -v grep  | awk '{print $1}' | xargs kill
+	 ps | grep -E "$PROGRAM" | grep -v grep  | awk '{print $1}' | xargs kill
 }
