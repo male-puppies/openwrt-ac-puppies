@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=95
+
+start() {
+	echo start nos-zone
+	SERVICE_DAEMONIZE=1 service_start /usr/bin/nos-zone start
+}
+
+stop() {
+	echo stop nos-zone
+	/usr/bin/nos-zone stop
+}
