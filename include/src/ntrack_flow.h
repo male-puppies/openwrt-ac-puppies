@@ -8,20 +8,33 @@
 #define FMT_FLOW_STR "fid: %u-%u [%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u-%u]"
 #define FMT_FLOW(fi) \
 			(fi)->id, (fi)->magic, \
-			HIPQUAD((fi)->tuple.ip_src), ntohs((fi)->tuple.port_src), \
-			HIPQUAD((fi)->tuple.ip_dst), ntohs((fi)->tuple.port_dst), \
+			NIPQUAD((fi)->tuple.ip_src), ntohs((fi)->tuple.port_src), \
+			NIPQUAD((fi)->tuple.ip_dst), ntohs((fi)->tuple.port_dst), \
 			(fi)->tuple.proto
-			
+
+/* -------------------------- */
+enum em_flow_flags {
+	FLOW_NPROTO_FIN = 1<<0,
+};
+
+static inline int nt_flow_nproto_fin(const flow_info_t *fi)
+{
+	return fi->hdr.flags & FLOW_NPROTO_FIN;
+}
+
+static inline void nt_flow_nproto_fin_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FLOW_NPROTO_FIN;
+}
+
 /* ########################## */
 /* nproto identify in Flow node. */
-
 typedef struct {
 	/* 
 	** PT_SOCK4, PT_SOCK5, PT_HTTP.
 	** PS_UNKNOWN, PS_PORT, PS_ADDR_PORT, PS_FINISH.
 	*/
 	uint8_t wrap_type:4, wrap_status:4;
-	
 } nt_flow_nproto_t;
 /* END nproto identify. */
 

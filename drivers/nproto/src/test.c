@@ -11,7 +11,7 @@
 #include <ntrack_nproto.h>
 #include <ntrack_log.h>
 
-extern int rules_match(nt_packet_t *pkt);
+extern int nproto_rules_match(nt_packet_t *pkt);
 
 static int nt_init(struct nos_track *nt, struct iphdr *iph, void *l4ptr)
 {
@@ -148,13 +148,10 @@ int test_run_pkt(const char *data, int dlen)
 		// np_dump(data, dlen, "dump: \n");
 		return n;
 	}
-	if(!nproto_finished(pkt.fi)) {
-		n = rules_match(&pkt);
-		if(n) {
-			nt_flow_proto_update(pkt.fi, NP_INNER_RULE_MAX + nt_flow_proto(pkt.fi), NULL);
-		}
+	if(!nt_flow_nproto_fin(pkt.fi)) {
+		n = nproto_rules_match(&pkt);
 	}
-	return nt_flow_proto(pkt.fi);
+	return n;
 }
 
 /* config netlink sockets */

@@ -34,8 +34,8 @@ np_rule_t inner_http_flv = {
 	.priority = NP_RULE_PRI_MAX,
 	
 	.rule_type = TP_RULE_FIN,
-	/* just match the http matched packet's */
-	.refs_type = NP_REF_PACKET,
+	/* match the http current packet's & flow. */
+	.refs_type = NP_REF_PACKET | NP_REF_FLOW,
 
 	/* use http match only. */
 	.enable_l4 = 0,

@@ -19,7 +19,7 @@ extern int test_init(void);
 extern void test_exit(void);
 extern int nproto_init(void);
 extern void nproto_cleanup(void);
-extern int rules_match(nt_packet_t *pkt);
+extern int nproto_rules_match(nt_packet_t *pkt);
 
 static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_t *pkt)
 {
@@ -109,13 +109,9 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 		return n;
 	}
 
-	nt_flow_proto_update(fi, 0, NULL);
-	if(!nproto_finished(fi)) {
-		n = rules_match(&pkt);
-	} else {
-		if(fi->tuple.proto == 6)
-			np_debug("fin: "FMT_FLOW_STR" %d\n", 
-					FMT_FLOW(fi), nt_flow_proto(fi));
+	/* update proto as match'ed fn. */
+	if(!nt_flow_nproto_fin(fi)) {
+		n = nproto_rules_match(&pkt);
 	}
 	return n;
 }

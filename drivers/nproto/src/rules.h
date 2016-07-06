@@ -231,6 +231,7 @@ enum __em_ctm_relation {
 };
 
 enum __em_result_bool {
+	NP_CONTINUE = -1,
 	NP_FALSE = 0,
 	NP_TRUE,
 };

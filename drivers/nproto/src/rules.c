@@ -12,7 +12,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-// #define RULE_DBG_ID NP_INNER_RULE_HTTP_REQ
+#define RULE_DBG_ID NP_INNER_RULE_HTTP_REQ
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -27,6 +27,7 @@
 #else
 #define RULE_DBG(rule, npt, fmt...) do{}while(0)
 #endif
+
 #define np_assert(x) BUG_ON(!(x))
 
 #define NP_MWM_STR "nproto"
@@ -603,7 +604,7 @@ static int l4_match(np_rule_t *rule, nt_packet_t *npt)
 	return NP_TRUE;
 }
 
-static int lnf_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
+static int len_info_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 {
 	uint32_t n = 0;
 	switch(lnm->type) {
@@ -792,7 +793,7 @@ static int l7_match(np_rule_t *rule, nt_packet_t *npt)
 		RULE_DBG(rule, NULL, "l7: pkt in flow dir[%d] miss.\n", npt->dir);
 		return NP_FALSE;
 	}
-	if(lnm->type != NP_LNM_NONE && !lnf_match(rule, lnm, npt)) {
+	if(lnm->type != NP_LNM_NONE && !len_info_match(rule, lnm, npt)) {
 		RULE_DBG(rule, NULL, "l7: length[%d] info miss.\n", npt->l7_len);
 		return NP_FALSE;
 	}
@@ -824,28 +825,44 @@ static int http_do_match(np_rule_t *rule, http_match_rule_t *htpm, nt_packet_t *
 {
 	int mlen = npt->l7_len, m;
 	uint8_t *hdr, *mdata = npt->l7_ptr, *mc;
+	nt_pkt_nproto_t *np = nt_pkt_nproto(npt);
 
-	switch(htpm->hdr) {
-		case 0: {
-			/* context search/regext match. */
-			hdr = np_http_hdr(npt, NP_HTTP_END, &m);
-			if(hdr && m > 0) {
-				mdata = hdr + m;
-				mlen -= (mdata - npt->l7_ptr);
-			}
-			if(mlen <= 0) {
-				RULE_DBG(rule, NULL, "http: nil content.\n");
-				return NP_FALSE;
+	switch(np->du_type) {
+		case NP_DUT_HTTP_REQ:
+		case NP_DUT_HTTP_REP: {
+			/* current packet match. */
+			switch(htpm->hdr) {
+				case 0: {
+					/* context search/regext match. */
+					hdr = np_http_hdr(npt, NP_HTTP_END, &m);
+					if(hdr && m > 0) {
+						mdata = hdr + m;
+						mlen -= (mdata - npt->l7_ptr);
+					}
+					if(mlen <= 0) {
+						RULE_DBG(rule, NULL, "http: nil content.\n");
+						return NP_FALSE;
+					}
+				} break;
+				default: {
+					hdr = np_http_hdr(npt, htpm->hdr, &mlen);
+					if(!hdr) {
+						RULE_DBG(rule, NULL, "http: hdr not found.\n");
+						return NP_FALSE;
+					}
+					mdata = hdr;
+				}break;
 			}
 		} break;
 		default: {
-			hdr = np_http_hdr(npt, htpm->hdr, &mlen);
-			if(!hdr) {
-				RULE_DBG(rule, NULL, "http: hdr not found.\n");
-				return NP_FALSE;
+			/* current flow match */
+			if(htpm->hdr != NP_HTTP_END) {
+				RULE_DBG(rule, NULL, "http: ctx ignor header.\n");
+				return NP_CONTINUE;
 			}
-			mdata = hdr;
-		}break;
+			mdata = npt->l7_ptr;
+			mlen = npt->l7_len;
+		} break;
 	}
 
 	mc = ctm_do(rule, &htpm->match, mdata, mlen);
@@ -858,47 +875,37 @@ static int http_do_match(np_rule_t *rule, http_match_rule_t *htpm, nt_packet_t *
 
 static int http_match(np_rule_t *rule, nt_packet_t *npt)
 {
-	nt_pkt_nproto_t *np = nt_pkt_nproto(npt);
-	
-	switch(np->du_type) {
-		case NP_DUT_HTTP_REQ:
-		case NP_DUT_HTTP_REP:
-		{
-			int i, m = NP_TRUE, relation_OR;
-			relation_OR = (rule->http.relation == NP_CTM_OR ? 1 : 0);
-			for (i = 0; i <ARRAY_SIZE(rule->http.htpm); ++i) {
-				http_match_rule_t *htpm = &rule->http.htpm[i];
-				if(htpm->match.length <= 0) {
-					break;
-				}
-				m = http_do_match(rule, htpm, npt);
-				if(m) {
-					if(relation_OR) {
-						RULE_DBG(rule, NULL, "http: or matched.\n");
-						return NP_TRUE;
-					}
-				} else {
-					if(!relation_OR) {
-						RULE_DBG(rule, NULL, "http: and miss match.\n");
-						return NP_FALSE;
-					}
-				}
+	int i, m = NP_TRUE, relation_OR;
+	relation_OR = (rule->http.relation == NP_CTM_OR ? 1 : 0);
+	for (i = 0; i <ARRAY_SIZE(rule->http.htpm); ++i) {
+		http_match_rule_t *htpm = &rule->http.htpm[i];
+		if(htpm->match.length <= 0) {
+			break;
+		}
+		m = http_do_match(rule, htpm, npt);
+		if(m == NP_TRUE) {
+			if(relation_OR) {
+				RULE_DBG(rule, NULL, "http: or matched.\n");
+				return NP_TRUE;
 			}
-			return m;
-		} break;
-		default:{
-			np_error("ref'ed not http.\n");
-		} break;
+		} else if (m == NP_FALSE){
+			if(!relation_OR) {
+				RULE_DBG(rule, NULL, "http: and miss match.\n");
+				return NP_FALSE;
+			}
+		} else {
+			/* try next ... */
+			RULE_DBG(rule, NULL, "http: try next. %d\n", i);
+			continue;
+		}
 	}
-
-	return NP_FALSE;
+	return m;
 }
 
 static int rule_matched_cb(void *np, void *prule)
 {
-	// np_rule_t *rule = prule;
-	
-	RULE_DBG((np_rule_t*)prule, NULL, "rule: %s, matched.\n", rule->name_rule);
+	np_rule_t *rule = prule;	
+	RULE_DBG(rule, NULL, "rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
@@ -986,27 +993,34 @@ np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 	return NULL;
 }
 
-int rules_match(nt_packet_t *npt)
+int nproto_rules_match(nt_packet_t *npt)
 {
-	np_rule_t *rule, *last_matched = NULL;
-	uint16_t proto = nt_flow_proto(npt->fi);
+	np_rule_t *rule = NULL, *last_matched = NULL;
 	np_rule_set_t *hash_set = NULL;
 	np_rule_set_t *base_set = &rule_sets_base[npt->dir][np_proto_to_set(npt->l4_proto)];
 
-	rule = rules_set_match(base_set, npt);
-	if(rule) {
-		last_matched = rule;
-		nt_flow_proto_update(npt->fi, rule->ID, NULL);
-		np_debug("base match: %s\n", rule->name_rule);
-	}
-
-	if(rule && rule->ref_set) {
-		rule = rules_set_match(rule->ref_set, npt);
+	uint16_t proto = nt_flow_proto(npt->fi);
+	if(!proto) {
+		/* unknown proto yet. */
+		rule = rules_set_match(base_set, npt);
 		if(rule) {
 			last_matched = rule;
-			nt_flow_proto_update(npt->fi, rule->ID, NULL);
-			np_debug("inner-ref match: %s\n", rule->name_rule);
+			np_debug("base match: %s\n", rule->name_rule);
 		}
+		/* current packet's ref match. */
+		if(rule && rule->ref_set) {
+			rule = rules_set_match(rule->ref_set, npt);
+			if(rule) {
+				last_matched = rule;
+				np_debug("inner-ref match: %s\n", rule->name_rule);
+			}
+		}
+	}
+
+	/* base matched, check the cross packets ref. */
+	if(last_matched) {
+		/* proto maybe changed. */
+		proto = last_matched->ID;
 	}
 
 	/* assert the valid proto index. */
@@ -1017,20 +1031,27 @@ int rules_match(nt_packet_t *npt)
 		rule = rules_set_match(hash_set, npt);
 		if(rule) {
 			last_matched = rule;
-			nt_flow_proto_update(npt->fi, rule->ID, NULL);
 			np_debug("hash-ref match: %s\n", rule->name_rule);
 		}
 	}
-
+	/* proto change save to flow. */
 	if(last_matched) {
-		np_info("--- [%s] --- matched %s--- \n", 
-			last_matched->name_rule, RULE_IS_FIN(last_matched)?"fin":"min");
+		if(RULE_IS_FIN(last_matched)) {
+			nt_flow_nproto_fin_set(npt->fi);
+		}
+		nt_flow_proto_update(npt->fi, last_matched->ID, NULL);
 	}
+	
+	/* DEBUG */
+	if(last_matched) {
+		np_info(FMT_FLOW_STR"\n\t\t[%s] --- matched %s--- \n", 
+			FMT_FLOW(npt->fi),
+			last_matched->name_rule, 
+			RULE_IS_FIN(last_matched)?"fin":"mid");
+	}
+	/* END debug. */
 
-	if(last_matched && RULE_IS_FIN(last_matched)) {
-		return last_matched->ID;
-	}
-	return 0;
+	return last_matched ? last_matched->ID : 0;
 }
 
 int nproto_init(void)
