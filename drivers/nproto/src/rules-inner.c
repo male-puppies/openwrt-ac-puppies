@@ -12,6 +12,7 @@ int inner_rules_init(void)
 	inner_ftp, inner_dhcp, \
 	inner_RDP, inner_SIP, \
 	inner_SMB, inner_NTP, \
+	inner_mysql, \
 	inner_VNC, inner_GTalk;
 
 	np_rule_register(&inner_http_req);
@@ -29,6 +30,7 @@ int inner_rules_init(void)
 	np_rule_register(&inner_NTP);
 	np_rule_register(&inner_VNC);
 	np_rule_register(&inner_GTalk);
+	np_rule_register(&inner_mysql);
 
 	return 0;
 }

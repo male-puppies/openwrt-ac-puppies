@@ -17,5 +17,6 @@ enum __em_inner_proto {
 	NP_INNER_RULE_NTP,
 	NP_INNER_RULE_VNC,
 	NP_INNER_RULE_GTalk,
+	NP_INNER_RULE_MYSQL,
 	NP_INNER_RULE_MAX,
 };

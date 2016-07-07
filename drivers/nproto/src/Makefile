@@ -58,4 +58,5 @@ nproto-y += rules/SMB.o
 nproto-y += rules/NTP.o
 nproto-y += rules/VNC.o
 nproto-y += rules/GTalk.o
+nproto-y += rules/mysql.o
 # end rules built-in

@@ -12,7 +12,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_HTTP_REQ
+#define RULE_DBG_ID NP_INNER_RULE_MYSQL
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -914,14 +914,14 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 {
 	int n;
 
-	RULE_DBG(rule, npt, "-------- dir: %d rule: %s\n", npt->dir, rule->name_rule);
+	RULE_DBG(rule, npt, "\t<<<<<<<<---- dir: %d rule: %s\n", npt->dir, rule->name_rule);
 
 	/* do match process. */
 	if(rule->enable_l4) {
 		n = l4_match(rule, npt);
 		if(!n) {
 			/* miss match. */
-			RULE_DBG(rule, npt, "l4: miss match. -------- \n");
+			RULE_DBG(rule, npt, "l4: miss match. ---->>>>>>>> \n");
 			return NP_FALSE;
 		}
 	}
@@ -929,7 +929,7 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(rule->enable_l7) {
 		n = l7_match(rule, npt);
 		if(!n) {
-			RULE_DBG(rule, npt, "l7: miss match. -------- \n");
+			RULE_DBG(rule, npt, "l7: miss match. ---->>>>>>>> \n");
 			return NP_FALSE;
 		}
 	}
