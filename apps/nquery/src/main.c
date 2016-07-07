@@ -57,7 +57,9 @@ static void dump_flowinfo(void)
 		}
 		ui = nt_get_user_by_flow(&ntrack, fi);
 
-		nt_print(FMT_FLOW_STR"\n\t"FMT_USER_STR"\n", FMT_FLOW(fi), FMT_USER(ui));
+		nt_print(FMT_FLOW_STR" l7: %d\n\t"FMT_USER_STR"\n", 
+			FMT_FLOW(fi), nt_flow_nproto(fi),
+			FMT_USER(ui));
 	}
 }
 

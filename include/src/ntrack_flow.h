@@ -14,17 +14,25 @@
 
 /* -------------------------- */
 enum em_flow_flags {
-	FLOW_NPROTO_FIN = 1<<0,
+	/* byte: normal flags. */
+	FG_FLOW_NPROTO_FIN		= 1<<0, /* identify finished. */
+	FG_FLOW_NPROTO_BEHIVOR	= 1<<1, /* behivor identify need. */
+	FG_FLOW_TRACE			= 1<<2, /* recored url/content need. */
+	/* next byte: drop flags. */
+	FG_FLOW_DROP_AUTH		= 1<<8, /* droped by auth not successued */
+	FG_FLOW_DROP_L4_FW		= 1<<9, /* droped by layer 4 firewall. */
+	FG_FLOW_DROP_L7_FW		= 1<<10, /* droped by layer 7 firewall, such as user ACL rules. */
+	FG_FLOW_DROP_CTX_FILTER	= 1<<11, /* droped by content filter, eg: keywords filter... */
 };
 
 static inline int nt_flow_nproto_fin(const flow_info_t *fi)
 {
-	return fi->hdr.flags & FLOW_NPROTO_FIN;
+	return fi->hdr.flags & FG_FLOW_NPROTO_FIN;
 }
 
 static inline void nt_flow_nproto_fin_set(flow_info_t *fi)
 {
-	fi->hdr.flags |= FLOW_NPROTO_FIN;
+	fi->hdr.flags |= FG_FLOW_NPROTO_FIN;
 }
 
 /* ########################## */
@@ -48,9 +56,7 @@ typedef struct {
 } nt_flow_authd_t;
 /* END USER AUTHD */
 
-#define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) + sizeof(nt_flow_authd_t)
-
-static inline void nt_flow_proto_update(
+static inline void nt_flow_nproto_update(
 	flow_info_t *fi, uint16_t proto, 
 	void (*cb)(flow_info_t *, uint16_t))
 {
@@ -62,28 +68,29 @@ static inline void nt_flow_proto_update(
 	fi->hdr.proto = proto;
 }
 
-static inline uint16_t nt_flow_proto(const flow_info_t *fi)
+static inline uint16_t nt_flow_nproto(const flow_info_t *fi)
 {
 	return fi->hdr.proto;
 }
 
-static inline void* nt_flow_priv(flow_info_t *fi, size_t *size)
+static inline nt_flow_nproto_t* nt_flow_priv_nproto(flow_info_t *fi)
+{
+	return (nt_flow_nproto_t*)&fi->private[0];
+}
+
+static inline nt_flow_authd_t* nt_flow_priv_authd(flow_info_t *fi)
+{
+	return (nt_flow_authd_t*)&fi->private[sizeof(nt_flow_nproto_t)];
+}
+
+#define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) + sizeof(nt_flow_authd_t)
+static inline void* nt_flow_priv_data(flow_info_t *fi, size_t *size)
 {
 	/* assert size */
 	STATIC_ASSERT(sizeof(fi->private) > (NT_FLOW_CMM_HDR_SIZE));
 
 	*size = sizeof(fi->private) - (NT_FLOW_CMM_HDR_SIZE);
 	return (void*)&fi->private[NT_FLOW_CMM_HDR_SIZE];
-}
-
-static inline nt_flow_nproto_t* nt_flow_nproto(flow_info_t *fi)
-{
-	return (nt_flow_nproto_t*)&fi->private[0];
-}
-
-static inline nt_flow_authd_t* nt_flow_authd(flow_info_t *fi)
-{
-	return (nt_flow_authd_t*)&fi->private[sizeof(nt_flow_nproto_t)];
 }
 
 enum __em_flow_dir {

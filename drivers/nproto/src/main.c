@@ -112,6 +112,8 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 	/* update proto as match'ed fn. */
 	if(!nt_flow_nproto_fin(fi)) {
 		n = nproto_rules_match(&pkt);
+	} else {
+		np_info(FMT_FLOW_STR" l7: %d\n", FMT_FLOW(fi), nt_flow_nproto(fi));
 	}
 	return n;
 }

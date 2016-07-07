@@ -34,9 +34,9 @@
 #define NP_RULE_SETS_HASH 4096 /* max 4k rule id be-refed. */
 
 /* inner data struct's */
-np_rule_t *inner_rules[NP_INNER_RULE_MAX];
-np_rule_set_t *rule_sets_refs[NP_RULE_SETS_HASH] = {NULL,};
-np_rule_set_t rule_sets_base[NP_FLOW_DIR_MAX][NP_SET_BASE_MAX];
+static np_rule_t *inner_rules[NP_INNER_RULE_MAX];
+static np_rule_set_t *RS_REFs[NP_RULE_SETS_HASH] = {NULL,};
+static np_rule_set_t RS_BASE[NP_FLOW_DIR_MAX][NP_SET_BASE_MAX];
 
 static LIST_HEAD(all_rules);
 
@@ -315,7 +315,7 @@ int np_rule_register(np_rule_t *rule)
 	np_assert(proto < NP_SET_BASE_MAX);
 
 	np_info("base rule: %s, id: %d\n", rule->name_rule, rule->ID);
-	return set_add_rule(&rule_sets_base[dir][proto], rule);
+	return set_add_rule(&RS_BASE[dir][proto], rule);
 }
 
 void set_cleanup(np_rule_set_t *set)
@@ -388,11 +388,11 @@ void rules_cleanup(void)
 	/* clean rule set's */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		for(j=0; j<NP_SET_BASE_MAX; j++){
-			set_cleanup(&rule_sets_base[i][j]);
+			set_cleanup(&RS_BASE[i][j]);
 		}
 	}
 	for(i=0; i<NP_RULE_SETS_HASH; i++) {
-		np_rule_set_t *hash_set = rule_sets_refs[i];
+		np_rule_set_t *hash_set = RS_REFs[i];
 		if(hash_set) {
 			set_cleanup(hash_set);
 		}
@@ -449,14 +449,14 @@ int rules_build(void)
 		if(RULE_REF_FLOW(rule1)) {
 			/* cross rule match use hash sets. */
 			uint16_t idx = rule1->ID % NP_RULE_SETS_HASH;
-			np_rule_set_t *hash_set = rule_sets_refs[idx];
+			np_rule_set_t *hash_set = RS_REFs[idx];
 			if(!hash_set) {
 				hash_set = set_alloc("hash");
 				if(!hash_set) {
 					np_error("alloc hash set[%d:%s] failed.\n", rule1->ID, rule1->name_rule);
 					continue;
 				}
-				rule_sets_refs[idx] = hash_set;
+				RS_REFs[idx] = hash_set;
 			}
 			set_add_rule(hash_set, rule1);
 		}
@@ -500,7 +500,7 @@ int rules_build(void)
 		/* base sets */
 		for(j=0; j<NP_SET_BASE_MAX; j++) {
 			snprintf(name, sizeof(name), "base: %s-%s", SET_DIR_STR(i), SET_BASE_STR(j));
-			set_compile(&rule_sets_base[i][j], name);
+			set_compile(&RS_BASE[i][j], name);
 		}
 	}
 	/* rule in-match ref. */
@@ -513,7 +513,7 @@ int rules_build(void)
 	}
 	/* cross rule matched ref. */
 	for(i=0; i<NP_RULE_SETS_HASH; i++) {
-		np_rule_set_t *hash_set = rule_sets_refs[i];
+		np_rule_set_t *hash_set = RS_REFs[i];
 		if(!hash_set) {
 			continue;
 		}
@@ -525,10 +525,10 @@ int rules_build(void)
 	/* dump rules */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		for(j=0; j<NP_SET_BASE_MAX; j++)
-		 set_dump(&rule_sets_base[i][j], 0);
+		 set_dump(&RS_BASE[i][j], 0);
 	}
 	for(i=0; i<NP_RULE_SETS_HASH; i++) {
-		np_rule_set_t *hash_set = rule_sets_refs[i];
+		np_rule_set_t *hash_set = RS_REFs[i];
 		if(hash_set) {
 			set_dump(hash_set, 0);
 		}
@@ -995,63 +995,63 @@ np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 
 int nproto_rules_match(nt_packet_t *npt)
 {
-	np_rule_t *rule = NULL, *last_matched = NULL;
+	np_rule_t *rule = NULL, *mlast = NULL;
 	np_rule_set_t *hash_set = NULL;
-	np_rule_set_t *base_set = &rule_sets_base[npt->dir][np_proto_to_set(npt->l4_proto)];
+	np_rule_set_t *base_set = &RS_BASE[npt->dir][np_proto_to_set(npt->l4_proto)];
 
-	uint16_t proto = nt_flow_proto(npt->fi);
+	uint16_t proto = nt_flow_nproto(npt->fi);
 	if(!proto) {
 		/* unknown proto yet. */
 		rule = rules_set_match(base_set, npt);
 		if(rule) {
-			last_matched = rule;
+			mlast = rule;
 			np_debug("base match: %s\n", rule->name_rule);
 		}
 		/* current packet's ref match. */
 		if(rule && rule->ref_set) {
 			rule = rules_set_match(rule->ref_set, npt);
 			if(rule) {
-				last_matched = rule;
+				mlast = rule;
 				np_debug("inner-ref match: %s\n", rule->name_rule);
 			}
 		}
 	}
 
 	/* base matched, check the cross packets ref. */
-	if(last_matched) {
+	if(mlast) {
 		/* proto maybe changed. */
-		proto = last_matched->ID;
+		proto = mlast->ID;
 	}
 
 	/* assert the valid proto index. */
 	np_assert(proto < NP_RULE_SETS_HASH);
 
-	hash_set = rule_sets_refs[proto % NP_RULE_SETS_HASH];
+	hash_set = RS_REFs[proto % NP_RULE_SETS_HASH];
 	if(hash_set) {
 		rule = rules_set_match(hash_set, npt);
 		if(rule) {
-			last_matched = rule;
+			mlast = rule;
 			np_debug("hash-ref match: %s\n", rule->name_rule);
 		}
 	}
 	/* proto change save to flow. */
-	if(last_matched) {
-		if(RULE_IS_FIN(last_matched)) {
+	if(mlast) {
+		if(RULE_IS_FIN(mlast)) {
 			nt_flow_nproto_fin_set(npt->fi);
 		}
-		nt_flow_proto_update(npt->fi, last_matched->ID, NULL);
+		nt_flow_nproto_update(npt->fi, mlast->ID, NULL);
 	}
 	
 	/* DEBUG */
-	if(last_matched) {
+	if(mlast) {
 		np_info(FMT_FLOW_STR"\n\t\t[%s] --- matched %s--- \n", 
 			FMT_FLOW(npt->fi),
-			last_matched->name_rule, 
-			RULE_IS_FIN(last_matched)?"fin":"mid");
+			mlast->name_rule, 
+			RULE_IS_FIN(mlast)?"fin":"mid");
 	}
 	/* END debug. */
 
-	return last_matched ? last_matched->ID : 0;
+	return mlast ? mlast->ID : 0;
 }
 
 int nproto_init(void)
@@ -1070,8 +1070,8 @@ int nproto_init(void)
 	}
 
 	memset(&inner_rules, 0, sizeof(inner_rules));
-	memset(&rule_sets_base, 0, sizeof(rule_sets_base));
-	memset(&rule_sets_refs, 0, sizeof(rule_sets_refs));
+	memset(&RS_BASE, 0, sizeof(RS_BASE));
+	memset(&RS_REFs, 0, sizeof(RS_REFs));
 
 	ret = inner_rules_init();
 	if(ret) {
