@@ -25,7 +25,7 @@ fi
 test -e $workdb || eexit "init $workdb fail"
 
 ## following mysql 
-sql="create database if not exists cnf"
+sql="create database if not exists disk"
 mysql -uroot -pwjrc0409 -e "$sql"
 test $? -eq 0 || eexit "sql fail $sql"
 

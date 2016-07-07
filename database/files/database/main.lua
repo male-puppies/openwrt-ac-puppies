@@ -68,7 +68,7 @@ local function connect_mysql()
     local ok, err, errno, sqlstate = db:connect({
 		host = "127.0.0.1",
 		port = 3306,
-		database = "cnf",
+		database = "disk",
 		user = "root",
 		password = "wjrc0409",
 		max_packet_size = 1024 * 1024,
@@ -79,9 +79,8 @@ end
 
 local function test_sync() 
 	while true do 
-		for i = 1, 10 do 
-			ski.sleep(1)
-			print(i)
+		for i = 1, 1 do 
+			ski.sleep(1) 
 		end
 		sync.sync()
 	end 

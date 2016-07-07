@@ -50,15 +50,34 @@ create_sqlite3_disk_table() {
 	test $? -eq 0 || eexit "sql fail $sql"
 }
 
-drop_mysql_memory_table() {
-	local sql="drop table if exists $1"
-	mysql -uroot -p$password cnf -e "$sql"	
-	test $? -eq 0 || eexit "sql fail $sql"
-}
 
-create_mysql_memory_table() {
+execute_sqlite3_disk_sql() { 
 	local sql=$1
-	mysql -uroot -p$password cnf -e "$sql"	
+	sqlite3 $dbfile "$sql"
+	test $? -eq 0 || eexit "sql fail $sql" 
+}
+
+
+drop_mysql_disk_table() {
+	local sql="drop table if exists $1"
+	mysql -uroot -p$password disk -e "$sql"	
 	test $? -eq 0 || eexit "sql fail $sql"
 }
 
+create_mysql_disk_table() {
+	local sql=$1
+	mysql -uroot -p$password disk -e "$sql"	
+	test $? -eq 0 || eexit "sql fail $sql"
+}
+
+drop_mysql_memo_table() {
+	local sql="drop table if exists $1"
+	mysql -uroot -p$password memo -e "$sql"	
+	test $? -eq 0 || eexit "sql fail $sql"
+}
+
+create_mysql_memo_table() {
+	local sql=$1
+	mysql -uroot -p$password memo -e "$sql"	
+	test $? -eq 0 || eexit "sql fail $sql"
+}

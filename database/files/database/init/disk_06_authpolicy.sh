@@ -11,10 +11,13 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		zid 		integer		not null default 0, \
 		ipgid 		integer 	not null default 0, \
 		gid 		integer		not null default 0, \
-		type 		char(16) 	not null default 'auto' \
+		type 		char(16) 	not null default 'auto', \
+		foreign key(zid) references zone(zid) 			on delete restrict on update restrict, \
+		foreign key(ipgid) references ipgroup(ipgid) 	on delete restrict on update restrict, \
+		foreign key(gid) references acgroup(gid) 		on delete restrict on update restrict \
 	)"
-drop_mysql_memory_table $tbname	
-create_mysql_memory_table "create table if not exists $tbname ( \
+drop_mysql_disk_table $tbname	
+create_mysql_disk_table "create table if not exists $tbname ( \
 		$keyname 	int 		primary key, \
 		name	 	char(64) 	not null unique default '', \
 		des 		char(128) 	not null default '', \
@@ -23,3 +26,5 @@ create_mysql_memory_table "create table if not exists $tbname ( \
 		gid 		int			not null default 0, \
 		type 		char(16) 	not null default 'auto' \
 	)engine=memory"
+
+# type : auto wechat sms onekey 

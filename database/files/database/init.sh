@@ -11,5 +11,9 @@ for script in `ls ./disk_*`; do
 	test $? -eq 0 || eexit "script fail $script $msg"
 done
 
+for script in `ls ./memo_*`; do  
+	msg=`$script`
+	test $? -eq 0 || eexit "script fail $script $msg"
+done
 
 
