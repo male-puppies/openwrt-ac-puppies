@@ -10,7 +10,7 @@ function method:close() self.conn:close() self.conn = nil end
 function method:execute(sql) return self.conn:execute(sql) end
 
 function method:select(sql)
-	local cur, err = conn:execute(sql)
+	local cur, err = self.conn:execute(sql)
 	if not cur then 
 		return nil, err 
 	end
@@ -61,8 +61,8 @@ function new(diskpath, attaches)
 		local ret, err = conn:execute(sql) 	assert(ret, err)
 	end
 
-	--local params = {"PRAGMA journal_mode=memory", "PRAGMA locking_mode=EXCLUSIVE", "PRAGMA foreign_keys = ON", "PRAGMA auto_vacuum=FULL"}
-	local params = {"PRAGMA journal_mode=memory", "PRAGMA foreign_keys = ON"}
+	-- local params = {"PRAGMA journal_mode=memory", "PRAGMA locking_mode=EXCLUSIVE", "PRAGMA foreign_keys = ON", "PRAGMA auto_vacuum=FULL"}
+	local params = {"PRAGMA journal_mode=memory", "PRAGMA foreign_keys = ON", "PRAGMA auto_vacuum=FULL"}
 	for _, sql in ipairs(params) do
 		local r, e = conn:execute(sql) 	assert(r, e)
 	end 
