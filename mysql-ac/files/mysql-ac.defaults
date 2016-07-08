@@ -2,4 +2,6 @@
 
 cp -a /usr/share/mysql-ac/my.cnf /etc/
 cp -a /usr/share/mysql-ac/mysqld /etc/init.d/
+/etc/init.d/mysqld disable
+/etc/init.d/mysqld enable
 exit 0
