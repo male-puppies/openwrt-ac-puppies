@@ -5,13 +5,45 @@ server {
 
 	#charset koi8-r;
 	#access_log logs/host.access.log  main;
-
+	#error_log /tmp/error_ac.log  error;
 	location / {
-		root html;
+		root /usr/share/nginx-ac/html;
 		index index.html index.htm;
 	}
 	
 	location /auth {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /cloudonline {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /bypass_host {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /cloudlogin {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /authopt {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /wxlogin2info {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /weixin2_login {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /PhoneNo {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
+	}
+	
+	location /webui/login.html {
 		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
 	}
 }
