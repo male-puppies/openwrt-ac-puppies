@@ -89,13 +89,17 @@ static inline nt_pkt_nproto_t *nt_skb_nproto(struct sk_buff *skb, nt_packet_t *n
 }
 #endif
 
-/* http packet parse apis. */
+/* http packet parse APIs. */
 static inline char *np_http_hdr(nt_packet_t* pkt, int em_hdr, int *len)
 {
 	int16_t offset, end;
 	nt_pkt_nproto_t *np = nt_pkt_nproto(pkt);
 	nproto_http_t *http = &np->du.http;
 
+	/* do not fetch NP_HTTP_END use api, 
+	*	as l7 ptr & length is fixed 
+	*	by the http-base rule's callback. 
+	*/
 	if(em_hdr <= 0 || em_hdr >= NP_HTTP_MAX) {
 		return NULL;
 	}

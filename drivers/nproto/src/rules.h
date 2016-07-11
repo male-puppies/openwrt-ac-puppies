@@ -23,6 +23,7 @@
 #define NP_PATT_LEN_MAX  256
 #define NP_RULE_PRI_MIN 0
 #define NP_RULE_PRI_MAX 65535
+#define NP_RULES_COUNT_MAX 4096
 
 typedef struct {
 	uint32_t addrs[MAX_L4_ADDRS];
@@ -110,14 +111,14 @@ typedef struct {
 	*/
 	uint16_t hdr;
 	match_t match;
-} http_match_rule_t;
+} httpm_t;
 
 typedef struct {
 	/* 
 	* relation: OR/AND,
 	*/
 	uint8_t relation:1;
-	http_match_rule_t htpm[MAX_CT_MATCH_NUM];
+	httpm_t htpm[MAX_CT_MATCH_NUM];
 } http_match_t;
 
 typedef struct nproto_rule np_rule_t;
@@ -133,6 +134,7 @@ typedef struct nproto_rule np_rule_t;
 typedef struct {
 	char name[128];
 	mwm_t *pmwm; /* rules with 4 char search patterns. */
+	mwm_t *pmwm_host; /* for http search 'host'. */
 
 	uint16_t num_rules;
 	uint16_t capacity; /* the capacity of this set */
@@ -140,7 +142,6 @@ typedef struct {
 } np_rule_set_t;
 
 struct nproto_rule {
-	struct list_head list;
 	/* rule name, app name(xunlei, web-chrome), service: http, mail, game. */
 	char *name_rule, *name_app, *name_service;
 

@@ -12,7 +12,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_MYSQL
+#define RULE_DBG_ID NP_INNER_RULE_SSL
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -34,11 +34,15 @@
 #define NP_RULE_SETS_HASH 4096 /* max 4k rule id be-refed. */
 
 /* inner data struct's */
+typedef struct {
+	int count;
+	np_rule_t *array[NP_RULES_COUNT_MAX];
+} all_rules_t;
+static all_rules_t RULES_ALL;
+
 static np_rule_t *inner_rules[NP_INNER_RULE_MAX];
 static np_rule_set_t *RS_REFs[NP_RULE_SETS_HASH] = {NULL,};
 static np_rule_set_t RS_BASE[NP_FLOW_DIR_MAX][NP_SET_BASE_MAX];
-
-static LIST_HEAD(all_rules);
 
 static int ctm_init(np_rule_t *rule, match_t *ctm)
 {
@@ -113,7 +117,7 @@ static int rule_compile(np_rule_t *rule)
 	/* init http match struct */
 	if(RULE_REF_HTTP(rule)) {
 		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
-			http_match_rule_t *htpm = &rule->http.htpm[i];
+			httpm_t *htpm = &rule->http.htpm[i];
 			if(ctm_init(rule, &htpm->match) > 0) {
 				break;
 			}
@@ -139,7 +143,7 @@ static void rule_release(np_rule_t *rule)
 	}
 	if(rule->enable_http) {
 		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
-			http_match_rule_t *htpm = &rule->http.htpm[i];
+			httpm_t *htpm = &rule->http.htpm[i];
 			ctm_destroy(rule, &htpm->match);
 		}
 	}
@@ -227,10 +231,10 @@ static int set_add_rule_normal(np_rule_set_t *set, np_rule_t *rule)
 	return set_add_rule_normal_sorted(set, rule);
 }
 
-static int set_add_rule_mwm(np_rule_set_t *set, np_rule_t *rule, match_t *ctm)
+static int set_add_rule_mwm(np_rule_set_t *set, mwm_t **pmwm, np_rule_t *rule, match_t *ctm)
 {
 	int n;
-	mwm_t *mwm = set->pmwm;
+	mwm_t *mwm = *pmwm;
 
 	/* init mwm st.. */
 	if(!mwm) {
@@ -239,15 +243,15 @@ static int set_add_rule_mwm(np_rule_set_t *set, np_rule_t *rule, match_t *ctm)
 			np_error("create mwm failed.\n");
 			return set_add_rule_normal(set, rule);
 		}
-		set->pmwm = mwm;
+		*pmwm = mwm;
 	}
 	/* add patters & rule to mwm. */
 	n = mwmAddPatternEx(mwm, ctm->patt, ctm->length, ctm->offset, ctm->deep, rule);
 	if(n<0) {
-		np_error("mwm prepare %s:%d error.\n", rule->name_rule, rule->ID);
+		np_error("mwm:%p add patt %s:%d err.\n", mwm, rule->name_rule, rule->ID);
 		return set_add_rule_normal(set, rule);
 	} else {
-		np_info("mwm add rule[%s:%d].\n", rule->name_rule, rule->ID);
+		np_info("mwm:%p add rule[%s:%d].\n", mwm, rule->name_rule, rule->ID);
 	}
 	return 0;
 }
@@ -266,9 +270,18 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 	/* http search && length >= 4 */
 	if(RULE_REF_HTTP(rule)) {
 		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
-			match_t *ctm = &rule->http.htpm[i].match;
-			if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
-				return set_add_rule_mwm(set, rule, ctm);
+			httpm_t *htpm = &rule->http.htpm[i];
+			match_t *ctm = &htpm->match;
+			if(htpm->hdr == NP_HTTP_END) {
+				/* http only add content search to mwm. */
+				if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
+					return set_add_rule_mwm(set, &set->pmwm, rule, ctm);
+				}
+			} else if(htpm->hdr == NP_HTTP_Host) {
+				/* use mwm to search host, as too many web services. */
+				if(ctm->type == MHTP_SEARCH && ctm->length >=4 ) {
+					return set_add_rule_mwm(set, &set->pmwm_host, rule, ctm);
+				}
 			}
 		}
 	} else {
@@ -276,7 +289,7 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 			match_t *ctm = &rule->l7.ctm[i].match;
 			if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
 				/* ! search & patt length >= 4 */
-				return set_add_rule_mwm(set, rule, ctm);
+				return set_add_rule_mwm(set, &set->pmwm, rule, ctm);
 			}
 		}
 	}
@@ -294,7 +307,11 @@ int np_rule_register(np_rule_t *rule)
 	}
 
 	/* add to global list. */
-	list_add_tail(&rule->list, &all_rules);
+	RULES_ALL.array[RULES_ALL.count++] = rule;
+	if(RULES_ALL.count>=ARRAY_SIZE(RULES_ALL.array)) {
+		np_error("GLOBAL rule array limited.\n");
+		return -ENOMEM;
+	}
 
 	if(!RULE_IS_BASE(rule)) {
 		/* ref rule not add to base sets. */
@@ -323,6 +340,9 @@ void set_cleanup(np_rule_set_t *set)
 	if(set->pmwm) {
 		mwmFree(set->pmwm);
 	}
+	if(set->pmwm_host) {
+		mwmFree(set->pmwm_host);
+	}
 }
 
 static np_rule_set_t *set_alloc(char *name)
@@ -337,21 +357,35 @@ static np_rule_set_t *set_alloc(char *name)
 	return set;
 }
 
+static int mwm_compile(mwm_t *mwm)
+{
+	int ret = mwmPrepPatterns(mwm);
+	if(ret <= 0) {
+		np_error("init mwm:%p - failed.\n", mwm);
+		mwmFree(mwm);
+		return -EINVAL;
+	}
+	/* debug dump */
+	// mwmGroupDetails(set->pmwm);
+
+	return 0;
+}
+
 int set_compile(np_rule_set_t *set, char *name)
 {
 	int ret;
 
 	snprintf(set->name, sizeof(set->name), "%s", name);
 	if(set->pmwm) {
-		ret = mwmPrepPatterns(set->pmwm);
-		if(ret < 0) {
-			np_error("init mwm - failed.\n");
-			return -EINVAL;
-		} else if(ret == 0) {
-			mwmFree(set->pmwm);
+		ret = mwm_compile(set->pmwm);
+		if(ret) {
 			set->pmwm = NULL;
-		} else {
-			mwmGroupDetails(set->pmwm);
+		}
+	}
+	if(set->pmwm_host) {
+		ret = mwm_compile(set->pmwm_host);
+		if(ret) {
+			set->pmwm_host = NULL;
 		}
 	}
 	return 0;
@@ -373,6 +407,9 @@ static void set_dump(np_rule_set_t *set, int stage)
 	if(set->pmwm) {
 		mwmGroupDetails(set->pmwm);
 	}
+	if(set->pmwm_host) {
+		mwmGroupDetails(set->pmwm_host);
+	}
 	for(i=0; i<set->num_rules; i++) {
 		np_rule_t *rule = set->rules[i];
 		rule_dump(rule);
@@ -383,7 +420,6 @@ static void set_dump(np_rule_set_t *set, int stage)
 void rules_cleanup(void)
 {
 	int i, j;
-	struct list_head *itr;
 
 	/* clean rule set's */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
@@ -397,9 +433,9 @@ void rules_cleanup(void)
 			set_cleanup(hash_set);
 		}
 	}
-	list_for_each(itr, &all_rules) {
-		np_rule_t *rule = list_entry(itr, np_rule_t, list);
-	
+	for(i=0; i<RULES_ALL.count; i++) {
+		np_rule_t *rule = RULES_ALL.array[i];
+
 		/* cleanup refs. */
 		rule_release(rule);
 		if(rule->ref_set) {
@@ -408,34 +444,36 @@ void rules_cleanup(void)
 	}
 }
 
-const char *flow_dir_name[NP_FLOW_DIR_MAX] = {"any", "c2s", "s2c"};
-const char *set_inner_name[NP_SET_BASE_MAX] = {"udp","tcp","others"};
+const char *flow_dir_name[NP_FLOW_DIR_MAX] = {"ANY", "C2S", "S2C"};
+const char *set_inner_name[NP_SET_BASE_MAX] = {"UDP","TCP","OTHER's"};
 int rules_build(void)
 {
 	int i, j;
 	char name[64];
-	struct list_head *itr1, *itr2;
 
 	/* build the http ref's */
-	list_for_each(itr1, &all_rules) {
-		np_rule_t *rule1 = list_entry(itr1, np_rule_t, list);
+	for(i=0; i<RULES_ALL.count; i++) {
+		np_rule_t *rule1 = RULES_ALL.array[i];
+		/* self */
 		if(rule1->ID != NP_INNER_RULE_HTTP_REQ &&
-			rule1->ID != NP_INNER_RULE_HTTP_REP) 
-		{
+			rule1->ID != NP_INNER_RULE_HTTP_REP) {
 			continue;
 		}
 		/* round2 find the http ref rules. */
-		list_for_each(itr2, &all_rules) {
-			np_rule_t *rule2 = list_entry(itr2, np_rule_t, list);
-			if(rule1 == rule2) { /* self */
-				continue;
-			}
+		for(j=i+1; j<RULES_ALL.count; j++) {
+			np_rule_t *rule2 = RULES_ALL.array[j];
+			/* set to ref. */
 			if(RULE_REF_HTTP(rule2)) {
 				/* assert not base rule. */
 				np_assert(!RULE_IS_BASE(rule2));
+				/* append ref. */
 				for(i=0; i<ARRAY_SIZE(rule1->ID_REFs); i++) {
-					if(!rule2->ID_REFs[i]) {
+					uint16_t id = rule2->ID_REFs[i];
+					if(!id) {
 						break;
+					}
+					if(id == rule1->ID) {
+						np_warn("double ref.\n");
 					}
 				}
 				rule2->ID_REFs[i] = rule1->ID;
@@ -444,8 +482,8 @@ int rules_build(void)
 	}
 
 	/* build each ref's */
-	list_for_each(itr1, &all_rules) {
-		np_rule_t *rule1 = list_entry(itr1, np_rule_t, list);
+	for(i=0; i<RULES_ALL.count; i++) {
+		np_rule_t *rule1 = RULES_ALL.array[i];
 		if(RULE_REF_FLOW(rule1)) {
 			/* cross rule match use hash sets. */
 			uint16_t idx = rule1->ID % NP_RULE_SETS_HASH;
@@ -469,12 +507,9 @@ int rules_build(void)
 					break;
 				}
 				/* round2 find the ref target. */
-				list_for_each(itr2, &all_rules) {
-					np_rule_t *rule2 = list_entry(itr2, np_rule_t, list);
+				for(j=i+1; j<RULES_ALL.count; j++) {
+					np_rule_t *rule2 = RULES_ALL.array[j];
 					if(rule2->ID != ref_id) {
-						continue;
-					}
-					if(rule1 == rule2) {
 						continue;
 					}
 					if(!rule2->ref_set) {
@@ -504,8 +539,8 @@ int rules_build(void)
 		}
 	}
 	/* rule in-match ref. */
-	list_for_each(itr1, &all_rules) {
-		np_rule_t *rule = list_entry(itr1, np_rule_t, list);
+	for(i=0; i<RULES_ALL.count; i++) {
+		np_rule_t *rule = RULES_ALL.array[i];
 		if(rule->ref_set) {
 			snprintf(name, sizeof(name), "in-ref: %s", rule->name_rule);
 			set_compile(rule->ref_set, name);
@@ -718,7 +753,8 @@ static uint8_t* ctm_do(np_rule_t *rule, match_t *ctm, uint8_t *data, int dlen)
 				RULE_DBG(rule, NULL, "l7: rex match at: %d\n", m);
 				return data + offset + m;
 			} else {
-				RULE_DBG(rule, NULL, "l7: rex miss.\n");
+				RULE_DBG(rule, NULL, "l7: rex miss %d.\n", m);
+				np_dump(data + offset, 16, "rex:");
 			}
 			return NULL;
 		} break;
@@ -770,6 +806,7 @@ static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 				return NP_FALSE;
 			}
 		}
+		RULE_DBG(rule, NULL, "l7: wrapper len: %d\n", (uint16_t)(mc - l7data));
 	}
 
 	mc = ctm_do(rule, &cont->match, l7data, l7dlen);
@@ -821,37 +858,22 @@ static int l7_match(np_rule_t *rule, nt_packet_t *npt)
 	return NP_FALSE;
 }
 
-static int http_do_match(np_rule_t *rule, http_match_rule_t *htpm, nt_packet_t *npt)
+static int http_do_match(np_rule_t *rule, httpm_t *htpm, nt_packet_t *npt)
 {
-	int mlen = npt->l7_len, m;
-	uint8_t *hdr, *mdata = npt->l7_ptr, *mc;
+	int mdlen = npt->l7_len;
+	uint8_t *mdata = npt->l7_ptr, *mc;
 	nt_pkt_nproto_t *np = nt_pkt_nproto(npt);
 
 	switch(np->du_type) {
 		case NP_DUT_HTTP_REQ:
 		case NP_DUT_HTTP_REP: {
 			/* current packet match. */
-			switch(htpm->hdr) {
-				case 0: {
-					/* context search/regext match. */
-					hdr = np_http_hdr(npt, NP_HTTP_END, &m);
-					if(hdr && m > 0) {
-						mdata = hdr + m;
-						mlen -= (mdata - npt->l7_ptr);
-					}
-					if(mlen <= 0) {
-						RULE_DBG(rule, NULL, "http: nil content.\n");
-						return NP_FALSE;
-					}
-				} break;
-				default: {
-					hdr = np_http_hdr(npt, htpm->hdr, &mlen);
-					if(!hdr) {
-						RULE_DBG(rule, NULL, "http: hdr not found.\n");
-						return NP_FALSE;
-					}
-					mdata = hdr;
-				}break;
+			if(htpm->hdr != NP_HTTP_END) {
+				mdata = np_http_hdr(npt, htpm->hdr, &mdlen);
+				if(!mdata || mdlen <= 0) {
+					RULE_DBG(rule, NULL, "http: hdr not found.\n");
+					return NP_FALSE;
+				}
 			}
 		} break;
 		default: {
@@ -861,11 +883,11 @@ static int http_do_match(np_rule_t *rule, http_match_rule_t *htpm, nt_packet_t *
 				return NP_CONTINUE;
 			}
 			mdata = npt->l7_ptr;
-			mlen = npt->l7_len;
+			mdlen = npt->l7_len;
 		} break;
 	}
 
-	mc = ctm_do(rule, &htpm->match, mdata, mlen);
+	mc = ctm_do(rule, &htpm->match, mdata, mdlen);
 	if(mc) {
 		RULE_DBG(rule, NULL, "http: ctm matched.\n");
 		return NP_TRUE;
@@ -878,7 +900,7 @@ static int http_match(np_rule_t *rule, nt_packet_t *npt)
 	int i, m = NP_TRUE, relation_OR;
 	relation_OR = (rule->http.relation == NP_CTM_OR ? 1 : 0);
 	for (i = 0; i <ARRAY_SIZE(rule->http.htpm); ++i) {
-		http_match_rule_t *htpm = &rule->http.htpm[i];
+		httpm_t *htpm = &rule->http.htpm[i];
 		if(htpm->match.length <= 0) {
 			break;
 		}
@@ -921,7 +943,7 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 		n = l4_match(rule, npt);
 		if(!n) {
 			/* miss match. */
-			RULE_DBG(rule, npt, "l4: miss match. ---->>>>>>>> \n");
+			RULE_DBG(rule, npt, "l4: miss match. ---->>>>>>>>\n");
 			return NP_FALSE;
 		}
 	}
@@ -929,7 +951,7 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(rule->enable_l7) {
 		n = l7_match(rule, npt);
 		if(!n) {
-			RULE_DBG(rule, npt, "l7: miss match. ---->>>>>>>> \n");
+			RULE_DBG(rule, npt, "l7: miss match. ---->>>>>>>>\n");
 			return NP_FALSE;
 		}
 	}
@@ -938,7 +960,7 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	if(rule->enable_http) {
 		n = http_match(rule, npt);
 		if(!n) {
-			RULE_DBG(rule, npt, "http: miss match. -------- \n");
+			RULE_DBG(rule, npt, "http: miss match. ---->>>>>>>>\n");
 			return NP_FALSE;
 		}
 	}
@@ -969,8 +991,10 @@ static int mwmOnMatch(void* rule, void *npt, void *out)
 
 np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 {
-	int i;
+	int i, mdlen = npt->l7_len;
+	uint8_t *mdata = npt->l7_ptr;
 	mwm_t *pmwm = set->pmwm;
+	mwm_t *pmwm_host = set->pmwm_host;
 
 	for (i = 0; i <set->num_rules; i++) {
 		np_rule_t* rule = set->rules[i];
@@ -980,9 +1004,29 @@ np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 			return rule;
 		}
 	}
+	/* search dst ip addr. */
+
+	/* search http host, only as set's ref-http. */
+	if(pmwm_host) {
+		/* HTTP ref-match */
+		void *out = NULL;
+		mdata = np_http_hdr(npt, NP_HTTP_Host, &mdlen);
+		if(!mdata || mdlen <= 0) {
+			goto __next_mwm;
+		}
+		mwmSearch(pmwm_host, mdata, mdlen, npt, &out, mwmOnMatch);
+		if(out) {
+			np_rule_t *rule = out;
+			np_debug("mwm host matched: %s\n", rule->name_rule);
+			return rule;
+		}
+	}
+
+__next_mwm:
+	/* search l7 content OR http payload. */
 	if(pmwm) {
 		void* out = NULL;
-		mwmSearch(pmwm, npt->l7_ptr, npt->l7_len, npt, &out, mwmOnMatch);
+		mwmSearch(pmwm, mdata, mdlen, npt, &out, mwmOnMatch);
 		if(out) {
 			np_rule_t* rule = out;
 			np_debug("mwm matched: %s\n", rule->name_rule);

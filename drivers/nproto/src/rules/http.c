@@ -103,12 +103,27 @@ static int mwm_http_match(void *par, void *in, void *out)
 	uint8_t idx = ((void*)par - (void*)&http_headers[0])/sizeof(void*);
 
 	if(idx == NP_HTTP_END) {
+		int16_t nlen;
+
+		/* \r\n\r\n */
 		end = (uint8_t*)out - npt->l7_ptr + 4;
-		nproto->du.http.headers_range[idx][0] = end;
-		nproto->du.http.headers_range[idx][1] = end;
-		/* finished parse & exit. */
+		/* debug */
 		np_debug("found http header end.\n");
 		np_dump(out, 16, "dump: ");
+
+		/* save end offset. */
+		nproto->du.http.headers_range[idx][0] = end;
+		nproto->du.http.headers_range[idx][1] = end;
+
+		/* finished parse & exit. */
+		nlen = npt->l7_len - end;
+		if(nlen < 0) {
+			np_error("bad http packet length !!! hdr-end:%d, len:%d\n", end, npt->l7_len);
+			return -1;
+		}
+		/* http context match only. */
+		npt->l7_len = nlen;
+		npt->l7_ptr += end;
 		return -1;
 	}
 
@@ -122,6 +137,7 @@ static int mwm_http_match(void *par, void *in, void *out)
 	}
 	end = end_ptr - npt->l7_ptr;
 
+	/* debug */
 	np_print("%4d:[%4d-%4d]: %s\n", idx, start, end, http_headers[idx]);
 	np_dump((uint8_t*)out + 1, end-start, "dump:");
 
@@ -131,18 +147,38 @@ static int mwm_http_match(void *par, void *in, void *out)
 }
 
 /* do line parse. store the result into flow private union -> nproto_t. */
-static int on_http_req(nt_packet_t *npt, void *prule)
+static int on_http_hdr(nt_packet_t *npt, void *prule)
 {
-	// np_rule_t *rule = prule;
+	int i;
+	int16_t start = 0, end = 0;
+	np_rule_t *rule = prule;
 	nt_pkt_nproto_t *nproto = nt_pkt_nproto(npt);
 
-	// np_print("%s: " FMT_FLOW_STR"\n", rule->name_rule, FMT_FLOW(npt->fi));
-	// np_dump(npt->l7_ptr, 64, "dump");
-
-	nproto->du_type = NP_DUT_HTTP_REQ;
+	/* find the blank space. */
+	for(i=0; i<npt->l7_len; i++) {
+		uint8_t c = npt->l7_ptr[i];
+		if(!start && c == 0x20) {
+			start = i;
+			continue;
+		}
+		if(!end && c == 0x20) {
+			end = i;
+			break;
+		}
+		if(c == '\r' || c == '\n')
+			break;
+	}
+	/* save url offset. */
+	if(start && end) {
+		nproto->du.http.headers_range[NP_HTTP_URL][0] = start;
+		nproto->du.http.headers_range[NP_HTTP_URL][1] = end;
+		np_dump(npt->l7_ptr + start, end - start, "[%s]: URL:", rule->name_rule);
+	}
+	/* parse other headers. */
 	if(mwmParser) {
 		mwmSearch(mwmParser, npt->l7_ptr, npt->l7_len, npt, NULL, mwm_http_match);
 	}
+	nproto->du_type = NP_DUT_HTTP_REQ;
 	return 0;
 }
 
@@ -188,7 +224,7 @@ np_rule_t inner_http_req = {
 	/* callback's. */
 	.proto_init = http_init,
 	.proto_clean = http_clean,
-	.proto_cb = on_http_req,
+	.proto_cb = on_http_hdr,
 };
 
 np_rule_t inner_http_rep = {
@@ -233,5 +269,5 @@ np_rule_t inner_http_rep = {
 	/* proto callback's */
 	.proto_init = http_init,
 	.proto_clean = http_clean,
-	.proto_cb = on_http_req,
+	.proto_cb = on_http_hdr,
 };
