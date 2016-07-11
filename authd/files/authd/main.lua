@@ -4,10 +4,12 @@ local udp = require("ski.udp")
 local js = require("cjson.safe")
 local mysql = require("ski.mysql")
 local sandcproxy = require("sandcproxy")
+local luasql = require("luasql.sqlite3")
 
 local modules = {
 	web = 		require("web"),
 	sms = 		require("sms"),
+	auto = 		require("auto"),
 	wechat = 	require("wechat"),
 	broadcast = require("broadcast"),
 }
@@ -17,11 +19,9 @@ local udp_chan, tcp_chan, mqtt, udpsrv, myconn
 
 local function dispatch_udp_loop()
 	local f = function(cmd, ip, port)
-		local match, r, e
 		for _, mod in pairs(modules) do
-			match, r, e = mod.dispatch(cmd) 
-			if match then
-				udpsrv:send(ip, port, encode({r, e}))
+			local f = mod.dispatch_udp
+			if f and f(cmd, ip, port) then
 				break
 			end
 		end
@@ -30,7 +30,7 @@ local function dispatch_udp_loop()
 	local r, e
 	while true do
 		r, e = udp_chan:read() 					assert(r, e) 
-		ski.go(f, r[1], r[2], r[3]) 
+		f(r[1], r[2], r[3]) 
 	end
 end
 
@@ -113,6 +113,10 @@ local function connect_mysql()
 		max_packet_size = 1024 * 1024,
 		-- compact_arrays = true,
 	})
+
+	local env = luasql.sqlite3()
+	local conn, e = env:connect(":memory:") 			assert(conn, e)
+	db.escape = function(db, s) return conn:escape(s) end
    	return db
 end
 
@@ -146,7 +150,7 @@ local function main()
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
 	myconn, udpsrv, mqtt = connect_mysql(), start_udp_server(), start_sand_server()
 	for _, mod in pairs(modules) do 
-		mod.init(myconn)
+		mod.init(myconn, udpsrv, mqtt)
 	end
 	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop)
 	-- ski.go(test)
