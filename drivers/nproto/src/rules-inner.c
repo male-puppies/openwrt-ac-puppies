@@ -7,6 +7,7 @@ int inner_rules_init(void)
 	inner_http_req, \
 	inner_http_rep, \
 	inner_http_svn, \
+	inner_http_weibo, \
 	inner_pop3, inner_smtp, \
 	inner_ssh, inner_ssl, \
 	inner_ftp, inner_dhcp, \
@@ -18,6 +19,7 @@ int inner_rules_init(void)
 	np_rule_register(&inner_http_req);
 	np_rule_register(&inner_http_rep);
 	np_rule_register(&inner_http_svn);
+	np_rule_register(&inner_http_weibo);
 	np_rule_register(&inner_pop3);
 	np_rule_register(&inner_smtp);
 	np_rule_register(&inner_ssh);

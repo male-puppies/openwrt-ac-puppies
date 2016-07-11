@@ -452,7 +452,7 @@ int rules_build(void)
 	char name[64];
 
 	/* build the http ref's */
-	for(i=0; i<RULES_ALL.count; i++) {
+	for(i=0; i<RULES_ALL.count - 1; i++) {
 		np_rule_t *rule1 = RULES_ALL.array[i];
 		/* self */
 		if(rule1->ID != NP_INNER_RULE_HTTP_REQ &&
@@ -482,7 +482,7 @@ int rules_build(void)
 	}
 
 	/* build each ref's */
-	for(i=0; i<RULES_ALL.count; i++) {
+	for(i=0; i<RULES_ALL.count - 1; i++) {
 		np_rule_t *rule1 = RULES_ALL.array[i];
 		if(RULE_REF_FLOW(rule1)) {
 			/* cross rule match use hash sets. */
@@ -499,10 +499,11 @@ int rules_build(void)
 			set_add_rule(hash_set, rule1);
 		}
 		if(RULE_REF_PACKET(rule1)) {
+			int k;
 			/* rule1 in-rule's ref as rule2 matched. */
-			for(i=0; i<ARRAY_SIZE(rule1->ID_REFs); i++) {
+			for(k=0; k<ARRAY_SIZE(rule1->ID_REFs); k++) {
 				/* each ref id find the target rule. */
-				uint16_t ref_id = rule1->ID_REFs[i];
+				uint16_t ref_id = rule1->ID_REFs[k];
 				if(!ref_id) {
 					break;
 				}
@@ -1113,6 +1114,7 @@ int nproto_init(void)
 		goto __erro_pcre;
 	}
 
+	memset(&RULES_ALL, 0, sizeof(RULES_ALL));
 	memset(&inner_rules, 0, sizeof(inner_rules));
 	memset(&RS_BASE, 0, sizeof(RS_BASE));
 	memset(&RS_REFs, 0, sizeof(RS_REFs));
