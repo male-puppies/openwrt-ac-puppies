@@ -31,7 +31,6 @@
 
 #include <linux/klog.h>
 
-extern void *ntrack_klog_fd;
 #define nt_print printk
 #ifdef __DEBUG
  #define nt_debug(fmt...) 	do{ \
@@ -39,14 +38,12 @@ extern void *ntrack_klog_fd;
 						nt_print(fmt); \
 					} while(0)
 #else
- #define nt_debug(fmt...) 	klog_debug(ntrack_klog_fd, ##fmt)
+ #define nt_debug KLOG_DEBUG
 #endif
-#define nt_info(fmt...) 	klog_info(ntrack_klog_fd, ##fmt)
-#define nt_warn(fmt...) 	klog_warn(ntrack_klog_fd, ##fmt)
-#define nt_error(fmt...) 	klog_error(ntrack_klog_fd, ##fmt)
-#define nt_dump(buf, size, fmt, args...) 	klog_dumpbuf(ntrack_klog_fd, buf, size, fmt, ##args)
-#define nt_trace(level, fmt...) 	klog_trace(ntrack_klog_fd, level, ##fmt)
-#define nt_assert(x, fmt...) 	BUG_ON(!(x))
+#define nt_info KLOG_INFO
+#define nt_warn KLOG_WARN
+#define nt_error KLOG_ERROR
+#define nt_assert(x, fmt...)   BUG_ON(!(x))
 
 extern void *nproto_klog_fd;
 #define np_print printk

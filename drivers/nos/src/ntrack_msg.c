@@ -5,6 +5,7 @@
 #include <linux/list.h>
 #include <asm/smp.h>
 
+#include "nos.h"
 #include <linux/nos_track.h>
 #include <ntrack_rbf.h>
 #include <ntrack_msg.h>

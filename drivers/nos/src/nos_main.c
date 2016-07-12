@@ -23,7 +23,6 @@
 #include <linux/nos_track.h>
 #include <ntrack_comm.h>
 #include "nos.h"
-#include "nos_log.h"
 #include "nos_auth.h"
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
@@ -156,14 +155,18 @@ static unsigned int nos_fw_hook(void *priv,
 	flow = nt_flow(nos);
 	ui = nt_user(nos);
 
-	if ((flow->hdr.info_status & INFO_STATUS_VALID_BIT)) {
+	if (!(flow->hdr.info_status & INFO_STATUS_VALID_BIT)) {
 		//get sipgrp dipgrp szone dzone info
 		flow->hdr.src_zone_id = nos_zone_match(in);
 		flow->hdr.dst_zone_id = nos_zone_match(out);
 		flow->hdr.src_ipgrp_bits = nos_ipgrp_match_src(in, out, skb);
 		flow->hdr.dst_ipgrp_bits = nos_ipgrp_match_dst(in, out, skb);
 
-		flow->hdr.info_status |= INFO_STATUS_VALID_BIT;;
+		flow->hdr.info_status |= INFO_STATUS_VALID_BIT;
+
+		KLOG_DEBUG("flow info: szone=%u,dzone=%u,sipgrps=bits:0x%llx,dipgrps=bits:0x%llx\n",
+				flow->hdr.src_zone_id, flow->hdr.dst_zone_id,
+				flow->hdr.src_ipgrp_bits, flow->hdr.dst_ipgrp_bits);
 	}
 
 	ret = nos_auth_hook(in, out, skb, ct, flow, ui);
@@ -238,14 +241,14 @@ static struct nf_hook_ops nos_hooks[] = {
 	},
 };
 
-void *ntrack_klog_fd = NULL;
+void *nos_klog_fd = NULL;
 
 static int __init nos_init(void)
 {
 	int ret = 0;
 
-	ntrack_klog_fd = klog_init("ntrack", 0x0e, 0);
-	if(!ntrack_klog_fd) {
+	nos_klog_fd = klog_init("nos", 0x0e, 0);
+	if(!nos_klog_fd) {
 		return -ENOMEM;
 	}
 
@@ -278,7 +281,7 @@ nos_ipgrp_init_failed:
 nos_zone_init_failed:
 	nt_msg_cleanup();
 nt_msg_init_failed:
-	klog_fini(ntrack_klog_fd);
+	klog_fini(nos_klog_fd);
 
 	return ret;
 }
@@ -290,7 +293,7 @@ static void __exit nos_exit(void)
 	nos_ipgrp_exit();
 	nos_zone_exit();
 	nt_msg_cleanup();
-	klog_fini(ntrack_klog_fd);
+	klog_fini(nos_klog_fd);
 }
 
 module_init(nos_init);

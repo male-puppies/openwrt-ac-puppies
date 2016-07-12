@@ -66,6 +66,37 @@ void hex_printout(const char *msg, const unsigned char *buf, unsigned int len);
             } \
         } while(0)
 
+#define KLOG_DEBUG(fmt, ...) \
+        do { \
+            void *logfd = _MODULE_NAME__klog_fd; \
+            if(klog_debug_check(logfd)) { \
+                printk("[dbg] (%s, %d): " pr_fmt(fmt), __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            } \
+        } while(0)
+
+#define KLOG_INFO(fmt, ...) \
+        do { \
+            void *logfd = _MODULE_NAME__klog_fd; \
+            if(klog_debug_check(logfd)) { \
+                printk("[info] (%s, %d): " pr_fmt(fmt), __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            } \
+        } while(0)
+
+#define KLOG_WARN(fmt, ...) \
+        do { \
+            void *logfd = _MODULE_NAME__klog_fd; \
+            if(klog_debug_check(logfd)) { \
+                printk("[warn] (%s, %d): " pr_fmt(fmt), __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            } \
+        } while(0)
+
+#define KLOG_ERROR(fmt, ...) \
+        do { \
+            void *logfd = _MODULE_NAME__klog_fd; \
+            if(klog_debug_check(logfd)) { \
+                printk("[erro] (%s, %d): " pr_fmt(fmt), __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+            } \
+        } while(0)
 
 #endif //#ifndef _KLOG_H__
 

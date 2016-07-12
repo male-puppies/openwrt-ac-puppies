@@ -145,6 +145,8 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		ui->hdr.status = AUTH_BYPASS;
 		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = INVALID_AUTH_RULE_ID;
 		for (i = 0; i < auth_conf.num; i++) {
+			KLOG_DEBUG("matching rule %u, szone=%u, sipgrp=%u\n",
+					auth_conf.auth[i].id, auth_conf.auth[i].src_zone_id, auth_conf.auth[i].src_ipgrp_id);
 			if ( flow->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
 					(flow->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
 				ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = (uint8_t)auth_conf.auth[i].id;

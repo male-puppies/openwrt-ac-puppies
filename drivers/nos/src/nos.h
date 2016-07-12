@@ -4,12 +4,16 @@
  */
 #ifndef _NOS_H_
 #define _NOS_H_
+#include <linux/version.h>
 #include <linux/netdevice.h>
 #include <linux/kernel.h>
 #include <linux/netfilter/ipset/ip_set.h>
 #include <linux/netfilter/x_tables.h>
 #include <linux/netfilter/xt_set.h>
 
+#include "nos_log.h"
+extern void *nos_klog_fd;
+#define _MODULE_NAME__klog_fd nos_klog_fd
 #define NOS_VERSION "1.0.0"
 
 /* @linux/netfilter/nf_conntrack_common.h
