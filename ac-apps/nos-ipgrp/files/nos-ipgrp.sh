@@ -20,8 +20,8 @@ for i in `seq 0 255`; do
 
 	id="`uci get nos-ipgrp.@ipgrp[$i].id`"
 	test -n "$id" || continue
-	networks="`uci get nos-ipgrp.@ipgrp[$i].network`"
-	type="`uci get nos-ipgrp.@ipgrp[$i].type`"
+	networks="`uci get nos-ipgrp.@ipgrp[$i].network 2>/dev/null`"
+	type="`uci get nos-ipgrp.@ipgrp[$i].type 2>/dev/null`"
 
 	if [ x"$type" = "xall" ]; then
 		echo ipgrp $id=@all >/dev/nos_ipgrp_ctl
