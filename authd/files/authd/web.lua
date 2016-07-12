@@ -31,6 +31,7 @@ local function get_userinfo(magic, uid)
 	return {}
 end
 
+local numb_expire = {["0000-00-00 00:00:00"] = 1, ["1970-01-01 00:00:00"] = 1}
 local function check_user(r, p)
 	if not r then
 		return nil, "no such user"
@@ -40,20 +41,23 @@ local function check_user(r, p)
 		return nil, "disable"
 	end
 
-	if #r.bindip > 0 and r.bindip ~= p.ip then 
+	if r.password ~= p.password then
+		return nil, "invalid password"
+	end
+
+	local bindip = r.bindip
+	if #bindip > 0 and bindip ~= p.ip then 
 		return nil, "invalid ip"
 	end
 
-	if #r.bindmac > 0 and r.bindmac ~= p.mac then 
+	local bindmac = r.bindmac
+	if #bindmac > 0 and bindmac ~= p.mac then 
 		return nil, "invalid mac"
 	end
 
-	if #r.expire > 0 and r.expire ~= "0000-00-00 00:00:00" and r.expire < os.date("%Y-%m-%d %H:%M:%S") then 
+	local expire = r.expire
+	if #expire > 0 and not numb_expire[expire] and expire < os.date("%Y-%m-%d %H:%M:%S") then 
 		return nil, "expire"
-	end
-
-	if r.password ~= p.password then
-		return nil, "invalid password"
 	end
 
 	return true
