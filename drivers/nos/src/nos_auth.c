@@ -145,8 +145,6 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		ui->hdr.status = AUTH_BYPASS;
 		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = INVALID_AUTH_RULE_ID;
 		for (i = 0; i < auth_conf.num; i++) {
-			KLOG_DEBUG("matching rule %u, szone=%u, sipgrp=%u\n",
-					auth_conf.auth[i].id, auth_conf.auth[i].src_zone_id, auth_conf.auth[i].src_ipgrp_id);
 			if ( flow->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
 					(flow->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
 				ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = (uint8_t)auth_conf.auth[i].id;
@@ -164,6 +162,10 @@ unsigned int nos_auth_hook(const struct net_device *in,
 							ui->hdr.status = AUTH_BYPASS;
 					}
 				}
+
+				KLOG_DEBUG("auth matched rule %u, szone=%u, sipgrp=%u\n",
+						auth_conf.auth[i].id, auth_conf.auth[i].src_zone_id, auth_conf.auth[i].src_ipgrp_id);
+
 				nos_user_info_hold(ui);
 				eth = eth_hdr(skb);
 				memcpy(ui->hdr.macaddr, eth->h_source, ETH_ALEN);
@@ -326,11 +328,11 @@ void nos_auth_http_302(const struct net_device *dev, struct sk_buff *skb, const 
 	if (!http)
 		return;
 
-	snprintf(http->location, sizeof(http->location), "http://%pI4/index.html?ip=%pI4&mac=%02X-%02X-%02X-%02X-%02X-%02X&uid=%u&magic=%u&_t=%lu",
+	snprintf(http->location, sizeof(http->location), "http://%pI4/index.html?ip=%pI4&mac=%02X-%02X-%02X-%02X-%02X-%02X&uid=%u&magic=%u&rid=%u&_t=%lu",
 			&redirect_ip, &ui->ip,
 			eth->h_source[0], eth->h_source[1], eth->h_source[2],
 			eth->h_source[3], eth->h_source[4], eth->h_source[5],
-			ui->id, ui->magic, jiffies);
+			ui->id, ui->magic, ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH], jiffies);
 	http->location[sizeof(http->location) - 1] = 0;
 	n = snprintf(http->data, sizeof(http->data), http_data_fmt, http->location);
 	http->data[sizeof(http->data) - 1] = 0;
