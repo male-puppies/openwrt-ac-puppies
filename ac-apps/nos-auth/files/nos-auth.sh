@@ -79,4 +79,6 @@ for i in `seq 0 255`; do
 	echo "$cmd" >/dev/nos_auth_ctl
 done
 
+echo update magic >/dev/nos_auth_ctl
+
 exit 0
