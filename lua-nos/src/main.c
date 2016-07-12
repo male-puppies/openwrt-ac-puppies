@@ -118,10 +118,8 @@ static int user_get_ip_mac(lua_State *L) {
 	if (r) 
 		return r;
 	
-	// TODO get mac 
-	unsigned char mac[6] = {0};
 	lua_pushfstring(L, "%u.%u.%u.%u", NIPQUAD(ui->ip));
-	lua_pushfstring(L, "%02x:%02x:%02x:%02x:%02x:%02x", FMT_MAC(mac));
+	lua_pushfstring(L, "%02x:%02x:%02x:%02x:%02x:%02x", FMT_MAC(ui->hdr.macaddr));
 	return 2;
 }
 

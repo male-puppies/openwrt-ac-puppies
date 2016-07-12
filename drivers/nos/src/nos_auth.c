@@ -140,6 +140,7 @@ unsigned int nos_auth_hook(const struct net_device *in,
 {
 	if (ui->hdr.rule_magic != g_auth_conf_magic) {
 		int i;
+		struct ethhdr *eth;
 		ui->hdr.type = AUTH_TYPE_UNKNOWN;
 		ui->hdr.status = AUTH_BYPASS;
 		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = INVALID_AUTH_RULE_ID;
@@ -162,6 +163,8 @@ unsigned int nos_auth_hook(const struct net_device *in,
 					}
 				}
 				nos_user_info_hold(ui);
+				eth = eth_hdr(skb);
+				memcpy(ui->hdr.macaddr, eth->h_source, ETH_ALEN);
 			}
 		}
 		ui->hdr.rule_magic = g_auth_conf_magic;
