@@ -54,7 +54,7 @@ int nt_unotify(void *buff, int len)
 	struct sockaddr_in addr_authd;
 
 	addr_authd.sin_family = AF_INET;
-	addr_authd.sin_port = htons(50000);
+	addr_authd.sin_port = htons(50002);
 	inet_pton(AF_INET, "127.0.0.1", &addr_authd.sin_addr);
 
 	io.iov_base = buff;

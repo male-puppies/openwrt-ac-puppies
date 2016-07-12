@@ -25,10 +25,6 @@
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
 
-/* update conf to kernel modules */
-extern int nt_nl_init(void);
-extern int nt_nl_xmit(void *data);
-
 /* kernel user node message delivery to authd. */
 extern int nt_unotify_init(void);
 extern int nt_unotify(void *buff, int len);
@@ -62,12 +58,15 @@ static int fn_message_disp(void *p)
 		{
 			user_info_t *ui;
 			auth_msg_t *auth = nt_msg_data(hdr);
+			char buf[128];
+			int n;
+			n = sprintf(buf, "{\"cmd\":\"keepalive\",\"magic\":%u,\"uid\":%u}", auth->magic, auth->id);
 			
 			nt_debug("message uid: %u, magic: %u\n", auth->id, auth->magic);
 			ui = nt_get_user_by_id(&ntrack, auth->id, auth->magic);
 			if(ui) {
 				dump_user(ui);
-				nt_unotify((void*)auth, sizeof(auth_msg_t));
+				nt_unotify(buf, n);
 			}else{
 				nt_error("[%u:%u]->not found userinfo.\n", auth->id, auth->magic);
 			}
@@ -116,14 +115,8 @@ int main(int argc, char *argv[])
 {
 	int i;
 
-	/* to kernel */
-	nt_nl_init();
 	/* to user authd. */
 	nt_unotify_init();
-
-	/* test update conf. */
-	extern char *auth_conf;
-	nt_nl_xmit(auth_conf);
 
 	/* mmap init & user/flow info. */
 	if (nt_base_init(&ntrack)) {

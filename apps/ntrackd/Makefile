@@ -1,26 +1,41 @@
+#
+# Copyright (C) 2014-2015 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ntrackd
-PKG_VERSION:=2015-08-06
-PKG_RELEASE=1
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=1
 
+PKG_MAINTAINER:=Chen Minqiang <ptpt52@gmail.com>
 PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
-PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
-
+ 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ntrackd
+define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:=+pps_comm +libpps
-  TITLE:=Generic ntrackd user space tools 
+  DEPENDS:= +pps_comm +libpps
 endef
 
-define Package/ntrackd/description
+define Package/$(PKG_NAME)
+  $(call Package/$(PKG_NAME)/Default)
+  TITLE:=Generic ntrackd user space tools
+endef
+
+define Package/$(PKG_NAME)/description
   ntrackd system for user track & flow track.
+endef
+
+define Package/$(PKG_NAME)/conffiles
+endef
+
+define Package/$(PKG_NAME)/postinst
 endef
 
 define Build/Prepare
@@ -35,27 +50,16 @@ MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)"
 
-define Package/ntrackd/install
-	$(CP) -a ./files/* $(1)/
+define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/ntrackd.init $(1)/etc/init.d/ntrackd
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ntrackd $(1)/usr/sbin/ntrackd
 endef
 
-define Package/ntrackd/postinst
-if [ -z "$${IPKG_INSTROOT}" ]; then
-	echo "Enabling rc.d symlink for tbq"
-	/etc/init.d/ntrackd enable
-fi
-exit 0
+define Build/Configure
+  true
 endef
 
-define Package/ntrackd/prerm
-if [ -z "$${IPKG_INSTROOT}" ]; then
-	echo "Removing rc.d symlink for ntrackd"
-	/etc/init.d/ntrackd disable
-fi
-exit 0
-endef
-
-$(eval $(call BuildPackage,ntrackd))
+$(eval $(call BuildPackage,$(PKG_NAME)))
 
