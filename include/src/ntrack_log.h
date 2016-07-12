@@ -19,7 +19,7 @@
 			(ui)->hdr.u_grp_id, (ui)->hdr.u_usr_crc, \
 			(ui)->hdr.status, \
 			(ui)->refcnt, \
-			HIPQUAD((ui)->ip)
+			NIPQUAD((ui)->ip)
 
 #define FMT_MAC_STR "%02x:%02x:%02x:%02x:%02x:%02x"
 #define FMT_MAC(m)  (unsigned char)m[0],(unsigned char)m[1],(unsigned char)m[2],\
