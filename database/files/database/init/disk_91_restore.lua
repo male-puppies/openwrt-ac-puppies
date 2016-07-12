@@ -63,10 +63,14 @@ local function main()
 			local nhex = rdsparser.hex(sql)
 			if ohex ~= nhex then 
 				return error_return(string.format("invalid cmd %s %s", nhex, js.encode(narr))) 
-			end 
+			end
+			
 			local ret, err = conn:execute(sql)
 			if not ret then
-				local _ = err:find("no such table") or log.fatal("database execute fail %s %s", sql, err or "")
+				if not err:find("no such table") then 
+					io.stderr:write("database execute fail ", sql, err or "", "\n")
+					os.exit(1)
+				end
 			end 
 		end
 	end

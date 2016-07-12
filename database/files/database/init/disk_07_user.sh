@@ -17,6 +17,9 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		foreign key(gid) references acgroup(gid) on delete cascade on update cascade \
 	)"
 	
+#insert into user(username,password,gid) select 'yjs','123',gid from acgroup where name='g11' 
+#insert into user(username,password,gid) select '15914180656','123',gid from acgroup where name='g11'
+	
 drop_mysql_disk_table $tbname	
 create_mysql_disk_table "create table $tbname ( \
 		$keyname int 		primary key, \
