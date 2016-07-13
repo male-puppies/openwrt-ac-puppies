@@ -245,7 +245,10 @@ static struct nf_hook_ops nos_hooks[] = {
 	},
 };
 
-void *nos_klog_fd = NULL;
+/* message ring export APIs */
+extern int nt_msg_init(void);
+extern void nt_msg_cleanup(void);
+void *ntrack_klog_fd = NULL;
 
 static int __init nos_init(void)
 {
