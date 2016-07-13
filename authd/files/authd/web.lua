@@ -1,7 +1,14 @@
 local ski = require("ski")
 local log = require("log")
-local js = require("cjson.safe")
+local nos = require("luanos")
 local batch = require("batch")
+local js = require("cjson.safe")
+
+local get_ip_mac	= nos.user_get_ip_mac
+local set_status	= nos.user_set_status
+local get_status	= nos.user_get_status
+local get_rule_id	= nos.user_get_rule_id
+local set_gid_ucrc	= nos.user_set_gid_ucrc
 
 local udp_map, tcp_map = {}, {}
 local myconn, udpsrv, mqtt
@@ -25,10 +32,6 @@ local function dispatch_tcp(cmd)
 	if f then
 		return true, f(cmd)
 	end
-end
-
-local function get_userinfo(magic, uid)
-	return {}
 end
 
 local numb_expire = {["0000-00-00 00:00:00"] = 1, ["1970-01-01 00:00:00"] = 1}
@@ -107,11 +110,23 @@ function on_batch(count, arr)
 	end
 end
 
+local function get_userinfo(uid, magic)
+	local ip, mac = get_ip_mac(uid, magic)
+	if not ip then 
+		return nil, mac
+	end 
+	local rule_id, e = get_rule_id(uid, magic)
+	if not rule_id then 
+		return nil, e
+	end 
+	return ip, mac, rule_id
+end
+
 -- curl 'http://1.0.0.8/auth/weblogin?ip=192.168.72.56&mac=D0-50-99-41-7C-B4&uid=4033&magic=8068&username=15914180656&password=123456'
-udp_map["/cloudlogin"] = function(p, ip, port) 
-	local magic, uid, uip, mac, username, password = p.magic, p.uid, p.ip, p.mac, p.username, p.password
-	local map = get_userinfo(magic, uid)
-	p.ip, p.port = ip, port
+udp_map["/cloudlogin"] = function(p, uip, uport) 
+	local magic, uid, ip, mac, username, password = p.magic, p.uid, p.ip, p.mac, p.username, p.password
+	local kip, kmac, rule_id = get_userinfo(uid, magic)
+	p.rule_id = rule_id
 	login_trigger:emit(p)
 end
 
