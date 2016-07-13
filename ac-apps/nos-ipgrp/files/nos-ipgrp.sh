@@ -34,4 +34,6 @@ for i in `seq 0 255`; do
 	fi
 done
 
+echo update magic >/dev/nos_ipgrp_ctl
+
 exit 0

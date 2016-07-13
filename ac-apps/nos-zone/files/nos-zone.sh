@@ -24,4 +24,6 @@ for i in `seq 0 255`; do
 	done
 done
 
+echo update magic >/dev/nos_zone_ctl
+
 exit 0
