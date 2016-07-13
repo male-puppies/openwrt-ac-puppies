@@ -26,7 +26,6 @@
 #include "nos_auth.h"
 #include "nos_zone.h"
 #include "nos_ipgrp.h"
-#include "nos_auth.h"
 #include "ntrack_kapi.h"
 #include "ntrack_msg.h"
 
@@ -128,8 +127,8 @@ static unsigned int nos_fw_hook(void *priv,
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
 
-	struct nos_flow_info *flow;
-	struct nos_user_info *ui;
+	//struct nos_flow_info *flow;
+	struct nos_user_info *ui, *pi;
 	struct nos_track* nos;
 
 	if (nos_hook_disable) {
@@ -152,24 +151,29 @@ static unsigned int nos_fw_hook(void *priv,
 	if ((nos = nf_ct_get_nos(ct)) == NULL) {
 		return NF_ACCEPT;
 	}
-	flow = nt_flow(nos);
+	//flow = nt_flow(nos);
 	ui = nt_user(nos);
+	pi = nt_peer(nos);
 
-	if (!(flow->hdr.info_status & INFO_STATUS_VALID_BIT)) {
-		//get sipgrp dipgrp szone dzone info
-		flow->hdr.src_zone_id = nos_zone_match(in);
-		flow->hdr.dst_zone_id = nos_zone_match(out);
-		flow->hdr.src_ipgrp_bits = nos_ipgrp_match_src(in, out, skb);
-		flow->hdr.dst_ipgrp_bits = nos_ipgrp_match_dst(in, out, skb);
-
-		flow->hdr.info_status |= INFO_STATUS_VALID_BIT;
-
-		KLOG_DEBUG("flow info: szone=%u,dzone=%u,sipgrps=bits:0x%llx,dipgrps=bits:0x%llx\n",
-				flow->hdr.src_zone_id, flow->hdr.dst_zone_id,
-				flow->hdr.src_ipgrp_bits, flow->hdr.dst_ipgrp_bits);
+	if (pi->hdr.zone_magic != g_zone_conf_magic) {
+		pi->hdr.zone_id = nos_zone_match(out);
+		pi->hdr.zone_magic = g_zone_conf_magic;
+	}
+	if (ui->hdr.zone_magic != g_zone_conf_magic) {
+		ui->hdr.zone_id = nos_zone_match(in);
+		ui->hdr.zone_magic = g_zone_conf_magic;
 	}
 
-	ret = nos_auth_hook(in, out, skb, ct, flow, ui);
+	if (pi->hdr.ipgrp_magic != g_ipgrp_conf_magic) {
+		pi->hdr.ipgrp_bits = nos_ipgrp_match_dst(in, out, skb);
+		pi->hdr.ipgrp_magic = g_ipgrp_conf_magic;
+	}
+	if (ui->hdr.ipgrp_magic != g_ipgrp_conf_magic) {
+		ui->hdr.ipgrp_bits = nos_ipgrp_match_src(in, out, skb);
+		ui->hdr.ipgrp_magic = g_ipgrp_conf_magic;
+	}
+
+	ret = nos_auth_hook(in, out, skb, ct, ui);
 	if (ret != NF_ACCEPT)
 		return ret;
 

@@ -26,6 +26,8 @@
 #include "nos.h"
 #include "nos_ipgrp.h"
 
+uint16_t g_ipgrp_conf_magic = 50855;
+
 static int nos_ipgrp_major = 0;
 static int nos_ipgrp_minor = 0;
 static int number_of_devices = 1;
@@ -162,16 +164,19 @@ static void *nos_ipgrp_start(struct seq_file *m, loff_t *pos)
 				"#    ipgrp <id>=@all -- set all range 0.0.0.0~255.255.255.255\n"
 				"#    delete <id> -- delete one ipgrp\n"
 				"#    clean -- remove all existing ipgrp(s)\n"
+				"#    update magic -- update the g_ipgrp_conf_magic\n"
 				"#\n"
 				"# Info: "
 				"#  VALID IPGRP ID RANGE: 0~%u\n"
 				"#  MAX IPGRP: %u\n"
+				"#    g_ipgrp_conf_magic=%u\n"
 				"#\n"
 				"# Reload cmd:\n"
 				"\n"
 				"clean\n"
 				"\n",
-				MAX_IPGRP - 1, MAX_IPGRP);
+				MAX_IPGRP - 1, MAX_IPGRP,
+				g_ipgrp_conf_magic);
 		nos_ipgrp_ctl_buffer[n] = 0;
 		return nos_ipgrp_ctl_buffer;
 	} else if ((*pos) > 0) {
@@ -310,6 +315,9 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 				goto done;
 			printk("nos_ipgrp_delete() failed ret=%d\n", err);
 		}
+	} else if (strncmp(data, "update magic", 12) == 0) {
+		g_ipgrp_conf_magic++;
+		goto done;
 	}
 
 	printk("ignoring line[%s]\n", data);

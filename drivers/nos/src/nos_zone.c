@@ -26,6 +26,8 @@
 #include "nos.h"
 #include "nos_zone.h"
 
+uint16_t g_zone_conf_magic = 50855;
+
 static int nos_zone_major = 0;
 static int nos_zone_minor = 0;
 static int number_of_devices = 1;
@@ -130,16 +132,19 @@ static void *nos_zone_start(struct seq_file *m, loff_t *pos)
 				"#    zone <id>=<if_name> -- set interface zone\n"
 				"#    delete <id> -- delete one zone\n"
 				"#    clean -- remove all existing zone(s)\n"
+				"#    update magic -- update the g_zone_conf_magic\n"
 				"#\n"
 				"# Info: "
 				"#  VALID ZONE ID RANGE: 0~%u\n"
 				"#  MAX ZONE: %u\n"
+				"#    g_zone_conf_magic=%u\n"
 				"#\n"
 				"# Reload cmd:\n"
 				"\n"
 				"clean\n"
 				"\n",
-				INVALID_ZONE_ID - 1, INVALID_ZONE_ID);
+				INVALID_ZONE_ID - 1, INVALID_ZONE_ID,
+				g_zone_conf_magic);
 		nos_zone_ctl_buffer[n] = 0;
 		return nos_zone_ctl_buffer;
 	} else if ((*pos) > 0) {
@@ -272,6 +277,9 @@ static ssize_t nos_zone_write(struct file *file, const char __user *buf, size_t 
 				goto done;
 			printk("nos_zone_delete() failed ret=%d\n", err);
 		}
+	} else if (strncmp(data, "update magic", 12) == 0) {
+		g_zone_conf_magic++;
+		goto done;
 	}
 
 	printk("ignoring line[%s]\n", data);

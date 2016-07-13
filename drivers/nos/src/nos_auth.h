@@ -13,6 +13,7 @@
 #include "ntrack_auth.h"
 
 extern unsigned int redirect_ip;
+extern uint16_t g_auth_conf_magic;
 
 struct auth_rule_t {
 #define INVALID_AUTH_RULE_ID 255
@@ -42,7 +43,6 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		const struct net_device *out,
 		struct sk_buff *skb,
 		struct nf_conn *ct,
-		struct nos_flow_info *flow,
 		struct nos_user_info *ui);
 
 void nos_auth_http_302(const struct net_device *dev, struct sk_buff *skb, const struct nos_user_info *ui);

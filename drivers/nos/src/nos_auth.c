@@ -39,7 +39,7 @@
 #include "nos_ipgrp.h"
 #include "ntrack_msg.h"
 
-static uint16_t g_auth_conf_magic = 50855;
+uint16_t g_auth_conf_magic = 50855;
 
 /*XXX: default redirect_ip 1.0.0.8 */
 unsigned int redirect_ip = __constant_htonl((1<<24)|(0<<16)|(0<<8)|(8<<0));
@@ -135,7 +135,6 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		const struct net_device *out,
 		struct sk_buff *skb,
 		struct nf_conn *ct,
-		struct nos_flow_info *flow,
 		struct nos_user_info *ui)
 {
 	if (ui->hdr.rule_magic != g_auth_conf_magic) {
@@ -143,11 +142,11 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		struct ethhdr *eth;
 		ui->hdr.type = AUTH_TYPE_UNKNOWN;
 		ui->hdr.status = AUTH_BYPASS;
-		ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = INVALID_AUTH_RULE_ID;
+		ui->hdr.rule_id = INVALID_AUTH_RULE_ID;
 		for (i = 0; i < auth_conf.num; i++) {
-			if ( flow->hdr.src_zone_id == auth_conf.auth[i].src_zone_id &&
-					(flow->hdr.src_ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
-				ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH] = (uint8_t)auth_conf.auth[i].id;
+			if ( ui->hdr.zone_id == auth_conf.auth[i].src_zone_id &&
+					(ui->hdr.ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
+				ui->hdr.rule_id = (uint8_t)auth_conf.auth[i].id;
 				if (auth_conf.auth[i].auth_type == AUTH_TYPE_AUTO) {
 					ui->hdr.type = AUTH_TYPE_AUTO;
 					ui->hdr.status = AUTH_OK;
@@ -220,7 +219,7 @@ unsigned int nos_auth_hook(const struct net_device *in,
 
 			nt_msghdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
 			if (nt_msg_enqueue(&hdr, &auth, 0)) {
-				nt_debug("skb cap failed.\n");
+				KLOG_DEBUG("skb cap failed.\n");
 			}
 		}
 	}
@@ -332,7 +331,7 @@ void nos_auth_http_302(const struct net_device *dev, struct sk_buff *skb, const 
 			&redirect_ip, &ui->ip,
 			eth->h_source[0], eth->h_source[1], eth->h_source[2],
 			eth->h_source[3], eth->h_source[4], eth->h_source[5],
-			ui->id, ui->magic, ui->hdr.rule_idx[NOS_RULE_TYPE_AUTH], jiffies);
+			ui->id, ui->magic, ui->hdr.rule_id, jiffies);
 	http->location[sizeof(http->location) - 1] = 0;
 	n = snprintf(http->data, sizeof(http->data), http_data_fmt, http->location);
 	http->data[sizeof(http->data) - 1] = 0;

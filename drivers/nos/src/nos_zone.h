@@ -7,6 +7,8 @@
 #include <linux/netdevice.h>
 #include <ntrack_comm.h>
 
+extern uint16_t g_zone_conf_magic;
+
 #define MAX_IF_INDEX 4096
 #define INVALID_ZONE_ID 255
 #define ZONE_ID_MASK 255

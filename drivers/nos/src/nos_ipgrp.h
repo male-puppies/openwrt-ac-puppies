@@ -10,6 +10,8 @@
 #include <linux/kernel.h>
 #include <ntrack_comm.h>
 
+extern uint16_t g_ipgrp_conf_magic;
+
 struct ip_grp_t {
 	unsigned int id;
 	unsigned int ipset_id;
