@@ -26,18 +26,25 @@ np_rule_t inner_http_weibo = {
 	.rule_type = TP_RULE_FIN,
 	/* just match the http matched packet's */
 	.refs_type = NP_REF_PACKET,
+	.ID_REFs = {NP_INNER_RULE_HTTP_REQ, },
 
 	/* use http match only. */
 	.enable_http = 1,
 
 	.http = {
-		.relation = NP_CTM_OR,
+		.htp_relation = NP_CTM_OR,
 		.htpm = {
 			{
 				.hdr = NP_HTTP_Host,
 				.match = {
 					.type = MHTP_SEARCH,
 					.patt = ".weibo.com",
+				},
+			},{
+				.hdr = NP_HTTP_Host,
+				.match = {
+					.type = MHTP_SEARCH,
+					.patt = ".weibo.cn",
 				},
 			},{
 				.hdr = NP_HTTP_Host,

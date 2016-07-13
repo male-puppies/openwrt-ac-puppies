@@ -117,7 +117,7 @@ typedef struct {
 	/* 
 	* relation: OR/AND,
 	*/
-	uint8_t relation:1;
+	uint8_t htp_relation:1;
 	httpm_t htpm[MAX_CT_MATCH_NUM];
 } http_match_t;
 

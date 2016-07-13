@@ -117,6 +117,7 @@ int nt_msg_enqueue(nt_msghdr_t *hdr, void *buf_in, uint32_t key)
 	queue_work_on(KEY_TO_CORE(key), nmsg_wq, &cur_msgq->wq_msg);
 	return 0;
 }
+EXPORT_SYMBOL(nt_msg_enqueue);
 
 static int nmsg_fill_buffer(rbf_t *rbfp, nmsg_node_t *node)
 {

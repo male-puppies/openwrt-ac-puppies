@@ -11,18 +11,28 @@
 #include <nproto/tencent_qq.h>
 
 #define FMT_PKT_STR "FID:%4u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u,len:%d"
+#ifdef __KERNEL__
 #define FMT_PKT(p) 	((p)->fi->id), \
 					NIPQUAD((p)->iph->saddr), \
 			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->source):ntohs((p)->udp->source)), \
 					NIPQUAD((p)->iph->daddr), \
 			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest)), \
 			((p)->l7_len)
+#else 
+		/* FIXME: xxx */
+		//FMT_PKT(p) (...)
+#endif
 
 typedef struct {
+#ifdef __KERNEL__
 	/* ntarck */
 	flow_info_t *fi;
 	user_info_t *ui;
 	user_info_t *pi; /* peer info */
+#else
+	uint32_t fid, fmagic;
+#endif
+
 	/* l3/l4 */
 	const struct iphdr *iph;
 	union {
@@ -33,7 +43,7 @@ typedef struct {
     
 	/* upper proto */
 	uint8_t l4_proto;
-	uint8_t dir: 4, parser_ok: 1; /* dir: C2S, S2C; */
+	uint8_t dir: 4; /* dir: C2S, S2C; */
 	// uint8_t tcp_retransmission;
 
 	int16_t l3_len;
@@ -42,16 +52,13 @@ typedef struct {
 	uint8_t *l7_ptr;
 	uint64_t timestamps;
 
+#ifdef __KERNEL__
 	/* userspace this point to ntrack_priv, kernel -> skb->ntrack_priv */
 	void *priv; 
-#ifndef __KERNEL__
+#else
 	/* result of nproto parser */
 	unsigned char ntrack_priv[NTRACK_PKT_PRIV_SIZE];
 #endif
-
-	/* frame data need transmit to others. */
-	uint16_t dlen;
-	uint8_t data[0]; /* dynamic buffer. */
 } nt_packet_t;
 
 

@@ -1259,9 +1259,9 @@ void mwmGroupDetails(mwm_t *pv)
 
 		for( m=0; patrn < patrnEnd; m++, patrn++ ) /* Test all patterns in the group */
 		{
-			np_print("\tmwm: Pattern[%d]: ",m); 
+			np_print("\tmwm: Pattern[%d]: <",m); 
 			ShowBytes(patrn->psLen,patrn->psPat);
-			np_print("\n");
+			np_print(">\n");
 		} 
 
 		if(m > gmax )

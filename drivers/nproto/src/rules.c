@@ -12,7 +12,7 @@
 #include "rules.h"
 #include "pcre.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_SSL
+#define RULE_DBG_ID NP_INNER_RULE_HTTP_WEIBO
 
 /* ... */
 #ifdef RULE_DBG_ID
@@ -141,7 +141,7 @@ static void rule_release(np_rule_t *rule)
 			ctm_destroy(rule, &ctm->match);
 		}
 	}
-	if(rule->enable_http) {
+	if(RULE_REF_HTTP(rule)) {
 		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
 			httpm_t *htpm = &rule->http.htpm[i];
 			ctm_destroy(rule, &htpm->match);
@@ -208,7 +208,9 @@ int set_add_rule_normal_sorted(np_rule_set_t *set, np_rule_t *rule)
 		set->rules[hi + 1] = rule;
 	}
 	set->num_rules ++;
-	return 0;
+
+	np_info("[%s:%d]\n", rule->name_rule, rule->ID);
+	return set->num_rules;
 }
 
 #define NP_SET_GROW_COUNT 64
@@ -239,7 +241,7 @@ static int set_add_rule_mwm(np_rule_set_t *set, mwm_t **pmwm, np_rule_t *rule, m
 	/* init mwm st.. */
 	if(!mwm) {
 		mwm = mwmNew();
-		if(mwm) {
+		if(!mwm) {
 			np_error("create mwm failed.\n");
 			return set_add_rule_normal(set, rule);
 		}
@@ -248,17 +250,17 @@ static int set_add_rule_mwm(np_rule_set_t *set, mwm_t **pmwm, np_rule_t *rule, m
 	/* add patters & rule to mwm. */
 	n = mwmAddPatternEx(mwm, ctm->patt, ctm->length, ctm->offset, ctm->deep, rule);
 	if(n<0) {
-		np_error("mwm:%p add patt %s:%d err.\n", mwm, rule->name_rule, rule->ID);
+		np_error("mwm: [%s:%d] add patt [%s] err\n", rule->name_rule, rule->ID, ctm->patt);
 		return set_add_rule_normal(set, rule);
 	} else {
-		np_info("mwm:%p add rule[%s:%d].\n", mwm, rule->name_rule, rule->ID);
+		np_info("mwm: [%s:%d] add [%s]\n", rule->name_rule, rule->ID, ctm->patt);
 	}
 	return 0;
 }
 
 static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 {
-	int i;
+	int i, in_mwm = -1;
 
 	np_assert(set);
 	np_assert(rule);
@@ -269,29 +271,51 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 	}
 	/* http search && length >= 4 */
 	if(RULE_REF_HTTP(rule)) {
-		for(i=0; i<ARRAY_SIZE(rule->http.htpm); i++) {
-			httpm_t *htpm = &rule->http.htpm[i];
+		http_match_t *htp = &rule->http;
+		if(htp->htp_relation != NP_CTM_OR) {
+			/* only mwm or rules. */
+			return set_add_rule_normal(set, rule);
+		}
+		for(i=0; i<ARRAY_SIZE(htp->htpm); i++) {
+			httpm_t *htpm = &htp->htpm[i]; 
 			match_t *ctm = &htpm->match;
 			if(htpm->hdr == NP_HTTP_END) {
 				/* http only add content search to mwm. */
 				if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
-					return set_add_rule_mwm(set, &set->pmwm, rule, ctm);
+					in_mwm = set_add_rule_mwm(set, &set->pmwm, rule, ctm);
+					if(in_mwm) {
+						return 0;
+					}
 				}
 			} else if(htpm->hdr == NP_HTTP_Host) {
 				/* use mwm to search host, as too many web services. */
 				if(ctm->type == MHTP_SEARCH && ctm->length >=4 ) {
-					return set_add_rule_mwm(set, &set->pmwm_host, rule, ctm);
+					in_mwm = set_add_rule_mwm(set, &set->pmwm_host, rule, ctm);
+					if(in_mwm) {
+						return 0;
+					}
 				}
 			}
 		}
 	} else {
-		for(i=0; i<rule->l7.ctm_num; i++) {
-			match_t *ctm = &rule->l7.ctm[i].match;
+		l7_match_t *l7 = &rule->l7;
+		if(l7->ctm_relation != NP_CTM_OR) {
+			return set_add_rule_normal(set, rule);
+		}
+		for(i=0; i<l7->ctm_num; i++) {
+			match_t *ctm = &l7->ctm[i].match;
 			if(ctm->type == MHTP_SEARCH && ctm->length >= 4) {
 				/* ! search & patt length >= 4 */
-				return set_add_rule_mwm(set, &set->pmwm, rule, ctm);
+				in_mwm = set_add_rule_mwm(set, &set->pmwm, rule, ctm);
+				if(in_mwm) {
+					return 0;
+				}
 			}
 		}
+	}
+	if(in_mwm >= 0) {
+		/* already add to mwm OR normal. */
+		return 0;
 	}
 	/* default add to normal set */
 	return set_add_rule_normal(set, rule);
@@ -400,14 +424,13 @@ static void set_dump(np_rule_set_t *set, int stage)
 		return;
 	}
 
-	while(stage--) {
-		np_print("\t\t");
-	}
-	np_print("----[%s:%d]----\n", set->name, set->num_rules);
+	np_print("----[%d:%s:%d]----\n", stage, set->name, set->num_rules);
 	if(set->pmwm) {
+		np_print("mwm search:\n");
 		mwmGroupDetails(set->pmwm);
 	}
 	if(set->pmwm_host) {
+		np_print("mwm host search:\n");
 		mwmGroupDetails(set->pmwm_host);
 	}
 	for(i=0; i<set->num_rules; i++) {
@@ -448,58 +471,34 @@ const char *flow_dir_name[NP_FLOW_DIR_MAX] = {"ANY", "C2S", "S2C"};
 const char *set_inner_name[NP_SET_BASE_MAX] = {"UDP","TCP","OTHER's"};
 int rules_build(void)
 {
-	int i, j;
+	int i, j, k;
 	char name[64];
 
-	/* build the http ref's */
-	for(i=0; i<RULES_ALL.count - 1; i++) {
-		np_rule_t *rule1 = RULES_ALL.array[i];
-		/* self */
-		if(rule1->ID != NP_INNER_RULE_HTTP_REQ &&
-			rule1->ID != NP_INNER_RULE_HTTP_REP) {
-			continue;
-		}
-		/* round2 find the http ref rules. */
-		for(j=i+1; j<RULES_ALL.count; j++) {
-			np_rule_t *rule2 = RULES_ALL.array[j];
-			/* set to ref. */
-			if(RULE_REF_HTTP(rule2)) {
-				/* assert not base rule. */
-				np_assert(!RULE_IS_BASE(rule2));
-				/* append ref. */
-				for(i=0; i<ARRAY_SIZE(rule1->ID_REFs); i++) {
-					uint16_t id = rule2->ID_REFs[i];
-					if(!id) {
-						break;
-					}
-					if(id == rule1->ID) {
-						np_warn("double ref.\n");
-					}
-				}
-				rule2->ID_REFs[i] = rule1->ID;
-			}
-		}
-	}
-
 	/* build each ref's */
-	for(i=0; i<RULES_ALL.count - 1; i++) {
+	for(i=0; i<RULES_ALL.count; i++) {
 		np_rule_t *rule1 = RULES_ALL.array[i];
 		if(RULE_REF_FLOW(rule1)) {
-			/* cross rule match use hash sets. */
-			uint16_t idx = rule1->ID % NP_RULE_SETS_HASH;
-			np_rule_set_t *hash_set = RS_REFs[idx];
-			if(!hash_set) {
-				hash_set = set_alloc("hash");
-				if(!hash_set) {
-					np_error("alloc hash set[%d:%s] failed.\n", rule1->ID, rule1->name_rule);
-					continue;
+			/* cross rule match use hash sets. */	
+			for(k=0; k<ARRAY_SIZE(rule1->ID_REFs); k++) {
+				np_rule_set_t *hash_set;
+				uint16_t idx, ref_id = rule1->ID_REFs[k];
+				if(!ref_id) {
+					break;
 				}
-				RS_REFs[idx] = hash_set;
-			}
-			set_add_rule(hash_set, rule1);
+				idx = ref_id % NP_RULE_SETS_HASH;
+				hash_set = RS_REFs[idx];
+				if(!hash_set) {
+					hash_set = set_alloc("hash");
+					if(!hash_set) {
+						np_error("alloc hash set[%d:%s] failed.\n", rule1->ID, rule1->name_rule);
+						continue;
+					}
+					RS_REFs[idx] = hash_set;
+				}
+				set_add_rule(hash_set, rule1);
+			}		
 		}
 		if(RULE_REF_PACKET(rule1)) {
-			int k;
 			/* rule1 in-rule's ref as rule2 matched. */
 			for(k=0; k<ARRAY_SIZE(rule1->ID_REFs); k++) {
 				/* each ref id find the target rule. */
@@ -508,7 +507,7 @@ int rules_build(void)
 					break;
 				}
 				/* round2 find the ref target. */
-				for(j=i+1; j<RULES_ALL.count; j++) {
+				for(j=0; j<RULES_ALL.count; j++) {
 					np_rule_t *rule2 = RULES_ALL.array[j];
 					if(rule2->ID != ref_id) {
 						continue;
@@ -899,7 +898,7 @@ static int http_do_match(np_rule_t *rule, httpm_t *htpm, nt_packet_t *npt)
 static int http_match(np_rule_t *rule, nt_packet_t *npt)
 {
 	int i, m = NP_TRUE, relation_OR;
-	relation_OR = (rule->http.relation == NP_CTM_OR ? 1 : 0);
+	relation_OR = (rule->http.htp_relation == NP_CTM_OR ? 1 : 0);
 	for (i = 0; i <ARRAY_SIZE(rule->http.htpm); ++i) {
 		httpm_t *htpm = &rule->http.htpm[i];
 		if(htpm->match.length <= 0) {
@@ -958,7 +957,7 @@ int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	}
 
 	/* do http match */
-	if(rule->enable_http) {
+	if(RULE_REF_HTTP(rule)) {
 		n = http_match(rule, npt);
 		if(!n) {
 			RULE_DBG(rule, npt, "http: miss match. ---->>>>>>>>\n");
@@ -997,6 +996,8 @@ np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 	mwm_t *pmwm = set->pmwm;
 	mwm_t *pmwm_host = set->pmwm_host;
 
+	np_debug("%s\n", set->name);
+
 	for (i = 0; i <set->num_rules; i++) {
 		np_rule_t* rule = set->rules[i];
 		if(rule_one_match(rule, npt, rule_matched_cb)) {
@@ -1013,6 +1014,7 @@ np_rule_t *rules_set_match(np_rule_set_t *set, nt_packet_t *npt)
 		void *out = NULL;
 		mdata = np_http_hdr(npt, NP_HTTP_Host, &mdlen);
 		if(!mdata || mdlen <= 0) {
+			np_debug("host not found.\n");
 			goto __next_mwm;
 		}
 		mwmSearch(pmwm_host, mdata, mdlen, npt, &out, mwmOnMatch);

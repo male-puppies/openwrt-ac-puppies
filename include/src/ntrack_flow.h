@@ -35,6 +35,16 @@ static inline void nt_flow_nproto_fin_set(flow_info_t *fi)
 	fi->hdr.flags |= FG_FLOW_NPROTO_FIN;
 }
 
+static inline int nt_flow_track(const flow_info_t *fi) 
+{
+	return fi->hdr.flags & FG_FLOW_TRACE;
+}
+
+static inline void nt_flow_track_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FG_FLOW_TRACE;
+}
+
 /* ########################## */
 /* nproto identify in Flow node. */
 typedef struct {

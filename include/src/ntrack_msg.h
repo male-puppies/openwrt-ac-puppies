@@ -32,12 +32,6 @@ static inline void* nt_msg_data(nt_msghdr_t *hdr)
 
 #ifdef __KERNEL__
 /* 
-* ntrack message queue init/fini.
-*/
-int nt_msg_init(void);
-void nt_msg_cleanup(void);
-
-/* 
 * init the message header, setup type & content length.
 */
 static inline nt_msghdr_t *nt_msghdr_init(nt_msghdr_t *hdr, int type, uint16_t data_len)

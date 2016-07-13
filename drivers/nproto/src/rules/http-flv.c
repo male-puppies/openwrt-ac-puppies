@@ -27,8 +27,8 @@ flash
 */
 np_rule_t inner_http_flv = {
 	.name_rule = "http-flv",
-	.name_app = "flv",
-	.name_service = "flv",
+	.name_app = "flash",
+	.name_service = "Media",
 
 	.ID = NP_INNER_RULE_HTTP_FLV,
 	.priority = NP_RULE_PRI_MAX,
@@ -36,14 +36,13 @@ np_rule_t inner_http_flv = {
 	.rule_type = TP_RULE_FIN,
 	/* match the http current packet's & flow. */
 	.refs_type = NP_REF_PACKET | NP_REF_FLOW,
+	.ID_REFs = {NP_INNER_RULE_HTTP_REP, },
 
 	/* use http match only. */
-	.enable_l4 = 0,
-	.enable_l7 = 0,
 	.enable_http = 1,
 
 	.http = {
-		.relation = NP_CTM_OR,
+		.htp_relation = NP_CTM_OR,
 		.htpm = {
 			{
 				.hdr = 0, /* context match. */

@@ -106,7 +106,7 @@ static int mwm_http_match(void *par, void *in, void *out)
 		int16_t nlen;
 
 		/* \r\n\r\n */
-		end = (uint8_t*)out - npt->l7_ptr + 4;
+		end = (uint8_t*)out - npt->l7_ptr;
 		/* debug */
 		np_debug("found http header end.\n");
 		np_dump(out, 16, "dump: ");
@@ -127,7 +127,7 @@ static int mwm_http_match(void *par, void *in, void *out)
 		return -1;
 	}
 
-	start = (uint8_t*)out - npt->l7_ptr + 1;
+	start = (uint8_t*)out - npt->l7_ptr;
 	lasted = npt->l7_len - start;
 	end_ptr = BMHChr(bmhLine, out+1, lasted);
 	if(!end_ptr) {
