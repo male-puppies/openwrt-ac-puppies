@@ -539,41 +539,28 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 				&auth.src_zone_id,
 				&auth.src_ipgrp_id);
 		if (n == 3) {
-			int i = 0;
-			int j = 0;
-			int found = 1;
-#define _STATUS_IPWHITE_ (1<<0)
-#define _STATUS_MACWHITE_ (1<<1)
-			int status = 0;
 			do {
-				if (found && j == 3) {
-					found = 0;
-					if (strncmp(data + i, "type=web", 8) == 0) {
+				char *p;
+				p = strstr(data, ",type=");
+				if (p) {
+					p = p + 6;
+					if (strncmp(p, "web", 3) == 0) {
 						auth.auth_type = AUTH_TYPE_WEB;
-					} else if (strncmp(data + i, "type=auto", 9) == 0) {
+					} else if (strncmp(p, "auto", 4) == 0) {
 						auth.auth_type = AUTH_TYPE_AUTO;
 					} else {
 						err = -EINVAL;
 						break;
 					}
-				}
-				if (found && (j == 4 || j == 5)) {
-					found = 0;
-					if (strncmp(data + i, "ipwhite=", 8) == 0) {
+
+					p = strstr(data, ",ipwhite=");
+					if (p) {
 						int k = 0;
 						char buf[256];
-
-						if ((status & _STATUS_IPWHITE_)) {
-							printk("dup ipwhite=...\n");
-							err = -EINVAL;
-							break;
-						}
-						status |= _STATUS_IPWHITE_;
-
-						i += 8;
-						while (i < 256 && data[i] && data[i] != ',' && data[i] != '\n') {
-							buf[k++] = data[i];
-							i++;
+						p = p + 9;
+						while (p[k] && p[k] != ',') {
+							buf[k] = p[k];
+							k++;
 						}
 						buf[k] = 0;
 						if (buf[0]) {
@@ -588,21 +575,16 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 								break;
 							}
 						}
-					} else if (strncmp(data + i, "macwhite=", 9) == 0) {
+					}
+
+					p = strstr(data, ",macwhite=");
+					if (p) {
 						int k = 0;
 						char buf[256];
-
-						if ((status & _STATUS_MACWHITE_)) {
-							printk("dup macwhite=...\n");
-							err = -EINVAL;
-							break;
-						}
-						status |= _STATUS_MACWHITE_;
-
-						i += 9;
-						while (i < 256 && data[i] && data[i] != ',' && data[i] != '\n') {
-							buf[k++] = data[i];
-							i++;
+						p = p + 10;
+						while (p[k] && p[k] != ',') {
+							buf[k] = p[k];
+							k++;
 						}
 						buf[k] = 0;
 						if (buf[0]) {
@@ -617,21 +599,12 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 								break;
 							}
 						}
-					} else {
-						err = -EINVAL;
-						break;
 					}
-				}
-				if (data[i] == ',') {
-					found = 1;
-					j++;
 				} else {
-					found = 0;
-				}
-				if (data[i] == '\n')
+					err = -EINVAL;
 					break;
-				i++;
-			} while (i < 256);
+				}
+			} while (0);
 			if (err == 0) {
 				if ((err = nos_auth_set(&auth)) == 0)
 					goto done;
