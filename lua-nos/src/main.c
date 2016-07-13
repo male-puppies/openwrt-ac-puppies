@@ -56,8 +56,10 @@ static inline int get_user(lua_State *L, user_info_t **ui) {
 	check_uid_magic(L, &uid, &magic);
 	*ui = nt_get_user_by_id(&ntrack, uid, magic);
 	if(!(*ui)) {
+		char buff[32] = {0};
+		snprintf(buff, sizeof(buff), "not find user %u-%u", uid, magic);
 		lua_pushnil(L);
-		lua_pushfstring(L, "not find user %u-%u", uid, magic);
+		lua_pushstring(L, buff);
 		return 2;
 	}
 	
@@ -118,8 +120,11 @@ static int user_get_ip_mac(lua_State *L) {
 	if (r) 
 		return r;
 	
-	lua_pushfstring(L, "%u.%u.%u.%u", NIPQUAD(ui->ip));
-	lua_pushfstring(L, "%02x:%02x:%02x:%02x:%02x:%02x", FMT_MAC(ui->hdr.macaddr));
+	char buff[32] = {0};
+	snprintf(buff, sizeof(buff), "%u.%u.%u.%u", NIPQUAD(ui->ip)); 
+	lua_pushstring(L, buff);
+	snprintf(buff, sizeof(buff), "%02x:%02x:%02x:%02x:%02x:%02x", FMT_MAC(ui->hdr.macaddr));
+	lua_pushstring(L, buff);
 	return 2;
 }
 
