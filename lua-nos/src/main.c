@@ -72,7 +72,7 @@ static int user_get_rule_id(lua_State *L) {
 	if (r)
 		return r;
 		
-	lua_pushinteger(L, ui->hdr.rule_idx[0]);
+	lua_pushinteger(L, ui->hdr.rule_id);
 	return 1;
 }
 
