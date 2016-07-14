@@ -5,13 +5,15 @@ local js = require("cjson.safe")
 local mysql = require("ski.mysql")
 local sandcproxy = require("sandcproxy")
 local luasql = require("luasql.sqlite3")
+local cfg = 		require("cfg")
 
 local modules = {
 	web = 		require("web"),
 	sms = 		require("sms"),
 	auto = 		require("auto"),
 	wechat = 	require("wechat"),
-	broadcast = require("broadcast"),
+	kernel = 	require("kernel"),
+	dbevent = 	require("dbevent"),
 }
 
 local encode, decode = js.encode, js.decode
@@ -22,9 +24,10 @@ local function dispatch_udp_loop()
 		for _, mod in pairs(modules) do
 			local f = mod.dispatch_udp
 			if f and f(cmd, ip, port) then
-				break
+				return
 			end
 		end
+		print("invalid cmd", js.enocde(cmd))
 	end
 
 	local r, e
@@ -34,23 +37,34 @@ local function dispatch_udp_loop()
 	end
 end
 
+local function on_kernel_msg(cmd)
+	for _, mod in pairs(modules) do
+		local f = mod.dispatch_udp
+		if f and f(cmd) then
+			return
+		end
+	end
+	print("invalid cmd", js.enocde(cmd))
+end
+
 local function dispatch_tcp_loop() 
 	local f = function(map)
 		local match, r, e, s 
 		local cmd, topic, seq = map.pld, map.mod, map.seq
 		for _, mod in pairs(modules) do
-			match, r, e = mod.dispatch(cmd) 
-			if match then
+			local f = mod.dispatch_tcp
+			if f and f(cmd) then
 				local _ = mod and seq and mqtt:publish(topic, js.encode({seq = seq, pld = {r, e}}))
-				break
+				return
 			end
 		end
+		print("invalid cmd", js.encode(cmd))
 	end
 
 	local r, e
 	while true do
 		r, e = tcp_chan:read()					assert(r, e)
-		ski.go(f, r)
+		f(r)
 	end
 end
 
@@ -71,7 +85,7 @@ local function start_sand_server()
 	local args = {
 		log = log,
 		unique = unique,
-		clitopic = {unique}, 
+		clitopic = {unique, "a/ac/database_sync"}, 
 		srvtopic = {unique .. "_srv"}, 
 		on_message = on_message, 
 		on_disconnect = function(st, err) log.fatal("disconnect %s %s", st, err) end,
@@ -82,7 +96,7 @@ end
 
 local function start_udp_server()
 	local udpsrv = udp.new()
-	local r, e = udpsrv:bind("127.0.0.1", 51235) 			assert(r, e)
+	local r, e = udpsrv:bind("127.0.0.1", 50002) 			assert(r, e)
 
 	ski.go(function()
 		local r, e, m, ip, port
@@ -139,7 +153,7 @@ local function test()
 	}
 	local proxy = sandcproxy.run_new(args) 
 	while true do  
-		local r, e = proxy:query("a/local/authd_srv", {cmd = "broadcast", data = {user = {1,2,3,4}}})
+		local r, e = proxy:query("a/local/authd_srv", {cmd = "dbevent", data = {user = {1,2,3,4}}})
 		print(js.encode({r, e}))
 		ski.sleep(1)
 	end
@@ -152,6 +166,8 @@ local function main()
 	for _, mod in pairs(modules) do 
 		mod.init(myconn, udpsrv, mqtt)
 	end
+	cfg.init(myconn, udpsrv, mqtt)
+	require("kernel").set_kernel_cb(on_kernel_msg)
 	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop)
 	-- ski.go(test)
 end
