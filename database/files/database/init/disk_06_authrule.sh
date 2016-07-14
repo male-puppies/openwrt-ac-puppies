@@ -1,7 +1,7 @@
 #!/bin/sh 
 . ./init_template_lib.sh
-tbname=authpolicy
-keyname=polid
+tbname=authrule
+keyname=rid
 
 drop_sqlite3_disk_table $tbname
 create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname ( \

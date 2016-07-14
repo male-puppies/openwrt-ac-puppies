@@ -13,8 +13,18 @@ local sandcproxy = require("sandcproxy")
 
 local dbrpc, proxy, udpsrv
 local cmd_map = {}
+
+local function broadcast(change)
+	for _ in pairs(change) do 
+		proxy:publish("a/ac/database_sync", js.encode({pld = {cmd = "dbsync", data = change}}))
+		break
+	end
+end
+
 function cmd_map.rpc(cmd, ctx)  
-	local r = dbrpc:execute(cmd), sync.sync()
+	local r = dbrpc:execute(cmd)
+	local change = sync.sync()
+	broadcast(change)
 	local _ = r and proxy:publish(ctx.mod, js.encode({seq = ctx.seq, pld = r}))
 end
 
@@ -95,13 +105,14 @@ local function main()
 	mgr.new(conn, myconn, ud, cfg)
 	
 	local st = ski.time()
-	sync.sync(true)
+	local change = sync.sync(true)
 	log.info("sync init spends %ss", ski.time() - st)
 
 	ski.go(start_udp_server)
 	proxy = start_sand_server()
 	dbrpc = rpcserv.new(proxy)
-	-- ski.go(test_sync)
+	broadcast(change)
+	ski.go(test_sync)
 end
 
 log.setmodule("db")

@@ -66,11 +66,14 @@ local function sync_all_tables()
 		local _ = r or log.fatal("%s %s", sql, e)
 	end
 
+	local broad = {}
 	for _, tbname in ipairs(sync_tables) do
-		sync_one_table(tbname)	
+		sync_one_table(tbname)
+		broad[tbname] = {all = 1}
 	end
 
 	local r, e = conn:execute("delete from trigger") 	assert(r, e)
+	return broad
 end
 
 local function sync_trigger()
@@ -97,10 +100,12 @@ local function sync_trigger()
 			local _ = r or log.fatal("%s %s", sql, e)
 		end
 
-		arr = actions.add
-		for _, r in ipairs(actions.set) do 
+		arr = actions.set
+		for _, r in ipairs(actions.add) do 
 			table.insert(arr, r)
 		end
+
+		actions.add = nil
 
 		if #arr > 0 then
 			local map = {}
@@ -121,12 +126,36 @@ local function sync_trigger()
 	end
 	
 	local r, e = conn:execute("delete from trigger") 	assert(r, e)
+	
+	local get_keys = function(arr)
+		local narr = {}
+		for _, r in ipairs(arr) do  
+			table.insert(narr, r.val)
+		end 
+		return narr 
+	end 
+
+	local broad = {}
+	for tbname, actions in pairs(tbmap) do
+		local item = {} 
+		local del, set = actions.del, actions.set 
+		if #del > 0 then 
+			item.del = get_keys(del)
+		end
+		if #set > 0 then 
+			item.set = get_keys(set)
+		end
+		if item.set or item.del then 
+			broad[tbname] = item
+		end 
+	end
+
+	return broad
 end
 
 local function sync(sync_all)
 	if not sync_tables then 
 		sync_tables = parse_sync_tables() 	assert(sync_tables)
-		
 		return sync_all_tables() 
 	end
 
