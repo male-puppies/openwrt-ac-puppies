@@ -2,7 +2,7 @@ local js = require("cjson.safe")
 local query = require("common.query")
 
 local uri = ngx.var.uri
-local host, port = "127.0.0.1", 51235
+local host, port = "127.0.0.1", 50002
 local function reply(r, d)
 	ngx.say(js.encode({status = r, data = d}))
 end
@@ -15,8 +15,8 @@ local function check_query_vars()
 	local rip = ngx.var.remote_addr
 	local p = ngx.req.get_uri_args()
 
-	local magic, uid, ip, mac = tonumber(p.magic), tonumber(p.uid), p.ip, p.mac
-	if not (magic and uid and ip and mac) then 
+	local magic, uid, ip, mac, rid = tonumber(p.magic), tonumber(p.uid), p.ip, p.mac, tonumber(p.rid)
+	if not (magic and uid and ip and mac and rid) then
 		return nil, "invalid param"
 	end
 
@@ -29,7 +29,7 @@ local function check_query_vars()
 		return nil, "invalid mac"
 	end
 
-	return {cmd = uri, magic = magic, uid = uid, ip = ip, mac = mac}
+	return {cmd = uri, magic = magic, uid = uid, ip = ip, mac = mac, rid = rid}
 end
 
 local function query_common(param) 
