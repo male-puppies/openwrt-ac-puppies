@@ -100,7 +100,7 @@ static int user_set_status(lua_State *L) {
 static int user_set_gid_ucrc(lua_State *L) {
 	user_info_t *ui;
 	int r = get_user(L, &ui);
-	if (r) 
+	if (r)
 		return r;
 	
 	uint32_t gid, ucrc;
