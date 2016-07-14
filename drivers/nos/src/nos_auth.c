@@ -238,6 +238,11 @@ static inline void nos_auth_reply_payload(const char *payload, int payload_len, 
 	int offset, header_len;
 	char *data;
 
+	if (skb_linearize(oskb) != 0) {
+		printk("skb_linearize fail\n");
+		return;
+	}
+
 	oeth = (struct ethhdr *)skb_mac_header(oskb);
 	oiph = ip_hdr(oskb);
 	otcph = (struct tcphdr *)((void *)oiph + oiph->ihl*4);
@@ -247,10 +252,6 @@ static inline void nos_auth_reply_payload(const char *payload, int payload_len, 
 	nskb = skb_copy_expand(oskb, skb_headroom(oskb), header_len, GFP_ATOMIC);
 	if (!nskb) {
 		printk("alloc_skb fail\n");
-		return;
-	}
-	if (skb_linearize(nskb) != 0) {
-		printk("skb_linearize fail\n");
 		return;
 	}
 
