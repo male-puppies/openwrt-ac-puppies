@@ -27,7 +27,7 @@ local function dispatch_udp_loop()
 				return
 			end
 		end
-		print("invalid cmd", js.enocde(cmd))
+		print("invalid cmd", js.encode(cmd))
 	end
 
 	local r, e
