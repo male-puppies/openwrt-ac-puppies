@@ -1,18 +1,23 @@
 local ski = require("ski")
 local log = require("log")
+local cfg = require("cfg")
 local nos = require("luanos")
 local batch = require("batch")
+local share = require("share")
 local js = require("cjson.safe")
 local authlib = require("authlib")
 
-local map2arr, arr2map, limit = authlib.map2arr, authlib.arr2map, authlib.limit 
-local escape_map, escape_arr, empty = authlib.escape_map, authlib.escape_arr, authlib.empty
-local set_status, set_gid_ucrc = nos.user_set_status, nos.user_set_gid_ucrc
-local get_ip_mac, get_status, get_rule_id = nos.user_get_ip_mac, nos.user_get_status, nos.user_get_rule_id
+local map2arr, arr2map, limit, empty = share.map2arr, share.arr2map, share.limit, share.empty
+local escape_map, escape_arr = share.escape_map, share.escape_arr
+
+local find_missing, set_online = authlib.find_missing, authlib.set_online
+local keepalive, insert_online = authlib.keepalive, authlib.insert_online
+local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
 
 local udp_map = {}
 local myconn, udpsrv, mqtt
-local login_trigger, keepalive_trigger, on_login_batch
+local login_trigger, on_login_batch
+local keepalive_trigger, on_keepalive_batch
 
 local function init(m, u, p)
 	myconn, udpsrv, mqtt = m, u, p
@@ -65,54 +70,27 @@ local function check_user(r, p)
 	return true
 end
 
-local function set_online(uid, magic, gid) 
-	local _ = set_status(uid, magic, 1), set_gid_ucrc(uid, magic, gid, 1)
-end
-
-local function insert_online(ukey_map)
-	local now = math.floor(ski.time())
-	local arr, r, e = {}
-	for ukey, p in pairs(ukey_map) do
-		table.insert(arr, string.format("('%s','web','%s','%s','%s',%s,%s,%s)", p.ukey, p.username or p.mac, p.ip, p.mac, p.rid, now, now))
-	end
-
-	local sql = string.format([[insert into memo.online (ukey,type,username,ip,mac,rid,login,active) values %s on duplicate key update type='web',state=1]], table.concat(arr, ","))
-	r, e = myconn:query(sql) 	assert(r, e)
-end 
-
 on_login_batch = function(count, arr)
-	local usermap, narr = {}, {} 
-	for _, p in ipairs(arr) do  
-		usermap[p.username] = p
-	end
-
-	for username in pairs(usermap) do 
-		table.insert(narr, string.format("'%s'", myconn:escape(username)))
-	end 
-
-	local sql = string.format("select a.*,b.state from user a left outer join memo.online b using(username) where username in (%s)", table.concat(narr, ","))
+	local usermap = arr2map(arr, "username")
+	local sql = string.format("select a.*,b.login from user a left outer join memo.online b using(username) where a.username in (%s)", escape_map(arr, "username"))
 	local rs, e = myconn:query(sql) 	assert(rs, e)
-
-	local rsmap, p, uid, magic, rp, gid = {}
 	for _, r in ipairs(rs) do
-		local username = r.username
-		if r.state ~= 1 then
-			rsmap[username] = r
-		else 
+		local username, p = r.username
+		if r.login then 
 			p, usermap[username] = usermap[username], nil
-			reply(p.u_ip, p.u_port, 0, "already online") 
-			set_online(p.uid, p.magic, r.gid)
+			reply(p.u_ip, p.u_port, 0, "already online")
+			set_online(p.uid, p.magic, r.gid, username)
 		end
 	end
 
-	local online, r, e = {}
+	local online, rsmap = {}, arr2map(rs, "username")
 	for username, p in pairs(usermap) do
-		rp = rsmap[username]
-		r, e = check_user(rp, p)
+		local rp = rsmap[username]
+		local r, e = check_user(rp, p)
 		if not r then
 			reply(p.u_ip, p.u_port, 1, e)
 		else
-			set_online(p.uid, p.magic, rsmap[username].gid)
+			set_online(p.uid, p.magic, rsmap[username].gid, username)
 			local _ = table.insert(online, username), reply(p.u_ip, p.u_port, 0, "web login success")
 		end
 	end
@@ -125,11 +103,11 @@ on_login_batch = function(count, arr)
 	local tmap, p = {} 
 	for _, username in ipairs(online) do 
 		p = usermap[username]
-		p.ukey = p.mac 
+		p.ukey = string.format("%d_%d", p.uid, p.magic)
 		tmap[username] = p
 	end
 
-	insert_online(tmap)
+	insert_online(myconn, tmap, "web")
 end
 
 udp_map["/cloudlogin"] = function(p, uip, uport)
@@ -154,43 +132,17 @@ udp_map["web_keepalive"] = function(p)
 	keepalive_trigger:emit(p)
 end
 
-local function find_missing(ukey_arr)
-	local ukey_map = arr2map(ukey_arr, "ukey")
-	local sql = string.format("select ukey from memo.online where ukey in (%s)", escape_map(ukey_map, "ukey"))
-	local rs, e = myconn:query(sql) 		assert(rs, e) 
-	local exists, miss, find = {}, {}
-	for _, r in ipairs(rs) do
-		ukey = r.ukey
-		exists[ukey] = ukey_map[ukey]
-	end
-
-	for ukey, r in pairs(ukey_map) do 
-		if not exists[ukey] then
-			miss[ukey], find = r, true
-		end 
-	end 
-
-	return exists, miss
-end
-
--- [{"cmd":"web_keepalive","uid":33703,"rid":3,"mac":"00:0c:29:04:3f:d0","magic":67408,"ip":"192.168.1.56","ukey":"00:0c:29:04:3f:d0"}]
-on_keepalive_batch = function(count, arr)
-	local ukey_map = arr2map(arr, "ukey")
-	local ukey_arr = map2arr(ukey_map)
-
-	local step, now, exists, miss, r, e, s, sql = 100, math.floor(ski.time())
+on_keepalive_batch = function(count, arr) 
+	local ukey_arr = map2arr(arr2map(arr, "ukey"))
+	local step = 100
 	for i = 1, #ukey_arr, step do 
-		exists, miss = find_missing(limit(ukey_arr, i, step))
-		s = escape_map(exists, "ukey")
-		if s then
-			sql = string.format("update memo.online set active='%s' where ukey in (%s)", now, s)
-			r, e = myconn:query(sql) 		assert(r, e)
-		end
-
-		local _ = empty(miss) or insert_online(miss)
+		local exists, miss = find_missing(myconn, limit(ukey_arr, i, step))
+		local _ = empty(exists) or keepalive(myconn, exists)
+		local _ = empty(miss) or log.error("logical error %s", js.encode(miss))
 	end
-	
-	-- ski.sleep(10) 	-- TODO
+	for k, v in pairs(_G) do 
+		print(k, v)
+	end
 end
 
 return {init = init, dispatch_udp = dispatch_udp}

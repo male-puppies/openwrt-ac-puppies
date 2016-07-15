@@ -23,7 +23,7 @@ tcp_map["dbsync"] = function(p)
 	end 
 
 	log.info("authrule change, reolad. %s", js.encode(authrule))
-	cfg.reset_authtype()
+	cfg.clear_authtype()
 end
 
 return {init = init, dispatch_tcp = dispatch_tcp}

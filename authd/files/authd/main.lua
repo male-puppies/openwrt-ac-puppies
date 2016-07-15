@@ -44,7 +44,7 @@ local function on_kernel_msg(cmd)
 			return
 		end
 	end
-	print("invalid cmd", js.enocde(cmd))
+	print("invalid cmd", js.encode(cmd))
 end
 
 local function dispatch_tcp_loop() 

@@ -34,5 +34,18 @@ local function get_authtype(rid)
 	return r.authtype
 end
 
-return {init = init, get_authtype = get_authtype, reset_authtype = reset_authtype}
+local function get_gid(rid)
+	local r = rid_map[rid]
+	if not r then 
+		reset_authtype()
+		r = rid_map[rid]
+	end
+	return r.gid
+end
+
+local function clear_authtype()
+	rid_map = {}
+end
+
+return {init = init, get_gid = get_gid, get_authtype = get_authtype, clear_authtype = clear_authtype}
 

@@ -33,9 +33,8 @@ udp_map["keepalive"] = function(p)
 	local rid = get_rule_id(uid, magic) 	assert(rid)
 	local ip, mac = get_ip_mac(uid, magic) 	assert(ip)
 
-	local authtype = get_authtype(rid)
-	p.ip, p.mac, p.rid, p.cmd, p.ukey = ip, mac, rid, authtype .. "_keepalive", mac
-
+	local authtype = get_authtype(rid) 
+	p.ip, p.mac, p.rid, p.cmd, p.ukey = ip, mac, rid, authtype .. "_keepalive", string.format("%s_%s", uid, magic)
 	dispatch_keepalive(p)
 end
 
