@@ -4,7 +4,8 @@ server {
 	server_name _;
 
 	location / {
-		proxy_pass http://127.0.0.1:8000;
+		root /usr/share/admin-web/www;
+		index index.html index.htm;
 	}
 	
 	location /rpc {
