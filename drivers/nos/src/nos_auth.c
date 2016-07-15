@@ -238,11 +238,6 @@ static inline void nos_auth_reply_payload(const char *payload, int payload_len, 
 	int offset, header_len;
 	char *data;
 
-	if (skb_linearize(oskb) != 0) {
-		printk("skb_linearize fail\n");
-		return;
-	}
-
 	oeth = (struct ethhdr *)skb_mac_header(oskb);
 	oiph = ip_hdr(oskb);
 	otcph = (struct tcphdr *)((void *)oiph + oiph->ihl*4);
@@ -295,7 +290,11 @@ static inline void nos_auth_reply_payload(const char *payload, int payload_len, 
 	nskb->len += offset;
 	skb_push(nskb, (char *)niph - (char *)neth);
 	nskb->dev = (struct net_device *)dev;
-	nskb->ip_summed = CHECKSUM_NONE;
+
+	nskb->ip_summed = CHECKSUM_UNNECESSARY;
+	skb_shinfo(nskb)->gso_size = 0;
+	skb_shinfo(nskb)->gso_segs = 0;
+	skb_shinfo(nskb)->gso_type = 0;
 
 	dev_queue_xmit(nskb);
 }
@@ -385,8 +384,6 @@ void nos_auth_convert_tcprst(struct sk_buff *skb)
 		tcph->check = 0;
 		skb->csum = skb_checksum(skb, iph->ihl * 4, len - iph->ihl * 4, 0);
 		tcph->check = csum_tcpudp_magic(iph->saddr, iph->daddr, len - iph->ihl * 4, iph->protocol, skb->csum);
-
-		skb->ip_summed = CHECKSUM_NONE;
 	}
 }
 
