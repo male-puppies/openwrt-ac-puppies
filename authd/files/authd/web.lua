@@ -115,12 +115,12 @@ udp_map["/cloudlogin"] = function(p, uip, uport)
 	
 	local krid = get_rule_id(uid, magic)
 	local kip, kmac = get_ip_mac(uid, magic)
-
-	if not (krid and kip and ip == kip and mac == kmac and krid == rid) then 
+	local gid = cfg.get_gid(rid)
+	if not (krid and kip and gid and ip == kip and mac == kmac and krid == rid) then 
 		return reply(uip, uport, 1, "invalid query") 
 	end
 
-	p.u_ip, p.u_port = uip, uport
+	p.u_ip, p.u_port, p.gid = uip, uport, gid
 	login_trigger:emit(p)
 end
 

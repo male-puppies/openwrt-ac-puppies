@@ -8,6 +8,7 @@ create_mysql_memo_table "create table $tbname ( \
 		type 		char(8) 	not null default '', \
 		username 	char(40) 	not null default '', \
 		rid 		int 		not null default 0, \
+		gid 		int 		not null default 0, \
 		ip 			char(24) 	not null default '', \
 		mac 		char(24) 	not null default '', \
 		login 		int			not null default 0, \

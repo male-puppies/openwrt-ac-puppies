@@ -34,10 +34,10 @@ local function insert_online(myconn, ukey_map, authtype)
 	local arr, r, e = {}
 	local now = math.floor(ski.time())
 	for ukey, p in pairs(ukey_map) do
-		table.insert(arr, string.format("('%s','%s','%s','%s','%s',%s,%s,%s)", p.ukey, authtype, p.username, p.ip, p.mac, p.rid, now, now))
+		table.insert(arr, string.format("('%s','%s','%s','%s','%s',%s,%s,%s,%s)", p.ukey, authtype, p.username, p.ip, p.mac, p.rid, p.gid, now, now))
 	end
 
-	local sql = string.format([[insert into memo.online (ukey,type,username,ip,mac,rid,login,active) values %s on duplicate key update type='%s']], table.concat(arr, ","), authtype)
+	local sql = string.format([[insert into memo.online (ukey,type,username,ip,mac,rid,gid,login,active) values %s on duplicate key update type='%s']], table.concat(arr, ","), authtype)
 	r, e = myconn:query(sql) 	assert(r, e)
 end 
 
@@ -46,6 +46,5 @@ local function keepalive(myconn, exists)
 	local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), s)
 	local r, e = myconn:query(sql) 		assert(r, e)
 end
-
 
 return {find_missing = find_missing, set_online = set_online, insert_online = insert_online, keepalive = keepalive}

@@ -34,7 +34,6 @@ end
 
 on_keepalive_batch = function(count, arr)
 	local ukey_arr = map2arr(arr2map(arr, "ukey"))
-	print(3334, js.encode(arr))
 	local step = 100
 	for i = 1, #ukey_arr, step do 
 		local exists, miss = find_missing(myconn, limit(ukey_arr, i, step))
@@ -43,8 +42,8 @@ on_keepalive_batch = function(count, arr)
 		if not empty(miss) then
 			for _, r in pairs(miss) do 
 				r.username = r.mac
-				local gid = cfg.get_gid(r.rid)
-				local _ = gid and set_online(r.uid, r.magic, gid, r.username)
+				r.gid = cfg.get_gid(r.rid)
+				local _ = gid and set_online(r.uid, r.magic, r.gid, r.username)
 			end
 			insert_online(myconn, miss, "auto")
 		end

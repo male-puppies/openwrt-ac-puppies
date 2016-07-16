@@ -40,7 +40,8 @@ local function get_gid(rid)
 		reset_authtype()
 		r = rid_map[rid]
 	end
-	return r.gid
+	
+	return r and r.gid or nil
 end
 
 local function clear_authtype()
