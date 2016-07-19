@@ -30,6 +30,10 @@ local function set_online(uid, magic, gid, username)
 	local _ = set_status(uid, magic, 1), set_gid_ucrc(uid, magic, gid, 1)
 end
 
+local function set_offline(uid, magic)
+	set_status(uid, magic, 0)
+end
+
 local function insert_online(myconn, ukey_map, authtype)
 	local arr, r, e = {}
 	local now = math.floor(ski.time())
@@ -47,4 +51,10 @@ local function keepalive(myconn, exists)
 	local r, e = myconn:query(sql) 		assert(r, e)
 end
 
-return {find_missing = find_missing, set_online = set_online, insert_online = insert_online, keepalive = keepalive}
+return {
+	find_missing = find_missing, 
+	set_online = set_online, 
+	set_offline = set_offline, 
+	insert_online = insert_online, 
+	keepalive = keepalive,
+}

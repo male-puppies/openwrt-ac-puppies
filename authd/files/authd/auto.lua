@@ -1,7 +1,6 @@
 local ski = require("ski")
 local log = require("log")
 local cfg = require("cfg")
-local nos = require("luanos")
 local batch = require("batch")
 local share = require("share")
 local js = require("cjson.safe")
@@ -23,7 +22,6 @@ end
 local function dispatch_udp(cmd, ip, port)
 	local f = udp_map[cmd.cmd]
 	if f then
-		print(cmd.cmd, udp_map[cmd.cmd])
 		return true, f(cmd, ip, port)
 	end
 end
@@ -32,7 +30,7 @@ udp_map["auto_keepalive"] = function(p)
 	keepalive_trigger:emit(p)
 end
 
-on_keepalive_batch = function(count, arr)
+function on_keepalive_batch(count, arr)
 	local ukey_arr = map2arr(arr2map(arr, "ukey"))
 	local step = 100
 	for i = 1, #ukey_arr, step do 

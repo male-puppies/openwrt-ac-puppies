@@ -10,7 +10,7 @@ local authlib = require("authlib")
 local map2arr, arr2map, limit, empty = share.map2arr, share.arr2map, share.limit, share.empty
 local escape_map, escape_arr = share.escape_map, share.escape_arr
 
-local find_missing, set_online = authlib.find_missing, authlib.set_online
+local find_missing, set_online, set_offline = authlib.find_missing, authlib.set_online, authlib.set_offline
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
 local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
 
@@ -18,11 +18,13 @@ local udp_map = {}
 local myconn, udpsrv, mqtt
 local login_trigger, on_login_batch
 local keepalive_trigger, on_keepalive_batch
+local loop_timeout_check
 
 local function init(m, u, p)
 	myconn, udpsrv, mqtt = m, u, p
 	login_trigger = batch.new(on_login_batch)
 	keepalive_trigger = batch.new(on_keepalive_batch)
+	ski.go(loop_timeout_check)
 end
 
 local reply_obj = {status = 0, data = 0}
@@ -70,7 +72,7 @@ local function check_user(r, p)
 	return true
 end
 
-on_login_batch = function(count, arr)
+function on_login_batch(count, arr)
 	local usermap = arr2map(arr, "username")
 	local sql = string.format("select a.*,b.login from user a left outer join memo.online b using(username) where a.username in (%s)", escape_map(arr, "username"))
 	local rs, e = myconn:query(sql) 	assert(rs, e)
@@ -95,7 +97,6 @@ on_login_batch = function(count, arr)
 		end
 	end
 
-	-- update online
 	if #online == 0 then
 		return 
 	end 
@@ -132,7 +133,7 @@ udp_map["web_keepalive"] = function(p)
 	keepalive_trigger:emit(p)
 end
 
-on_keepalive_batch = function(count, arr) 
+function on_keepalive_batch(count, arr) 
 	local ukey_arr = map2arr(arr2map(arr, "ukey"))
 	local step = 100
 	for i = 1, #ukey_arr, step do 
@@ -140,8 +141,33 @@ on_keepalive_batch = function(count, arr)
 		local _ = empty(exists) or keepalive(myconn, exists)
 		local _ = empty(miss) or log.error("logical error %s", js.encode(miss))
 	end
-	for k, v in pairs(_G) do 
-		print(k, v)
+end
+
+function loop_timeout_check()
+	local get_offline_time = function()
+		local rs, e = myconn:query("select v from disk.kv where k='offline_time'") 	assert(rs, e)
+		if #rs == 0 then 
+			return 1801
+		end 
+		return tonumber(rs[1].v) or 1801
+	end
+
+	local offline = function(rs)
+		for _, r in pairs(rs) do 
+			local uid, magic = r.ukey:match("(%d+)_(%d+)")
+			set_offline(tonumber(uid), tonumber(magic))
+			print("set_offline", js.encode(r))
+		end
+		local sql = string.format("delete from memo.online where ukey in (%s)", escape_map(rs, "ukey"))
+		local r, e = myconn:query(sql) 		assert(r, e)
+	end
+
+	while true do
+		ski.sleep(60)
+		local timeout = get_offline_time()
+		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='web' and active-login>%s;", timeout)
+		local rs, e = myconn:query(sql) 		assert(rs, e)
+		local _ = #rs > 0 and offline(rs)
 	end
 end
 
