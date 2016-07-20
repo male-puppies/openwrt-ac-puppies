@@ -39,6 +39,8 @@ test $version -lt 1 && {
 	cp /usr/share/base-config/etc/ppp/options /etc/ppp/options && chmod 644 /etc/ppp/options
 	cp /usr/share/base-config/etc/inittab /etc/inittab && chmod 644 /etc/inittab
 
+	cp /usr/share/base-config/etc/init.d/dnsmasq /etc/init.d/dnsmasq && chmod 755 /etc/init.d/dnsmasq
+
 	version=1
 }
 
