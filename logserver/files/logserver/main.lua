@@ -79,8 +79,7 @@ local function flush(cache)
 		ski.go(limit_files)
 		fp = openlog()
 	end
-
-	fp:write(table.concat(cache, "\n"))
+	fp:write(table.concat(cache, "\n"), "\n")
 	fp:flush()
 end
 

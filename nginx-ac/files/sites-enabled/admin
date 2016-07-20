@@ -17,4 +17,10 @@ server {
 		chunked_transfer_encoding off;
 		content_by_lua_file /usr/share/nginx-ac/lualib/app/rpc.lua;
 	}
+	
+	location /log {
+		content_by_lua_file /usr/share/nginx-ac/lualib/app/log.lua;
+	}
 }
+
+#lua_shared_dict log 1k;

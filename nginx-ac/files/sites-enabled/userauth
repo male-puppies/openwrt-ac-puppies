@@ -47,4 +47,4 @@ server {
 		content_by_lua_file /usr/share/nginx-ac/lualib/app/auth.lua;
 	}
 }
-lua_shared_dict vip 1m;
+
