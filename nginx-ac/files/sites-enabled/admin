@@ -1,4 +1,3 @@
-lua_package_path "/usr/share/nginx-ac/lualib/?.lua;;";
 server {
 	listen 80 default_server;
 	server_name _;
@@ -6,6 +5,11 @@ server {
 	location / {
 		root /usr/share/admin-web/www;
 		index index.html index.htm;
+	}
+
+	location /admin-web/cgi-bin/ {
+		default_type text/html;
+		content_by_lua_file /usr/share/admin-web/lua/admin.lua;
 	}
 	
 	location /rpc {

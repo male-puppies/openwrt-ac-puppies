@@ -51,6 +51,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DATA) ./files/admin-web.defaults $(1)/etc/uci-defaults/95-admin-web
 	$(INSTALL_DIR) $(1)/usr/share/admin-web/
 	$(CP) -r ./files/www $(1)/usr/share/admin-web/
+	$(CP) -r ./files/lua $(1)/usr/share/admin-web/
 endef
 
 define Build/Configure
