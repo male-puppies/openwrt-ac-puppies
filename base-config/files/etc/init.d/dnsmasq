@@ -427,6 +427,10 @@ dhcp_add() {
 	# Do not support non-static interfaces for now
 	[ static = "$proto" ] || return 0
 
+	# Override subnet if applicable
+	config_get pfxsubnet "$cfg" subnet
+	test -n "pfxsubnet" && subnet=$pfxsubnet
+
 	# Override interface netmask with dhcp config if applicable
 	config_get netmask "$cfg" netmask "${subnet##*/}"
 
@@ -434,15 +438,11 @@ dhcp_add() {
 	config_get_bool force "$cfg" force 0
 	[ $force -gt 0 ] || dhcp_check "$ifname" || return 0
 
-	config_get pfxsubnet "$cfg" subnet
 	config_get start "$cfg" start
 	config_get limit "$cfg" limit
 	config_get leasetime "$cfg" leasetime
 	config_get options "$cfg" options
 	config_get_bool dynamicdhcp "$cfg" dynamicdhcp 1
-
-	echo $pfxsubnet
-	test -n "pfxsubnet" && subnet=$pfxsubnet
 
 	leasetime="${leasetime:-12h}"
 	start="$(dhcp_calc "${start:-100}")"
