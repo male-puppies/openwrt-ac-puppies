@@ -21,6 +21,17 @@ server {
 	location /log {
 		content_by_lua_file /usr/share/nginx-ac/lualib/app/log.lua;
 	}
+	
+	location /admin/api/ {
+		content_by_lua_file /usr/share/nginx-ac/lualib/admin/content.lua;
+	}
+	
+	location ~ /admin/rs/.*.html$ {
+		default_type 'text/html';
+		access_by_lua_file /usr/share/nginx-ac/lualib/admin/access.lua;
+	}
+	
+	location ~ /admin/rs/.*.(gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$ {}
 }
 
 #lua_shared_dict log 1k;

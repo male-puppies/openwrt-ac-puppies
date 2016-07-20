@@ -27,9 +27,25 @@ local function close(rds, e)
 	return nil, e
 end
 
+local function query(f)
+	local rds, e = get() 
+	if not rds then 
+		return nil, e
+	end
+
+	local r, e = f(rds)
+	if not r then 
+		return close(rds, e)
+	end
+
+	reserve(rds)
+	return r
+end
+
 return {
 	get = get,
 	close = close,
+	query = query,
 	reserve = reserve,
 	reserve_e = reserve_e, 
 }

@@ -78,8 +78,6 @@ uri_map["/cloudlogin"] = function()
 
 	ngx.req.read_body()
 	local p = ngx.req.get_post_args()
-	local s = js.encode(p)
-	log.real1("%s", js.encode(p))
 	if not p then 
 		return reply(1, "invalid param")
 	end
