@@ -41,6 +41,15 @@ test $version -lt 1 && {
 
 	cp /usr/share/base-config/etc/init.d/dnsmasq /etc/init.d/dnsmasq && chmod 755 /etc/init.d/dnsmasq
 
+	for i in `seq 0 255`; do
+		test -e /sys/class/net/eth$i/address || break
+		mac=`cat /sys/class/net/eth$i/address`
+		cfg=`uci add network device`
+		uci set network.$cfg.ifname="eth$i"
+		uci set network.$cfg.macaddr="$mac"
+	done
+	uci commit network
+
 	version=1
 }
 
