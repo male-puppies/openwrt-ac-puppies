@@ -2,11 +2,11 @@ local js = require("cjson.safe")
 local rds = require("common.rds")
 
 local function reply_e(e)
-	ngx.say(js.encode({r = 1, d = e}))
+	ngx.say(js.encode({status = 1, data = e}))
 end
 
-local function reply(d, p)
-	ngx.say(js.encode({r = 0, d = d, p = p}))
+local function reply(d)
+	ngx.say(js.encode({status = 0, data = d}))
 end
 
 local function check_method_token(expect_method, token)

@@ -77,7 +77,6 @@ local function cache_auth(r)
 
 	local s = js.encode(args)
 	local r, e = rds.query(function(db) return db:eval(cache_auth_code, 0, s) end)
-	ngx.log(ngx.ERR, js.encode({r, e}), s)
 	if not r then 
 		return reply_e(e)
 	end 
