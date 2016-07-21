@@ -23,7 +23,7 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		dhcp_dynamic		integer 	not null default 0, \
 		dhcp_lease 			text		not null, \
 		dhcp_dns			text 		not null, \
-		br_port 			text 		not null \
+		br_ports 			text 		not null \
 	)"
 drop_mysql_disk_table $tbname	
 create_mysql_disk_table "create table $tbname ( \

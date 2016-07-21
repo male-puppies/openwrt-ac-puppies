@@ -10,7 +10,6 @@ test -e $dbfile || eexit "missing $dbfile"
 
 tbname=trigger
 sql="create table if not exists $tbname ( \
-		tid		integer 	primary key autoincrement, \
 		tb 		char(24) 	not null default '', \
 		act 	char(64) 	not null default '', \
 		key 	char(64) 	not null default '', \
