@@ -3,7 +3,7 @@
 tbname=authrule
 keyname=rid
 
-drop_sqlite3_disk_table $tbname
+#drop_sqlite3_disk_table $tbname
 create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname ( \
 		$keyname	integer 	primary key autoincrement,
 		name	 	char(64) 	not null unique default '', \

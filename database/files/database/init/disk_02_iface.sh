@@ -3,7 +3,7 @@
 tbname=iface
 keyname=fid
 
-drop_sqlite3_disk_table $tbname
+#drop_sqlite3_disk_table $tbname
 create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname ( \
 		$keyname			integer 	primary key default 0,
 		name 				char(64) 	not null unique default '', \
@@ -19,7 +19,7 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		dhcp_enable 		integer 	not null default 0, \
 		dhcp_start 			char(16) 	not null default '', \
 		dhcp_end 			char(16) 	not null default '', \
-		dhcp_time 			integer 	not null default 0, \
+		dhcp_time 			char(8) 	not null default '', \
 		dhcp_dynamic		integer 	not null default 0, \
 		dhcp_lease 			text		not null, \
 		dhcp_dns			text 		not null, \
@@ -41,7 +41,7 @@ create_mysql_disk_table "create table $tbname ( \
 		dhcp_enable 		int 			not null default 0, \
 		dhcp_start 			char(16) 		not null default '', \
 		dhcp_end 			char(16) 		not null default '', \
-		dhcp_time 			int 			not null default 0, \
+		dhcp_time 			char(8) 		not null default '', \
 		dhcp_dynamic		int 			not null default 0, \
 		dhcp_lease 			varchar(10240)	not null, \
 		dhcp_dns			varchar(1024) 	not null, \
