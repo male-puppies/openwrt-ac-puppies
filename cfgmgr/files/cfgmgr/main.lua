@@ -1,14 +1,19 @@
 local ski = require("ski")
+local lfs = require("lfs")
 local log = require("log")
+local cfg = require("cfg")
 local udp = require("ski.udp") 
 local js = require("cjson.safe")
+local common = require("common")
 local mysql = require("ski.mysql")
 local sandcproxy = require("sandcproxy")
-local luasql = require("luasql.sqlite3")
-local cfg = 		require("cfg")
 
+local read = common.read 
 local modules = {
-	zone = 		require("zone"),
+	-- web = 		require("web"),
+	-- sms = 		require("sms"),
+	-- auto = 		require("auto"),
+	-- wechat = 	require("wechat"),
 	dbevent = 	require("dbevent"),
 }
 
@@ -56,7 +61,7 @@ end
 
 local function start_sand_server()
 	local pld, cmd, map, r, e
-	local unique = "a/ac/cfgmgr"
+	local unique = "a/local/cfgmgr"
 	
 	local on_message = function(topic, payload)
 		map = decode(payload)
@@ -102,6 +107,17 @@ local function start_udp_server()
 	return udpsrv
 end
 
+local function loop_check_debug()
+	local path = "/tmp/debug_cfgmgr"
+	while true do 
+		if lfs.attributes(path) then
+			local s = read(path), os.remove(path)
+			local _ = (#s == 0 and log.real_stop or log.real_start)(s)
+		end
+		ski.sleep(5)
+	end
+end
+
 local function connect_mysql()
 	local db = mysql.new()
 	local ok, err, errno, sqlstate = db:connect({
@@ -145,15 +161,15 @@ local function test()
 end
 
 local function main()
-	local _ = log.setmodule("cm"), log.setdebug(true)
+	log.setmodule("cm")
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
 	myconn, udpsrv, mqtt = connect_mysql(), start_udp_server(), start_sand_server()
 	for _, mod in pairs(modules) do 
 		mod.init(myconn, udpsrv, mqtt)
 	end
 	cfg.init(myconn, udpsrv, mqtt)
-	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop)
-	-- ski.go(test)
+
+	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 end
 
 ski.run(main)
