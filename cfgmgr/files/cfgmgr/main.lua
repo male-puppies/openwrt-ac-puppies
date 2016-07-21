@@ -13,7 +13,7 @@ local modules = {
 	-- web = 		require("web"),
 	-- sms = 		require("sms"),
 	-- auto = 		require("auto"),
-	-- wechat = 	require("wechat"),
+	zone = 		require("zone"),
 	dbevent = 	require("dbevent"),
 }
 
@@ -129,7 +129,7 @@ local function connect_mysql()
 		max_packet_size = 1024 * 1024,
 	})
 
-	local env = luasql.sqlite3()
+	local env = require("luasql.sqlite3").sqlite3()
 	local conn, e = env:connect(":memory:") 			assert(conn, e)
 	db.escape = function(db, s) return conn:escape(s) end
 	return db

@@ -1,10 +1,9 @@
 local js = require("cjson.safe")
-local global = require("admin.global")
 local rds = require("common.rds")
 local mysql = require("common.mysql")
+local authlib = require("admin.authlib")
 
-local reply_e, reply = global.reply_e, global.reply
-local check_method_token = global.check_method_token
+local reply_e, reply = authlib.reply_e, authlib.reply
 
 local function check()
 	local p = ngx.req.get_uri_args()

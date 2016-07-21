@@ -1,92 +1,93 @@
 local js = require("cjson.safe")
 local log = require("common.log")
-local global = require("admin.global")
+local authlib = require("admin.authlib")
 local rds = require("common.rds")
 local mysql = require("common.mysql")
+local query = require("common.query")
 
-local reply_e, reply = global.reply_e, global.reply
-local check_method_token = global.check_method_token
+local r1 = log.real1
+local reply_e, reply = authlib.reply_e, authlib.reply
+local validate_get, validate_post = authlib.validate_get, authlib.validate_post
+local gen_validate_num, gen_validate_str = authlib.gen_validate_num, authlib.gen_validate_str
+
+local validate_type = gen_validate_num(2, 3)
+local validate_zid = gen_validate_num(0, 255) 
+local validate_zids = gen_validate_str(2, 256)
+local validate_des = gen_validate_str(1, 32, true)
+local validate_name = gen_validate_str(1, 32, true)
+
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
 
 local cmd_map = {}
+
 local function run(cmd) 	local _ = (cmd_map[cmd] or cmd_map.numb)(cmd) 	end
 function cmd_map.numb(cmd) 	reply_e("invalid cmd " .. cmd) 					end
 
-local function check()
-	local p = ngx.req.get_uri_args()
-	local username, password = p.username, p.password
-	if not (username and password and #username > 0 and #password > 0) then 
-		return nil, "invalid param"
+local function query_common(m, cmd)
+	m.cmd = cmd
+	local r, e = query_u(m)
+	if not r then 
+		return reply_e(e)
 	end
-
-	return {username = username, password = password}
+	reply(r)
 end
 
-local function auth(p)
-	local sql = string.format("select count(*) as count, perm from csadmin where username='%s' and password='%s'", p.username, p.password)
-	
-	-- local r, e = mysql.query(function(db)
-	-- 	local rs, e = db:query(sql) 	
-	-- 	if not rs then 
-	-- 		return nil, e 
-	-- 	end 
-	-- 	return rs[1]
-	-- end)
-
-	-- if not r then 
-	-- 	return nil, e
-	-- end 
-	local r = {username = p.username, count = 1, perm = js.encode({})}
-	if tonumber(r.count) == 0 then 
-		return nil, "invalid auth"
-	end 
-
-	r.username = p.username
-	return r
-end
-
-local token_ttl_code = [[
-	local pc, index, token = redis.call, ARGV[1], ARGV[2]
-	local r = pc("SELECT", index) 		assert(r.ok == "OK")
-
-	r = pc("TTL", "admin_" .. token)
-	return r
-]]
-local function check_access_token(index, token)
-	local left, e = rds.query(function(rds) return rds:eval(token_ttl_code, 0, 9, token) end)
-	if not left then 
-		return nil, "redis error"
-	end
-
-	
-	log.real1("%s", js.encode({left, e, type(left)}))
-
-	return true
-end
-log.setlevel("1,2,3,4,d,i,e")
 function cmd_map.zone_get()
-	local check = function() 
-		local r, e = check_method_token("GET")
-		if not r then 
-			return nil, e
-		end
+	local m, e = validate_get({page = 1, count = 1})
 
-		local p = ngx.req.get_uri_args()
-		local r, e = check_access_token(9, p.token)
-		
-		
-		if not r then
-			return nil, e
-		end
-		
-		return {}
-	end
-
-	local p, e = check()
-	if not p then
+	if not m then 
 		return reply_e(e)
 	end
 
-	reply(p)
+	return query_common(m, "zone_get")
+end
+log.setlevel("1,2,3")
+
+function cmd_map.zone_add()
+	local m, e = validate_post({
+		des = validate_des,
+		type = validate_type,
+		name = validate_name,
+	})
+
+	if not m then 
+		return reply_e(e)
+	end
+
+	return query_common(m, "zone_add")
+end
+
+function cmd_map.zone_set()
+	local m, e = validate_post({
+		zid = validate_zid,
+		des = validate_des,
+		type = validate_type,
+		name = validate_name,
+	})
+
+	if not m then 
+		return reply_e(e)
+	end
+
+	return query_common(m, "zone_set")
+end
+
+function cmd_map.zone_del()
+	local m, e = validate_post({zids = validate_zids})
+	if not m then 
+		return reply_e(e)
+	end
+	
+	local s, zids = m.zids .. ",", {}
+	for zid in s:gmatch("(%d-),") do 
+		local v = validate_zid(tonumber(zid))
+		if not v then 
+			return reply_e("invalid zids " .. m.zids)
+		end 
+		table.insert(zids, v)
+	end
+
+	return query_common({zids = zids}, "zone_del")
 end
 
 return {run = run}

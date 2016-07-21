@@ -1,4 +1,4 @@
-local reply_e = require("admin.global").reply_e
+local reply_e = require("admin.authlib").reply_e
 
 -- 检查uri格式
 local uri = ngx.var.uri
@@ -10,12 +10,11 @@ end
 local cmd_map = {}
 
 -- curl 'http://127.0.0.1/admin/api/login/v01?username=wjrc&password=wjrc0409'
-function cmd_map.login() 		require("admin.login").run() 			end
+if cmd == "login" then 
+	return require("admin.login").run()
+end
 
 -- curl 'http://127.0.0.1/admin/api/zone_get/v01?page=1&count=10'
-function cmd_map.zone_get(cmd) 	require("admin.zone").run(cmd) 			end
-
-function cmd_map.numb() 		reply_e("invalid request " .. uri)		end
-
-local _ = (cmd_map[cmd] or cmd_map.numb)(cmd)
-
+if cmd:find("^zone_") then
+	return require("admin.zone").run(cmd)
+end 
