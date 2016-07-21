@@ -1,13 +1,16 @@
 local ski = require("ski")
+local lfs = require("lfs")
 local log = require("log")
+local cfg = require("cfg")
 local udp = require("ski.udp") 
 local js = require("cjson.safe")
 local kernel = require("kernel")
+local common = require("common")
 local mysql = require("ski.mysql")
 local sandcproxy = require("sandcproxy")
 local luasql = require("luasql.sqlite3")
-local cfg = 		require("cfg")
 
+local read = common.read 
 local modules = {
 	web = 		require("web"),
 	sms = 		require("sms"),
@@ -101,7 +104,7 @@ local function start_udp_server()
 
 	ski.go(function()
 		local r, e, m, ip, port
-		while true do 
+		while true do
 			r, ip, port = udpsrv:recv()
 			if r then
 				m = decode(r)
@@ -117,6 +120,17 @@ local function start_udp_server()
 	return udpsrv
 end
 
+local function loop_check_debug()
+	local path = "/tmp/debug_authd"
+	while true do 
+		if lfs.attributes(path) then
+			local s = read(path), os.remove(path)
+			local _ = (#s == 0 and log.real_stop or log.real_start)(s)
+		end
+		ski.sleep(5)
+	end
+end
+
 local function connect_mysql()
 	local db = mysql.new()
     local ok, err, errno, sqlstate = db:connect({
@@ -126,7 +140,6 @@ local function connect_mysql()
 		user = "root",
 		password = "wjrc0409",
 		max_packet_size = 1024 * 1024,
-		-- compact_arrays = true,
 	})
 
 	local env = luasql.sqlite3()
@@ -161,7 +174,7 @@ local function test()
 end
 
 local function main()
-	local _ = log.setmodule("auth"), log.setdebug(true)
+	log.setmodule("auth")
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
 	myconn, udpsrv, mqtt = connect_mysql(), start_udp_server(), start_sand_server()
 	for _, mod in pairs(modules) do 
@@ -169,7 +182,7 @@ local function main()
 	end
 	cfg.init(myconn, udpsrv, mqtt)
 	kernel.set_kernel_cb(on_kernel_msg)
-	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop)
+	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 	-- ski.go(test)
 end
 
