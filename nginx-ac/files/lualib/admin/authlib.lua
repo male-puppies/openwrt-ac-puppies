@@ -50,16 +50,21 @@ end
 local function gen_validate_num(min, max)
 	return function(v) 
 		local v = tonumber(v)
-		return (v >= min and v <= max) and v or nil 
+		return (v and v >= min and v <= max) and v or nil 
 	end 
 end
 
 local function gen_validate_str(min, max, match_var_style)
 	return function(v)
+		if not (#v >= min and #v <= max) then 
+			return nil 
+		end
 		if match_var_style then
-			return (#v >= min and #v <= max and v:find("^[%w%-_#.]+$")) and v or nil
+			if not v:find("^[%w%-_#.]+$") then 
+				return nil 
+			end 
 		end 
-		return (#v >= min and #v <= max) and v or nil
+		return v
 	end 
 end
 
@@ -98,7 +103,7 @@ local function validate_get(fields)
 			return nil, e or string.format("invalid %s:%s", field, v)
 		end
 
-		m[field] = v
+		m[field] = nv
 	end
 
 	local page, count = m.page, m.count
@@ -150,7 +155,7 @@ local function validate_post(fields)
 			return nil, e or string.format("invalid %s:%s", field, v)
 		end
 
-		m[field] = v
+		m[field] = nv
 	end
 
 	return m

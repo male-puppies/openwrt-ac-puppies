@@ -23,6 +23,7 @@ server {
 	}
 	
 	location /admin/api/ {
+		default_type 'text/json';
 		content_by_lua_file /usr/share/nginx-ac/lualib/admin/content.lua;
 	}
 	

@@ -12,7 +12,7 @@ local read = common.read
 local modules = {
 	-- web = 		require("web"),
 	-- sms = 		require("sms"),
-	-- auto = 		require("auto"),
+	iface = 	require("iface"),
 	zone = 		require("zone"),
 	dbevent = 	require("dbevent"),
 }
