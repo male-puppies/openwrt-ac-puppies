@@ -15,15 +15,15 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		mac 				char(20) 	not null default '' , \
 		pppoe_account 		char(64) 	not null default '', \
 		pppoe_password		char(64) 	not null default '', \
-		static_ip 			text 		not null, \
+		static_ip 			text 		, \
 		dhcp_enable 		integer 	not null default 0, \
 		dhcp_start 			char(16) 	not null default '', \
 		dhcp_end 			char(16) 	not null default '', \
 		dhcp_time 			char(8) 	not null default '', \
 		dhcp_dynamic		integer 	not null default 0, \
-		dhcp_lease 			text		not null, \
-		dhcp_dns			text 		not null, \
-		br_ports 			text 		not null \
+		dhcp_lease 			text		, \
+		dhcp_dns			text 		, \
+		br_ports 			text 		 \
 	)"
 drop_mysql_disk_table $tbname	
 create_mysql_disk_table "create table $tbname ( \
@@ -37,13 +37,13 @@ create_mysql_disk_table "create table $tbname ( \
 		mac 				char(20) 		not null default '' , \
 		pppoe_account 		char(64) 		not null default '', \
 		pppoe_password		char(64) 		not null default '', \
-		static_ip 			varchar(2048) 	not null, \
+		static_ip 			varchar(2048) 	, \
 		dhcp_enable 		int 			not null default 0, \
 		dhcp_start 			char(16) 		not null default '', \
 		dhcp_end 			char(16) 		not null default '', \
 		dhcp_time 			char(8) 		not null default '', \
 		dhcp_dynamic		int 			not null default 0, \
-		dhcp_lease 			varchar(10240)	not null, \
-		dhcp_dns			varchar(1024) 	not null, \
-		br_ports 			varchar(1024) 	not null \
+		dhcp_lease 			varchar(10240)	, \
+		dhcp_dns			varchar(1024) 	, \
+		br_ports 			varchar(1024) 	 \
 	) engine=memory"
