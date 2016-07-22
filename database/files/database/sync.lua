@@ -80,7 +80,7 @@ local function sync_trigger()
 	local ins = mgr.ins()
 	local conn, myconn = ins.conn, ins.myconn
 
-	local sql = "select * from trigger order by tid"
+	local sql = "select * from trigger order by rowid"
 	local rs, e = conn:select(sql)
 	local _ = rs or log.fatal("%s %s", sql, e)
 

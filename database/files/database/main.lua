@@ -116,7 +116,6 @@ local function main()
 end
 
 log.setmodule("db")
-log.setdebug(true)
 
 ski.run(main)
 
