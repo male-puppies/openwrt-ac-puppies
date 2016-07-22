@@ -33,25 +33,6 @@ local function rollback(conn, sql, err)
 	return conn:execute("rollback")
 end
 
-function method:transaction(f)
-	local ret, err = self:execute("begin transaction") 	assert(ret, err)
-	local r, d = pcall(f, self)
-	if r then 
-		local ret, err = self:execute("commit")  		assert(ret, err)
-		return d
-	end
-	local ret, err = self:execute("rollback") 		assert(ret, err)
-	assert(false, d)
-end
-
-function method:protect(f)
-	local r, d = pcall(f, self)
-	if r then 
-		return d
-	end
-	assert(false, d)
-end
-
 function new(diskpath, attaches)
 	local conn, err = env:connect(diskpath) 	assert(conn, err)
 	
