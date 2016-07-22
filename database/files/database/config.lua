@@ -1,5 +1,5 @@
 local dbconfig = {
-	disk_dir = "/data/sqlite3/",
+	disk_dir = "/etc/sqlite3/",
 	work_dir = "/tmp/db",
 	cache_log_count = 1,
 	cache_log_timeout = 1,

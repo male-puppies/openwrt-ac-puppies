@@ -33,6 +33,7 @@ define Package/$(PKG_NAME)/description
 endef
 
 define Package/$(PKG_NAME)/conffiles 
+/etc/sqlite3
 endef
 
 define Package/$(PKG_NAME)/postinst

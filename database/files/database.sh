@@ -1,6 +1,6 @@
 #!/bin/sh
 mkdir -p /tmp/db
-mkdir -p /data/sqlite3
+mkdir -p /etc/sqlite3
 cd /usr/share/database
 ./init.sh
 
