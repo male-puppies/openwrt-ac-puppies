@@ -1,7 +1,7 @@
 local ski = require("ski")
 local udp = require("ski.udp")
 
-local mod, levels = "", {}
+local mod, levels, debug_on = "", {}, os.getenv("DEBUG_ON")
 local unpack = table.unpack and table.unpack or unpack 
 local host, server_port, real_port = "127.0.0.1", 50001, 50000
 
@@ -58,45 +58,62 @@ local function logfmt(level, fmt, ...)
 	return ret and s or msg
 end
 
+local function debug_print(s)
+	print(debug_on, s)
+	local _ = debug_on and print(s)
+end
+
 local function debug(fmt, ...)
 	local s = logfmt("d", fmt, ...)
 	log_client:send_sys(s)
 	local _ = levels["d"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function info(fmt, ...)
 	local s = logfmt("i", fmt, ...)
 	log_client:send_sys(s)
 	local _ = levels["i"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function error(fmt, ...)
 	local s = logfmt("e", fmt, ...)
 	log_client:send_sys(s)
 	local _ = levels["e"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function fatal(fmt, ...)
 	local s = logfmt("f", fmt, ...)
 	log_client:send_sys(s)
 	local _ = levels["f"] and log_client:send_real(s)
+	debug_print(s)
 	os.exit(-1)
 end
 
 local function real1(fmt, ...)
-	local _ = levels["1"] and log_client:send_real(logfmt("1", fmt, ...) )
+	local s = logfmt("1", fmt, ...)
+	local _ = levels["1"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function real2(fmt, ...)
-	local _ = levels["2"] and log_client:send_real(logfmt("2", fmt, ...) )
+	local s = logfmt("2", fmt, ...) 
+	local _ = levels["2"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function real3(fmt, ...)
-	local _ = levels["3"] and log_client:send_real(logfmt("3", fmt, ...) )
+	local s = logfmt("3", fmt, ...) 
+	local _ = levels["3"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function real4(fmt, ...)
-	local _ = levels["4"] and log_client:send_real(logfmt("4", fmt, ...) )
+	local s = logfmt("4", fmt, ...) 
+	local _ = levels["4"] and log_client:send_real(s)
+	debug_print(s)
 end
 
 local function real_start(level)
@@ -115,9 +132,7 @@ local function setmodule(m)
 	mod = m
 end
 
-local function setdebug(b)
-
-end
+local function setdebug(b) end
 
 return {
 	debug = debug,
