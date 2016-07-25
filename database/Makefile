@@ -39,15 +39,19 @@ endef
 define Package/$(PKG_NAME)/postinst
 endef
 
-define Package/$(PKG_NAME)/install 
+define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/database.init $(1)/etc/init.d/database
 	$(INSTALL_DIR) $(1)/usr/share/
-	cp -r files/database $(1)/usr/share/
 	$(INSTALL_DIR) $(1)/usr/lib/lua/
-	cp -r files/lib/* $(1)/usr/lib/lua/
 	$(INSTALL_DIR) $(1)/usr/sbin
+	
+	$(INSTALL_BIN) ./files/database.init $(1)/etc/init.d/database
+	$(CP) -r files/lib/* $(1)/usr/lib/lua/
 	$(INSTALL_BIN) ./files/database.sh $(1)/usr/sbin/database
+ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
+	#TODO change database_ar71xx to database_x86
+	$(CP) -r files/database_ar71xx $(1)/usr/share/database 	
+endif
 endef
 
 define Build/Configure
