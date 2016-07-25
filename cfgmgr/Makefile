@@ -46,7 +46,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/cfgmgr.sh $(1)/usr/sbin/cfgmgr
 ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
 	#TODO change database_ar71xx to database_x86
-	$(CP) -r files/cfgmgr_71xx $(1)/usr/share/
+	$(CP) -r files/cfgmgr_71xx $(1)/usr/share/cfgmgr
 endif	
 endef
 
