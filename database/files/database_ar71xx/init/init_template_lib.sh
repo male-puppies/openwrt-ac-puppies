@@ -3,7 +3,10 @@
 work_dir=`grep -E "work_dir[ \t]+=" ../config.lua  | awk -F\" '{print $2}'`
 dbfile=$work_dir/disk.db
 test -e $dbfile || eexit "missing $dbfile"
-password=wjrc0409
+disk_m=$work_dir/disk_m.db
+test -e $disk_m || eexit "missing $disk_m"
+memo_m=$work_dir/memo_m.db
+test -e $memo_m || eexit "missing $memo_m"
 
 eexit () {
 	echo "$*" 1>&2
@@ -11,7 +14,6 @@ eexit () {
 }
 
 drop_sqlite3_disk_table() {
-	#return
 	local tbname=$1
 	local sql="drop table if exists $tbname"
 	sqlite3 $dbfile "$sql"
@@ -60,24 +62,24 @@ execute_sqlite3_disk_sql() {
 
 drop_mysql_disk_table() {
 	local sql="drop table if exists $1"
-	mysql -uroot -p$password disk -e "$sql"	
+	sqlite3 $disk_m "$sql"
 	test $? -eq 0 || eexit "sql fail $sql"
 }
 
 create_mysql_disk_table() {
 	local sql=$1
-	mysql -uroot -p$password disk -e "$sql"	
+	sqlite3 $disk_m "$sql"
 	test $? -eq 0 || eexit "sql fail $sql"
 }
 
 drop_mysql_memo_table() {
 	local sql="drop table if exists $1"
-	mysql -uroot -p$password memo -e "$sql"	
+	sqlite3 $memo_m "$sql"
 	test $? -eq 0 || eexit "sql fail $sql"
 }
 
 create_mysql_memo_table() {
 	local sql=$1
-	mysql -uroot -p$password memo -e "$sql"	
+	sqlite3 $memo_m "$sql"
 	test $? -eq 0 || eexit "sql fail $sql"
 }

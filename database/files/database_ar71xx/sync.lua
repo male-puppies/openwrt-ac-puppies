@@ -50,7 +50,7 @@ local function sync_all_tables()
 
 	local sync_one_table = function(tbname)
 		local sql = "delete from " .. tbname
-		local r, e = myconn:query(sql) 
+		local r, e = myconn:execute(sql) 
 		local _ = r or log.fatal("%s %s", sql, e)
 
 		local sql = "select * from " .. tbname 
@@ -60,9 +60,8 @@ local function sync_all_tables()
 		if #rs == 0 then 
 			return
 		end
-		
 		local sql = format_replace(conn, rs, tbname)
-		local r, e = myconn:query(sql) 	
+		local r, e = myconn:execute(sql) 	
 		local _ = r or log.fatal("%s %s", sql, e)
 	end
 
@@ -96,7 +95,7 @@ local function sync_trigger()
 		local arr = actions.del
 		if #arr > 0 then 
 			local sql = format_delete(conn, arr, tbname)
-			local r, e = myconn:query(sql)
+			local r, e = myconn:execute(sql)
 			local _ = r or log.fatal("%s %s", sql, e)
 		end
 
@@ -120,7 +119,7 @@ local function sync_trigger()
 			local rs, e = conn:select(sql)
 			local _ = rs or log.fatal("%s %s", sql, e)
 			local sql = format_replace(conn, rs, tbname)
-			local r, e = myconn:query(sql)
+			local r, e = myconn:execute(sql)
 			local _ = r or log.fatal("%s %s", sql, e)
 		end
 	end
@@ -153,7 +152,7 @@ local function sync_trigger()
 	return broad
 end
 
-local function sync(sync_all)
+local function sync()
 	if not sync_tables then 
 		sync_tables = parse_sync_tables() 	assert(sync_tables)
 		return sync_all_tables() 

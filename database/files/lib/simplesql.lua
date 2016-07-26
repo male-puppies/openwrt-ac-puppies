@@ -3,10 +3,12 @@ local code = [[
 	local conn = require("mgr").ins().conn
 	local param, isexec, memo = arg[1], arg[2], arg[3]
 	if not isexec then 
-		return conn:protect(function()
-			local r, e = conn:select(param) 		assert(r, e) 
-			return r
-		end)
+		local r, e = conn:select(param)
+		if not r then 
+			return nil, e 
+		end
+
+		return r
 	end
 
 	if type(param) == "string" then 

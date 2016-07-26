@@ -98,8 +98,13 @@ cmd_map.iface = {
 			return false 
 		end
 
-		local arr = {}
-		for ifname, iface in pairs(miss) do 
+		local arr, narr = {}, {}
+		for _, r in pairs(miss) do 
+			table.insert(narr, r)
+		end 
+		table.sort(narr, function(a, b) return a.ifname < b.ifname end)
+		for _, iface in pairs(narr) do 
+			local ifname = iface.ifname
 			maxid = maxid + 1 
 			table.insert(arr, string.format("(%s,'%s','ether',1500,'%s')", maxid, ifname, iface.mac))
 		end
@@ -116,7 +121,7 @@ cmd_map.zone = {
 	func = function(conn)
 		local zonename = "all"
 		local sql = string.format("select * from zone where zonename='%s'", zonename)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 				assert(rs, e)
 		if #rs ~= 0 then 
 			return 
 		end 
@@ -130,7 +135,7 @@ cmd_map.zone = {
 }
 
 local function main()
-	local cfg, e = config.ins() 		assert(cfg, e)
+	local cfg, e = config.ins() 					assert(cfg, e)
 	local conn = dc.new(cfg:get_workdb()) 
 
 	local arr = {}

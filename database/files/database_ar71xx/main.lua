@@ -6,7 +6,6 @@ local udp = require("ski.udp")
 local dc = require("dbcommon")
 local js = require("cjson.safe")
 local config = require("config")
-local mysql = require("ski.mysql")
 local rpcserv = require("rpcserv")
 local updatelog = require("updatelog")
 local sandcproxy = require("sandcproxy")
@@ -21,7 +20,7 @@ local function broadcast(change)
 	end
 end
 
-function cmd_map.rpc(cmd, ctx)  
+function cmd_map.rpc(cmd, ctx)
 	local r = dbrpc:execute(cmd)
 	local change = sync.sync()
 	broadcast(change)
@@ -74,16 +73,9 @@ local function init_config()
 end
 
 local function connect_mysql()
+	local mysql = require("mysql")
 	local db = mysql.new()
-    local ok, err, errno, sqlstate = db:connect({
-		host = "127.0.0.1",
-		port = 3306,
-		database = "disk",
-		user = "root",
-		password = "wjrc0409",
-		max_packet_size = 1024 * 1024,
-		-- compact_arrays = true,
-	})
+	local r, e = db:connect({}) 		assert(r, e)
    	return db
 end
 
@@ -105,7 +97,7 @@ local function main()
 	mgr.new(conn, myconn, ud, cfg)
 	
 	local st = ski.time()
-	local change = sync.sync(true)
+	local change = sync.sync()
 	log.info("sync init spends %ss", ski.time() - st)
 
 	ski.go(start_udp_server)

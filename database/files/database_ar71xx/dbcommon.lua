@@ -29,8 +29,15 @@ function method:select(sql)
 	return arr
 end
 
-local function rollback(conn, sql, err)
-	return conn:execute("rollback")
+function method:transaction(f)
+	local r, e = self:execute("begin transaction") 	assert(r, e)
+	local r, d, e = pcall(f, self)
+	if r then
+		local r, e = self:execute("commit")  		assert(r, e)
+		return d
+	end
+	local r1, e1 = self:execute("rollback") 		assert(r1, e1)
+	return nil, e
 end
 
 function new(diskpath, attaches)

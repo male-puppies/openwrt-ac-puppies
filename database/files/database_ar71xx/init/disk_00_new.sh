@@ -24,8 +24,16 @@ fi
 
 test -e $workdb || eexit "init $workdb fail"
 
-## following mysql 
-sql="create database if not exists disk"
-mysql -uroot -pwjrc0409 -e "$sql"
-test $? -eq 0 || eexit "sql fail $sql"
+#simulate mysql
+mysql_disk_db=$work_dir/disk_m.db
+mysql_memo_db=$work_dir/memo_m.db
 
+if [ ! -e $mysql_disk_db ]; then  
+	sqlite3 $mysql_disk_db "select 1" >/dev/null 2>&1
+	test $? -eq 0 || eexit "missing $mysql_disk_db"
+	sqlite3 $mysql_memo_db "select 1" >/dev/null 2>&1
+	test $? -eq 0 || eexit "missing $mysql_memo_db"
+fi
+
+test -e $mysql_disk_db || eexit "init $mysql_disk_db fail"
+test -e $mysql_memo_db || eexit "init $mysql_memo_db fail"
