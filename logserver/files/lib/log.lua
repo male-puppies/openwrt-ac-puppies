@@ -59,7 +59,6 @@ local function logfmt(level, fmt, ...)
 end
 
 local function debug_print(s)
-	print(debug_on, s)
 	local _ = debug_on and print(s)
 end
 

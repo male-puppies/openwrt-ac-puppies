@@ -11,9 +11,16 @@ local function execute(f, p, r)
 	if p then 
 		_G["arg"] = p 
 	end
-	local res, m = pcall(f)
+	local r, m, e = pcall(f)
 	_G["arg"] = nil
-	local res = {d = m or "error", e = (not res) and 1 or nil}
+	local res 
+	if not r then 
+		res = {d = m, e = 1}
+	elseif m == nil then 
+		res = {d = e, e = 1}
+	else 
+		res = {d = m}
+	end
 	return r and js.encode(res) or nil
 end
 
