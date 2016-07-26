@@ -10,11 +10,11 @@ local get_ip_mac, get_status, get_rule_id = nos.user_get_ip_mac, nos.user_get_st
 local dispatch_keepalive = function() end 
 
 local udp_map = {}
-local myconn, udpsrv, mqtt
+local udpsrv, mqtt
 local keepalive_trigger
 
-local function init(m, u, p)
-	myconn, udpsrv, mqtt = m, u, p
+local function init(u, p)
+	udpsrv, mqtt =u, p
 end
 
 local function set_kernel_cb(cb)

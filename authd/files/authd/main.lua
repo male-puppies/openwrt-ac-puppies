@@ -6,9 +6,10 @@ local udp = require("ski.udp")
 local js = require("cjson.safe")
 local kernel = require("kernel")
 local common = require("common")
-local mysql = require("ski.mysql")
 local sandcproxy = require("sandcproxy")
-local luasql = require("luasql.sqlite3")
+
+js.encode_keep_buffer(false)
+js.encode_sparse_array(true)
 
 local read = common.read 
 local modules = {
@@ -21,7 +22,7 @@ local modules = {
 }
 
 local encode, decode = js.encode, js.decode
-local udp_chan, tcp_chan, mqtt, udpsrv, myconn
+local udp_chan, tcp_chan, mqtt, udpsrv
 
 local function dispatch_udp_loop()
 	local f = function(cmd, ip, port)
@@ -131,23 +132,6 @@ local function loop_check_debug()
 	end
 end
 
-local function connect_mysql()
-	local db = mysql.new()
-    local ok, err, errno, sqlstate = db:connect({
-		host = "127.0.0.1",
-		port = 3306,
-		database = "disk",
-		user = "root",
-		password = "wjrc0409",
-		max_packet_size = 1024 * 1024,
-	})
-
-	local env = luasql.sqlite3()
-	local conn, e = env:connect(":memory:") 			assert(conn, e)
-	db.escape = function(db, s) return conn:escape(s) end
-   	return db
-end
-
 local function test()
 	local unique, proxy = "a/local/authd_test"
 	local on_message = function(topic, payload) 
@@ -176,11 +160,11 @@ end
 local function main()
 	log.setmodule("auth")
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
-	myconn, udpsrv, mqtt = connect_mysql(), start_udp_server(), start_sand_server()
+	udpsrv, mqtt = start_udp_server(), start_sand_server()
 	for _, mod in pairs(modules) do 
-		mod.init(myconn, udpsrv, mqtt)
+		mod.init(udpsrv, mqtt)
 	end
-	cfg.init(myconn, udpsrv, mqtt)
+	cfg.init(udpsrv, mqtt)
 	kernel.set_kernel_cb(on_kernel_msg)
 	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 	-- ski.go(test)

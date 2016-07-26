@@ -3,10 +3,9 @@ local log = require("log")
 local js = require("cjson.safe")
 
 local cmd_map = {}
-local myconn
 
 local function init(m)
-	myconn = m
+
 end
 
 
