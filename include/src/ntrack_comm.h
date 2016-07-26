@@ -38,6 +38,7 @@ static inline user_info_t * nt_peer(struct nos_track *nt)
 	nt_assert(ui->id >= 0 && ui->id < nos_user_info_max);
 	return ui;
 }
+
 #else /* __KERNEL__ */
 
 /* node track base address mmmap used. */

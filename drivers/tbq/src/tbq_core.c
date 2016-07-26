@@ -619,7 +619,7 @@ int tbq_filter_packet(struct sk_buff *skb, struct nos_track *nos, int pkt_dir)
 		return NF_ACCEPT;
 	}
 
-	pc = &skb->nos.pc;
+	pc = tbq_packet_ctrl_get(skb);
 	pc->bucket_sched = &tbq.sched[pkt_dir];
 	pc->user_sched = &tu->sched[pkt_dir];
 	pc->rule_mask = tf->rule_mask;
@@ -634,7 +634,7 @@ int tbq_filter_packet(struct sk_buff *skb, struct nos_track *nos, int pkt_dir)
 
 	if (tbq.backlog_packets >= tbq.config.max_backlog_packets) {
 		TBQ_TRACE(FILTER, "drop: %pI4h, len: %u, rule_mask: %08X, dir: %d, backlog: %u/%u\n",
-			&nos->usr_src->ip, pc->pkt_len, pc->rule_mask, pkt_dir,
+			&nos->ui_src->ip, pc->pkt_len, pc->rule_mask, pkt_dir,
 			tbq.backlog_packets, tbq.config.max_backlog_packets);
 		return NF_DROP;
 	}
@@ -642,13 +642,39 @@ int tbq_filter_packet(struct sk_buff *skb, struct nos_track *nos, int pkt_dir)
 	return NF_QUEUE;
 }
 
-static unsigned int tbq_nf_hook(
-	const struct nf_hook_ops *ops,
-	struct sk_buff *skb,
-	const struct net_device *in,
-	const struct net_device *out, 
-	int (*okfn)(struct sk_buff *))
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0)
+static unsigned tbq_nf_hook(unsigned int hooknum,
+		struct sk_buff *skb,
+		const struct net_device *in,
+		const struct net_device *out,
+		int (*okfn)(struct sk_buff *))
 {
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
+static unsigned int tbq_nf_hook(const struct nf_hook_ops *ops,
+		struct sk_buff *skb,
+		const struct net_device *in,
+		const struct net_device *out,
+		int (*okfn)(struct sk_buff *))
+{
+	//unsigned int hooknum = ops->hooknum;
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
+static unsigned int tbq_nf_hook(const struct nf_hook_ops *ops,
+		struct sk_buff *skb,
+		const struct nf_hook_state *state)
+{
+	//unsigned int hooknum = state->hook;
+	const struct net_device *in = state->in;
+	const struct net_device *out = state->out;
+#else
+static unsigned int tbq_nf_hook(void *priv,
+		struct sk_buff *skb,
+		const struct nf_hook_state *state)
+{
+	//unsigned int hooknum = state->hook;
+	const struct net_device *in = state->in;
+	const struct net_device *out = state->out;
+#endif
 	struct nf_conn *ct = (struct nf_conn *)skb->nfct;
 	struct nos_track *nos;
 	int ret = NF_ACCEPT;
@@ -674,8 +700,11 @@ static unsigned int tbq_nf_hook(
 		return NF_ACCEPT;
 	}
 
-	nos = &ct->nos_track;
-	if (nos->flow == NULL) {
+	if ((nos = nf_ct_get_nos(ct)) == NULL) {
+		return NF_ACCEPT;
+	}
+
+	if (nt_flow(nos) == NULL) {
 		TBQ_DEBUG("nos_track is NULL\n");
 		return NF_ACCEPT;
 	}
@@ -687,11 +716,7 @@ static unsigned int tbq_nf_hook(
 			spin_lock_bh(&tbq.lock);
 			ret = tbq_filter_packet(skb, nos, pkt_dir);
 			spin_unlock_bh(&tbq.lock);
-		}/* else {
-			if(net_ratelimit()) {
-				printk("x"); 
-			}
-		}*/
+		}
 	}
 	rcu_read_unlock();
 
@@ -884,7 +909,7 @@ void tbq_flow_backlog_drop(
 
 	while (fb->base.octets > max_octets) {
 		pkt = list_entry(fb->packets.prev, struct nf_queue_entry, list);
-		pc = &pkt->skb->nos.pc;
+		pc = tbq_packet_ctrl_get(pkt->skb);
 
 		tbq_flow_backlog_dequeue(fb, pkt, pc->pkt_len);
 
@@ -922,7 +947,7 @@ int tbq_enqueue(struct nf_queue_entry *pkt, unsigned int queuenum)
 	spin_lock_bh(&tbq.lock);
 
 	nos = &((struct nf_conn *)pkt->skb->nfct)->nos_track;
-	pc = &pkt->skb->nos.pc;
+	pc = tbq_packet_ctrl_get(pkt->skb);
 	pkt_dir = pc->bucket_sched - tbq.sched;
 
 	fb = &nos->tbq.backlog[pkt_dir];
@@ -954,7 +979,7 @@ int tbq_enqueue(struct nf_queue_entry *pkt, unsigned int queuenum)
 	tbq.backlog_packets++;
 
 	TBQ_TRACE(FILTER, "enqueue: %pI4h, len: %u, rule_mask: %08X, dir: %d, backlog: %u/%u\n",
-		&nos->usr_src->ip, pc->pkt_len, pc->rule_mask, pkt_dir,
+		&nos->ui_src->ip, pc->pkt_len, pc->rule_mask, pkt_dir,
 		tbq.backlog_packets, tbq.config.max_backlog_packets);
 
 out:
@@ -983,7 +1008,7 @@ void tbq_flow_backlog_try_dequeue(
 
 	pkt = list_first_entry(&fb->packets, struct nf_queue_entry, list);
 	nos = &((struct nf_conn *)pkt->skb->nfct)->nos_track;
-	pc = &pkt->skb->nos.pc;
+	pc = tbq_packet_ctrl_get(pkt->skb);
 	pkt_dir = pc->bucket_sched - tbq.sched;	
 
 	BUG_ON(fb != &nos->tbq.backlog[pkt_dir]);
@@ -1276,8 +1301,10 @@ static const struct nf_queue_handler tbq_nf_queue = {
 
 static struct nf_hook_ops tbq_nf_hook_ops[] = {
 	{
-		.hook = tbq_nf_hook,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
 		.owner = THIS_MODULE,
+#endif
+		.hook = tbq_nf_hook,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_FORWARD,
 		.priority = NF_IP_PRI_LAST,

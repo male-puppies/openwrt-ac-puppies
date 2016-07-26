@@ -14,9 +14,11 @@ PKG_RELEASE:=3
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/tbq
-  SUBMENU:=Other modules
+  CATEGORY:=Puppies
+  SUBMENU:=Nos kernel modules
   TITLE:=tbq qos driver
   FILES:=$(PKG_BUILD_DIR)/tbq.ko
+  DEPENDS:=+nos
   AUTOLOAD:=$(call AutoProbe,tbq)
   KCONFIG:=
 endef
@@ -31,6 +33,8 @@ EXTRA_KCONFIG:= \
 EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(EXTRA_KCONFIG)))) \
+	-I $(TOOLCHAIN_DIR)/include/ \
+	-Wall
 
 MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \

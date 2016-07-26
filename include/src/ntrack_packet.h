@@ -78,15 +78,37 @@ static inline nt_pkt_nproto_t *nt_pkt_nproto(nt_packet_t *pkt)
 }
 
 #ifdef __KERNEL__
+
 #include <linux/skbuff.h>
+#include <linux/types.h>
+#include <linux/if.h>
+
+//skb->ntrack_priv[] layout: [tbq_packet_ctrl|nt_pkt_nproto_t]
+
+#define NOS_QOS_LINE_MAX    (8)
+struct tbq_packet_ctrl {
+	struct tbq_bucket_sched *bucket_sched;
+	struct tbq_user_sched *user_sched;
+	uint32_t rule_mask;
+	uint32_t pkt_len;
+};
+
+#define TBQ_PACKET_CTL_OFFSET 0
+static inline struct tbq_packet_ctrl *tbq_packet_ctrl_get(struct sk_buff *skb)
+{
+	return (struct tbq_packet_ctrl *)&skb->ntrack_priv[TBQ_PACKET_CTL_OFFSET];
+}
+
+#define NT_PKT_NPROTO_OFFSET (sizeof(struct tbq_packet_ctrl))
 static inline nt_pkt_nproto_t *nt_skb_nproto(struct sk_buff *skb, nt_packet_t *npt)
 {
-	STATIC_ASSERT((sizeof(nt_pkt_nproto_t)) < sizeof(skb->ntrack_priv));
+	STATIC_ASSERT((NT_PKT_NPROTO_OFFSET + sizeof(nt_pkt_nproto_t)) < sizeof(skb->ntrack_priv));
 	if(npt) {
-		npt->priv = (void*)&skb->ntrack_priv[0];
+		npt->priv = (void*)&skb->ntrack_priv[NT_PKT_NPROTO_OFFSET];
 	}
-	return (nt_pkt_nproto_t*)skb->ntrack_priv;
+	return (nt_pkt_nproto_t*)&skb->ntrack_priv[NT_PKT_NPROTO_OFFSET];
 }
+
 #endif
 
 /* http packet parse APIs. */

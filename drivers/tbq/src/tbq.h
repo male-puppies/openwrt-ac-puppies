@@ -19,6 +19,8 @@
 #include <net/netfilter/nf_conntrack.h>
 
 #include <linux/nos_track.h>
+#include <ntrack_comm.h>
+#include <ntrack_packet.h>
 
 //#define TBQ_DEBUG_CONTROL_PPS
 #define TBQ_LOG_LEVEL			2
