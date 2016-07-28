@@ -8,7 +8,7 @@ local common = require("common")
 local js = require("cjson.safe")
 local config = require("config")
 
-local read = common.read
+local read, arr2map = common.read, common.arr2map
 local shpath = "../db.sh"
 
 local function fatal(fmt, ...)
@@ -66,50 +66,99 @@ cmd_map.kv = {
 cmd_map.iface = {
 	priority = 3,
 	func = function(conn)
-		local s = read("uci show network | grep device", io.popen)
-		local map = {}
-		for idx, ifname in s:gmatch("device%[(%d+)%]%.ifname='(.-)'") do 
-			map[idx] = {ifname = ifname}
-		end
-		for idx, mac in s:gmatch("device%[(%d+)%]%.macaddr='(.-)'") do 
-			map[idx].mac = mac
+		local sql = "select count(*) as count from iface"
+		local rs, e = conn:select(sql) 				assert(rs, e)
+		if rs[1].count ~= 0 then 
+			return
 		end
 
-		local sql = string.format("select * from iface")
-		local rs, e = conn:select(sql)
-		local exist_map, maxid = {}, 0
-		for _, r in ipairs(rs) do 
-			exist_map[r.ifname] = r
-			local fid = tonumber(r.fid)
-			if fid > maxid then 
-				maxid = fid 
+		local default = {
+			ifname = "",
+			ifdesc = "",
+			ethertype = "",
+			iftype = "",
+			proto = "",
+			mtu = "",
+			mac = "",
+			metric = "",
+			gateway = "",
+			pppoe_account = "",
+			pppoe_password = "",
+			static_ip = "",
+			dhcp_enable = "",
+			dhcp_start = "",
+			dhcp_end = "",
+			dhcp_time = "",
+			dhcp_dynamic = "",
+			dhcp_lease = "",
+			dhcp_dns = "",
+		}
+		local set_default = function(r)
+			for field, v in pairs(default) do 
+				if not r[field] then 
+					r[field] = v
+		end
 			end
 		end
 
-		local miss, find = {}, false
-		for idx, iface in pairs(map) do
-			local ifname = iface.ifname
-			if not exist_map[ifname] then 
-				miss[ifname], find = iface, true
+		local ifarr = require("parse_network").parse()
+		for _, r in ipairs(ifarr) do 
+			set_default(r)
 			end
+		local ifmap = arr2map(ifarr, "ifname")
+		-- set zid
+		local rs, e = conn:select("select * from zone") 					assert(rs, e)
+		local zonemap = arr2map(rs, "zonename")
+		for _, r in pairs(ifmap) do
+			local n = zonemap[r.ifname:find("^wan") and "WAN" or "LAN"] 	assert(n)
+			r.zid, r.pid = n.zid, -1
 		end
 
-		if not find then 
-			return false 
+		-- set pid 
+		for _, r in pairs(ifmap) do
+			local parent = r.parent
+			if parent then 
+				local n = ifmap[parent]
+				r.pid = n.zid
+			end 
 		end
 
-		local arr, narr = {}, {}
-		for _, r in pairs(miss) do 
-			table.insert(narr, r)
+		local fields = {
+			"fid",
+			"ifname",
+			"ifdesc",
+			"ethertype",
+			"iftype",
+			"proto",
+			"mtu",
+			"mac",
+			"metric",
+			"gateway",
+			"pppoe_account",
+			"pppoe_password",
+			"static_ip",
+			"dhcp_enable",
+			"dhcp_start",
+			"dhcp_end",
+			"dhcp_time",
+			"dhcp_dynamic",
+			"dhcp_lease",
+			"dhcp_dns",
+			"zid",
+			"pid",
+		}
+		local narr = {}
+		for i, r in ipairs(ifarr) do
+			local arr = {}
+			r.fid = i - 1
+			for _, field in ipairs(fields) do 
+				table.insert(arr, string.format("'%s'", r[field]))
 		end 
-		table.sort(narr, function(a, b) return a.ifname < b.ifname end)
-		for _, iface in pairs(narr) do 
-			local ifname = iface.ifname
-			maxid = maxid + 1 
-			table.insert(arr, string.format("(%s,'%s','ether',1500,'%s')", maxid, ifname, iface.mac))
+			local s = string.format("(%s)", table.concat(arr, ","))
+			table.insert(narr, s)
 		end
 
-		local sql = string.format("insert into iface (fid,ifname,ethertype,mtu,mac) values %s", table.concat(arr, ","))
+		local sql = string.format("insert into iface(%s) values %s", table.concat(fields, ","), table.concat(narr, ","))
 		local r, e = conn:execute(sql)
 		local _ = r or fatal("%s %s", sql , e)
 		return true
@@ -119,15 +168,23 @@ cmd_map.iface = {
 cmd_map.zone = {
 	priority = 2,
 	func = function(conn)
-		local zonename = "all"
-		local sql = string.format("select * from zone where zonename='%s'", zonename)
+		local sql = "select count(*) as count from zone"
 		local rs, e = conn:select(sql) 				assert(rs, e)
-		if #rs ~= 0 then 
+		if rs[1].count ~= 0 then 
 			return 
 		end 
 
-		local zid, zonename, zonedesc, zonetype = 255, zonename, zonename, 3
-		local sql = string.format("insert into zone (zid,zonename,zonedesc,zonetype) values ('%s','%s','%s','%s')", zid, zonename, zonedesc, zonetype)
+		local arr = {
+			{zid = 0, 	zonename = "LAN", zonedesc = "LAN", zonetype = 3},
+			{zid = 1, 	zonename = "WAN", zonedesc = "WAN", zonetype = 3},
+			{zid = 255, zonename = "ALL", zonedesc = "ALL", zonetype = 3},
+		}
+
+		local narr = {}
+		for _, r in ipairs(arr) do 
+			table.insert(narr, string.format("('%s','%s','%s','%s')", r.zid, r.zonename, r.zonedesc, r.zonetype))
+		end
+		local sql = string.format("insert into zone (zid,zonename,zonedesc,zonetype) values %s", table.concat(narr, ","))
 		local r, e = conn:execute(sql) 	
 		local _ = r or fatal("%s %s", sql , e)
 		return true

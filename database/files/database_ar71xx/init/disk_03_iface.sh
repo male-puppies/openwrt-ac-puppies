@@ -13,6 +13,8 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		proto 				char(8) 	not null default 'none', \
 		mtu 				integer 	not null default 1500, \
 		mac 				char(20) 	not null default '' , \
+		metric				integer 	not null default 600, \
+		gateway				char(20)	not null default '', \
 		pppoe_account			char(64) 	not null default '', \
 		pppoe_password			char(64) 	not null default '', \
 		static_ip 			text 		, \
@@ -23,8 +25,9 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		dhcp_dynamic			integer 	not null default 0, \
 		dhcp_lease 			text		, \
 		dhcp_dns			text 		, \
-		br_ports 			text 		, \
-		zid				integer		not null default 255 \
+		pid 				integer 	not null default -1, \
+		zid					integer		not null default 255, \
+		foreign key(zid) references zone(zid) on delete restrict on update restrict \
 	)"
 drop_mysql_disk_table $tbname	
 create_mysql_disk_table "create table $tbname ( \
@@ -36,6 +39,8 @@ create_mysql_disk_table "create table $tbname ( \
 		proto 				char(8) 	not null default 'none', \
 		mtu 				integer 	not null default 1500, \
 		mac 				char(20) 	not null default '' , \
+		metric				integer 	not null default 600, \
+		gateway				char(20)	not null default '', \
 		pppoe_account			char(64) 	not null default '', \
 		pppoe_password			char(64) 	not null default '', \
 		static_ip 			text 		, \
@@ -46,6 +51,6 @@ create_mysql_disk_table "create table $tbname ( \
 		dhcp_dynamic			integer 	not null default 0, \
 		dhcp_lease 			text		, \
 		dhcp_dns			text 		, \
-		br_ports 			text 		, \
+		pid 				integer 	not null default -1, \
 		zid				integer		not null default 255 \
 	)"
