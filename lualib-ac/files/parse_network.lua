@@ -10,12 +10,12 @@ local function parse_board()
 	local board, default = m.board, m.default 	assert(board and default)
 	
 	local port_map, idx = {}, 0
-	for chip, r in pairs(board) do
-		local type = r.type
+	for _, r in ipairs(board) do
+		local chip, type = r.ifname, r.type
 		if type == "switch" then 
-			for _, port in ipairs(r.outer_ports) do 
+			for j, port in ipairs(r.outer_ports) do 
 				idx = idx + 1
-				port_map[idx] = {chip = chip, type = r.type}
+				port_map[idx] = {chip = chip, type = r.type, idx = j}
 			end
 		elseif type == "ether" then 
 			idx = idx + 1
@@ -68,27 +68,27 @@ local function parse_network(board)
 			ethertype = "bridge",
 			iftype = 3,
 			proto = r.proto,
-			mtu = r.mtu,
-			mac = r.mac:lower(),
-			static_ip = r.ipaddr,
+			mtu = r.mtu or 600,
+			mac = (r.mac or ""):lower(),
+			static_ip = r.ipaddr or "",
 		}
 		
 		local dhcpd = r.dhcpd
 		if dhcpd then 
-			m.dhcp_enable = dhcpd.enabled
-			m.dhcp_start = dhcpd.start
-			m.dhcp_end = dhcpd["end"]
-			m.dhcp_lease = dhcpd.leasetime
-			m.dhcp_dynamic = dhcpd.dynamicdhcp
-			m.dhcp_lease = js.encode(dhcpd.staticleases)
-			m.dns = dhcpd.dns
+			m.dhcp_enable = dhcpd.enabled or 0
+			m.dhcp_start = dhcpd.start or ""
+			m.dhcp_end = dhcpd["end"] or ""
+			m.dhcp_lease = dhcpd.leasetime or "12h"
+			m.dhcp_dynamic = dhcpd.dynamicdhcp or ""
+			m.dhcp_lease = js.encode(dhcpd.staticleases or "")
+			m.dns = dhcpd.dns or ""
 		end
 
 		table.insert(narr, m)
 		for _, idx in pairs(r.ports) do
 			local port = port_map[idx] 			assert(port)
 			local chip = port.chip
-			local name = chip .. "." .. idx
+			local name = chip .. "." .. port.idx
 			local m = {
 				ifname = name,
 				ifdesc = name,
@@ -111,9 +111,9 @@ local function parse_network(board)
 			iftype = 3,
 			ethertype = port.type == "switch" and "8021q" or "ether",
 			proto = r.proto,
-			mtu = r.mtu,
-			metric = r.metric,
-			mac = r.mac:lower()
+			mtu = r.mtu or 600,
+			metric = r.metric or "",
+			mac = (r.mac or ""):lower()
 		}
 
 		local proto = r.proto
