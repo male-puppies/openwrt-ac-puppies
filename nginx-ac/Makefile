@@ -32,7 +32,7 @@ define Package/$(PKG_NAME)/description
 	nginx config and ngxrpc lib
 endef
 
-define Package/$(PKG_NAME)/conffiles
+define Package/$(PKG_NAME)/conffiles/ar71xx
 endef
 
 define Package/$(PKG_NAME)/postinst
@@ -48,19 +48,13 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DIR) $(1)/usr/share/nginx-ac/
+	$(INSTALL_DIR) $(1)/usr/share
 	$(INSTALL_DIR) $(1)/usr/lib/lua
 	
-	$(INSTALL_DATA) ./files/nginx-ac.defaults $(1)/etc/uci-defaults/95-nginx-ac
-	$(CP) -r ./files/demo $(1)/usr/share/nginx-ac/
-	$(CP) -r ./files/webui $(1)/usr/share/nginx-ac/
-	$(INSTALL_DATA) ./files/nginx.conf $(1)/usr/share/nginx-ac/
-	$(CP) -r ./files/sites-enabled $(1)/usr/share/nginx-ac/
-	$(INSTALL_BIN) ./files/nginx.init $(1)/usr/share/nginx-ac/nginx.init
-	$(CP) -r ./files/lib/* $(1)/usr/lib/lua/
-ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
-	#TODO change database_ar71xx to database_x86
-	$(CP) -r ./files/lualib_71xx $(1)/usr/share/nginx-ac/lualib
+ifeq ($(CONFIG_TARGET_x86_64_Generic),y)	
+	$(INSTALL_DATA) ./files/ar71xx/nginx-ac.defaults $(1)/etc/uci-defaults/95-nginx-ac
+	$(CP) -r ./files/ar71xx/nginx-ac $(1)/usr/share/
+	$(CP) -r ./files/ar71xx/lib/* $(1)/usr/lib/lua/
 endif	
 endef
 

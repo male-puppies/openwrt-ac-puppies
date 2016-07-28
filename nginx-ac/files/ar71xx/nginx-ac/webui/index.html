@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>跳转中</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no">
+<style>
+body{font-family: Microsoft YaHei,"微软雅黑",Helvitica,Verdana,Tohoma,Arial,san-serif;background-color: #e9e7e4;font-size: 16px;padding: 0;margin: 0;box-sizing: border-box;height: 100%;}
+div{color: #999;text-shadow: 1px 1px 1px white;position:absolute;top:50%;left:50%;width:100px;height:40px;margin-left:-30px;margin-top:-40px;font-size:17px;}
+div b{padding:0 1px;}
+</style>
+<script type="text/javascript" src="scripts/jquery-1.11.3.min.js"></script>
+<script>
+var params = window.location.search || "";
+$.post(
+	"/bypass_host" + params,
+	function(d) {
+		window.location.href = "login.html" + params;
+	},
+	"json"
+);
+setTimeout(function() {
+	window.location.href = "login.html" + params;
+}, 2000);
+$(function() {
+	(function sf() {
+		setTimeout(function() {
+			if ($("div span b").length == 4) {
+				$("div span").html("<b>.</b>");
+			} else {
+				$("div span").append("<b>.</b>");
+			}
+			sf();
+		}, 350);
+	})();
+});
+</script>
+</head>
+<body>
+<div>跳转中<span><b>.</b></span></div>
+</body>
+</html>

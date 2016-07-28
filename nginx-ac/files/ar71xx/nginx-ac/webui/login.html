@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>平遥美食城</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="format-detection" content="telephone=no">
+<link type="text/css" rel="stylesheet" href="styles/index.css" />
+<script type="text/javascript" src="scripts/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="scripts/index.js"></script>
+<script type="text/javascript">var g_redirect="http://vip.weiduos.com";</script>
+</head>
+
+<body>
+<div class="banner">
+    <div class="dummy"></div>
+	<div class="swiper-container">
+        <div class="swiper-wrapper" ></div>
+		<div class="swiper-pagination"></div>
+    </div>
+</div>
+
+<div class="logo"><div><img id="logo" src="images/20160706212258862.jpg" alt="logo" /></div></div>
+
+<div class="link clearfix"><div class="pic-link"><div class="link-reserved"><i></i><a id="link-1" href="javascript:;"><img src="images/20160706212650496.jpg" /><p><span>欢迎您光临平遥美食城</span></p></a><b></b></div></div></div>
+
+<div class="fix-auth"><div class="auth"><p class="time-auth bg"></p><p class="time-auth font"><span>10</span> 秒后点击上网</p><script>$(function(){(function auth_set_times(time){var time=parseInt(time)||0;if(time==0){$("p.time-auth").hide();}else{$("p.font span").html(time);setTimeout(function(){time--;auth_set_times(time);},1000);}})(0);});</script><div class="weixin-auth"><div class="weixin-reserved"><i></i><a href="javascript:;" id="weixin-btn" onclick="call_weixin();"><span>微信认证</span></a><b></b></div></div><div class="web-auth"><div class="web-reserved"><i></i><a href="javascript:;" id="web-btn" onclick="call_web();"><span>web认证</span></a><b></b></div></div></div></div>
+
+<div class="copyright">2000-2016 平遥美食城 版权所有</div>
+
+<div class="alertbox sms-confirm">
+    <div class="alert-title">短信认证</div>
+	<div class="tips"></div>
+    <div class="number">
+		<input id="sms_user" type="tel" placeholder="请输入手机号码" />
+	</div>
+    <div class="code">
+		<input id="sms_pwd" type="tel" placeholder="请输入验证码" />
+		<span id="sms_code" onclick="sms_code();">获取验证码</span>
+	</div>
+    <div class="btns">
+        <span class="cancle">取消</span>
+        <span onclick="sms_action();">确定</span>
+    </div>
+</div>
+
+<div class="alertbox web-confirm">
+    <div class="alert-title">web认证</div>
+	<div class="tips"></div>
+    <div class="number">
+		<input id="web_user" type="text" placeholder="请输入账号" />
+	</div>
+    <div class="password">
+		<input id="web_pwd" type="password" placeholder="请输入密码" />
+	</div>
+    <div class="btns">
+        <span class="cancle">取消</span>
+        <span onclick="web_action();">确定</span>
+    </div>
+</div>
+
+<div class="mengban"></div>
+
+<script type="text/javascript" src="scripts/swiper-3.3.1.jquery.min.js"></script>
+<script>
+var mySwiper = new Swiper('.swiper-container', {
+	autoplay : 5000,
+	autoplayDisableOnInteraction: false,
+	pagination: '.swiper-pagination',
+	paginationClickable: true,
+	loop: true
+})
+</script>
+</body>
+</html>

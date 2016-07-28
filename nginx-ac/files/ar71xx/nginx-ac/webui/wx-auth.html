@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>微信连Wi-Fi</title>
+<style>
+*{margin:0;padding:0;}body{margin:0;padding:0;background:#F1F1F1;font:14px/160% arial,"Hiragino Sans GB","Microsoft Yahei","微软雅黑","宋体",Tahoma,Arial,Helvetica,STHeiti;}.main{min-height:390px;}.main .i{padding-top:90px;width:100%;}.main img{width:77px;height:68px;display:block;margin:0 auto;}.main .i p{color:#333;font-size:18px;line-height:20px;text-align:center;margin-top:18px;}.main .b{margin-top:80px;text-align:center;}.main .b .btn{cursor:pointer;display:inline-block;width:290px;-webkit-border-radius:5px;-moz-border-radius:5px;border-radius:5px;-webkit-background-clip:padding-box;-moz-background-clip:padding-box;background-clip:padding-box;height:40px;line-height:40px;background-color:#04be01;color:#fff;text-align:center;font-size:16px;border:none;margin-left:auto;margin-right:auto;}.main .b .btn b{font-size:18px;padding-left:12px;}.main .b .left{display:none;padding:0 15px;line-height:42px;font-size:15px;}.main .b p.left {margin-top:20px;color:red;font-size:16px;}.footer{clear:left;margin:50px auto 10px;text-align: center;}.footer a{color:#0066ff;text-decoration:none;}
+</style>
+<script src="scripts/jquery-1.11.3.min.js" type="text/javascript"></script>
+<script>
+var info = null;
+var callTimes = null;
+var falseJump = true;
+var loadIframe = null;
+var noResponse = null;
+var callUpTimestamp = 0;
+var g_redirect = null;
+
+$(function() {
+	/* 添加post，机制问题？ */
+	var params = getUrlSearch();
+	var obj = {}
+	obj.now = new Date().getTime();
+	$.post(
+		"/authopt" + params,
+		obj,
+		function(d) {
+		},
+		"json"
+	);
+
+	nodeTimesAuto(9);
+	setTimeout(function() {
+		call_weixin();
+	}, 500);
+	
+	document.addEventListener('visibilitychange', putNoResponse, false);
+});
+
+function getUrlSearch() {
+	var mark = 0,
+		href = "",
+		urlobj = getUrlObj(),
+		params = window.location.search;
+	
+	for (var k in urlobj) {
+		if (k == "g_redirect") {
+			g_redirect = urlobj[k];
+			continue;
+		}
+		
+		if (mark == 0) {
+			href += "?" + k + "=" + urlobj[k];
+		} else {
+			href += "&" + k + "=" + urlobj[k];
+		}
+		mark++;
+	}
+	return href;
+}
+
+function getUrlObj() {
+	var arr,
+		obj = {},
+		url = window.location.search;
+		
+	if (url && url != "") {
+		url = url.substring(1);
+		arr = url.split("&");
+		
+		for (var i = 0; i < arr.length; i ++) {
+			obj[arr[i].split("=")[0]] = arr[i].split("=")[1];
+		}
+	}
+	return obj;
+}
+
+function weixin_login_action(d) {
+	if (typeof d.status != "undefined") {
+		if (d.status == 0 && typeof d.data != "undefined") {
+			info = d.data;
+			d = d.data;
+		} else {
+			console.log("error get wxlogin2info")
+		}
+	} else {
+		info = d;
+	}
+	Wechat_GotoRedirect(d.AppID, d.Extend, d.TimeStamp, d.Sign, d.ShopID, d.AuthUrl, d.Mac, d.SSID, d.BSSID); 
+}
+
+function call_weixin() {
+	var params = getUrlSearch();
+	var obj = {};
+	obj.now = new Date().getTime();
+	$.post(
+		"/wxlogin2info" + params,
+		obj,
+		weixin_login_action,
+		"json"
+	);
+}
+
+function nodeTimesAuto(count) {
+	$(".main .btn b").html(count - 1);
+	setTimeout(function() {
+		count--;
+		if (count > 0) {
+			nodeTimesAuto(count);
+		} else {
+			doShowAutoAuth();
+		}
+	}, 1000);
+}
+
+function doShowAutoAuth() {
+	$(".main .btn b").css("display", "none");
+	$(".main .btn span").html("尝试再次打开微信");
+	$(".main .btn").attr("onclick", "againCallWechat()");
+	if (is_phone()) {
+		$(".main .left").css("display", "block");
+	}
+}
+
+function is_phone() {
+	var sUserAgent = navigator.userAgent.toLowerCase();
+	var bIsIpad = sUserAgent.match(/ipad/i) == "ipad";
+	var bIsIphoneOs = sUserAgent.match(/iphone os/i) == "iphone os";
+	var bIsMidp = sUserAgent.match(/midp/i) == "midp";
+	var bIsUc7 = sUserAgent.match(/rv:1.2.3.4/i) == "rv:1.2.3.4";
+	var bIsUc = sUserAgent.match(/ucweb/i) == "ucweb";
+	var bIsAndroid = sUserAgent.match(/android/i) == "android";
+	var bIsCE = sUserAgent.match(/windows ce/i) == "windows ce";
+	var bIsWM = sUserAgent.match(/windows mobile/i) == "windows mobile";
+	if (bIsIpad || bIsIphoneOs || bIsMidp || bIsUc7 || bIsUc || bIsAndroid || bIsCE || bIsWM) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function againCallWechat() {
+	window.location.reload();
+}
+
+function macAutoAuth() {
+	$.post(
+		"/weixin2_login",
+		{
+			openId: "wechat-" + info.Mac,
+			extend: info.Extend
+		},
+		function(d) {
+			if (d.status == 0) {
+				if (g_redirect && g_redirect != "" && g_redirect.substring(0, 4) == "http") {
+					window.location.href = g_redirect;
+				} else {
+					if (d.data && d.data != "" && d.data != "ok" && d.data.substring(0, 4) == "http") {
+						window.location.href = d.data;
+					} else {
+						window.location.href = "http://www.baidu.com";
+					}
+				}
+			} else {
+				alert("认证失败！请尝试刷新页面重新操作！");
+			}
+		},
+		"json"
+	);
+}
+/****/
+
+function putNoResponse(ev){
+	clearTimeout(noResponse);
+}	
+
+function errorJump(result) {
+	var ua = navigator.userAgent;
+	var now = new Date().getTime();
+	if ((now - callUpTimestamp) > 4*1000) {
+		falseJump = false;
+		return;
+	}
+	if (ua.indexOf("Chrome") != -1 && ua.indexOf("MI ") == -1 && ua.indexOf("QQBrowser") == -1) {
+		document.location = result.data;
+	}
+	falseJump = true;
+	//alert('该浏览器不支持自动跳转微信请手动打开微信\n如果已跳转请忽略此提示');
+}
+ 
+function createIframe(){
+	var iframe = document.createElement("iframe");
+	iframe.style.cssText = "display:none;width:0px;height:0px;";
+	document.body.appendChild(iframe);
+	loadIframe = iframe;
+}
+
+//注册回调函数
+function jsonpCallback(result) {
+	if (result && result.success) {
+		console.log('WeChat will call up : ' + result.success + '  data:' + result.data);			    
+		var ua = navigator.userAgent;              
+		if (ua.indexOf("iPhone") != -1 || ua.indexOf("iPod") != -1 || ua.indexOf("iPad") != -1) {   //iPhone             
+			document.location = result.data;
+		} else {
+			createIframe();
+			callUpTimestamp = new Date().getTime();
+			loadIframe.src = result.data;
+			noResponse = setTimeout(function(){
+				errorJump(result);
+			},3000);
+		}			    
+	} else if (result && !result.success) {
+		console.log(result.data);
+	}
+}
+
+function Wechat_GotoRedirect(appId, extend, timestamp, sign, shopId, authUrl, mac, ssid, bssid){
+	//将回调函数名称带到服务器端
+	var url = "https://wifi.weixin.qq.com/operator/callWechatBrowser.xhtml?appId=" + appId 
+						+ "&extend=" + extend 
+						+ "&timestamp=" + timestamp 
+						+ "&sign=" + sign;	
+	
+	//如果sign后面的参数有值，则是新3.1发起的流程
+	if(authUrl && shopId){
+		url = "https://wifi.weixin.qq.com/operator/callWechat.xhtml?appId=" + appId 
+						+ "&extend=" + extend 
+						+ "&timestamp=" + timestamp 
+						+ "&sign=" + sign
+						+ "&shopId=" + shopId
+						+ "&authUrl=" + encodeURIComponent(authUrl)
+						+ "&mac=" + mac
+						+ "&ssid=" + ssid
+						+ "&bssid=" + bssid;
+		
+	}
+	//通过dom操作创建script节点实现异步请求  
+	var script = document.createElement('script');  
+	script.setAttribute('src', url);
+	document.getElementsByTagName('head')[0].appendChild(script);
+}
+</script>
+</head>
+
+<body>
+<div class="main">
+	<div class="i">
+		<img src="images/wx-wifi.png" />
+		<p>微信连Wi-Fi</p>
+	</div>
+	
+	<div class="b">
+		<a class="btn"><span>正在打开微信...</span><b>5</b></a>
+		<p class="left tips">无法打开微信？试试手动打开</p>
+		<a class="left auth" href="javascript:;" onclick="macAutoAuth();">或者点击这里，进行微信离线认证</a>
+	</div>
+</div>
+<!--
+<footer class="footer">
+	<div class="container">
+		<p>Copyright © 2016 YXA10015907</p>
+	</div>
+</footer>
+-->
+</body>
+</html>
