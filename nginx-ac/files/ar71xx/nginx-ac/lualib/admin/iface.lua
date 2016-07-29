@@ -1,9 +1,8 @@
 local js = require("cjson.safe")
 local log = require("common.log")
-local authlib = require("admin.authlib")
 local rds = require("common.rds")
-local mysql = require("common.mysql")
 local query = require("common.query")
+local authlib = require("admin.authlib")
 
 local r1 = log.real1
 local reply_e, reply = authlib.reply_e, authlib.reply
@@ -33,7 +32,7 @@ local function query_common(m, cmd)
 end
 
 function cmd_map.iface_get()
-	local m, e = validate_get({page = 1, count = 1})
+	local m, e = validate_get({})
 	if not m then return reply_e(e) end
 	return query_common(m, "iface_get")
 end

@@ -63,6 +63,7 @@ cmd_map.kv = {
 	end
 }
 
+--[[
 cmd_map.iface = {
 	priority = 3,
 	func = function(conn)
@@ -164,7 +165,7 @@ cmd_map.iface = {
 		return true
 	end
 }
-
+]]
 cmd_map.zone = {
 	priority = 2,
 	func = function(conn)

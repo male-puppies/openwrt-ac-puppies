@@ -2,15 +2,17 @@ local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
-local simplesql = require("simplesql")
+local code = require("code")
+local common = require("common")
+
+local read = common.read
 
 local udp_map = {}
-local myconn, udpsrv, mqtt, dbrpc, simple
+local udpsrv, mqtt, dbrpc, simple
 
-local function init(m, u, p)
-	myconn, udpsrv, mqtt = m, u, p
+local function init(u, p)
+	udpsrv, mqtt = u, p
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-	simple = simplesql.new(dbrpc)
 end
 
 local reply_obj = {status = 0, data = 0}
@@ -27,33 +29,41 @@ local function dispatch_udp(cmd, ip, port)
 end
 
 udp_map["iface_get"] = function(p, ip, port)
-	local page, count = p.page, p.count
-	local sql = string.format("select * from iface order by ifname limit %s,%s", (page - 1) * count, count)
-	reply(ip, port, 0, simple:select2(sql))
+	local load = require("board").load
+	local r = load()
+	local ports, options, networks = r.ports, r.options, r.networks	
+	local path = "/etc/config/network.json"
+	local s = read(path) 	assert(s)
+	local m = js.decode(s) 	assert(m)
+	local net_name, net_cfg = m.name, m.network
+
+	local custom_map = {}
+	if net_name ~= "custom" then 
+		local lan0, wan0 = {}, {#ports}
+		for i = 1, #ports - 1 do 
+			table.insert(lan0, i)
+		end
+		custom_map.lan0,custom_map.wan0 = lan0, wan0
+	else 
+		for iface, r in pairs(net_cfg) do 
+			custom_map[iface] = r.ports
+		end
+	end
+	table.insert(options,  {name = "custom", map = custom_map})
+	local res = {ports = ports, options = options, networks = networks, network = m}
+	reply(ip, port, 0, res)
 end
 
 udp_map["iface_set"] = function(p, ip, port)
-	reply(ip, port, 0, p)
+	reply(ip, port, 0, "test")
 end
 
 udp_map["iface_add"] = function(p, ip, port)
-	local code = [[
-		local ins = require("mgr").ins()
-		local conn = ins.conn
-		return conn:protect(function()
-			local r, e = conn:select("select * from kv") 		assert(r, e) 
-			return r
-		end)
-	]]
-
-	local r, e = dbrpc:fetch("cfgmgr_iface_add", code)
-	if e then io.stderr:write("error ", e, "\n") os.exit(-1) end 	
-	log.debug("%s", js.encode({r, e}))
-	reply(ip, port, 0, {r, e})
+	reply(ip, port, 0, "test")
 end
 
 udp_map["iface_del"] = function(p, ip, port)
-	reply(ip, port, 0, p)
+	reply(ip, port, 0, "test")
 end
 
 return {init = init, dispatch_udp = dispatch_udp}

@@ -5,7 +5,7 @@ local function redirect()
 end
 
 local uri = ngx.var.uri  
-local login_html = "/admin/rs/login.html"
+local login_html = "/v1/admin/rs/login.html"
 if uri == login_html then
 	return
 end

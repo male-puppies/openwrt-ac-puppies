@@ -1,6 +1,5 @@
 local js = require("cjson.safe")
 local rds = require("common.rds")
-local mysql = require("common.mysql")
 local authlib = require("admin.authlib")
 
 local reply_e, reply = authlib.reply_e, authlib.reply
@@ -16,7 +15,7 @@ local function check()
 end
 
 local function auth(p)
-	local sql = string.format("select count(*) as count, perm from csadmin where username='%s' and password='%s'", p.username, p.password)
+	-- local sql = string.format("select count(*) as count, perm from csadmin where username='%s' and password='%s'", p.username, p.password)
 	
 	-- local r, e = mysql.query(function(db)
 	-- 	local rs, e = db:query(sql) 	
