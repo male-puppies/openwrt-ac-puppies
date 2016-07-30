@@ -1,0 +1,33 @@
+#
+# Copyright (C) 2010-2016 OpenWrt.org
+#
+# This is free software, licensed under the GNU General Public License v2.
+# See /LICENSE for more information.
+#
+
+menu "Configuration"
+depends on PACKAGE_base-config
+
+choice
+	prompt "Target build"
+	default TARGET_AC_x86_64
+	help
+		select the build target
+
+	config TARGET_AC_x86_64
+	bool "AC x86_64"
+	help
+		build target ac x86_64
+
+	config TARGET_AC_ar9531
+	bool "AC ar9531"
+	help
+		build target ac ar9531
+
+	config TARGET_AC_ar9563
+	bool "AC ar9563"
+	help
+		build target ac ar9563
+
+endchoice
+endmenu

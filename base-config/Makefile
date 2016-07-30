@@ -29,6 +29,10 @@ define Package/$(PKG_NAME)
   TITLE:=$(PKG_NAME)
 endef
 
+define Package/$(PKG_NAME)/config
+  source "$(SOURCE)/Config.in"
+endef
+
 define Package/$(PKG_NAME)/description
   Base config for AP or AC
 endef
@@ -48,18 +52,22 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/share/base-config
 	cp -r ./files/etc $(1)/usr/share/base-config/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-ifeq ($(CONFIG_TARGET_ar71xx_generic_AP9341),y)
-	$(INSTALL_DATA) ./files/ap9341.defaults $(1)/etc/uci-defaults/95-base-config
-endif
-ifeq ($(CONFIG_TARGET_ramips_mt7621_PUPPIES),y)
-	$(INSTALL_DATA) ./files/mt7621.defaults $(1)/etc/uci-defaults/95-base-config
-endif
-ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
+ifeq ($(CONFIG_TARGET_AC_x86_64),y)
 	$(INSTALL_DATA) ./files/x86_64.defaults $(1)/etc/uci-defaults/95-base-config
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/fstab.config $(1)/etc/config/fstab
 	$(INSTALL_DIR) $(1)/lib/preinit
 	$(INSTALL_DATA) ./files/disk_ready.preinit $(1)/lib/preinit/79_disk_ready
+endif
+ifeq ($(CONFIG_TARGET_AC_ar9531),y)
+	$(INSTALL_DATA) ./files/ar9531.board.json $(1)/usr/share/base-config/board.json
+	$(INSTALL_DATA) ./files/ar9531.defaults $(1)/etc/uci-defaults/95-base-config
+	$(INSTALL_DATA) ./files/board.lua $(1)/usr/share/base-config/board.lua
+endif
+ifeq ($(CONFIG_TARGET_AC_ar9563),y)
+	$(INSTALL_DATA) ./files/ar9563.board.json $(1)/usr/share/base-config/board.json
+	$(INSTALL_DATA) ./files/ar9563.defaults $(1)/etc/uci-defaults/95-base-config
+	$(INSTALL_DATA) ./files/board.lua $(1)/usr/share/base-config/board.lua
 endif
 endef
 

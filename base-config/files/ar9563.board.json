@@ -1,0 +1,247 @@
+{
+    "ports": [
+        {
+            "ifname": "eth1",
+            "type": "switch",
+            "outer_ports": [
+                {
+                    "num": 1,
+                    "mac": "__MAC_ADDRESS_1__"
+                },
+                {
+                    "num": 2,
+                    "mac": "__MAC_ADDRESS_2__"
+                },
+                {
+                    "num": 3,
+                    "mac": "__MAC_ADDRESS_3__"
+                },
+                {
+                    "num": 4,
+                    "mac": "__MAC_ADDRESS_4__"
+                }
+            ],
+            "inner_port": 0
+        },
+        {
+            "ifname": "eth0",
+            "type": "ether",
+            "outer_ports": [
+                {
+                    "num": 1,
+                    "mac": "__MAC_ADDRESS_0__"
+                }
+            ]
+        }
+    ],
+    "options": [
+        {
+            "name": "1lan1wan",
+            "map": {
+                "lan0": [
+                    1,
+                    2,
+                    3,
+                    4
+                ],
+                "wan0": [
+                    5
+                ]
+            }
+        },
+        {
+            "name": "1lan2wan",
+            "map": {
+                "lan0": [
+                    1,
+                    2,
+                    3
+                ],
+                "wan1": [
+                    4
+                ],
+                "wan0": [
+                    5
+                ]
+            }
+        },
+        {
+            "name": "2lan1wan",
+            "map": {
+                "lan0": [
+                    1,
+                    2
+                ],
+                "lan1": [
+                    3,
+                    4
+                ],
+                "wan0": [
+                    5
+                ]
+            }
+        }
+    ],
+    "networks": {
+        "lan0": {
+            "proto": "static",
+            "ipaddr": "172.16.0.1/16",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 1,
+                "start": "172.16.0.100",
+                "end": "172.16.200.254",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": "172.16.0.1"
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "lan1": {
+            "proto": "static",
+            "ipaddr": "172.17.0.1/16",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 1,
+                "start": "172.17.0.100",
+                "end": "172.17.200.254",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": "172.17.0.1"
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "lan2": {
+            "proto": "static",
+            "ipaddr": "172.18.0.1/16",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 1,
+                "start": "172.18.0.100",
+                "end": "172.17.200.254",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": "172.18.0.1"
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "lan3": {
+            "proto": "static",
+            "ipaddr": "172.19.0.1/16",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 1,
+                "start": "172.19.0.100",
+                "end": "172.17.200.254",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": "172.19.0.1"
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "wan0": {
+            "proto": "dhcp",
+            "ipaddr": "",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 0,
+                "start": "",
+                "end": "",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": ""
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "wan1": {
+            "proto": "dhcp",
+            "ipaddr": "",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 0,
+                "start": "",
+                "end": "",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": ""
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "wan2": {
+            "proto": "dhcp",
+            "ipaddr": "",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 0,
+                "start": "",
+                "end": "",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": ""
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "wan3": {
+            "proto": "dhcp",
+            "ipaddr": "",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 0,
+                "start": "",
+                "end": "",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": ""
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        }
+    }
+}

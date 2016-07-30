@@ -1,0 +1,81 @@
+#!/bin/sh
+version=`uci get base_config.@status[0].version`
+test -n "$version" || version=0
+
+test $version -lt 1 && {
+	uci get system.@system[0] && {
+		uci -q batch <<-EOT
+			set system.@system[0].hostname='AC'
+			set system.@system[0].zonename='Asia/Shanghai'
+			set system.@system[0].timezone='CST-8'
+		EOT
+		uci commit system
+	}
+	uci -q batch <<-EOT
+		delete network.globals
+		delete network.lan.ip6assign
+		delete network.wan6
+	EOT
+	uci commit network
+	[ x`uci get firewall.@defaults[0]` = xdefault ] && uci set firewall.@defaults[0].disable_ipv6='1'
+	[ x`uci get firewall.@zone[0].name` = xlan ] && {
+		[ x`firewall.@zone[0].mtu_fix` = x1 ] || uci set firewall.@zone[0].mtu_fix='1'
+	}
+	[ x`uci get firewall.@zone[1].name` = xwan ] && {
+		uci get firewall.@zone[1].network | grep -q wan6 && {
+			uci delete firewall.@zone[1].network
+			uci add_list firewall.@zone[1].network="wan"
+		}
+	}
+	uci commit firewall
+	[ x`uci get dropbear.@dropbear[0]` = xdropbear ] && {
+		uci set dropbear.@dropbear[0].PasswordAuth='off'
+		uci set dropbear.@dropbear[0].RootPasswordAuth='off'
+		uci set dropbear.@dropbear[0].Port='12580'
+		uci commit dropbear
+		cp /usr/share/base-config/etc/dropbear/authorized_keys /etc/dropbear/authorized_keys && chmod 600 /etc/dropbear/authorized_keys
+	}
+	cp /usr/share/base-config/etc/shadow /etc/shadow && chmod 600 /etc/shadow
+	cp /usr/share/base-config/etc/ppp/options /etc/ppp/options && chmod 644 /etc/ppp/options
+	cp /usr/share/base-config/etc/inittab /etc/inittab && chmod 644 /etc/inittab
+
+	cp /usr/share/base-config/etc/init.d/dnsmasq /etc/init.d/dnsmasq && chmod 755 /etc/init.d/dnsmasq
+
+	version=1
+}
+
+test $version -lt 2 && {
+	uci -q batch <<-EOT
+		delete uhttpd.main.listen_http
+		delete uhttpd.main.listen_https
+		add_list uhttpd.main.listen_http='0.0.0.0:8000'
+	EOT
+	uci commit uhttpd
+	version=2
+}
+
+test $version -lt 3 && {
+	macaddr=`cat /sys/class/net/eth0/address | tr A-Z a-z`
+	test -n "$macaddr" || macaddr=`head -c6 /dev/random | hexdump -e '/1 "%02x:"' | head -c17`
+	cp /usr/share/base-config/board.json /tmp/board.json
+	NR=`cat /tmp/board.json | grep -o __MAC_ADDRESS_ | wc -l`
+	IDX=0
+	while :; do
+		test $IDX -ge $NR && break
+		sed -i "s/__MAC_ADDRESS_${IDX}__/${macaddr}/" /tmp/board.json
+		macaddr=`maccalc add $macaddr 1`
+		IDX=$((IDX+1))
+	done
+	cp /tmp/board.json /etc/config/board.json
+
+	lua /usr/share/base-config/board.lua >/etc/config/network.json
+
+	version=3
+}
+
+touch /etc/config/base_config
+uci get base_config.@status[0] || uci add base_config status
+uci set base_config.@status[0].version=$version
+uci commit base_config
+exit 0
+
