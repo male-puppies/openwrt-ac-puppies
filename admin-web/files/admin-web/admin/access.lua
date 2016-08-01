@@ -1,4 +1,5 @@
-local authlib = require("admin.authlib") 
+package.path = "/usr/share/admin-web/?.lua;" .. package.path
+local authlib = require("authlib") 
 
 local function redirect()
 	ngx.redirect(login_html)
