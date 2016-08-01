@@ -39,8 +39,8 @@ define Package/$(PKG_NAME)/postinst
 #!/bin/sh
 
 if [ -z "$$IPKG_INSTROOT" ]; then
-  ( . /etc/uci-defaults/95-admin-web )
-  rm -f /etc/uci-defaults/95-admin-web
+  ( . /etc/uci-defaults/96-admin-web )
+  rm -f /etc/uci-defaults/96-admin-web
 fi
 
 exit 0
@@ -48,10 +48,9 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/admin-web.defaults $(1)/etc/uci-defaults/95-admin-web
-	$(INSTALL_DIR) $(1)/usr/share/admin-web/
-	$(CP) -r ./files/www $(1)/usr/share/admin-web/
-	$(CP) -r ./files/lua $(1)/usr/share/admin-web/
+	$(INSTALL_DATA) ./files/admin-web.defaults $(1)/etc/uci-defaults/96-admin-web
+	$(INSTALL_DIR) $(1)/usr/share
+	$(CP) -r ./files/admin-web $(1)/usr/share/
 endef
 
 define Build/Configure

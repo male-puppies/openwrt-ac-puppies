@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +ski +lua-cjson +lualib-ac +database +logserver +sands +base-config
+  DEPENDS:= +ski +lua-cjson +lualib-ac +database +logserver +sands +base-config +admin-web +nginx-ac
 endef
 
 define Package/$(PKG_NAME)
