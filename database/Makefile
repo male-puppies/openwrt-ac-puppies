@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +ski +libsqlite3 +rdsparser +lua-cjson +luasql-sqlite3 +luasql-mysql +lualib-ac +luafilesystem +sqlite3-cli
+  DEPENDS:= +ski +libsqlite3 +rdsparser +lua-cjson +luasql-sqlite3 +lualib-ac +luafilesystem +sqlite3-cli +base-config
 endef
 
 define Package/$(PKG_NAME)
@@ -48,8 +48,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/database.init $(1)/etc/init.d/database
 	$(CP) -r files/lib/* $(1)/usr/lib/lua/
 	$(INSTALL_BIN) ./files/database.sh $(1)/usr/sbin/database
-ifeq ($(CONFIG_TARGET_x86_64_Generic),y)
-	#TODO change database_ar71xx to database_x86
+ifeq ($(CONFIG_TARGET_AC_ar9531),y)
 	$(CP) -r files/database_ar71xx $(1)/usr/share/database 	
 endif
 endef

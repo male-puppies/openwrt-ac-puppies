@@ -1,14 +1,15 @@
 local ski = require("ski")
 local log = require("log")
+local code = require("code")
+local board = require("board")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
-local code = require("code")
 local common = require("common")
 
-local read = common.read
+local read, save_safe, arr2map = common.read, common.save_safe, common.arr2map
 
 local udp_map = {}
-local udpsrv, mqtt, dbrpc, simple
+local udpsrv, mqtt, dbrpc
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
@@ -29,8 +30,7 @@ local function dispatch_udp(cmd, ip, port)
 end
 
 udp_map["iface_get"] = function(p, ip, port)
-	local load = require("board").load
-	local r = load()
+	local r = board.load()
 	local ports, options, networks = r.ports, r.options, r.networks	
 	local path = "/etc/config/network.json"
 	local s = read(path) 	assert(s)
@@ -54,16 +54,63 @@ udp_map["iface_get"] = function(p, ip, port)
 	reply(ip, port, 0, res)
 end
 
+local function compare_ports(omap, nmap)
+	for iface, oports in pairs(omap) do 
+		local r = nmap[iface]
+		if not (r and r.ports) then 
+			return nil, "invalid param"
+		end
+
+		for i, op in ipairs(oports) do 
+			if op ~= r.ports[i] then 
+				return nil, "invalid port"
+			end 
+		end
+	end 
+
+	for iface, r in pairs(nmap) do 
+		local nports = r.ports
+		if not nports then 
+			return nil, "invalid param"
+		end
+
+		local oports = omap[iface]
+		if not oports then 
+			return nil, "invalid param"
+		end
+
+		for i, np in ipairs(nports) do
+			if np ~= oports[i] then 
+				return nil, "invalid port"
+			end 
+		end
+	end
+
+	return true
+end	
+
 udp_map["iface_set"] = function(p, ip, port)
-	reply(ip, port, 0, "test")
-end
+	local network = p.network
+	local name, network = network.name, network.network
+	local r = board.load()
+	local options = arr2map(r.options, "name")
 
-udp_map["iface_add"] = function(p, ip, port)
-	reply(ip, port, 0, "test")
-end
+	-- check ports
+	if name ~= "custom" then
+		local opt = options[name]
+		if not opt then 
+			return reply(ip, port, 1, "invaild name")
+		end 
 
-udp_map["iface_del"] = function(p, ip, port)
-	reply(ip, port, 0, "test")
+		local omap = opt.map
+		local r, e = compare_ports(omap, network)
+		if not r then
+			return reply(ip, port, 1, e)
+		end
+	end
+
+	local _ = network and save_safe("/etc/config/network.test.json", js.encode(network))
+	reply(ip, port, 0, "ok")
 end
 
 return {init = init, dispatch_udp = dispatch_udp}

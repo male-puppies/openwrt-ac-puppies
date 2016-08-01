@@ -3,6 +3,7 @@ local log = require("common.log")
 local rds = require("common.rds")
 local query = require("common.query")
 local authlib = require("admin.authlib")
+local network = require("admin.network")
 
 local r1 = log.real1
 local reply_e, reply = authlib.reply_e, authlib.reply
@@ -36,54 +37,74 @@ function cmd_map.iface_get()
 	if not m then return reply_e(e) end
 	return query_common(m, "iface_get")
 end
-
-log.setlevel("1,2,3")
-
-function cmd_map.iface_add()
-	local m, e = validate_post({
-		des = validate_des,
-		type = validate_type,
-		name = validate_name,
-	})
-
-	if not m then 
-		return reply_e(e)
-	end
-
-	return query_common(m, "iface_add")
-end
-
+local s = [[
+{
+            "name": "custom",
+            "network": {
+                "lan0": {
+                    "mac": "00:00:00:00:00:01",
+                    "proto": "static",
+                    "dns": "",
+                    "mtu": "",
+                    "ports": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "pppoe_account": "",
+                    "pppoe_password": "",
+                    "gateway": "",
+                    "dhcpd": {
+                        "enabled": 1,
+                        "leasetime": "12h",
+                        "dns": "172.16.0.1",
+                        "end": "172.16.200.254",
+                        "start": "172.16.0.100",
+                        "staticlease": {},
+                        "dynamicdhcp": 1
+                    },
+                    "metric": "",
+                    "ipaddr": "172.16.0.1/16"
+                },
+                "wan0": {
+                    "mac": "00:00:00:00:00:01",
+                    "proto": "dhcp",
+                    "dns": "",
+                    "mtu": "",
+                    "ports": [
+                        5
+                    ],
+                    "pppoe_account": "",
+                    "pppoe_password": "",
+                    "gateway": "",
+                    "dhcpd": {
+                        "enabled": 0,
+                        "leasetime": "12h",
+                        "dns": "",
+                        "end": "",
+                        "start": "",
+                        "staticlease": {},
+                        "dynamicdhcp": 1
+                    },
+                    "metric": "",
+                    "ipaddr": ""
+                }
+            }
+        }
+]]
 function cmd_map.iface_set()
-	local m, e = validate_post({
-		zid = validate_zid,
-		des = validate_des,
-		type = validate_type,
-		name = validate_name,
-	})
-
-	if not m then 
+	local p = ngx.req.get_uri_args()
+	-- local arg = p.arg 
+	-- if not arg then 
+	-- 	return reply_e("invalid param 4")
+	-- end
+	local arg = s
+	local cfg, e = network.validate(arg)
+	if not cfg then 
 		return reply_e(e)
 	end
-
-	return query_common(m, "iface_set")
-end
-
-function cmd_map.iface_del()
-	local m, e = validate_post({zids = validate_zids})
-	if not m then 
-		return reply_e(e)
-	end
-	
-	local s, zids = m.zids .. ",", {}
-	for zid in s:gmatch("(%d-),") do 
-		local v = validate_zid(tonumber(zid))
-		if not v then 
-			return reply_e("invalid zids " .. m.zids)
-		end 
-		table.insert(zids, v)
-	end
-
-	return query_common({zids = zids}, "iface_del")
+	return query_common({cmd = "iface_set", network = cfg}, "iface_set")
 end
 
 return {run = run}

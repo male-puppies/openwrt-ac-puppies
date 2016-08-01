@@ -10,6 +10,8 @@ local rpcserv = require("rpcserv")
 local updatelog = require("updatelog")
 local sandcproxy = require("sandcproxy")
 
+js.encode_keep_buffer(false)
+js.encode_sparse_array(true)
 local dbrpc, proxy, udpsrv
 local cmd_map = {}
 
