@@ -192,6 +192,30 @@ cmd_map.zone = {
 	end
 }
 
+cmd_map.ipgroup = {
+	priority = 4,
+	func = function(conn)
+		local sql = "select count(*) as count from ipgroup"
+		local rs, e = conn:select(sql) 				assert(rs, e)
+		if rs[1].count ~= 0 then 
+			return 
+		end 
+
+		local arr = {
+			{ipgid = 255, ipgrpname = "ALL", ipgrpdesc = "ALL", ranges = js.encode({"0.0.0.0-255.255.255.255"})},
+		}
+
+		local narr = {}
+		for _, r in ipairs(arr) do
+			table.insert(narr, string.format("('%s','%s','%s','%s')", r.ipgid, r.ipgrpname, r.ipgrpdesc, r.ranges))
+		end
+		local sql = string.format("insert into ipgroup (ipgid,ipgrpname,ipgrpdesc,ranges) values %s", table.concat(narr, ","))
+		local r, e = conn:execute(sql) 	
+		local _ = r or fatal("%s %s", sql , e)
+		return true
+	end
+}
+
 local function main()
 	local cfg, e = config.ins() 					assert(cfg, e)
 	local conn = dc.new(cfg:get_workdb()) 
