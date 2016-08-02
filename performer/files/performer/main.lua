@@ -1,37 +1,21 @@
 local ski = require("ski")
 local lfs = require("lfs")
 local log = require("log")
-local udp = require("ski.udp") 
 local js = require("cjson.safe")
 local common = require("common")
-local mysql = require("ski.mysql")
 local sandcproxy = require("sandcproxy")
+
+js.encode_keep_buffer(false)
+js.encode_sparse_array(true)
 
 local read = common.read 
 local modules = {
+	network = 	require("network"),
 	dbevent = 	require("dbevent"),
 }
 
 local encode, decode = js.encode, js.decode
-local udp_chan, tcp_chan, mqtt, udpsrv, myconn
-
-local function dispatch_udp_loop()
-	local f = function(cmd, ip, port)
-		for _, mod in pairs(modules) do
-			local f = mod.dispatch_udp
-			if f and f(cmd, ip, port) then
-				return
-			end
-		end
-		print("invalid cmd", js.encode(cmd))
-	end
-
-	local r, e
-	while true do
-		r, e = udp_chan:read() 					assert(r, e) 
-		f(r[1], r[2], r[3]) 
-	end
-end
+local udp_chan, tcp_chan, mqtt
 
 local function dispatch_tcp_loop() 
 	local f = function(map)
@@ -80,29 +64,6 @@ local function start_sand_server()
 	return sandcproxy.run_new(args)
 end
 
-local function start_udp_server()
-	local udpsrv = udp.new()
-	local r, e = udpsrv:bind("127.0.0.1", 50003) 			assert(r, e)
-
-	ski.go(function()
-		local r, e, m, ip, port
-		while true do
-			r, ip, port = udpsrv:recv()
-			if r then
-				print(r)
-				m = decode(r)
-				if m and m.cmd then
-					r, e = udp_chan:write({m, ip, port}) 	assert(r, e)
-				else
-					print("invalid udp request")
-				end
-			end
-		end
-	end)
-
-	return udpsrv
-end
-
 local function loop_check_debug()
 	local path = "/tmp/debug_performer"
 	while true do 
@@ -114,32 +75,15 @@ local function loop_check_debug()
 	end
 end
 
-local function connect_mysql()
-	local db = mysql.new()
-    local ok, err, errno, sqlstate = db:connect({
-		host = "127.0.0.1",
-		port = 3306,
-		database = "disk",
-		user = "root",
-		password = "wjrc0409",
-		max_packet_size = 1024 * 1024,
-	})
-
-	local env = require("luasql.sqlite3").sqlite3()
-	local conn, e = env:connect(":memory:") 			assert(conn, e)
-	db.escape = function(db, s) return conn:escape(s) end
-	return db
-end
-
 local function main()
 	log.setmodule("pf")
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
-	myconn, udpsrv, mqtt = connect_mysql(), start_udp_server(), start_sand_server()
+	mqtt = start_sand_server()
 	for _, mod in pairs(modules) do 
-		mod.init(myconn, udpsrv, mqtt)
+		mod.init(mqtt)
 	end
 
-	local _ = ski.go(dispatch_udp_loop), ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
+	local _ = ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 end
 
 ski.run(main)

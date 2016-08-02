@@ -111,6 +111,7 @@ udp_map["iface_set"] = function(p, ip, port)
 
 	local _ = network and save_safe("/etc/config/network.test.json", js.encode(network))
 	reply(ip, port, 0, "ok")
+	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "network"}}))
 end
 
 return {init = init, dispatch_udp = dispatch_udp}

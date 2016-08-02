@@ -3,9 +3,9 @@ local log = require("log")
 local js = require("cjson.safe")
 
 local tcp_map = {}
-local mqtt, udpsrv, db
-local function init(p, u, m)
-	mqtt, udpsrv, db = p, u, m
+local mqtt
+local function init(p)
+	mqtt = p
 end
 
 local function dispatch_tcp(cmd)
@@ -16,7 +16,7 @@ local function dispatch_tcp(cmd)
 end
 
 tcp_map["dbsync"] = function(p) 
-	log.info("db change, reolad. %s", js.encode(p))
+	print(js.encode(p))
 end
 
 return {init = init, dispatch_tcp = dispatch_tcp}

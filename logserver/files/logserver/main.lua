@@ -20,7 +20,7 @@ local maxfiles = 5
 local max_logsize = 1024 * 200
 local max_cache, flush_timeout = 10, 5
 
-local logdir = "/tmp/ugw/log"
+local logdir = "/tmp/log"
 local function openlog()
 	if not gfp then
 		local path, e = string.format("%s/log.current", logdir)
