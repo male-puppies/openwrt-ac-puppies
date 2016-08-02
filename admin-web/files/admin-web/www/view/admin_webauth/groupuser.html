@@ -1,0 +1,197 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>用户管理</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="../../css/jquery.datetimepicker.css" />
+<link rel="stylesheet" href="../../css/manage.css" />
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/jquery.cookie.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<script src="../../js/black/jquery.dataTables.min.js"></script>
+<script src="../../js/black/jquery.datetimepicker.js"></script>
+<script src="../../js/jquery.ext.verify.js"></script>
+<script src="../../js/commin.js"></script>
+<script src="../../js/groupuser.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/black/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix">
+			<table id="table_groupuser" class="table table-striped table-bordered" cellspacing="0" width="100%">
+				<thead>
+					<tr>
+						<th>序号</th>
+						<th>上网账号</th>
+						<th>地址绑定</th>
+						<th>有效期</th>
+						<th>剩余时间</th>
+						<th>状态</th>
+						<th>操作</th>
+						<th data-toggle="tooltip" data-container="body" data-trigger="hover" title="仅勾选当前页"><input type="checkbox" class="checkall" value="1 0" /></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td colspan="8"></td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="btn-group">
+				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+				<a class="btn btn-default delete" value=""><i class="icon-trash"></i>删除</a>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<!-- modal Start -->
+<div id="modal_edit" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">添加用户</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal">
+					<fieldset>
+						<legend>基本配置</legend>
+						<div class="form-group clearfix">	
+							<label class="col-xs-4 control-label" for="enable">启用</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="enable" value="1 0" /></label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="name">账号</label>
+							<div class="col-xs-5">
+								<input type="text" id="name" class="form-control" verify="name" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="desc">描述</label>
+							<div class="col-xs-5">
+								<input type="text" id="desc" class="form-control" verify="desc" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入字符串长度小于32个字符，不超过十个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="pwd">密码</label>
+							<div class="col-xs-5">
+								<input type="password" id="pwd" class="form-control" verify="pwd" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip showlock" data-toggle="tooltip" data-placement="bottom" title="显示/隐藏密码"><i class="icon-lock icon-large"></i></span>
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含数字、字母和下划线。长度范围4~32个字符。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+					</fieldset>
+					
+					<fieldset>
+						<legend>高级设置</legend>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="bind">仅限以下MAC使用</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label style="display:block;min-height:23px;"><input type="checkbox" id="bind" value="mac none" /></label>
+								</div>
+								<div class="checkbox">
+									<textarea class="form-control empty" disabled="disabled" id="maclist" verify="macs"></textarea>
+								</div>
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入MAC，每行一个，不允许多余空格和回车，例如：&#10;00:11:22:33:44:55。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="multi">允许多用户使用</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="multi" value="1 0" /></label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="expire">过期时间</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="expire" value="1 0" /></label>
+								</div>
+								<div class="checkbox">
+									<input class="form-control empty" type="text" disabled="disabled" readonly="readonly" id="expire_text" verify="notspace" />
+								</div>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="remain">剩余时间</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="remain" value="1 0" /></label>
+								</div>
+								<div class="checkbox">
+									<input type="text" id="remain_t1" class="form-control" style="width:56px;display:inline;" disabled="disabled" value="0" verify="num" />天
+									<input type="text" id="remain_t2" class="form-control" style="width:56px;display:inline;" disabled="disabled" value="0" verify="num 0 23" />时
+									<input type="text" id="remain_t3" class="form-control" style="width:56px;display:inline;" disabled="disabled" value="0" verify="num 0 59" />分
+								</div>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<div class="pull-right">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-zx" onclick="DoSave();">保存</button>
+				</div>
+				<div class="tip"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- modal End -->
+</body>
+</html>

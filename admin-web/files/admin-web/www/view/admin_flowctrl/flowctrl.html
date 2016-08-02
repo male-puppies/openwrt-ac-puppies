@@ -1,0 +1,224 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>流量控制</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="../../css/manage.css" />
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/jquery.cookie.js"></script>
+<script src="../../js/black/json2.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<script src="../../js/black/jquery.dataTables.min.js"></script>
+<script src="../../js/jquery.ext.verify.js"></script>
+<script src="../../js/commin.js"></script>
+<script src="../../js/flowctrl.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/black/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> 流量控制</span>
+				<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="请输入0-16000的数值。"><i class="icon-question-sign"></i></span>
+			</div>
+			<form class="form-horizontal">
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="GlobalSharedUpload">总出口上传配置</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="GlobalSharedUpload" class="form-control" verify="num 0 16000" />
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="units">Mbps</span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="GlobalSharedDownload">总出口下载配置</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="GlobalSharedDownload" class="form-control" verify="num 0 16000" />
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="units">Mbps</span>
+					</div>
+				</div>
+			</form>
+			<div class="main-bottom">
+				<div class="btn-group">
+					<a class="btn btn-zx submit"><i class="icon-save"></i>保存</a>
+				</div>
+			</div>
+		</div>
+
+		<div class="main-wrapper clearfix">
+			<table id="table_flowctrl" class="table table-striped table-bordered" cellspacing="0" width="100%">
+				<thead>
+					<tr>
+						<th>序号</th>
+						<th>名称</th>
+						<th>地址范围</th>
+						<th>共享下载</th>
+						<th>共享上传</th>
+						<th>单机下载</th>
+						<th>单机上传</th>
+						<th>状态</th>
+						<th>操作</th>
+						<th data-toggle="tooltip" data-container="body" data-trigger="hover" title="仅勾选当前页"><input type="checkbox" class="checkall" value="1 0" /></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td colspan="10"></td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="btn-group">
+				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+				<a class="btn btn-default delete"><i class="icon-trash"></i>删除</a>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<!-- modal Start -->
+<div id="modal_edit" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">流量控制配置</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal">
+					<fieldset>
+						<legend>基本配置</legend>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="Enabled">启用</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="Enabled" value="true false" /></label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="Name">名称</label>
+							<div class="col-xs-5">
+								<input type="text" id="Name" class="form-control" verify="name" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="Ip">地址范围</label>
+							<div class="col-xs-5">
+								<input type="text" id="Ip" class="form-control" verify="ips" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="支持单个IP地址或地址范围。例如：&#10;192.168.0.100 或者&#10;192.168.0.1-192.168.0.255。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+					</fieldset>
+					
+					<fieldset>
+						<legend>流量配置<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="请输入0-2000000的数值。"><i style="font-size:14px;padding-left:10px;" class="icon-question-sign"></i></span></legend>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="SharedDownload">共享下载</label>
+							<div class="col-xs-5">
+								<input type="text" id="SharedDownload" class="form-control" maxlength="7" verify="num 0 2000000" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<select id="SharedDownload_Unit" class="form-control" style="width:80px;">
+									<option selected="selected" value="KBytes">KBytes</option>
+									<option value="MBytes">MBytes</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="SharedUpload">共享上传</label>
+							<div class="col-xs-5">
+								<input type="text" id="SharedUpload" class="form-control" maxlength="7" verify="num 0 2000000" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<select id="SharedUpload_Unit" class="form-control" style="width:80px;">
+									<option selected="selected" value="KBytes">KBytes</option>
+									<option value="MBytes">MBytes</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="PerIpDownload">单机下载</label>
+							<div class="col-xs-5">
+								<input type="text" id="PerIpDownload" class="form-control" maxlength="7" verify="num 0 2000000" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<select id="PerIpDownload_Unit" class="form-control" style="width:80px;">
+									<option selected="selected" value="KBytes">KBytes</option>
+									<option value="MBytes">MBytes</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="PerIpUpload">单机上传</label>
+							<div class="col-xs-5">
+								<input type="text" id="PerIpUpload" class="form-control" maxlength="7" verify="num 0 2000000" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<select id="PerIpUpload_Unit" class="form-control" style="width:80px;">
+									<option selected="selected" value="KBytes">KBytes</option>
+									<option value="MBytes">MBytes</option>
+								</select>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<div class="pull-right">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-zx" onclick="DoSave();">保存</button>
+				</div>
+				<div class="tip"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- modal End -->
+</body>
+</html>
+
+			

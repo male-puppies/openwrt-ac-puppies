@@ -1,0 +1,154 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>新用户认证方式</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="../../css/manage.css" />
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/jquery.cookie.js"></script>
+<script src="../../js/black/json2.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<script src="../../js/black/jquery.dataTables.min.js"></script>
+<script src="../../js/jquery.ext.verify.js"></script>
+<script src="../../js/commin.js"></script>
+<script src="../../js/authpolicy.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/black/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> Portal认证选项</span>
+			</div>
+			<form class="form-horizontal">
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="AuthUrl">成功后重定向至</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="AuthUrl" class="form-control" />
+					</div>
+				</div>
+			</form>
+			<div class="main-bottom">
+				<div class="btn-group">
+					<a class="btn btn-zx submit"><i class="icon-save"></i>保存</a>
+				</div>
+			</div>
+		</div>
+		
+		<div class="main-wrapper clearfix">
+			<table id="table_authpolicy" class="table table-striped table-bordered" cellspacing="0" width="100%">
+				<thead>
+					<tr>
+						<th>序号</th>
+						<th>认证名</th>
+						<th>IP范围</th>
+						<th>认证方式</th>
+						<th>调整优先级</th>
+						<th>操作</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td colspan="6"></td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="btn-group">
+				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<!-- modal Start -->
+<div id="modal_edit" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">认证方式配置</h4>
+			</div>
+			<div class="modal-body">
+				<form class="form-horizontal">
+					<fieldset>
+						<legend>基本配置</legend>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="name">认证名</label>
+							<div class="col-xs-5">
+								<input type="text" id="name" class="form-control" verify="name" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="iprange">IP范围</label>
+							<div class="col-xs-5">
+								<input type="text" id="iprange" class="form-control" verify="ips" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="指定‘自动认证用户’自动划分到哪个组，&#10;支持单个IP地址或地址范围。例如：&#10;192.168.0.100 或者&#10;192.168.0.1-192.168.0.255。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label">认证方式</label>
+							<div class="col-xs-5">
+								<div class="radio">
+									<label><input type="radio" id="type" name="type" checked="checked" value="auto" />自动认证</label>
+								</div>
+								<div class="radio">
+									<label><input type="radio" name="type" value="web" />Portal认证</label>
+								</div>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="modal-footer">
+				
+				<div class="pull-right">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-zx" onclick="DoSave();">保存</button>
+				</div>
+				<div class="tip"></div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

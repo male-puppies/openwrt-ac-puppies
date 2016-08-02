@@ -1,0 +1,88 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>免认证白名单</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/manage.css" />
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/jquery.cookie.js"></script>
+<script src="../../js/black/json2.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<script src="../../js/commin.js"></script>
+<script src="../../js/jquery.ext.verify.js"></script>
+<script src="../../js/authwhite.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/black/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> 微信认证白名单</span>
+				<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="一行一个，进行微信认证时的放通列表。"><i class="icon-question-sign"></i></span>
+			</div>
+			
+			<form class="form-horizontal">
+				<textarea class="form-control" id="auth_white" rows="10" verify="authwhite">获取信息中......</textarea>
+			</form>
+			
+			<div class="main-bottom">
+				<div class="btn-group">
+					<a class="btn btn-zx submit"><i class="icon-save"></i>保存</a>
+				</div>
+			</div>
+		</div>
+		
+		<div class="main-wrapper clearfix" style="display:none;">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> 微信认证白名单</span>
+				<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="一行一个，支持IP和网站URL，列表中的内网主机无需认证也可上网，列表中的目标主机或网站未认证用户也可访问。"><i class="icon-question-sign"></i></span>
+			</div>
+			
+			<form class="form-horizontal">
+				<textarea class="form-control" id="wechat_white" rows="10" verify="authwhite">获取信息中......</textarea>
+			</form>
+			
+			<div class="main-bottom">
+				<div class="btn-group">
+					<a class="btn btn-zx wsubmit"><i class="icon-save"></i>保存</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

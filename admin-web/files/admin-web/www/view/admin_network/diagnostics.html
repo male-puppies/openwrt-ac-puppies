@@ -1,0 +1,107 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>网络诊断</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/manage.css" />
+<style>
+.diag {
+	margin: 20px 0;
+}
+#result {
+	display: none;
+	margin: 20px 0;
+}
+#result span {
+	background-color: #f5f5f5;
+	display: block;
+	padding: 8.5px;
+	line-height: 18px;
+	font-size: 12px;
+	border: 1px solid #ccc;
+	border: 1px solid rgba(0, 0, 0, 0.15);
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	white-space: pre;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+</style>
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/jquery.cookie.js"></script>
+<script src="../../js/black/json2.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<script src="../../js/jquery.ext.verify.js"></script>
+<script src="../../js/commin.js"></script>
+<script src="../../js/diagnostics.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/black/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix lan0">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> 网络工具</span>
+			</div>
+			<form class="form-horizontal clearfix">
+				<div class="col-md-4">
+					<div class="input-group diag">
+						<input id="DiagPing" type="text" class="form-control ping" value="baidu.com" />
+						<span class="input-group-btn">
+							<a class="btn btn-zx" onclick="OnDiag(this);"><i class="icon-refresh"></i> Ping</a>
+						</span>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div class="input-group diag">
+						<input id="DiagTraceroute" type="text" class="form-control ping" value="baidu.com" />
+						<span class="input-group-btn">
+							<a class="btn btn-zx" onclick="OnDiag(this);"><i class="icon-refresh"></i> Traceroute</a>
+						</span>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div class="input-group diag">
+						<input id="DiagNslookup" type="text" class="form-control ping" value="baidu.com" />
+						<span class="input-group-btn">
+							<a class="btn btn-zx" onclick="OnDiag(this);"><i class="icon-refresh"></i> Nslookup</a>
+						</span>
+					</div>
+				</div>
+			</form>
+			
+			<div id="result" class="clearfix">
+				<div class="col-md-12">
+					<span>--</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<!-- spin -->
+<div id="modal_spin" class="modal fade">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-body">
+				<i class="icon-spin icon-spinner icon-4x"></i>
+				<p>Loading...</p>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>短信管理</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/manage.css" />
+<style>
+.account-tips {
+	display: none;
+    padding-left: 20px;
+    color: #d9534f;
+    font-weight: normal;
+}
+.expire {
+	width: 25%;
+	display: inline;
+}
+#counter__success {
+	margin-right: 10px;
+}
+</style>
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/jquery.cookie.js"></script>
+<script src="../../js/black/json2.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<script src="../../js/jquery.ext.verify.js"></script>
+<script src="../../js/commin.js"></script>
+<script src="../../js/authsms.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/black/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">	
+		<div class="main-wrapper clearfix">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> 基础选项<b class="account-tips">该配置已启用云端管理，请在云端进行配置管理</b></span>
+			</div>
+			<form class="form-horizontal">
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="sms">启用短信认证</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<div class="checkbox">
+							<label><input type="checkbox" id="sms" value="1 0" /></label>
+						</div>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="type">认证短信提供商</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<select id="type" class="form-control">
+							<option value="1">吉信通</option>
+							<!--option value="2">网信通</option>
+							<option value="3">集时通</option-->
+							<option value="4">其它</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="sno">认证短信发送账号</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="sno" class="form-control" maxlength="32" verify="notspace" />
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="pwd">认证短信发送密码</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="password" id="pwd" class="form-control" maxlength="32" verify="notspace" />
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="icon-tip showlock" data-toggle="tooltip" data-placement="bottom" title="显示/隐藏密码"><i class="icon-lock icon-large"></i></span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label">认证码有效期</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="expire1" class="form-control expire" value="0" verify="num" />天
+						<input type="text" id="expire2" class="form-control expire" value="0" verify="num 0 23" />时
+						<input type="text" id="expire3" class="form-control expire" value="0" verify="num 0 59" />分
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="sign">认证短信发送签名</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="sign" class="form-control" maxlength="16" verify="notspace" />
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="一般为短信内容发送方名称，附在短信最末尾。"><i class="icon-question-sign"></i></span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="msg">认证短信发送内容</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<textarea type="text" id="msg" class="form-control" style="padding:6px 4px" maxlength="199" verify="notspace"></textarea>
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="计费标准：每70字按一条计费，总字数不超过200字。"><i class="icon-question-sign"></i></span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label">认证短信发送条数</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						成功：<input type="text" id="counter__success" class="form-control expire" disabled="disabled" value="0" />
+						失败：<input type="text" id="counter__fail" class="form-control expire" disabled="disabled" value="0"  />
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3  tip-icons">
+						<input type="button" class="btn btn-zx smsreset" value="清零" />
+					</div>
+				</div>
+			</form>
+		</div>
+		<div class="main-wrapper clearfix" style="padding:10px 20px">
+			<div class="btn-group">
+				<a class="btn btn-zx submit"><i class="icon-save"></i>保存</a>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

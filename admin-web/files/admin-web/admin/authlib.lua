@@ -46,6 +46,29 @@ local function validate_token(token)
 	return true
 end
 
+local token_update_code = [[
+	local pc, index, token, ttl = redis.call, ARGV[1], ARGV[2], ARGV[3]
+	local r = pc("SELECT", index) 		assert(r.ok == "OK")
+	r = pc("EXPIRE", "admin_" .. token, ttl)
+	return r
+]]
+
+local function validate_update_token(token)
+	local r, e = validate_token(token)
+	if not r then 
+		return nil, e 
+	end 
+
+	local r, e = rds.query(function(rds) 
+		return rds:eval(token_update_code, 0, auth_index, token, 1800) 
+	end)
+
+	if tonumber(r) == 1 then 
+		return true 
+	end 
+
+	return nil, "expire fail"
+end
 
 local function gen_validate_num(min, max)
 	return function(v) 
@@ -170,6 +193,7 @@ return {
 	gen_validate_num = gen_validate_num,
 	gen_validate_str = gen_validate_str,
 	check_method_token = check_method_token,
+	validate_update_token = validate_update_token,
 }
 
 
