@@ -2,14 +2,20 @@ server {
 	listen 80 default_server;
 	server_name _;
 
-	location / {
-		root /usr/share/admin-web/www;
-		index index.html index.htm;
+	location = / {
+		default_type 'text/plain';
+		rewrite_by_lua_block {
+			ngx.redirect("/view/admin_status/index.html?" .. os.time())
+		}
 	}
 
-	location /admin-web/cgi-bin/ {
-		default_type text/html;
-		content_by_lua_file /usr/share/admin-web/lua/admin.lua;
+	location ~ /.*.html {
+		root  	/usr/share/admin-web/www;
+		index	index.html index.htm;
+	}
+	
+	location ~ /.*.(js|css|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$ {
+		root  	/usr/share/admin-web/www;
 	}
 	
 	location /rpc {
