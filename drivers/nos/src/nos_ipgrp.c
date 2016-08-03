@@ -115,7 +115,7 @@ static inline int nos_ipgrp_delete(const struct ip_grp_t *ipgrp)
 uint64_t nos_ipgrp_match_src(const struct net_device *in, const struct net_device *out, struct sk_buff *skb)
 {
 	int i;
-	unsigned long bits = 0;
+	uint64_t bits = 0;
 
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
@@ -131,7 +131,7 @@ uint64_t nos_ipgrp_match_src(const struct net_device *in, const struct net_devic
 uint64_t nos_ipgrp_match_dst(const struct net_device *in, const struct net_device *out, struct sk_buff *skb)
 {
 	int i;
-	unsigned long bits = 0;
+	uint64_t bits = 0;
 
 	for (i = 0; i < ipgrp_conf.num; i++)
 	{
