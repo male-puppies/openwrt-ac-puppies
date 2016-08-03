@@ -14,7 +14,7 @@ local modules = {
 	-- web = 		require("web"),
 	-- sms = 		require("sms"),
 	iface = 	require("iface"),
-	-- zone = 		require("zone"),
+	ipgroup = 	require("ipgroup"),
 	dbevent = 	require("dbevent"),
 }
 

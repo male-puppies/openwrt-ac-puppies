@@ -1,13 +1,17 @@
 local js = require("cjson.safe")
 local rds = require("common.rds")
+local query = require("common.query")
+
 local r1 = require("common.log").real1
 
 local function reply_e(e)
 	ngx.say(js.encode({status = 1, data = e}))
+	return true
 end
 
 local function reply(d)
 	ngx.say(js.encode({status = 0, data = d}))
+	return true
 end
 
 local function check_method_token(expect_method, token)
@@ -68,6 +72,53 @@ local function validate_update_token(token)
 	end 
 
 	return nil, "expire fail"
+end
+
+
+
+local mysql_select_code = [[
+    local myconn = require("mgr").ins().myconn
+    return myconn:select(arg)
+]]
+
+local function mysql_select_common(sql, code, timeout)
+	return query.query_u("127.0.0.1", 51234, {cmd = "rpc", k = "mysql_select_code", p = sql, f = code, r = 1}, timeout or 3000)
+end
+
+local function mysql_select(sql, timeout)
+	local r, e = mysql_select_common(sql, nil, timeout)
+	if not r then 
+		return nil, e 
+	end 
+	
+	local r, e = js.decode(r)   
+	if not r then 
+		return nil, e
+	end
+
+	if not r.e then
+		return r.d
+	end
+
+	if r.d ~= "miss" then 
+		return nil, r.d 
+	end
+
+	local r, e = mysql_select_common(sql, mysql_select_code, timeout)
+	if not r then 
+		return nil, e 
+	end 
+
+	local r, e = js.decode(r)
+	if not r then 
+		return nil, e
+	end
+
+	if not r.e then
+		return r.d 
+	end
+
+	return nil, r.d
 end
 
 local function gen_validate_num(min, max)
@@ -133,7 +184,7 @@ local function validate_get(fields)
 	if page or count then 
 		if not (page and count) then 
 			return nil, "invalid limit"
-		end 
+		end
 	end
 
 	local search, like = m.search, m.like
@@ -184,9 +235,40 @@ local function validate_post(fields)
 	return m
 end
 
+local function search_opt(m, valids)
+	local order_fields, search_fields = valids.order, valids.search
+
+	local p = ngx.req.get_uri_args()
+	local order, desc = p.order, p.desc 
+	if not (order and order_fields[order]) then 
+		order, desc = nil 
+	end 
+
+	local search, like = p.search, p.like
+	if not (search and search_fields[search] and like and like:find("^[%w-_.]*$")) then 
+		search, like = nil 
+	end
+
+	m.order, m.desc, m.search, m.like = order, desc, search, like
+	return m 
+end
+
+local function search_cond(m)
+	local page, count, order, desc, search, like = m.page, m.count, m.order, m.desc, m.search, m.like
+    
+	local order_s = order and string.format("order by %s %s", order, desc and "desc" or "") or ""
+	local limit_s = string.format("limit %s,%s", (page - 1) * count, count)
+	local like_s = search and string.format("%s like '%%%s%%'", search, like)
+
+	return {order = order_s, limit = limit_s, like = like_s}
+end
+
 return { 
 	reply = reply,
 	reply_e = reply_e,
+	search_opt = search_opt,
+	search_cond = search_cond,
+	mysql_select = mysql_select,
 	validate_get = validate_get,
 	validate_post = validate_post,
 	validate_token = validate_token,
