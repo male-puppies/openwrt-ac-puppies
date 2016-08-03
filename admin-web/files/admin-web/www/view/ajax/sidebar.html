@@ -139,15 +139,15 @@ $("header ul.nav").on("click", "ul.dropdown-menu li", function() {
 });
 
 $(".sign_out").on("click", function() {
-	$.cookie('md5psw', '', {expires: -1, path: "/"});
+	$.cookie('token', '', {expires: -1, path: "/"});
 	window.location.href = "/login/admin_login/login.html";
 });
 
 $(function() {
 	var footer = '<div class="footer">Copyright © 2016 YXA10015907</div>'
 	$("body > .main").append(footer);
-	var loginid = $.cookie("loginid")
-	ucicall("UpdateLoginTime", loginid, function(){});
+	var refresh = $.cookie("refresh")
+	ucicall("UpdateLoginTime", refresh, function(){});
 })
 </script>
 <!-- header sidebar End -->

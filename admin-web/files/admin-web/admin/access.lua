@@ -17,7 +17,7 @@ if not cookie then
 end
 
 cookie = cookie .. ";"
-local token = cookie:match("token=(.-);") or cookie:match("md5psw=(.-);")
+local token = cookie:match("token=(.-);")
 local r, e = authlib.check_method_token("GET", token)
 if not r then
 	return redirect()

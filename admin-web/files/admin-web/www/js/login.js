@@ -38,8 +38,8 @@ function OnSubmit() {
 		"/v1/admin/api/login?username=" + username + "&password=" + password,
 		function(d) {
 			if (d.status == 0 && typeof d.data == "object" && typeof d.data.token != "undefined" && typeof d.data.refresh != "undefined") {
-				$.cookie('md5psw', d.data.token, {path: "/"});
-				$.cookie('loginid', d.data.refresh, {path: "/"});
+				$.cookie('token', d.data.token, {path: "/"});
+				$.cookie('refresh', d.data.refresh, {path: "/"});
 				if ($(".remember").is(":checked")) {
 					$.cookie('login_user', username, {expires: 7, path: "/"});
 					$.cookie('login_pwd', password, {expires: 7, path: "/"});

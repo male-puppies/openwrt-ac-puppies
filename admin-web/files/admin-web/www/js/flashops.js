@@ -71,7 +71,7 @@ function DoUpload() {
 		$("#modal_spin").modal("show");
 	});
 	ucicall("UploadBackup", function(d) {
-		$.cookie('md5psw', '', {expires: -1, path: "/"});
+		$.cookie('token', '', {expires: -1, path: "/"});
 		setTimeout(funcall, 12000);
 	});
 	
@@ -94,7 +94,7 @@ function DoBrush() {
 			} else {
 				$("#modal_spin .modal-body p").html("正在进行升级！<br>请稍候...");
 				$("#modal_spin").modal("show");
-				$.cookie('md5psw', '', {expires: -1, path: "/"});
+				$.cookie('token', '', {expires: -1, path: "/"});
 				setTimeout(funcall, 12000);
 			}
 		});
@@ -109,7 +109,7 @@ function DoReset() {
 	});
 
 	ucicall("ConfReset", function(d) {
-		$.cookie('md5psw', '', {expires: -1, path: "/"});
+		$.cookie('token', '', {expires: -1, path: "/"});
 		setTimeout(funcall, 12000);
 	});
 }

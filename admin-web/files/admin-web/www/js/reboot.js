@@ -15,7 +15,7 @@ function DoReboot() {
 	$("#modal_tips").one("hidden.bs.modal", function() {
 		ucicall("SysReboot", function(d) {
 			$("#modal_spin").modal("show");
-			$.cookie('md5psw', '', {expires: -1, path: "/"});
+			$.cookie('token', '', {expires: -1, path: "/"});
 			setTimeout(funcall, 12000);
 		});
 	});

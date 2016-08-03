@@ -58,7 +58,7 @@ function OnRefresh() {
 	var myDate = new Date();
 	var times = myDate.toLocaleDateString().replace(/\//g, "-") + " " + myDate.getHours() + ":" + myDate.getMinutes() + ":" + myDate.getSeconds();
 	
-	obj.loginid = $.cookie("loginid");
+	obj.refresh = $.cookie("refresh");
 	obj.times = times;
 	
 	$(".refresh i").addClass("icon-spin");

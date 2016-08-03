@@ -40,7 +40,7 @@ function OnSubmit() {
 	ucicall("SetPassword", obj, function(d) {
 		if (typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 0) {
 			createModalTips("保存成功！");
-			$.cookie('md5psw', d.data, {path: "/"});
+			$.cookie('token', d.data, {path: "/"});
 			initData();
 		} else {
 			createModalTips("保存失败！" + (d.data ? d.data : ""));
