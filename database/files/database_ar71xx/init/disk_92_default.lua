@@ -35,6 +35,7 @@ cmd_map.kv = {
 		end
 
 		local new_map = {
+			{k = "bypass_dst", v = "[]"},
 			{k = "offline_time", v = "1800"},
 			{k = "redirect_ip", v = "1.0.0.8"},
 			{k = "no_flow_timeout", v = "1800"},

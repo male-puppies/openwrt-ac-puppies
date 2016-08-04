@@ -40,6 +40,47 @@ function method:transaction(f)
 	return nil, e
 end
 
+function method:update_format(m)
+	local arr, conn = {}, self.conn
+	for k, v in pairs(m) do 
+		table.insert(arr, string.format("%s='%s'", k, conn:escape(v)))
+	end 
+	return table.concat(arr, ",")
+end
+
+function method:insert_format(m)
+	local fields = {}
+	for field in pairs(m) do 
+		table.insert(fields, field)
+	end
+
+	local arr, conn = {}, self.conn
+	for _, field in ipairs(fields) do 
+		table.insert(arr, string.format("'%s'", conn:escape(m[field])))
+	end 
+
+	return string.format("(%s)", table.concat(fields, ",")), string.format("(%s)", table.concat(arr, ","))
+end
+
+function method:next_id(ids, max)
+	table.sort(ids)
+	if #ids == max then 
+		return nil, "full"
+	end
+
+	if #ids == 0 then
+		return 0 
+	end 
+
+	for i, v in ipairs(ids) do 
+		local vv = i - 1
+		if v > vv then 
+			return vv
+		end
+	end
+
+	return #ids 
+end
 function new(diskpath, attaches)
 	local conn, err = env:connect(diskpath) 	assert(conn, err)
 	
