@@ -23,17 +23,17 @@ local function load_board()
 	return {ports = port_map, options = options, networks = networks}
 end
 
-local m = load_board()
-local s = js.encode(m)
+local board = load_board()
+--local s = js.encode(m)
 --print(s)
 
 local network = {}
 
-if m.options[1] then
-	network.name = m.options[1].name
+if board.options[1] then
+	network.name = board.options[1].name
 	network.network = {}
-	for ifname, ports in pairs(m.options[1].map) do
-		network.network[ifname] = m.networks[ifname]
+	for ifname, ports in pairs(board.options[1].map) do
+		network.network[ifname] = board.networks[ifname]
 		network.network[ifname].ports = ports
 	end
 end

@@ -3,6 +3,7 @@
         {
             "ifname": "eth1",
             "type": "switch",
+            "device": "switch0",
             "outer_ports": [
                 {
                     "num": 1,
@@ -26,6 +27,7 @@
         {
             "ifname": "eth0",
             "type": "ether",
+            "device": "eth0",
             "outer_ports": [
                 {
                     "num": 1,
