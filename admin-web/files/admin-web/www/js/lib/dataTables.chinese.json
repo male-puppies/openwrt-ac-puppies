@@ -1,0 +1,24 @@
+{
+    "sProcessing":   "处理中&nbsp;&nbsp;&nbsp;&nbsp;<i class='icon-spinner icon-spin icon-large'></i>",
+    "sLengthMenu":   "每页展示　_MENU_",
+    "sZeroRecords":  "没有匹配结果",
+    "sInfo":         "第 _START_ 至 _END_ 条结果　总共 _TOTAL_ 条",
+    "sInfoEmpty":    "第 0 至 0 条　总共 0 条",
+    "sInfoFiltered": "(由 _MAX_ 条结果过滤)",
+    "sInfoPostFix":  "",
+    "sSearch":       "查找 ",
+    "sUrl":          "",
+    "sEmptyTable":     "表中数据为空",
+    "sLoadingRecords": "<i class='icon-spinner icon-spin' style='font-size:22px'></i>",
+    "sInfoThousands":  ",",
+    "oPaginate": {
+        "sFirst":    "第一页",
+        "sPrevious": "上一页",
+        "sNext":     "下一页",
+        "sLast":     "最后一页"
+    },
+    "oAria": {
+        "sSortAscending":  ": 以升序排列此列",
+        "sSortDescending": ": 以降序排列此列"
+    }
+}

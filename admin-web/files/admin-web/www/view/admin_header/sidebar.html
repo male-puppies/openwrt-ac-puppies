@@ -76,12 +76,13 @@
 					<li class="dropdown">
 						<a class="menu icon-07" href="javascript:;"><img class="icon" src="../../images/header-icon-07.png" />系统</a>
 						<ul class="dropdown-menu">
-							<li><a href="/view/admin_system/system.html"><i></i>系统</a></li>
-							<li><a href="/view/admin_system/password.html"><i></i>密码修改</a></li>
-							<li><a href="/view/admin_system/flashops.html"><i></i>备份/升级</a></li>
-							<li><a href="/view/admin_system/reboot.html"><i></i>重启</a></li>
+							<li><a href="/admin/view/admin_system/system.html"><i></i>系统</a></li>
+							<li><a href="/admin/view/admin_system/password.html"><i></i>密码修改</a></li>
+							<li><a href="/admin/view/admin_system/flashops.html"><i></i>备份/升级</a></li>
+							<li><a href="/admin/view/admin_system/reboot.html"><i></i>重启</a></li>
 						</ul>
 					</li>
+					<a class="dropdown menu icon-08" href="/admin/view/admin_system/wizard.html"><img class="icon" src="../../images/header-icon-08.png" />设置向导</a>
 				</ul>
 				<!--
 				<div class="footing-title">
@@ -140,15 +141,15 @@ $("header ul.nav").on("click", "ul.dropdown-menu li", function() {
 });
 
 $(".sign_out").on("click", function() {
-	$.cookie('token', '', {expires: -1, path: "/"});
-	window.location.href = "/login/admin_login/login.html";
+	$.cookie('md5psw', '', {expires: -1, path: "/"});
+	window.location.href = "/admin/login/admin_login/login.html";
 });
-
+/*
 $(function() {
 	var footer = '<div class="footer">Copyright © 2016 YXA10015907</div>'
 	$("body > .main").append(footer);
-	var refresh = $.cookie("refresh")
-	ucicall("UpdateLoginTime", refresh, function(){});
-})
+	var loginid = $.cookie("loginid")
+	ucicall("UpdateLoginTime", loginid, function(){});
+})*/
 </script>
 <!-- header sidebar End -->
