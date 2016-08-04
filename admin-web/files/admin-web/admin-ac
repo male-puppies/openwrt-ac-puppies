@@ -15,7 +15,7 @@ server {
 		access_by_lua_file /usr/share/admin-web/admin/access.lua;
 	}
 	
-	location ~ /.*.(js|css|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$ {
+	location ~ /.*.(js|css|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma|otf|eot|svg|ttf|woff)$ {
 		root  	/usr/share/admin-web/www;
 	}
 	
