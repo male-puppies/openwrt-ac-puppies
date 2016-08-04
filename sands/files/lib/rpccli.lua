@@ -43,7 +43,7 @@ function method:fetch(name, f, arg)
 end
 
 function method:once(f, arg)
-	assert(type(bt) == "string")
+	assert(type(f) == "string")
 	local data = {cmd = "rpc", p = arg, f = f, r = 1}
 	local r, e = self.proxy:query(self.topic, data)
 	if e then 

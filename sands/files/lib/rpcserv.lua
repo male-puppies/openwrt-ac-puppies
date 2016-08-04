@@ -7,7 +7,7 @@ local function reply(d)
 	return type(d) == "table" and js.encode(d) or d
 end
 
-local function execute(f, p, r)
+local function execute(f, p, ret)
 	if p then 
 		_G["arg"] = p 
 	end
@@ -21,7 +21,7 @@ local function execute(f, p, r)
 	else 
 		res = {d = m}
 	end
-	return r and js.encode(res) or nil
+	return ret and js.encode(res) or nil
 end
 
 function method:execute(rpc)
