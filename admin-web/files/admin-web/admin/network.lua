@@ -1,75 +1,9 @@
 local js = require("cjson.safe")
 local common = require("common")
+local authlib = require("admin.authlib")
+
 local arr2map = common.arr2map
-local s = [[
-{
-            "name": "custom",
-            "network": {
-                "lan0": {
-                    "mac": "00:00:00:00:00:01",
-                    "proto": "static",
-                    "dns": "",
-                    "mtu": "",
-                    "ports": [
-                        1,
-                        2,
-                        3,
-                        4
-                    ],
-                    "pppoe_account": "",
-                    "pppoe_password": "",
-                    "gateway": "",
-                    "dhcpd": {
-                        "enabled": 1,
-                        "leasetime": "12h",
-                        "dns": "172.16.0.1",
-                        "end": "172.16.200.254",
-                        "start": "172.16.0.100",
-                        "staticlease": {},
-                        "dynamicdhcp": 1
-                    },
-                    "metric": "",
-                    "ipaddr": "172.16.0.1/16"
-                },
-                "wan0": {
-                    "mac": "00:00:00:00:00:01",
-                    "proto": "dhcp",
-                    "dns": "",
-                    "mtu": "",
-                    "ports": [
-                        5
-                    ],
-                    "pppoe_account": "",
-                    "pppoe_password": "",
-                    "gateway": "",
-                    "dhcpd": {
-                        "enabled": 0,
-                        "leasetime": "12h",
-                        "dns": "",
-                        "end": "",
-                        "start": "",
-                        "staticlease": {},
-                        "dynamicdhcp": 1
-                    },
-                    "metric": "",
-                    "ipaddr": ""
-                }
-            }
-        }
-]]
-
-
-local mac_pattern = (function()
-	local arr = {}
-	for i = 1, 6 do table.insert(arr, "[0-9a-zA-z][0-9a-zA-z]") end 
-	return string.format("^%s$", table.concat(arr, ":"))
-end)()
-
-local ip_pattern = (function()
-	local arr = {}
-	for i = 1, 4 do table.insert(arr, "[0-9][0-9]?[0-9]?") end 
-	return string.format("^%s$", table.concat(arr, "%."))
-end)()
+local ip_pattern, mac_pattern = authlib.ip_pattern, authlib.mac_pattern
 
 local validate_map = {
 	mac = function(v) 

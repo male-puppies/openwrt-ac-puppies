@@ -70,7 +70,7 @@ local function cache_auth(r)
 		perm = r.perm,
 		token = token, 
 		rtoken = refreshtoken,
-		timeout = 1800,
+		timeout = 3600,
 	}
 
 	local s = js.encode(args)

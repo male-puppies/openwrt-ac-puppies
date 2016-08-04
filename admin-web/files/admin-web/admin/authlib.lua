@@ -64,7 +64,7 @@ local function validate_update_token(token)
 	end 
 
 	local r, e = rds.query(function(rds) 
-		return rds:eval(token_update_code, 0, auth_index, token, 1800) 
+		return rds:eval(token_update_code, 0, auth_index, token, 3600) 
 	end)
 
 	if tonumber(r) == 1 then 
@@ -263,9 +263,23 @@ local function search_cond(m)
 	return {order = order_s, limit = limit_s, like = like_s}
 end
 
+local mac_pattern = (function()
+    local arr = {}
+    for i = 1, 6 do table.insert(arr, "[0-9a-zA-z][0-9a-zA-z]") end 
+    return string.format("^%s$", table.concat(arr, ":"))
+end)()
+
+local ip_pattern = (function()
+    local arr = {}
+    for i = 1, 4 do table.insert(arr, "[0-9][0-9]?[0-9]?") end 
+    return string.format("^%s$", table.concat(arr, "%."))
+end)()
+
 return { 
 	reply = reply,
 	reply_e = reply_e,
+	ip_pattern = ip_pattern,
+	mac_pattern = mac_pattern,
 	search_opt = search_opt,
 	search_cond = search_cond,
 	mysql_select = mysql_select,

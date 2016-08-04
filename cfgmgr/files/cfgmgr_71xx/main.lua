@@ -12,7 +12,7 @@ js.encode_sparse_array(true)
 local read = common.read 
 local modules = {
 	-- web = 		require("web"),
-	-- sms = 		require("sms"),
+	authrule = 	require("authrule"),
 	iface = 	require("iface"),
 	ipgroup = 	require("ipgroup"),
 	dbevent = 	require("dbevent"),

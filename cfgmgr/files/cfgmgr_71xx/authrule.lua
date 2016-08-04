@@ -29,21 +29,29 @@ local function dispatch_udp(cmd, ip, port)
 	end
 end
 
-udp_map["ipgroup_set"] = function(p, ip, port)
+udp_map["authrule_set"] = function(p, ip, port)
 	local code = [[
 		local ins = require("mgr").ins()
 		local conn, ud, p = ins.conn, ins.ud, arg
+		local rid, rulename = p.rid, p.rulename
 
-		-- check ipgid exists and dup ipgrpname
-		local ipgid, ipgrpname, ipgrpdesc, ranges = arg.ipgid, arg.ipgrpname, arg.ipgrpdesc, arg.ranges
-		local sql = string.format("select * from ipgroup where ipgid=%s or ipgrpname='%s'", ipgid, conn:escape(ipgrpname))
-		local rs, e = conn:select(sql) 			assert(rs, e)
-		if not (#rs == 1 and rs[1].ipgid == ipgid) then 
-			return nil, "invalid ipgid or dup ipgrpname"
+		-- check zid, ipgid existance
+		local zid, ipgid = p.zid, p.ipgid
+		local sql = string.format("select sum(count) as sum from (select 1,count(*) as count from ipgroup where ipgid=%s union select 2, count(*) as count from zone where zid=%s)t;", ipgid, zid)
+		local rs, e = conn:select(sql) 		assert(rs, e)
+		if tonumber(rs[1].sum) ~= 2 then 
+			return nil, "invalid reference"
 		end
-
-		-- check config change
-		p.ipgid = nil
+	
+		-- check rid exists and dup rulename
+		local sql = string.format("select * from authrule where rid=%s or rulename='%s'", rid, conn:escape(rulename))
+		local rs, e = conn:select(sql) 			assert(rs, e)
+		if not (#rs == 1 and rs[1].rid == rid) then 
+			return nil, "invalid rid or dup rulename"
+		end
+	
+		-- check change 
+		p.rid = nil
 		local change, r = false, rs[1]
 		for k, nv in pairs(p) do 
 			if r[k] ~= nv then 
@@ -51,18 +59,18 @@ udp_map["ipgroup_set"] = function(p, ip, port)
 				break 
 			end
 		end
-
+	
 		if not change then 
 			return true
 		end
-
-		-- update
-		local sql = string.format("update ipgroup set %s where ipgid=%s", conn:update_format(p), ipgid)
+		
+		-- update authrule
+		local sql = string.format("update authrule set %s where rid=%s", conn:update_format(p), rid)
 		local r, e = conn:execute(sql)
 		if not r then 
 			return nil, e 
 		end 
-
+		
 		ud:save_log(sql, true)
 		return true
 	]]
@@ -70,37 +78,43 @@ udp_map["ipgroup_set"] = function(p, ip, port)
 	p.cmd = nil
 	local r, e = dbrpc:fetch("cfgmgr_ipgroup_set", code, p)
 	-- local r, e = dbrpc:once(code, p)
-	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
+	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
-udp_map["ipgroup_add"] = function(p, ip, port)
+udp_map["authrule_add"] = function(p, ip, port)
 	local code = [[
 		local ins = require("mgr").ins()
 		local conn, ud, p = ins.conn, ins.ud, arg
+		local rulename = p.rulename
 		
-		-- check dup ipgrpname
-		local sql = string.format("select * from ipgroup")
-		local rs, e = conn:select(sql) 			assert(rs, e)
+		-- check zid/ipgid existance
+		local zid, ipgid = p.zid, p.ipgid
+		local sql = string.format("select sum(count) as sum from (select 1,count(*) as count from ipgroup where ipgid=%s union select 2, count(*) as count from zone where zid=%s)t;", ipgid, zid)
+		local rs, e = conn:select(sql) 		assert(rs, e)
+		if tonumber(rs[1].sum) ~= 2 then 
+			return nil, "invalid reference"
+		end
 
-		local ids, ipgrpname = {}, p.ipgrpname
+		-- check dup rulename
+		local rs, e = conn:select("select * from authrule") 			assert(rs, e)
+		local ids = {}
 		for _, r in ipairs(rs) do 
-			local id, name = r.ipgid, r.ipgrpname
+			local id, name = r.rid, r.rulename
 			table.insert(ids, id)
-			if name == ipgrpname then 
-				return nil, "exists ipgrpname"
+			if name == rulename then 
+				return nil, "exists rulename"
 			end
 		end
 
 		-- get next rid 
-		local id, e = conn:next_id(ids, 64)
-		print(id, e)
+		local id, e = conn:next_id(ids, 16)
 		if not id then 
 			return nil, e
 		end
 
-		-- insert 
-		p.ipgid = id
-		local sql = string.format("insert into ipgroup %s values %s", conn:insert_format(p))
+		-- insert new authrule
+		p.rid = id
+		local sql = string.format("insert into authrule %s values %s", conn:insert_format(p))
 		local r, e = conn:execute(sql)
 		if not r then 
 			return nil, e 
@@ -113,31 +127,19 @@ udp_map["ipgroup_add"] = function(p, ip, port)
 	p.cmd = nil
 	local r, e = dbrpc:fetch("cfgmgr_ipgroup_add", code, p)
 	-- local r, e = dbrpc:once(code, p)
-	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
+	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
-udp_map["ipgroup_del"] = function(p, ip, port)
+udp_map["authrule_del"] = function(p, ip, port)
 	local code = [[
 		local ins = require("mgr").ins()
 		local js = require("cjson.safe")
 		local conn, ud = ins.conn, ins.ud
-		local ipgids = js.decode(arg.ipgids)
+		local rids = js.decode(arg.rids)
 
-		-- TODO check more related tables
-		local in_part = table.concat(ipgids, ",")
-		local sql = string.format("select sum(count) as count from (select 1,count(*) as count from authrule where ipgid in (%s) union select 2,count(*) as count from authrule where ipgid in (%s)) t;", in_part, in_part)
-
-		local rs, e = conn:select(sql)
-		if not rs then 
-			return nil, e
-		end
-
-		local count = tonumber(rs[1].count)
-		if count ~= 0 then 
-			return nil, "referenced"
-		end
-
-		local sql = string.format("delete from ipgroup where ipgid in (%s)", in_part)
+		local in_part = table.concat(rids, ",")
+		
+		local sql = string.format("delete from authrule where rid in (%s)", in_part)
 		local r, e = conn:execute(sql)
 		if not r then 
 			return nil, e 
@@ -150,7 +152,7 @@ udp_map["ipgroup_del"] = function(p, ip, port)
 	p.cmd = nil
 	local r, e = dbrpc:fetch("cfgmgr_ipgroup_del", code, p)
 	-- local r, e = dbrpc:once(code, p)
-	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
+	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
 return {init = init, dispatch_udp = dispatch_udp}
