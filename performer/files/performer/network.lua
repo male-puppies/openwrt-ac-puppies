@@ -188,10 +188,29 @@ local function generate_network_cmds(board, network)
 	return cmd
 end
 
+local function network_reload()
+	local board = load_board()
+	local network = load_network()
+	local cmd = ""
+	cmd = cmd .. generate_board_cmds(board)
+	cmd = cmd .. generate_network_cmds(board, network)
+	cmd = cmd .. string.format("uci commit network\n")
+	cmd = cmd .. string.format("uci commit nos-zone\n")
+	cmd = cmd .. string.format("uci commit firewall\n")
+	cmd = cmd .. string.format("sleep 1\n")
+	cmd = cmd .. string.format("/etc/init.d/network restart\n")
+	cmd = cmd .. string.format("/etc/init.d/dnsmasq restart\n")
+	cmd = cmd .. string.format("/etc/init.d/nos-zone restart\n")
+	cmd = cmd .. string.format("/etc/init.d/firewall restart\n")
+	print(cmd)
+	os.execute(cmd)
+end
+
 local tcp_map = {}
 local mqtt
 local function init(p)
 	mqtt = p
+	network_reload()
 end
 
 local function dispatch_tcp(cmd)
@@ -202,18 +221,7 @@ local function dispatch_tcp(cmd)
 end
 
 tcp_map["network"] = function(p)
-	local board = load_board()
-	local network = load_network()
-	local cmd = ""
-	cmd = cmd .. generate_board_cmds(board)
-	cmd = cmd .. generate_network_cmds(board, network)
-	cmd = cmd .. string.format("sleep 1\n")
-	cmd = cmd .. string.format("/etc/init.d/network restart\n")
-	cmd = cmd .. string.format("/etc/init.d/dnsmasq restart\n")
-	cmd = cmd .. string.format("/etc/init.d/nos-zone restart\n")
-	cmd = cmd .. string.format("/etc/init.d/firewall restart\n")
-	print(cmd)
-	os.execute(cmd)
+	network_reload()
 end
 
 return {init = init, dispatch_tcp = dispatch_tcp}
