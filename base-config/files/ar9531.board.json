@@ -100,7 +100,7 @@
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
-                "dns": "172.16.0.1"
+                "dns": ""
             },
             "pppoe_account": "",
             "pppoe_password": ""
@@ -120,7 +120,7 @@
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
-                "dns": "172.17.0.1"
+                "dns": ""
             },
             "pppoe_account": "",
             "pppoe_password": ""
@@ -140,7 +140,7 @@
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
-                "dns": "172.18.0.1"
+                "dns": ""
             },
             "pppoe_account": "",
             "pppoe_password": ""
@@ -160,7 +160,7 @@
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
-                "dns": "172.19.0.1"
+                "dns": ""
             },
             "pppoe_account": "",
             "pppoe_password": ""
