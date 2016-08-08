@@ -19,15 +19,15 @@ choice
 	help
 		build target ac x86_64
 
-	config TARGET_AC_ar9531
-	bool "AC ar9531"
+	config TARGET_AC_qca9531
+	bool "AC qca9531"
 	help
-		build target ac ar9531
+		build target ac qca9531
 
-	config TARGET_AC_ar9563
-	bool "AC ar9563"
+	config TARGET_AC_qca9563
+	bool "AC qca9563"
 	help
-		build target ac ar9563
+		build target ac qca9563
 
 endchoice
 endmenu

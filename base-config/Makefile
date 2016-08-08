@@ -53,20 +53,20 @@ define Package/$(PKG_NAME)/install
 	cp -r ./files/etc $(1)/usr/share/base-config/
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 ifeq ($(CONFIG_TARGET_AC_x86_64),y)
-	$(INSTALL_DATA) ./files/x86_64.defaults $(1)/etc/uci-defaults/95-base-config
+	$(INSTALL_DATA) ./files/x86_64/uci.defaults $(1)/etc/uci-defaults/95-base-config
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_DATA) ./files/fstab.config $(1)/etc/config/fstab
+	$(INSTALL_DATA) ./files/x86_64/fstab.config $(1)/etc/config/fstab
 	$(INSTALL_DIR) $(1)/lib/preinit
-	$(INSTALL_DATA) ./files/disk_ready.preinit $(1)/lib/preinit/79_disk_ready
+	$(INSTALL_DATA) ./files/x86_64/disk_ready.preinit $(1)/lib/preinit/79_disk_ready
 endif
-ifeq ($(CONFIG_TARGET_AC_ar9531),y)
-	$(INSTALL_DATA) ./files/ar9531.board.json $(1)/usr/share/base-config/board.json
-	$(INSTALL_DATA) ./files/ar9531.defaults $(1)/etc/uci-defaults/95-base-config
+ifeq ($(CONFIG_TARGET_AC_qca9531),y)
+	$(INSTALL_DATA) ./files/qca9531/board.json $(1)/usr/share/base-config/board.json
+	$(INSTALL_DATA) ./files/qca9531/uci.defaults $(1)/etc/uci-defaults/95-base-config
 	$(INSTALL_DATA) ./files/board.lua $(1)/usr/share/base-config/board.lua
 endif
-ifeq ($(CONFIG_TARGET_AC_ar9563),y)
-	$(INSTALL_DATA) ./files/ar9563.board.json $(1)/usr/share/base-config/board.json
-	$(INSTALL_DATA) ./files/ar9563.defaults $(1)/etc/uci-defaults/95-base-config
+ifeq ($(CONFIG_TARGET_AC_qca9563),y)
+	$(INSTALL_DATA) ./files/qca9563/board.json $(1)/usr/share/base-config/board.json
+	$(INSTALL_DATA) ./files/qca9563/uci.defaults $(1)/etc/uci-defaults/95-base-config
 	$(INSTALL_DATA) ./files/board.lua $(1)/usr/share/base-config/board.lua
 endif
 endef
