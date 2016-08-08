@@ -7,7 +7,7 @@ local ip_pattern, mac_pattern = authlib.ip_pattern, authlib.mac_pattern
 
 local validate_map = {
 	mac = function(v) 
-		if v:find(mac_pattern) then 
+		if v == "" or v:find(mac_pattern) then 
 			return v 
 		end 
 		return nil, "invalid mac"

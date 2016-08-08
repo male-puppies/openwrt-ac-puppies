@@ -90,8 +90,8 @@ local function compare_ports(omap, nmap)
 end	
 
 udp_map["iface_set"] = function(p, ip, port)
-	local network = p.network
-	local name, network = network.name, network.network
+	local config = p.network
+	local name, network = config.name, config.network
 	local r = board.load()
 	local options = arr2map(r.options, "name")
 
@@ -109,7 +109,7 @@ udp_map["iface_set"] = function(p, ip, port)
 		end
 	end
 
-	local _ = network and save_safe("/etc/config/network.test.json", js.encode(network))
+	local _ = network and save_safe("/etc/config/network.json", js.encode(config))
 	reply(ip, port, 0, "ok")
 	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "network"}}))
 end

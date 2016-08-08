@@ -94,12 +94,9 @@ local s = [[
         }
 ]]
 function cmd_map.iface_set()
-	local p = ngx.req.get_uri_args()
-	-- local arg = p.arg 
-	-- if not arg then 
-	-- 	return reply_e("invalid param 4")
-	-- end
-	local arg = s
+	ngx.req.read_body()
+	local p = ngx.req.get_post_args()
+	local arg = p.arg
 	local cfg, e = network.validate(arg)
 	if not cfg then 
 		return reply_e(e)
