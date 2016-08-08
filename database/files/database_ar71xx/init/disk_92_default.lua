@@ -226,9 +226,10 @@ cmd_map.timegroup = {
 			return 
 		end 
 
-		local days = {mon = 0, tues = 0, wed = 0, thur = 0, fri = 0, sat = 0, sun = 0}
+		local days = {mon = 1, tues = 1, wed = 1, thur = 1, fri = 1, sat = 1, sun = 1}
+		local tmlist = {{hour_start = 0, min_start = 0, hour_end = 23, min_end = 59}}
 		local arr = {
-			{tmgid = 255, tmgrpname = "ALL", tmgrpdesc = "ALL", days = js.encode(days), tmlist = '[]'},
+			{tmgid = 255, tmgrpname = "ALL", tmgrpdesc = "ALL", days = js.encode(days), tmlist = js.encode(tmlist)},
 		}
 
 		local narr = {}
