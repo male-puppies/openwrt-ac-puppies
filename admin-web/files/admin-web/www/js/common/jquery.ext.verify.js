@@ -8,6 +8,14 @@
 			},
 			message: "非法IP格式。"
 		},
+		"ipsp": {
+			method: function(val) {
+				if (val == "") return true;
+				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+				return (reg.test(val)) ? true : false;
+			},
+			message: "非法IP格式。"
+		},
 		"mask": {
 			method: function(val) {
 				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -409,30 +417,19 @@
 				pars[0] = $(this).val();
 				res = obj.method.apply(this, pars);
 				if (res != true) {
-					var tip = $(this).closest(".form-group").find("label.control-label").html() || "";
-					$(this).closest(".form-group").addClass('has-error');
-					
-					verifyModalTip(tip, obj.message);
-					return false;
-					// var hmark = true;
-					// var hid = "";
-					// $("body > .modal").each(function(index, element) {
-						// if ($(element).is(":visible")) {
-							// hmark = false;
-							// hid = $(element).attr("id");
-							// return false;
-						// }
-					// });
+					var tips ="",
+						mtip = "",
+						tab_pane = $(this).closest(".tab-pane"),
+						tip = $(this).closest(".form-group").find("label.control-label").html() || "";
 
-					// if (hmark && $("body > .modal-backdrop").length == 0 && Object.prototype.toString.call(createModalTips) === "[object Function]") {
-						// createModalTips(tip + " " + obj.message);
-					// } else if (typeof hid != "undefined" && hid != "" && $("#" + hid + " .modal-footer .tip").length > 0) {
-						// console.log($("#" + hid + " .modal-footer .tip").length)
-						// $("#" + hid + " .modal-footer .tip").html("<span title='" + tip + " " + obj.message + "'><i class='icon-remove-sign'></i> " + tip + " " + obj.message + "</span>");
-					// } else {
-						// alert(tip + " " + obj.message);
-					// }
-					// return false;
+					if (tab_pane.length > 0 && typeof tab_pane.attr("data-mtip") != "undefined") {
+						mtip = tab_pane.attr("data-mtip") + "的";
+					}
+
+					$(this).closest(".form-group").addClass('has-error');
+
+					verifyModalTip(mtip + tip, obj.message);
+					return false;
 				} else {
 					$(this).closest(".form-group").removeClass('has-error');
 				}

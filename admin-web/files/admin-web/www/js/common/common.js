@@ -38,6 +38,7 @@
 		
 		function post() {
 			var obj,
+				sobj,
 				url,
 				argc = arguments.length;
 
@@ -52,10 +53,14 @@
 			} else {
 				obj = {}
 			}
+
+			sobj = {
+				"arg": JSON.stringify(obj)
+			}
 			
 			url = version + "admin/api/" + arguments[0] + "?_=" + new Date().getTime() + token;
 			
-			$.post(url, obj, callback, "json");
+			$.post(url, sobj, callback, "json");
 		}
 		
 		return {

@@ -2,6 +2,7 @@ var g_networks;
 
 $(function() {
 	initData();
+	verifyEventsInit();
 	initEvents();
 })
 
@@ -61,13 +62,27 @@ function initHtml(datas) {
 		for (var k in network) {
 			var ipd = network[k].ipaddr;
 			if (typeof ipd != "undefined") {
-				var arr = ipd.split("/");
-				network[k].ipaddr = arr[0];
-				if (arr.length > 1) {
-					network[k].netmask = cidrToMaskstr(arr[1]);
+				var ipd_arr = ipd.split("/");
+				network[k].ipaddr = ipd_arr[0];
+				if (ipd_arr.length > 1) {
+					network[k].netmask = cidrToMaskstr(ipd_arr[1]);
 				} else {
 					network[k].netmask = "";
 				}
+			}
+
+			var fdns;
+			if (k.indexOf("wan") > -1) {
+				fdns = network[k];
+			} else {
+				fdns = network[k]["dhcpd"];
+			}
+			var dns = network[k].dns;
+			if (typeof fdns["dns"] != "undefined") {
+				var dns_arr = fdns["dns"].split(",");
+				fdns["dns1"] = dns_arr[0] || "";
+				fdns["dns2"] = dns_arr[1] || "";
+				delete fdns["dns"];
 			}
 
 			var ltime = network[k].dhcpd.leasetime
@@ -89,6 +104,20 @@ function initHtml(datas) {
 				}
 			}
 
+			var fdns;
+			if (k.indexOf("wan") > -1) {
+				fdns = networks[k];
+			} else {
+				fdns = networks[k]["dhcpd"];
+			}
+			var dns = networks[k].dns;
+			if (typeof fdns["dns"] != "undefined") {
+				var dns_arr = fdns["dns"].split(",");
+				fdns["dns1"] = dns_arr[0] || "";
+				fdns["dns2"] = dns_arr[1] || "";
+				delete fdns["dns"];
+			}
+
 			var ltime = networks[k].dhcpd.leasetime
 			if (typeof ltime != "undefined") {
 				networks[k].dhcpd.leasetime = parseInt(ltime);
@@ -101,12 +130,12 @@ function initHtml(datas) {
 	}(datas));
 
 	this.setOptsHtml = function() {
-		var self = this;
-		var opts = this.datas.options;
-		var setnode = $("#select_opts");
-		var select = $("<select/>", {
-			"class": "form-control select-opts"
-		});
+		var self = this,
+			opts = this.datas.options,
+			setnode = $("#select_opts"),
+			select = $("<select/>", {
+				"class": "form-control select-opts"
+			});
 
 		for (var i = 0, ien = opts.length; i < ien; i++) {
 			var name = opts[i]["name"];
@@ -124,7 +153,7 @@ function initHtml(datas) {
 			}
 			self.consOptsHtml(arr, val);
 			self.setConfigHtml();
-		})
+		});
 	}
 
 	this.numberOpts = function(val) {
@@ -236,34 +265,35 @@ function initHtml(datas) {
 	}
 	
 	this.consConfigHtml = function(str, eth) {
-		var temp,
+		var id = "#tabs_" + eth,
+			temp,
 			result,
 			results;
 
-		if ($("#tabs_" + eth).length > 0) {
+		if ($(id).length > 0) {
 			return;
 		}
 		if (str == "wan") {
 			temp = $("#tabs_wan0").html();
 			result = temp.replace(/wan0__/g, eth + "__");
-			results = '<div class="tab-pane" id="tabs_' + eth + '">' + result + '</div>';
+			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
 			$("#form_wan .tab-content").append(results);
 			this.setValue(eth);
-			OnCheckProto();
 		} else {
 			temp = $("#tabs_lan0").html();
 			result = temp.replace(/lan0__/g, eth + "__");
-			results = '<div class="tab-pane" id="tabs_' + eth + '">' + result + '</div>';
+			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
 			$("#form_lan .tab-content").append(results);
 			this.setValue(eth);
-			OnCheckDhcp();
 		}
+		$(id + ' [data-toggle="tooltip"]').tooltip();
+		verifyEventsInit(id);
+		$(id).find(".has-error").removeClass("has-error");
 	}
 
 	this.setValue = function(eth) {
 		var arr = [],
 			val = this.datas.network.name,
-			init_arr = this.numberNetwork(val),
 			network = this.datas.network.network,
 			networks = this.datas.networks;
 
@@ -271,6 +301,7 @@ function initHtml(datas) {
 			arr.push(eth);
 		} else {
 			//无eth时，为初始化赋值
+			var init_arr = this.numberNetwork(val);
 			$("#select_opts select").val(val);
 			this.consOptsHtml(init_arr, val);
 			this.setConfigHtml();
@@ -285,20 +316,24 @@ function initHtml(datas) {
 				data = network[arr[i]];
 			} else if (typeof networks[arr[i]] != "undefined") {
 				data = networks[arr[i]];
-				if (arr[i].indexOf("wan") > -1) {
-					var s_arr = getSelectEth();
-					var num = $.inArray(arr[i], s_arr);
-					if (num > -1) {
-						data.mac = this.datas.ports[num]["mac"] || "";
-					}
-				}
 			} else {
 				return;
 			}
 
 			obj[arr[i]] = data;
 			jsonTraversal(obj, jsTravSet);
+			
+			if (arr[i].indexOf("wan") > -1) {
+				var s_arr = getSelectEth();
+				var num = $.inArray(arr[i], s_arr);
+				if (num > -1) {
+					$("#" + arr[i] + "__mac").attr("placeholder", this.datas.ports[num]["mac"] || "");
+				}
+			}
 		}
+
+		OnCheckProto();
+		OnCheckDhcp();
 	}
 	
 	this.numberNetwork = function(val) {
@@ -404,6 +439,7 @@ function getSubmitObj() {
 	}
 
 	obj = jsonTraversal(nts_obj, jsTravGet);
+
 	for (var k in obj) {
 		var netmask = obj[k]["netmask"];
 		if (typeof netmask != "undefined" && netmask != "") {
@@ -414,6 +450,20 @@ function getSubmitObj() {
 		if (typeof obj[k]["dhcpd"] != "undefined" && typeof obj[k]["dhcpd"]["leasetime"] != "undefined" && obj[k]["dhcpd"]["leasetime"] != "") {
 			obj[k]["dhcpd"]["leasetime"] = obj[k]["dhcpd"]["leasetime"] + "h";
 		}
+	
+		var fdns;
+		if (k.indexOf("wan") > -1) {
+			fdns = obj[k];
+		} else {
+			fdns = obj[k]["dhcpd"];
+		}
+
+		fdns["dns"] = fdns["dns1"] || "";
+		if (typeof fdns["dns2"] != "undefined" && $.trim(fdns["dns2"]) != "") {
+			fdns["dns"] = fdns["dns"] + "," + fdns["dns2"];
+		}
+		delete fdns["dns1"];
+		delete fdns["dns2"];
 		
 		obj[k]["ports"] = ports[k] || [];
 	}
@@ -430,15 +480,20 @@ function initEvents() {
 	$(".submit").on("click", OnSubmit);
 	$(".tab-content").on("click", ".check-dhcp input", OnCheckDhcp);
 	$(".tab-content").on("click", ".check-connect input", OnCheckProto);
+	$(".tab-content").on("click", ".showlock", OnShowlock);
+	$('[data-toggle="tooltip"]').tooltip();
 }
 
 function OnSubmit() {
+	if (!verification()) return false;
+
 	var obj = getSubmitObj();
 	cgicall.post("iface_set", obj, function(d) {
 		if (d.status == 0) {
-			alert("保存成功！");
+			createModalTips("保存成功！");
+			initData();
 		} else {
-			alert("保存失败！");
+			createModalTips("保存失败！");
 		}
 	});
 }
@@ -461,4 +516,17 @@ function OnCheckProto() {
 		$(element).nextAll(".form-group.ischeck").hide().find("input").prop("disabled", true);
 		$(element).nextAll(".form-group.ischeck." + checked).show().find("input").prop("disabled", false);
 	});
+}
+
+function OnShowlock(that) {
+	var tt = $(this).closest(".form-group").find("input.form-control")
+	if (tt.length > 0 && (tt.attr("type") == "text" || tt.attr("type") == "password")) {
+		if (tt.attr("type") == "password") {
+			$(this).find("i").removeClass("icon-lock").addClass("icon-unlock");
+			tt.attr("type", "text");
+		} else {
+			$(this).find("i").removeClass("icon-unlock").addClass("icon-lock");
+			tt.attr("type", "password")
+		}
+	}
 }
