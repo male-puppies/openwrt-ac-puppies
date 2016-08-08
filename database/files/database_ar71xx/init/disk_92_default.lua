@@ -217,6 +217,32 @@ cmd_map.ipgroup = {
 	end
 }
 
+cmd_map.timegroup = {
+	priority = 9,
+	func = function(conn)
+		local sql = "select count(*) as count from timegroup where tmgrpname='ALL'"
+		local rs, e = conn:select(sql) 				assert(rs, e)
+		if rs[1].count ~= 0 then 
+			return 
+		end 
+
+		local days = {mon = 0, tues = 0, wed = 0, thur = 0, fri = 0, sat = 0, sun = 0}
+		local arr = {
+			{tmgid = 255, tmgrpname = "ALL", tmgrpdesc = "ALL", days = js.encode(days), tmlist = '[]'},
+		}
+
+		local narr = {}
+		for _, r in ipairs(arr) do
+			table.insert(narr, string.format("('%s','%s','%s','%s','%s')", r.tmgid, r.tmgrpname, r.tmgrpdesc, r.days, r.tmlist))
+		end
+		local sql = string.format("insert into timegroup (tmgid,tmgrpname,tmgrpdesc,days,tmlist) values %s", table.concat(narr, ","))
+		local r, e = conn:execute(sql) 	
+		local _ = r or fatal("%s %s", sql , e)
+		return true
+	end
+}
+
+
 local function main()
 	local cfg, e = config.ins() 					assert(cfg, e)
 	local conn = dc.new(cfg:get_workdb()) 
