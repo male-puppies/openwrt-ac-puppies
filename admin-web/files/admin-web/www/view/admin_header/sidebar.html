@@ -30,6 +30,7 @@
 						<a class="menu icon-02" href="javascript:;"><img class="icon" src="../../images/header-icon-02.png" />上网设置</a>
 						<ul class="dropdown-menu">
 							<li><a href="/view/admin_network/network.html"><i></i>网络设置</a></li>
+							<li><a href="/view/admin_network/ipgroup.html"><i></i>IP组设置</a></li>
 							<li><a href="/view/admin_network/wanconfig.html"><i></i>WAN设置</a></li>
 							<li><a href="/view/admin_network/lanconfig.html"><i></i>LAN设置</a></li>
 							<!--li><a href="/view/admin_network/dhcpconfig.html"><i></i>DHCP设置</a></li-->
@@ -144,12 +145,12 @@ $(".sign_out").on("click", function() {
 	$.cookie('md5psw', '', {expires: -1, path: "/"});
 	window.location.href = "/admin/login/admin_login/login.html";
 });
-/*
+
 $(function() {
 	var footer = '<div class="footer">Copyright © 2016 YXA10015907</div>'
 	$("body > .main").append(footer);
-	var loginid = $.cookie("loginid")
-	ucicall("UpdateLoginTime", loginid, function(){});
-})*/
+	//var loginid = $.cookie("loginid")
+	//ucicall("UpdateLoginTime", loginid, function(){});
+})
 </script>
 <!-- header sidebar End -->

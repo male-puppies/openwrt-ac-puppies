@@ -488,7 +488,10 @@ function OnSubmit() {
 	if (!verification()) return false;
 
 	var obj = getSubmitObj();
-	cgicall.post("iface_set", obj, function(d) {
+	var sobj = {
+		"arg": JSON.stringify(obj)
+	}
+	cgicall.post("iface_set", sobj, function(d) {
 		if (d.status == 0) {
 			createModalTips("保存成功！");
 			initData();
