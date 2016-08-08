@@ -212,6 +212,8 @@ int np_hook_unregister(np_hook_t fn)
 
 	return 0;
 }
+EXPORT_SYMBOL(np_hook_register);
+EXPORT_SYMBOL(np_hook_unregister);
 
 void nt_flow_nproto_update(flow_info_t *fi, uint16_t proto_new)
 {

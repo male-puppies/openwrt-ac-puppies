@@ -76,16 +76,7 @@ typedef struct {
 	} du;
 } nt_pkt_nproto_t;
 
-static inline nt_pkt_nproto_t *nt_pkt_nproto(nt_packet_t *pkt)
-{
-	#ifndef __KERNEL__
-	STATIC_ASSERT((sizeof(nt_pkt_nproto_t)) < sizeof(pkt->ntrack_priv));
-	#endif
-	return (nt_pkt_nproto_t*)pkt->priv;
-}
-
 #ifdef __KERNEL__
-
 #include <linux/skbuff.h>
 #include <linux/types.h>
 #include <linux/if.h>
@@ -93,7 +84,6 @@ static inline nt_pkt_nproto_t *nt_pkt_nproto(nt_packet_t *pkt)
 /*
 	skb->ntrack_priv[] layout: [tbq_packet_ctrl|nt_pkt_nproto_t]
 */
-
 #define NOS_QOS_LINE_MAX    (8)
 struct tbq_packet_ctrl {
 	struct tbq_bucket_sched *bucket_sched;
@@ -118,7 +108,11 @@ static inline nt_pkt_nproto_t *nt_skb_nproto(struct sk_buff *skb, nt_packet_t *n
 	return (nt_pkt_nproto_t*)&skb->ntrack_priv[NT_PKT_NPROTO_OFFSET];
 }
 
-#endif
+static inline nt_pkt_nproto_t *nt_pkt_nproto(nt_packet_t *pkt)
+{
+	return (nt_pkt_nproto_t*)pkt->priv;
+}
+#endif /* __KERNEL__ */
 
 /* http packet parse APIs. */
 static inline char *np_http_hdr(nt_packet_t* pkt, int em_hdr, int *len)

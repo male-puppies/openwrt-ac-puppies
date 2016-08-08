@@ -13,16 +13,18 @@
 			(fi)->tuple.proto
 
 /* -------------------------- */
+#define FLOW_DROP_SHIFT 	(8)
+#define FLOW_DROP_MASK 		(0x000000FFUL << FLOW_DROP_SHIFT)
 enum em_flow_flags {
 	/* byte: normal flags. */
 	FG_FLOW_NPROTO_FIN		= 1<<0, /* identify finished. */
 	FG_FLOW_NPROTO_BEHIVOR	= 1<<1, /* behivor identify need. */
 	FG_FLOW_TRACE			= 1<<2, /* recored url/content need. */
 	/* next byte: drop flags. */
-	FG_FLOW_DROP_AUTH		= 1<<8, /* droped by auth not successued */
-	FG_FLOW_DROP_L4_FW		= 1<<9, /* droped by layer 4 firewall. */
-	FG_FLOW_DROP_L7_FW		= 1<<10, /* droped by layer 7 firewall, such as user ACL rules. */
-	FG_FLOW_DROP_CTX_FILTER	= 1<<11, /* droped by content filter, eg: keywords filter... */
+	FG_FLOW_DROP_AUTH		= 1<<(FLOW_DROP_SHIFT), 	/* droped by auth not successued */
+	FG_FLOW_DROP_L4_FW		= 1<<(FLOW_DROP_SHIFT + 1), /* droped by layer 4 firewall. */
+	FG_FLOW_DROP_L7_FW		= 1<<(FLOW_DROP_SHIFT + 2), /* droped by layer 7 firewall, such as user ACL rules. */
+	FG_FLOW_DROP_CTX_FILTER	= 1<<(FLOW_DROP_SHIFT + 3), /* droped by content filter, eg: keywords filter... */
 };
 
 static inline int nt_flow_nproto_fin(const flow_info_t *fi)
@@ -43,6 +45,16 @@ static inline int nt_flow_track(const flow_info_t *fi)
 static inline void nt_flow_track_set(flow_info_t *fi)
 {
 	fi->hdr.flags |= FG_FLOW_TRACE;
+}
+
+static inline void nt_flow_drop_set(flow_info_t *fi, uint32_t drop)
+{
+	fi->hdr.flags |= FLOW_DROP_MASK & drop;
+}
+
+static inline int nt_flow_droped(flow_info_t *fi)
+{
+	return fi->hdr.flags & FLOW_DROP_MASK;
 }
 
 /* ########################## */
