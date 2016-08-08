@@ -3,7 +3,6 @@
 #include <linux/slab.h>
 #include <linux/list.h>
 #include <linux/skbuff.h>
-#include <asm/smp.h>
 
 #include <linux/nos_track.h>
 #include <ntrack_comm.h>

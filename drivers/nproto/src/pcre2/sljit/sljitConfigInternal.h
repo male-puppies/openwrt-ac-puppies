@@ -327,10 +327,13 @@
 
 #else
 
+#ifdef CONFIG_ARCH_BCM
 /* Calls __ARM_NR_cacheflush on ARM-Linux. */
-#define SLJIT_CACHE_FLUSH(from, to) \
+ #define SLJIT_CACHE_FLUSH(from, to) \
 	__clear_cache((char*)(from), (char*)(to))
-
+#else
+ #define SLJIT_CACHE_FLUSH(from, to)
+#endif
 #endif
 
 #endif /* !SLJIT_CACHE_FLUSH */

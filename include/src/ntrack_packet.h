@@ -90,7 +90,9 @@ static inline nt_pkt_nproto_t *nt_pkt_nproto(nt_packet_t *pkt)
 #include <linux/types.h>
 #include <linux/if.h>
 
-//skb->ntrack_priv[] layout: [tbq_packet_ctrl|nt_pkt_nproto_t]
+/*
+	skb->ntrack_priv[] layout: [tbq_packet_ctrl|nt_pkt_nproto_t]
+*/
 
 #define NOS_QOS_LINE_MAX    (8)
 struct tbq_packet_ctrl {

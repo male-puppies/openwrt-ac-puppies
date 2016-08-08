@@ -1086,7 +1086,7 @@ int nproto_rules_match(nt_packet_t *npt)
 		if(RULE_IS_FIN(mlast)) {
 			nt_flow_nproto_fin_set(npt->fi);
 		}
-		nt_flow_nproto_update(npt->fi, mlast->ID, NULL);
+		nt_flow_nproto_update(npt->fi, mlast->ID);
 	}
 	
 	/* DEBUG */

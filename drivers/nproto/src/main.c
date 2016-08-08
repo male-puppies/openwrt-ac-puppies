@@ -5,8 +5,6 @@
 #include <linux/skbuff.h>
 #include <linux/version.h>
 
-#include <asm/smp.h>
-
 #include <net/netfilter/nf_conntrack.h>
 
 #include <linux/nos_track.h>
@@ -169,6 +167,70 @@ static struct nf_hook_ops nproto_nf_hook_ops[] = {
 		.priority = 0,
 	},
 };
+
+static np_hook_t np_hooks[NP_HOOK_MAX];
+int np_hook_register(np_hook_t fn)
+{
+	int i = 0;
+	for (; i < NP_HOOK_MAX; ++i) {
+		np_hook_t hk = np_hooks[i];
+		if(!hk) {
+			np_hooks[i] = fn;
+			break;
+		} 
+		if (hk == fn) {
+			np_error("re-register hook fn\n");
+			return -EINVAL;
+		}
+	}
+	if(i == NP_HOOK_MAX) {
+		np_error("np hook list overflow.\n");
+		return -NP_HOOK_MAX;
+	}
+	return i;
+}
+int np_hook_unregister(np_hook_t fn)
+{
+	int i=0;
+
+	for (; i < NP_HOOK_MAX; ++i) {
+		if(np_hooks[i] && np_hooks[i] == fn) {
+			int j = i;
+			for(; j < NP_HOOK_MAX - 1; j++) {
+				np_hooks[j] = np_hooks[j+1];
+				if(!np_hooks[j]) {
+					break;
+				}
+			}
+			break;
+		}
+	}
+	if(i == NP_HOOK_MAX) {
+		np_error("np hook %p not found\n", fn);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+void nt_flow_nproto_update(flow_info_t *fi, uint16_t proto_new)
+{
+	int i;
+
+	if(fi->hdr.proto != proto_new) {
+		for (i = 0; i < NP_HOOK_MAX; ++i) {
+			np_hook_t fn = np_hooks[i];
+			if(!fn) {
+				break;
+			}
+			fn(fi, proto_new);
+		}
+	} else {
+		np_warn(FMT_FLOW_STR"-NOT changed proto: %d\n", FMT_FLOW(fi), proto_new);
+		return;
+	}
+	fi->hdr.proto = proto_new;
+}
 
 void *nproto_klog_fd = NULL;
 static int __init nproto_module_init(void)

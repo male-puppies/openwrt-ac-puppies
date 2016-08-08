@@ -5,6 +5,7 @@
 
 #include <linux/nos_track.h>
 
+#include <ntrack_nproto.h>
 #include <ntrack_packet.h>
 #include <ntrack_flow.h>
 #include <nproto/build-in.h>

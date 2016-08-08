@@ -203,9 +203,10 @@ static SLJIT_CONST sljit_ub reg_map[SLJIT_NUMBER_OF_REGISTERS + 5] = {
    Useful for reordering instructions in the delay slot. */
 static sljit_si push_inst(struct sljit_compiler *compiler, sljit_ins ins, sljit_si delay_slot)
 {
+	sljit_ins *ptr;
 	SLJIT_ASSERT(delay_slot == MOVABLE_INS || delay_slot >= UNMOVABLE_INS
 		|| delay_slot == ((ins >> 11) & 0x1f) || delay_slot == ((ins >> 16) & 0x1f));
-	sljit_ins *ptr = (sljit_ins*)ensure_buf(compiler, sizeof(sljit_ins));
+	ptr = (sljit_ins*)ensure_buf(compiler, sizeof(sljit_ins));
 	FAIL_IF(!ptr);
 	*ptr = ins;
 	compiler->size++;
@@ -349,12 +350,10 @@ keep_address:
 	return code_ptr;
 }
 
-#ifdef __GNUC__
-static __attribute__ ((noinline)) void sljit_cache_flush(void* code, void* code_ptr)
+static void sljit_cache_flush(void* code, void* code_ptr)
 {
 	SLJIT_CACHE_FLUSH(code, code_ptr);
 }
-#endif
 
 SLJIT_API_FUNC_ATTRIBUTE void* sljit_generate_code(struct sljit_compiler *compiler)
 {

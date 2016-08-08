@@ -66,17 +66,7 @@ typedef struct {
 } nt_flow_authd_t;
 /* END USER AUTHD */
 
-static inline void nt_flow_nproto_update(
-	flow_info_t *fi, uint16_t proto, 
-	void (*cb)(flow_info_t *, uint16_t))
-{
-	if(fi->hdr.proto != proto) {
-		if(cb){
-			cb(fi, proto);
-		}
-	}
-	fi->hdr.proto = proto;
-}
+void nt_flow_nproto_update(flow_info_t *fi, uint16_t proto_new);
 
 static inline uint16_t nt_flow_nproto(const flow_info_t *fi)
 {

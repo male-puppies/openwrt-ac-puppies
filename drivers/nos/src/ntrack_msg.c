@@ -3,7 +3,6 @@
 #include <linux/workqueue.h>
 #include <linux/slab.h>
 #include <linux/list.h>
-#include <asm/smp.h>
 
 #include "nos.h"
 #include <linux/nos_track.h>

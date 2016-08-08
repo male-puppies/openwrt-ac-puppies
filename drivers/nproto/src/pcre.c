@@ -73,11 +73,11 @@ static inline int pattern_parse(const char *pattern, PCRE2_UCHAR ** pcre, PCRE2_
 	}
 
 	if (relen > 0) {
-		np_debug("\tpcre: %lu|%s|\n", relen, *pcre);
+		np_debug("\tpcre: %lu|%s|\n", (unsigned long)relen, *pcre);
 	}
 
 	if (oplen > 0) {
-		np_debug("\topts: %lu|%s|\n", oplen, *op_str);
+		np_debug("\topts: %lu|%s|\n", (unsigned long)oplen, *op_str);
 	}
 
 	pcre2_match_data_free(match_data);

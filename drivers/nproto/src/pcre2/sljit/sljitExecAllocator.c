@@ -97,6 +97,11 @@ static SLJIT_INLINE void free_chunk(void* chunk, sljit_uw size)
 #include <linux/mm.h>
 #include <linux/vmalloc.h>
 
+/* mips not supported */
+#ifndef PAGE_KERNEL_EXEC
+# define PAGE_KERNEL_EXEC PAGE_KERNEL
+#endif
+
 static SLJIT_INLINE void* alloc_chunk(sljit_uw size)
 {
     return __vmalloc(size, GFP_ATOMIC | __GFP_HIGHMEM, PAGE_KERNEL_EXEC);
