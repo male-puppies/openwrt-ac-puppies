@@ -2,19 +2,19 @@ local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
-local code = require("code")
+local simplesql = require("simplesql")
 
 local rid_map = {}
-local dbrpc, udpsrv, mqtt
-local mysql_select = code.select
+local simple, udpsrv, mqtt
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	local simple = simplesql.new(dbrpc)
 end
 
 local function reset_authtype()
-	local rs, e = mysql_select(dbrpc, "select * from authrule") 	assert(rs, e)
+	local rs, e = simple:mysql_select("select * from authrule") 	assert(rs, e)
 	
 	rid_map = {}
 	for _, r in ipairs(rs) do 

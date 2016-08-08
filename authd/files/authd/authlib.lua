@@ -2,17 +2,15 @@ local ski = require("ski")
 local log = require("log")
 local nos = require("luanos")
 local share = require("share")
-local code = require("code")
 
 local map2arr, arr2map, limit = share.map2arr, share.arr2map, share.limit 
 local set_status, set_gid_ucrc = nos.user_set_status, nos.user_set_gid_ucrc
 local escape_map, escape_arr, empty = share.escape_map, share.escape_arr, share.empty
-local mysql_select, mysql_execute = code.select, code.execute
 
-local function find_missing(dbrpc, ukey_arr)
+local function find_missing(simple, ukey_arr)
 	local ukey_map = arr2map(ukey_arr, "ukey")
 	local sql = string.format("select ukey from memo.online where ukey in (%s)", escape_map(ukey_map, "ukey"))
-	local rs, e = mysql_select(dbrpc, sql) 		assert(rs, e) 
+	local rs, e = simple:mysql_select(sql) 		assert(rs, e) 
 	local exists, miss, find = {}, {}
 	for _, r in ipairs(rs) do
 		local ukey = r.ukey
@@ -36,7 +34,7 @@ local function set_offline(uid, magic)
 	set_status(uid, magic, 0)
 end
 
-local function insert_online(dbrpc, ukey_map, authtype)
+local function insert_online(simple, ukey_map, authtype)
 	local arr, r, e = {}
 	local now = math.floor(ski.time())
 	for ukey, p in pairs(ukey_map) do
@@ -44,13 +42,13 @@ local function insert_online(dbrpc, ukey_map, authtype)
 	end
 
 	local sql = string.format([[insert or replace into memo.online (ukey,type,username,ip,mac,rid,gid,login,active) values %s]], table.concat(arr, ","))
-	local r, e = mysql_execute(dbrpc, sql) 		assert(r, e)
+	local r, e = simple:mysql_execute(sql) 		assert(r, e)
 end 
 
-local function keepalive(dbrpc, exists)
+local function keepalive(simple, exists)
 	local s = escape_map(exists, "ukey")
 	local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), s)
-	local r, e = mysql_execute(dbrpc, sql) 		assert(r, e)
+	local r, e = simple:mysql_execute(sql) 		assert(r, e)
 end
 
 return {

@@ -1,6 +1,5 @@
 local ski = require("ski")
 local log = require("log")
-local code = require("code")
 local board = require("board")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
