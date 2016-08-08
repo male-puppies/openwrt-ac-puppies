@@ -28,20 +28,28 @@
 #define RULE_DBG(rule, npt, fmt...) do{}while(0)
 #endif
 
-#define np_assert(x) BUG_ON(!(x))
-
 #define NP_MWM_STR "nproto"
-#define NP_RULE_SETS_HASH 4096 /* max 4k rule id be-refed. */
+#define np_assert(x) BUG_ON(!(x))
 
 /* inner data struct's */
 typedef struct {
 	int count;
 	np_rule_t *array[NP_RULES_COUNT_MAX];
+	uint16_t id_to_index[NP_RULES_COUNT_MAX];
 } all_rules_t;
 static all_rules_t RULES_ALL;
+static np_rule_t *get_rule_by_id(uint16_t id)
+{
+	uint16_t idx;
+
+	np_assert(id >= 0);
+	np_assert(id < NP_RULES_COUNT_MAX);
+
+	idx = RULES_ALL.id_to_index[id];
+	return RULES_ALL.array[idx];
+}
 
 static np_rule_t *inner_rules[NP_INNER_RULE_MAX];
-static np_rule_set_t *RS_REFs[NP_RULE_SETS_HASH] = {NULL,};
 static np_rule_set_t RS_BASE[NP_FLOW_DIR_MAX][NP_SET_BASE_MAX];
 
 static int ctm_init(np_rule_t *rule, match_t *ctm)
@@ -450,12 +458,6 @@ void rules_cleanup(void)
 			set_cleanup(&RS_BASE[i][j]);
 		}
 	}
-	for(i=0; i<NP_RULE_SETS_HASH; i++) {
-		np_rule_set_t *hash_set = RS_REFs[i];
-		if(hash_set) {
-			set_cleanup(hash_set);
-		}
-	}
 	for(i=0; i<RULES_ALL.count; i++) {
 		np_rule_t *rule = RULES_ALL.array[i];
 
@@ -474,31 +476,20 @@ int rules_build(void)
 	int i, j, k;
 	char name[64];
 
+	/* build id2index */
+	for (i = 0; i < RULES_ALL.count; ++i) {
+		np_rule_t *rule = RULES_ALL.array[i];
+		if(RULES_ALL.id_to_index[rule->ID]) {
+			np_error("conflected rule ID: %d\n", rule->ID);
+			continue;
+		}
+		RULES_ALL.id_to_index[rule->ID] = i;
+	}
+
 	/* build each ref's */
 	for(i=0; i<RULES_ALL.count; i++) {
 		np_rule_t *rule1 = RULES_ALL.array[i];
-		if(RULE_REF_FLOW(rule1)) {
-			/* cross rule match use hash sets. */	
-			for(k=0; k<ARRAY_SIZE(rule1->ID_REFs); k++) {
-				np_rule_set_t *hash_set;
-				uint16_t idx, ref_id = rule1->ID_REFs[k];
-				if(!ref_id) {
-					break;
-				}
-				idx = ref_id % NP_RULE_SETS_HASH;
-				hash_set = RS_REFs[idx];
-				if(!hash_set) {
-					hash_set = set_alloc("hash");
-					if(!hash_set) {
-						np_error("alloc hash set[%d:%s] failed.\n", rule1->ID, rule1->name_rule);
-						continue;
-					}
-					RS_REFs[idx] = hash_set;
-				}
-				set_add_rule(hash_set, rule1);
-			}		
-		}
-		if(RULE_REF_PACKET(rule1)) {
+		if(RULE_REFs(rule1)) {
 			/* rule1 in-rule's ref as rule2 matched. */
 			for(k=0; k<ARRAY_SIZE(rule1->ID_REFs); k++) {
 				/* each ref id find the target rule. */
@@ -546,27 +537,12 @@ int rules_build(void)
 			set_compile(rule->ref_set, name);
 		}
 	}
-	/* cross rule matched ref. */
-	for(i=0; i<NP_RULE_SETS_HASH; i++) {
-		np_rule_set_t *hash_set = RS_REFs[i];
-		if(!hash_set) {
-			continue;
-		}
-		snprintf(name, sizeof(name), "hash-ref: %d", i);
-		set_compile(hash_set, name);
-	}
 
 	#if 1
 	/* dump rules */
 	for(i=0; i<NP_FLOW_DIR_MAX; i++) {
 		for(j=0; j<NP_SET_BASE_MAX; j++)
 		 set_dump(&RS_BASE[i][j], 0);
-	}
-	for(i=0; i<NP_RULE_SETS_HASH; i++) {
-		np_rule_set_t *hash_set = RS_REFs[i];
-		if(hash_set) {
-			set_dump(hash_set, 0);
-		}
 	}
 	#endif
 
@@ -1043,7 +1019,6 @@ __next_mwm:
 int nproto_rules_match(nt_packet_t *npt)
 {
 	np_rule_t *rule = NULL, *mlast = NULL;
-	np_rule_set_t *hash_set = NULL;
 	np_rule_set_t *base_set = &RS_BASE[npt->dir][np_proto_to_set(npt->l4_proto)];
 
 	uint16_t proto = nt_flow_nproto(npt->fi);
@@ -1062,41 +1037,34 @@ int nproto_rules_match(nt_packet_t *npt)
 				np_debug("inner-ref match: %s\n", rule->name_rule);
 			}
 		}
+	} else {
+		/* cross packet, same flow ref match */
+		rule = get_rule_by_id(proto);
+		if(rule && rule->ref_set) {
+			rule = rules_set_match(rule->ref_set, npt);
+			if(rule) {
+				mlast = rule;
+				np_debug("flow-ref match: %s\n", rule->name_rule);
+			}
+		}
 	}
 
 	/* base matched, check the cross packets ref. */
 	if(mlast) {
 		/* proto maybe changed. */
 		proto = mlast->ID;
-	}
-
-	/* assert the valid proto index. */
-	np_assert(proto < NP_RULE_SETS_HASH);
-
-	hash_set = RS_REFs[proto % NP_RULE_SETS_HASH];
-	if(hash_set) {
-		rule = rules_set_match(hash_set, npt);
-		if(rule) {
-			mlast = rule;
-			np_debug("hash-ref match: %s\n", rule->name_rule);
-		}
-	}
-	/* proto change save to flow. */
-	if(mlast) {
 		if(RULE_IS_FIN(mlast)) {
 			nt_flow_nproto_fin_set(npt->fi);
 		}
 		nt_flow_nproto_update(npt->fi, mlast->ID);
-	}
-	
-	/* DEBUG */
-	if(mlast) {
+
+		/* DEBUG */
 		np_info(FMT_FLOW_STR"\n\t\t[%s] --- matched %s--- \n", 
 			FMT_FLOW(npt->fi),
 			mlast->name_rule, 
 			RULE_IS_FIN(mlast)?"fin":"mid");
+		/* END debug. */
 	}
-	/* END debug. */
 
 	return mlast ? mlast->ID : 0;
 }
@@ -1119,7 +1087,6 @@ int nproto_init(void)
 	memset(&RULES_ALL, 0, sizeof(RULES_ALL));
 	memset(&inner_rules, 0, sizeof(inner_rules));
 	memset(&RS_BASE, 0, sizeof(RS_BASE));
-	memset(&RS_REFs, 0, sizeof(RS_REFs));
 
 	ret = inner_rules_init();
 	if(ret) {

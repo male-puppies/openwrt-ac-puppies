@@ -226,6 +226,7 @@ enum __em_np_rule_relation {
 #define RULE_REF_FLOW(rule) 	(rule->refs_type & NP_REF_FLOW)
 #define RULE_REF_PACKET(rule) 	(rule->refs_type & NP_REF_PACKET)
 #define RULE_REF_HTTP(rule) 	(rule->enable_http)
+#define RULE_REFs(rule) (RULE_REF_FLOW(rule) || RULE_REF_PACKET(rule))
 
 enum __em_ctm_relation {
 	NP_CTM_OR = 0,
