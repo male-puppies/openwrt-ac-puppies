@@ -83,6 +83,25 @@ function method:exec_batchm2(sqls)
 	return r
 end
 
+----------------------------------
+local mysql_code_key = "mysql_code_key"
+local mysql_code = [[
+	local myconn = require("mgr").ins().myconn
+	local sql, isexec = arg[1], arg[2]
+	if isexec then 
+		return myconn:execute(sql)
+	end 
+	return myconn:select(sql)
+]]
+
+function method:mysql_select(sql)
+	return self.rpc:fetch(mysql_code_key, mysql_code, {sql})
+end
+
+function method:mysql_execute(sql)
+	return self.rpc:fetch(mysql_code_key, mysql_code, {sql, 1})
+end
+
 local function new(rpc)
 	assert(rpc)
 	local obj = {rpc = rpc}

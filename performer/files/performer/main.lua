@@ -3,6 +3,7 @@ local lfs = require("lfs")
 local log = require("log")
 local js = require("cjson.safe")
 local common = require("common")
+local dbevent = require("dbevent")
 local sandcproxy = require("sandcproxy")
 
 js.encode_keep_buffer(false)
@@ -10,6 +11,7 @@ js.encode_sparse_array(true)
 
 local read = common.read 
 local modules = {
+	ipgroup = 	require("ipgroup"),
 	network = 	require("network"),
 	dbevent = 	require("dbevent"),
 }
@@ -36,6 +38,16 @@ local function dispatch_tcp_loop()
 		r, e = tcp_chan:read()					assert(r, e)
 		f(r)
 	end
+end
+
+local function on_db_event(cmd)
+	for _, mod in pairs(modules) do
+		local f = mod.dispatch_tcp
+		if f and f(cmd) then
+			return
+		end
+	end
+	print("no one deal with cmd", js.encode(cmd))
 end
 
 local function start_sand_server()
@@ -82,7 +94,7 @@ local function main()
 	for _, mod in pairs(modules) do 
 		mod.init(mqtt)
 	end
-
+	dbevent.set_event_cb(on_db_event)
 	local _ = ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 end
 

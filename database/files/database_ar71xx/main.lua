@@ -86,7 +86,8 @@ local function test_sync()
 		for i = 1, 1 do 
 			ski.sleep(1) 
 		end
-		sync.sync()
+		local change = sync.sync()
+		broadcast(change)
 	end 
 end
 
