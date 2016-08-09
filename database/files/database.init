@@ -1,14 +1,15 @@
 #!/bin/sh /etc/rc.common
 # Copyright (C) 2006-2011 OpenWrt.org
 
-START=61
+START=65
 STOP=10
 BIN=/usr/sbin/database
-start() {
-	SERVICE_DAEMONIZE=1 service_start $BIN start 
-	echo database done > /tmp/debug
-}
 
-stop() {
-	ps | grep -E "database/main|/database" | grep -v grep  | awk '{print $1}' | xargs kill 
+USE_PROCD=1
+
+start_service() {
+	procd_open_instance
+	procd_set_param command $BIN start
+	procd_set_param respawn
+	procd_close_instance
 }
