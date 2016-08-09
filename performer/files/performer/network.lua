@@ -191,6 +191,9 @@ local function generate_network_cmds(board, network)
 		for _, network in ipairs(zone.network) do
 			table.insert(arr, string.format("	uci add_list firewall.$obj.network='%s'", network))
 		end
+		if name:find("^wan") then
+			table.insert(arr, string.format("	uci set firewall.$obj.masq='1'"))
+		end
 		table.insert(arr, string.format("}"))
 	end
 
