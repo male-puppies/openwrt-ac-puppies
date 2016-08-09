@@ -44,7 +44,7 @@ function on_keepalive_batch(count, arr)
 		if not empty(miss) then
 			for _, r in pairs(miss) do 
 				r.username = r.mac
-				r.gid = cfg.get_gid(r.rid)
+				r.gid = 1 --TODO select gid 
 				local _ = gid and set_online(r.uid, r.magic, r.gid, r.username)
 			end
 			insert_online(simple, miss, "auto")

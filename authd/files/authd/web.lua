@@ -120,7 +120,8 @@ udp_map["/cloudlogin"] = function(p, uip, uport)
 	
 	local krid = get_rule_id(uid, magic)
 	local kip, kmac = get_ip_mac(uid, magic)
-	local gid = cfg.get_gid(rid)
+	
+	local gid = 0 	-- TODO select gid 
 	if not (krid and kip and gid and ip == kip and mac == kmac and krid == rid) then 
 		return reply(uip, uport, 1, "invalid query") 
 	end

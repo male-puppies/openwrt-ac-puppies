@@ -10,7 +10,7 @@ local simple, udpsrv, mqtt
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-	local simple = simplesql.new(dbrpc)
+	simple = simplesql.new(dbrpc)
 end
 
 local function reset_authtype()
@@ -35,7 +35,7 @@ local function get_authtype(rid)
 		reset_authtype()
 		r = rid_map[rid]
 	end
-	return r.authtype
+	return r and r.authtype or nil
 end
 
 local function get_gid(rid)
