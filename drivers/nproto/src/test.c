@@ -4,13 +4,7 @@
 #include <linux/list.h>
 #include <linux/skbuff.h>
 
-#include <linux/nos_track.h>
-#include <ntrack_comm.h>
-#include <ntrack_packet.h>
-#include <ntrack_nproto.h>
-#include <ntrack_log.h>
-
-extern int nproto_rules_match(nt_packet_t *pkt);
+#include "nproto_private.h"
 
 static int nt_init(struct nos_track *nt, struct iphdr *iph, void *l4ptr)
 {

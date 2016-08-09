@@ -14,4 +14,4 @@ void nproto_cleanup(void);
 
 int nproto_rules_match(nt_packet_t *pkt);
 
-void nt_flow_nproto_update(flow_info_t *fi, uint16_t proto_new);
+void nproto_update_flow(flow_info_t *fi, uint16_t proto_new);

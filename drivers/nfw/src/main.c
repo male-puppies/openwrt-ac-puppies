@@ -6,10 +6,7 @@
 #include <net/ip.h>
 #include <net/netfilter/nf_conntrack.h>
 
-#include <linux/nos_track.h>
-#include <ntrack_log.h>
-#include <ntrack_comm.h>
-#include <ntrack_nproto.h>
+#include "nfw_private.h"
 
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack layer 7 firewall system driver"
