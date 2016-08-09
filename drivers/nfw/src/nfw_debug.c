@@ -160,11 +160,17 @@ static ssize_t nfw_write(struct file *file,
 static ssize_t nfw_read(struct file *file, char __user *buffer,
 				   size_t count, loff_t * offset)
 {
-	size_t size;
+	int size = 0;
 
-	size = snprintf(buffer, 512, "addr=x.x.x.x/mask port=xx\n"
+	if(*offset != 0) {
+		return 0;
+	}
+
+	size = snprintf(buffer, count, "addr=x.x.x.x/mask port=xx\n"
 		"\t%u.%u.%u.%u/%u.%u.%u.%u:%u, bypass: %u\n", 
 		NIPQUAD(GDBG.addr), NIPQUAD(GDBG.mask), ntohs(GDBG.port), GDBG.bypass);
+
+	*offset += size;
 	return size;
 }
 
@@ -181,6 +187,8 @@ int nfw_dbg_init(void)
 {
 	struct proc_dir_entry *dir, *file;
 	
+	memset(&GDBG, 0, sizeof(GDBG));
+	mutex_init(&GDBG.lock);
 	/* create proc dir */
 	if(GDBG.proc_dir) {
 		fw_error("re-inited ...\n");

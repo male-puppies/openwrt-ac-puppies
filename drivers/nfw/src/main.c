@@ -102,7 +102,7 @@ static int fw_nproto_callback(flow_info_t *fi, uint32_t proto_crc)
 }
 
 void *nfw_klog_fd = NULL;
-static int __init ct_modules_init(void)
+static int __init nfw_modules_init(void)
 {
 	int ret = 0;
 
@@ -133,7 +133,7 @@ __err:
 	return ret;
 }
 
-static void __exit ct_modules_exit(void)
+static void __exit nfw_modules_exit(void)
 {
 	fw_info("module cleanup.\n");
 
@@ -146,8 +146,8 @@ static void __exit ct_modules_exit(void)
 	return;
 }
 
-module_init(ct_modules_init);
-module_exit(ct_modules_exit);
+module_init(nfw_modules_init);
+module_exit(nfw_modules_exit);
 
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
