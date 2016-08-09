@@ -281,5 +281,5 @@ module_exit(nproto_module_exit);
 
 MODULE_DESCRIPTION(DRV_DESC);
 MODULE_VERSION(DRV_VERSION);
-MODULE_AUTHOR("xxx <ooo@gmail.com>");
+MODULE_AUTHOR("1767ff8829cfe9e30f1a3170427e9b10 <@gmail.com>");
 MODULE_LICENSE("GPL");

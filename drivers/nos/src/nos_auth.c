@@ -162,7 +162,7 @@ unsigned int nos_auth_hook(const struct net_device *in,
 					}
 				}
 
-				KLOG_DEBUG("auth matched rule %u, szone=%u, sipgrp=%u\n",
+				nt_debug("auth matched rule %u, szone=%u, sipgrp=%u\n",
 						auth_conf.auth[i].id, auth_conf.auth[i].src_zone_id, auth_conf.auth[i].src_ipgrp_id);
 
 				nos_user_info_hold(ui);
@@ -219,7 +219,7 @@ unsigned int nos_auth_hook(const struct net_device *in,
 
 			nt_msghdr_init(&hdr, en_MSG_AUTH, sizeof(auth));
 			if (nt_msg_enqueue(&hdr, &auth, 0)) {
-				KLOG_DEBUG("skb cap failed.\n");
+				nt_debug("skb cap failed.\n");
 			}
 		}
 	}
@@ -246,7 +246,7 @@ static inline void nos_auth_reply_payload(const char *payload, int payload_len, 
 	header_len = offset < 0 ? 0 : offset;
 	nskb = skb_copy_expand(oskb, skb_headroom(oskb), header_len, GFP_ATOMIC);
 	if (!nskb) {
-		printk("alloc_skb fail\n");
+		nt_error("alloc_skb fail\n");
 		return;
 	}
 
@@ -515,7 +515,7 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 	if (l >= cnt) {
 		data_left += l;
 		if (data_left >= 256) {
-			printk("err: too long a line\n");
+			nt_error("err: too long a line\n");
 			data_left = 0;
 			return -EINVAL;
 		}
@@ -610,14 +610,14 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 				ip_set_put_byindex(&init_net, auth.ip_white_list_id);
 			if (auth.mac_white_list_set)
 				ip_set_put_byindex(&init_net, auth.mac_white_list_id);
-			printk("nos_auth_set() failed ret=%d\n", err);
+			nt_error("nos_auth_set() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "delete ", 7) == 0) {
 		n = sscanf(data, "delete %u\n", &auth.id);
 		if (n == 1) {
 			if ((err = nos_auth_delete(&auth)) == 0)
 				goto done;
-			printk("nos_auth_delete() failed ret=%d\n", err);
+			nt_error("nos_auth_delete() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "redirect_ip=", 12) == 0) {
 		unsigned int a, b, c ,d;
@@ -642,7 +642,7 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 		goto done;
 	}
 
-	printk("ignoring line[%s]\n", data);
+	nt_error("ignoring line[%s]\n", data);
 	if (err != 0) {
 		return err;
 	}
@@ -689,12 +689,12 @@ int nos_auth_init(void)
 		retval = alloc_chrdev_region(&devno, nos_auth_minor, number_of_devices, nos_auth_dev_name);
 	}
 	if (retval < 0) {
-		printk("alloc_chrdev_region failed!\n");
+		nt_error("alloc_chrdev_region failed!\n");
 		return retval;
 	}
 	nos_auth_major = MAJOR(devno);
 	nos_auth_minor = MINOR(devno);
-	printk("nos_auth_major=%d, nos_auth_minor=%d\n", nos_auth_major, nos_auth_minor);
+	nt_info("nos_auth_major=%d, nos_auth_minor=%d\n", nos_auth_major, nos_auth_minor);
 
 	cdev_init(&nos_auth_cdev, &nos_auth_fops);
 	nos_auth_cdev.owner = THIS_MODULE;
@@ -702,13 +702,13 @@ int nos_auth_init(void)
 
 	retval = cdev_add(&nos_auth_cdev, devno, 1);
 	if (retval) {
-		printk("adding chardev, error=%d\n", retval);
+		nt_error("adding chardev, error=%d\n", retval);
 		goto cdev_add_failed;
 	}
 
 	nos_auth_class = class_create(THIS_MODULE,"nos_auth_class");
 	if (IS_ERR(nos_auth_class)) {
-		printk("failed in creating class\n");
+		nt_error("failed in creating class\n");
 		retval = -EINVAL;
 		goto class_create_failed;
 	}

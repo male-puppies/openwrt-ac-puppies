@@ -267,7 +267,7 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 	if (l >= cnt) {
 		data_left += l;
 		if (data_left >= 256) {
-			printk("err: too long a line\n");
+			nt_error("err: too long a line\n");
 			data_left = 0;
 			return -EINVAL;
 		}
@@ -302,25 +302,25 @@ static ssize_t nos_ipgrp_write(struct file *file, const char __user *buf, size_t
 					else
 						ip_set_put_byindex(&init_net, ipgrp.ipset_id);
 				} else {
-					printk("ip_set '%s' not found\n", buf);
+					nt_error("ip_set '%s' not found\n", buf);
 					err = -EINVAL;
 				}
 			}
-			printk("nos_ipgrp_set() failed ret=%d\n", err);
+			nt_error("nos_ipgrp_set() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "delete ", 7) == 0) {
 		n = sscanf(data, "delete %u\n", &ipgrp.id);
 		if (n == 1) {
 			if ((err = nos_ipgrp_delete(&ipgrp)) == 0)
 				goto done;
-			printk("nos_ipgrp_delete() failed ret=%d\n", err);
+			nt_error("nos_ipgrp_delete() failed ret=%d\n", err);
 		}
 	} else if (strncmp(data, "update magic", 12) == 0) {
 		g_ipgrp_conf_magic++;
 		goto done;
 	}
 
-	printk("ignoring line[%s]\n", data);
+	nt_info("ignoring line[%s]\n", data);
 	if (err != 0) {
 		return err;
 	}
@@ -367,12 +367,12 @@ int nos_ipgrp_init(void)
 		retval = alloc_chrdev_region(&devno, nos_ipgrp_minor, number_of_devices, nos_ipgrp_dev_name);
 	}
 	if (retval < 0) {
-		printk("alloc_chrdev_region failed!\n");
+		nt_error("alloc_chrdev_region failed!\n");
 		return retval;
 	}
 	nos_ipgrp_major = MAJOR(devno);
 	nos_ipgrp_minor = MINOR(devno);
-	printk("nos_ipgrp_major=%d, nos_ipgrp_minor=%d\n", nos_ipgrp_major, nos_ipgrp_minor);
+	nt_info("nos_ipgrp_major=%d, nos_ipgrp_minor=%d\n", nos_ipgrp_major, nos_ipgrp_minor);
 
 	cdev_init(&nos_ipgrp_cdev, &nos_ipgrp_fops);
 	nos_ipgrp_cdev.owner = THIS_MODULE;
@@ -380,13 +380,13 @@ int nos_ipgrp_init(void)
 
 	retval = cdev_add(&nos_ipgrp_cdev, devno, 1);
 	if (retval) {
-		printk("adding chardev, error=%d\n", retval);
+		nt_error("adding chardev, error=%d\n", retval);
 		goto cdev_add_failed;
 	}
 
 	nos_ipgrp_class = class_create(THIS_MODULE,"nos_ipgrp_class");
 	if (IS_ERR(nos_ipgrp_class)) {
-		printk("failed in creating class\n");
+		nt_error("failed in creating class\n");
 		retval = -EINVAL;
 		goto class_create_failed;
 	}
