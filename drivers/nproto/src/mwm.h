@@ -41,7 +41,7 @@
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 
-#include <ntrack_log.h>
+#include "nproto_log.h"
 
 //#define MWM_DEBUG
 /*

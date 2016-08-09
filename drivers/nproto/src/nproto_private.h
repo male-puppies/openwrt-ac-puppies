@@ -2,7 +2,8 @@
 #include <ntrack_comm.h>
 #include <ntrack_packet.h>
 #include <ntrack_nproto.h>
-#include <ntrack_log.h>
+
+#include "nproto_log.h"
 
 int test_init(void);
 
