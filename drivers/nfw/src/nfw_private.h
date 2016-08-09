@@ -4,3 +4,6 @@
 
 #include "nfw_log.h"
 
+int nfw_dbg_init(void);
+void nfw_dbg_exit(void);
+int nfw_droplist_match(flow_info_t *fi);

@@ -46,7 +46,7 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 	}
 
 	if((nos = nf_ct_get_nos(ct)) == NULL) {
-		nt_debug("nos untracked.\n");
+		fw_debug("nos untracked.\n");
 		return NF_ACCEPT;
 	}
 
@@ -56,14 +56,26 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 		return NF_ACCEPT;
 	}
 	
-	/* TODO: lookup flow drop flags here */
-	if((ret=nt_flow_droped(fi)) !=0 ) {
-		/* debug */
+	/* lookup flow drop flags here */
+	ret = nt_flow_droped(fi);
+	if(ret != 0) {
 		fw_debug(FMT_FLOW_STR " droped by: %x\n", FMT_FLOW(fi), ret);
-		ret = NF_DROP;
+
+		/* TODO: log to userspace this acction. */
+		ret = nfw_droplist_match(fi);
+		if(ret == 0){
+			return NF_DROP;
+		}
+		if(ret > 0) {
+			/* BYPASS */
+			return NF_ACCEPT;
+		} else {
+			/* TODO: LOG & DROP */
+			return NF_DROP;
+		}
 	}
 
-	return ret;
+	return NF_ACCEPT;
 }
 
 static struct nf_hook_ops ntrack_nf_hook_ops[] = {
@@ -80,7 +92,7 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	}
 };
 
-static int fw_nproto_callback(flow_info_t *fi, uint16_t proto_new)
+static int fw_nproto_callback(flow_info_t *fi, uint32_t proto_crc)
 {
 	/*TODO: check the config rule's, markup fi->flags.*/
 	if(/*fw_check_rule(fi, proto_new)*/0) {
@@ -99,6 +111,11 @@ static int __init ct_modules_init(void)
 		return -ENOMEM;
 	}
 
+	ret = nfw_dbg_init();
+	if(ret) {
+		goto __err;
+	}
+
 	fw_info("init nf hooks.\n");
 	ret = nf_register_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
 	if (ret) {
@@ -109,6 +126,7 @@ static int __init ct_modules_init(void)
 	return 0;
 
 __err:
+	nfw_dbg_exit();
 	if(nfw_klog_fd) {
 		klog_fini(nfw_klog_fd);
 	}
@@ -119,6 +137,7 @@ static void __exit ct_modules_exit(void)
 {
 	fw_info("module cleanup.\n");
 
+	nfw_dbg_exit();
 	np_hook_unregister(fw_nproto_callback);
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
 	klog_fini(nfw_klog_fd);

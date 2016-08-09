@@ -12,6 +12,26 @@
 			NIPQUAD((fi)->tuple.ip_dst), ntohs((fi)->tuple.port_dst), \
 			(fi)->tuple.proto
 
+static inline uint32_t flow_srcip(flow_info_t *fi)
+{
+	return fi->tuple.ip_src;
+}
+
+static inline uint32_t flow_dstip(flow_info_t *fi)
+{
+	return fi->tuple.ip_dst;
+}
+
+static inline uint16_t flow_sport(flow_info_t *fi)
+{
+	return fi->tuple.port_src;
+}
+
+static inline uint16_t flow_dport(flow_info_t *fi)
+{
+	return fi->tuple.port_dst;
+}
+
 /* -------------------------- */
 #define FLOW_STAT_SHIFT		(0)
 #define FLOW_STAT_MASK		(0x000000FFU << FLOW_STAT_SHIFT)
