@@ -5,6 +5,5 @@
 obj-${CONFIG_NFW} += nfw.o
 nfw-y	:= \
 	main.o \
-	nfw_debug.o \
-	nxjson.o
+	nfw_debug.o 
 
