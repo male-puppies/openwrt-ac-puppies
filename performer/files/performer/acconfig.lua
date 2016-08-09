@@ -1,6 +1,14 @@
 --local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
+local rpccli = require("rpccli")
+local batch = require("batch")
+local share = require("share")
+local simplesql = require("simplesql")
+
+
+--database related
+local mqtt, simple 
 
 local ConfigType = {"Rule", "Set"}		--two type config
 local ConfigCate = {"Control", "Audit"}	--every type contains two categories config
@@ -106,7 +114,7 @@ end
 compare rule one by one
 --]]
 local function ac_rule_cmp(old, new)
-	local cmp_sorted_ids = function(old, new)
+	local cmp_sorted_arr = function(old, new)
 		if #old ~= #new then
 			return true
 		end
@@ -132,27 +140,27 @@ local function ac_rule_cmp(old, new)
 			return true
 		end
 
-		if cmp_sorted_ids(old_item["SrcZoneIds"], old_item["SrcZoneIds"]) then
+		if cmp_sorted_arr(old_item["SrcZoneIds"], old_item["SrcZoneIds"]) then
 			print("SrcZoneIds diff")
 			return true
 		end
 		
-		if cmp_sorted_ids(old_item["SrcIpgrpIds"], old_item["SrcIpgrpIds"]) then
+		if cmp_sorted_arr(old_item["SrcIpgrpIds"], old_item["SrcIpgrpIds"]) then
 			print("SrcIpgrpIds diff")
 			return true
 		end
 
-		if cmp_sorted_ids(old_item["DstZoneIds"], old_item["DstZoneIds"]) then
+		if cmp_sorted_arr(old_item["DstZoneIds"], old_item["DstZoneIds"]) then
 			print("DstZoneIds diff")
 			return true
 		end
 
-		if cmp_sorted_ids(old_item["DstIpgrpIds"], old_item["DstIpgrpIds"]) then
+		if cmp_sorted_arr(old_item["DstIpgrpIds"], old_item["DstIpgrpIds"]) then
 			print("DstIpgrpIds diff")
 			return true
 		end
 
-		if cmp_sorted_ids(old_item["ProtoIds"], old_item["ProtoIds"]) then
+		if cmp_sorted_arr(old_item["ProtoIds"], old_item["ProtoIds"]) then
 			print("ProtoIds diff")
 			return true
 		end
@@ -167,58 +175,6 @@ local function ac_rule_cmp(old, new)
 
 	return false
 end
-
--- config_map["ControlSet"] = function(old, new)
--- 	local key_arr = {"MacWhiteListSetName", "IpWhiteListSetName",
--- 						"MacBlackListSetName", "IpBlackListSetName"}
--- 	return set_name_cmp(old, new, key_arry)
--- end
-
--- config_map["ControlRule"] = function(old, new)
--- 	return ac_rule_cmp(old, new)
--- end
-
--- config_map["AuditSet"] = function(old, new)
--- 	local key_arr = {"MacWhiteListSetName", "IpWhiteListSetName"}
--- 	return set_name_cmp(old, new, key_arry)
--- end
-
--- config_map["AuditRule"] = function(old, new)
--- 	return ac_rule_cmp(old, new)
--- end
-
-
---[[
-Compare old_config and new_ac_rules, if they are different, return true; otherwise, return false.
-Notice:
-1.there are four parts should be considered: ControlSet, ControlRule, AuditSet, and AuditRule.
-2.old_config and new_ac_rules must be non-nil !!!
---]]
--- local function compare_config(old_config, new_ac_rules)
--- 	local changed = false
-
--- 	if old_config == nil or new_ac_rules == nil then
--- 		print("invalid parameter")
--- 		return false
--- 	end
-
--- 	for _, item in pairs(config_map) do
--- 		local func = config_map[item] assert(func)
--- 		if old_config[item] and new_ac_rules[item] then
--- 			if func(old_config[item], new_ac_rules[item]) then
--- 				changed = true
--- 				break
--- 			end
-		
--- 		elseif not (old_config[item] == nil and new_ac_rules[item] == nil) then
--- 			changed = true
--- 			break
--- 		end
--- 	end
-
--- 	return changed
--- end
-
 
 --[[
 Check whether tm is contained by tmlist
@@ -454,14 +410,20 @@ fetch_raw_config["Set"] = function()
 end
 
 
---load config
+--[[
+load config:Rule and set 
+]]
 local function load_config()
 	for _, config_type in ipairs(ConfigType) do
 		local func = fetch_raw_config[config_type] assert(func)
-		all_raw_ac_config[config_type] = func()
+		local tmp_config = func()
+		if not tmp_config then
+			log.err("fetch config(type=%s) failed", config_type)
+			return false
+		end
+		all_raw_ac_config[config_type] = tmp_config
 		print("-----------load_config:", config_type, js.encode(all_raw_ac_config[config_type]))
 	end
-	print("\n\n")
 	return true
 end
 
@@ -469,8 +431,8 @@ end
 check config whether need update and commit
 --]]
 local function check_config_update()
-
 	if not load_config() then
+		log.err("load config failed")
 		return false
 	end
 
@@ -512,12 +474,15 @@ end
 local function run()
 	while true do
 		check_config_update()
-		--ski.sleep(60)
+		ski.sleep(60)
 	end
 end
 
---fetch raw config from db
-local function init()	
+--init db and load config from db
+local function init(p)	
+	mqtt = p
+	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	simple = simplesql.new(dbrpc)
 	load_config()
 end
 
