@@ -28,7 +28,13 @@ for i in `seq 0 255`; do
 	else
 		ipset create ipgrp_$id hash:net
 		for network in $networks; do
-			ipset add ipgrp_$id $network
+			if echo $network | grep -q -- -; then
+				ipcalc -r `echo $network | sed 's/-/ /'` | grep ^[0-9] | while read line; do
+					ipset add ipgrp_$id $line
+				done
+			else
+				ipset add ipgrp_$id $network
+			fi
 		done
 		echo ipgrp $id=ipgrp_$id >/dev/nos_ipgrp_ctl
 	fi

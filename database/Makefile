@@ -48,7 +48,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/database.init $(1)/etc/init.d/database
 	$(CP) -r files/lib/* $(1)/usr/lib/lua/
 	$(INSTALL_BIN) ./files/database.sh $(1)/usr/sbin/database
-ifeq ($(CONFIG_TARGET_AC_ar9531),y)
+ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(CP) -r files/database_ar71xx $(1)/usr/share/database 	
 endif
 endef

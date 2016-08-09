@@ -44,7 +44,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/cfgmgr.init $(1)/etc/init.d/cfgmgr
 	$(INSTALL_BIN) ./files/cfgmgr.sh $(1)/usr/sbin/cfgmgr
-ifeq ($(CONFIG_TARGET_AC_ar9531),y)
+ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	#TODO change database_ar71xx to database_x86
 	$(CP) -r files/cfgmgr_71xx $(1)/usr/share/cfgmgr
 endif	
