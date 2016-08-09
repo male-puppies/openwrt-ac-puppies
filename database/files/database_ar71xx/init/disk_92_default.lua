@@ -203,7 +203,7 @@ cmd_map.ipgroup = {
 		end 
 
 		local arr = {
-			{ipgid = 255, ipgrpname = "ALL", ipgrpdesc = "ALL", ranges = js.encode({"0.0.0.0-255.255.255.255"})},
+			{ipgid = 63, ipgrpname = "ALL", ipgrpdesc = "ALL", ranges = js.encode({"0.0.0.0-255.255.255.255"})},
 		}
 
 		local narr = {}
