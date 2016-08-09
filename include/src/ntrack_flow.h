@@ -13,15 +13,17 @@
 			(fi)->tuple.proto
 
 /* -------------------------- */
+#define FLOW_STAT_SHIFT		(0)
+#define FLOW_STAT_MASK		(0x000000FFU << FLOW_STAT_SHIFT)
 #define FLOW_DROP_SHIFT 	(8)
-#define FLOW_DROP_MASK 		(0x000000FFUL << FLOW_DROP_SHIFT)
+#define FLOW_DROP_MASK 		(0x000000FFU << FLOW_DROP_SHIFT)
 enum em_flow_flags {
 	/* byte: normal flags. */
-	FG_FLOW_NPROTO_FIN		= 1<<0, /* identify finished. */
-	FG_FLOW_NPROTO_BEHIVOR	= 1<<1, /* behivor identify need. */
-	FG_FLOW_TRACE			= 1<<2, /* recored url/content need. */
+	FG_FLOW_NPROTO_FIN		= 1<<(FLOW_STAT_SHIFT + 0), /* identify finished. */
+	FG_FLOW_NPROTO_BEHIVOR	= 1<<(FLOW_STAT_SHIFT + 1), /* behivor identify need. */
+	FG_FLOW_TRACE			= 1<<(FLOW_STAT_SHIFT + 2), /* recored url/content need. */
 	/* next byte: drop flags. */
-	FG_FLOW_DROP_AUTH		= 1<<(FLOW_DROP_SHIFT), 	/* droped by auth not successued */
+	FG_FLOW_DROP_AUTH		= 1<<(FLOW_DROP_SHIFT + 0), /* droped by auth not successued */
 	FG_FLOW_DROP_L4_FW		= 1<<(FLOW_DROP_SHIFT + 1), /* droped by layer 4 firewall. */
 	FG_FLOW_DROP_L7_FW		= 1<<(FLOW_DROP_SHIFT + 2), /* droped by layer 7 firewall, such as user ACL rules. */
 	FG_FLOW_DROP_CTX_FILTER	= 1<<(FLOW_DROP_SHIFT + 3), /* droped by content filter, eg: keywords filter... */
@@ -78,8 +80,6 @@ typedef struct {
 } nt_flow_authd_t;
 /* END USER AUTHD */
 
-void nt_flow_nproto_update(flow_info_t *fi, uint16_t proto_new);
-
 static inline uint16_t nt_flow_nproto(const flow_info_t *fi)
 {
 	return fi->hdr.proto;
@@ -111,7 +111,6 @@ enum __em_flow_dir {
 	NP_FLOW_DIR_S2C,
 	NP_FLOW_DIR_MAX,
 };
-#define SET_DIR_STR(idx) flow_dir_name[idx]
 
 static inline int nt_flow_dir(flow_tuple_t *tuple, struct iphdr *iph)
 {

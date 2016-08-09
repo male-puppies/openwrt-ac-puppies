@@ -7,17 +7,7 @@
 
 #include <net/netfilter/nf_conntrack.h>
 
-#include <linux/nos_track.h>
-#include <ntrack_comm.h>
-#include <ntrack_packet.h>
-#include <ntrack_nproto.h>
-#include <ntrack_log.h>
-
-extern int test_init(void);
-extern void test_exit(void);
-extern int nproto_init(void);
-extern void nproto_cleanup(void);
-extern int nproto_rules_match(nt_packet_t *pkt);
+#include "nproto_private.h"
 
 static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_t *pkt)
 {

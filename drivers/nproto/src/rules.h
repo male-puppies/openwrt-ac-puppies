@@ -193,6 +193,7 @@ enum __em_inner_sets {
 	NP_SET_BASE_OTHER,
 	NP_SET_BASE_MAX,
 };
+#define SET_DIR_STR(idx) flow_dir_name[idx]
 #define SET_BASE_STR(idx) set_inner_name[idx]
 
 static inline uint8_t np_proto_to_set(uint8_t proto)

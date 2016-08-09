@@ -2,7 +2,6 @@
 
 #include <linux/udp.h>
 #include <linux/tcp.h>
-
 #include <linux/nos_track.h>
 
 #include <nproto/http.h>
@@ -11,6 +10,7 @@
 #include "bmh.h"
 #include "rules.h"
 #include "pcre.h"
+#include "nproto_private.h"
 
 #define RULE_DBG_ID NP_INNER_RULE_HTTP_WEIBO
 

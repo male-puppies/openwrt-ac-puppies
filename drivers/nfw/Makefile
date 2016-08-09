@@ -18,7 +18,7 @@ define KernelPackage/nfw
   SUBMENU:=Nos kernel modules
   TITLE:=nos track layer 7 firewall kernel driver
   FILES:=$(PKG_BUILD_DIR)/nfw.ko
-  DEPENDS:=+kmod-klog +kmod-nproto +kmod-ipt-ipset +pps_comm
+  DEPENDS:=+kmod-klog +kmod-nproto +pps_comm
   AUTOLOAD:=$(call AutoProbe, nfw)
   KCONFIG:=
 endef

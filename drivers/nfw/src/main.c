@@ -83,7 +83,7 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	}
 };
 
-static int fw_nproto_hook(flow_info_t *fi, uint16_t proto_new)
+static int fw_nproto_callback(flow_info_t *fi, uint16_t proto_new)
 {
 	/*TODO: check the config rule's, markup fi->flags.*/
 	if(/*fw_check_rule(fi, proto_new)*/0) {
@@ -108,7 +108,7 @@ static int __init ct_modules_init(void)
 		goto __err;
 	}
 
-	np_hook_register(fw_nproto_hook);
+	np_hook_register(fw_nproto_callback);
 	return 0;
 
 __err:
@@ -122,7 +122,7 @@ static void __exit ct_modules_exit(void)
 {
 	fw_info("module cleanup.\n");
 
-	np_hook_unregister(fw_nproto_hook);
+	np_hook_unregister(fw_nproto_callback);
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
 	klog_fini(nfw_klog_fd);
 
