@@ -75,7 +75,7 @@ local function generate_network_cmds(board, network)
 
 	for name, option in pairs(network) do
 		uci_network[name] = option
-		if #option.ports > 1 then
+		if name:find("^lan") then
 			uci_network[name].type = 'bridge'
 		end
 
@@ -132,7 +132,7 @@ local function generate_network_cmds(board, network)
 			table.insert(arr, string.format("uci set dhcp.%s.force='1'", name))
 			table.insert(arr, string.format("uci set dhcp.%s.subnet='%s'", name, uci_network[name].ipaddr))
 			table.insert(arr, string.format("uci set dhcp.%s.dynamicdhcp='%u'", name, uci_network[name].dhcpd["dynamicdhcp"] or 1))
-			if uci_network[name].dhcpd["dns"] then
+			if uci_network[name].dhcpd["dns"] and uci_network[name].dhcpd["dns"] ~= "" then
 				table.insert(arr, string.format("uci add_list dhcp.%s.dhcp_option='6,%s'", name, uci_network[name].dhcpd["dns"]))
 			end
 		end
