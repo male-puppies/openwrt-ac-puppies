@@ -24,6 +24,7 @@ local v_while_mac   = gen_validate_str(2, 10240)
 local v_wechat      = gen_validate_str(2, 1024)
 local v_sms         = gen_validate_str(2, 1024)
 local v_rids        = gen_validate_str(2, 256)
+local v_priority    = gen_validate_num(0, 99999)
 
 local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
 
@@ -46,7 +47,7 @@ function cmd_map.authrule_get()
     end
 
     local cond = authlib.search_cond(authlib.search_opt(m, {order = valid_fields, search = valid_fields}))
-    local sql = string.format("select * from authrule, zone, ipgroup where authrule.zid=zone.zid and authrule.ipgid=ipgroup.ipgid %s %s %s", cond.like and string.format("and %s", cond.like) or "", cond.order, cond.limit)
+    local sql = string.format("select * from authrule, zone, ipgroup where authrule.zid=zone.zid and authrule.ipgid=ipgroup.ipgid %s %s %s", cond.like and string.format("and %s", cond.like) or "", "order by priority", cond.limit)
     local rs, e = mysql_select(sql)
     return rs and reply(rs) or reply_e(e)
 end
@@ -131,7 +132,7 @@ local function authrule_update_common(cmd, ext)
 end
 
 function cmd_map.authrule_set()
-    return authrule_update_common("authrule_set", {rid = v_rid})
+    return authrule_update_common("authrule_set", {rid = v_rid, priority = v_priority})
 end
 
 function cmd_map.authrule_add()
@@ -158,6 +159,28 @@ function cmd_map.authrule_del()
     end
 
     return query_common(m, "authrule_del")
+end
+
+function cmd_map.authrule_adjust()
+    local m, e = validate_post({rids = v_rids})
+
+    if not m then 
+        return reply_e(e)
+    end
+
+    local ids = js.decode(m.rids)
+    if not (ids and #ids == 2) then 
+        return reply_e("invalid rids")
+    end 
+
+    for _, id in ipairs(ids) do 
+        local tid = tonumber(id)
+        if not (tid and tid >= 0 and tid < 16) then 
+            return reply_e("invalid rids")
+        end
+    end
+
+    return query_common(m, "authrule_adjust")
 end
 
 return {run = run}

@@ -12,8 +12,9 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		ipgid 		integer 	not null default 0, \
 		authtype 	char(16) 	not null default 'auto', \
 		enable 		integer		not null default 1, \
-		modules 	char(32)	not null default '[]', \
+		modules 	char(32)	not null default '{}', \
 		iscloud		integer		not null default 0, \
+		priority	integer		not null default 0, \
 		white_ip	text		, \
 		white_mac	text		, \
 		wechat		text		, \
@@ -30,8 +31,9 @@ create_mysql_disk_table "create table $tbname ( \
 		ipgid 		integer 	not null default 0, \
 		authtype 	char(16) 	not null default 'auto', \
 		enable 		integer		not null default 1, \
-		modules 	char(32)	not null default '[]', \
+		modules 	char(32)	not null default '{}', \
 		iscloud		integer		not null default 0, \
+		priority	integer		not null default 0, \
 		white_ip	text		, \
 		white_mac	text		, \
 		wechat		text		, \

@@ -96,10 +96,10 @@ udp_map["authrule_add"] = function(p, ip, port)
 
 		-- check dup rulename
 		local rs, e = conn:select("select * from authrule") 			assert(rs, e)
-		local ids = {}
+		local ids, priorities = {}, {}
 		for _, r in ipairs(rs) do 
-			local id, name = r.rid, r.rulename
-			table.insert(ids, id)
+			local name = r.rulename
+			local _ = table.insert(ids, r.rid), table.insert(priorities, r.priority)
 			if name == rulename then 
 				return nil, "exists rulename"
 			end
@@ -111,8 +111,14 @@ udp_map["authrule_add"] = function(p, ip, port)
 			return nil, e
 		end
 
+		local priority = 0
+		if #priorities > 0 then 
+			table.sort(priorities)
+			priority = priorities[#priorities] + 1
+		end 
+
 		-- insert new authrule
-		p.rid = id
+		p.rid, p.priority = id, priority
 		local sql = string.format("insert into authrule %s values %s", conn:insert_format(p))
 		local r, e = conn:execute(sql)
 		if not r then 
@@ -154,4 +160,50 @@ udp_map["authrule_del"] = function(p, ip, port)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
+udp_map["authrule_adjust"] = function(p, ip, port)
+	local code = [[
+		local ins = require("mgr").ins()
+		local js = require("cjson.safe")
+		local conn, ud = ins.conn, ins.ud
+		local rids = js.decode(arg.rids)
+		local rid1, rid2 = rids[1], rids[2]
+
+		local in_part = table.concat(rids, ",")
+		
+		local sql = string.format("select rid, priority from authrule where rid in (%s)", in_part)
+		local rs, e = conn:select(sql) 	assert(rs, e)
+		if not rs then 
+			return nil, e 
+		end
+
+		if #rs ~= 2 then 
+			return nil, "invalid rids"
+		end 
+
+		rs[1].priority, rs[2].priority = rs[2].priority, rs[1].priority
+		local arr, e = conn:transaction(function()
+			local arr = {}
+			for _, r in ipairs(rs) do 
+				local sql = string.format("update authrule set priority='%s' where rid='%s'", r.priority, r.rid)
+				local r, e = conn:execute(sql)
+				if not r then 
+					return nil, e 
+				end
+				table.insert(arr, sql)
+			end
+			return arr
+		end)
+		if not arr then
+			return nil, e 
+		end
+
+		ud:save_log(arr, true)
+		return true
+	]]
+
+	p.cmd = nil
+	local r, e = dbrpc:fetch("cfgmgr_ipgroup_adjust", code, p)
+	--local r, e = dbrpc:once(code, p)
+	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
+end
 return {init = init, dispatch_udp = dispatch_udp}
