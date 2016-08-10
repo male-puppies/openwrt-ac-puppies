@@ -144,7 +144,7 @@ end
 
 local default_validator = {
 	page = gen_validate_num(1, 100000),
-	count = gen_validate_num(10, 100),
+	count = gen_validate_num(10, 10000),
 	desc = function(v) return v and 1 or nil end,
 }
 
