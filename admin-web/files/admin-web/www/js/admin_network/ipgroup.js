@@ -23,17 +23,9 @@ function createDt() {
 		"order": [[1, 'asc']],
 		"language": {"url": '../../js/lib/dataTables.chinese.json'},
 		"ajax": {
-			"url": cgiTdUrl("ipgroup_get", cgiobj),
+			"url": cgiDtUrl("ipgroup_get", cgiobj),
 			"type": "GET",
-			"dataSrc": function(json) {
-				if (json.status == 0) {
-					return dtObjToArray(json.data);
-				} else if (json.data.indexOf("timeout") > -1) {
-					window.location.href = "/login/admin_login/login.html";
-				} else {
-					return [];
-				}
-			}
+			"dataSrc": dtDataCallback
 		},
 		"columns": [
 			{
@@ -56,11 +48,10 @@ function createDt() {
 			{
 				"data": "ranges",
 				"render": function(d, t, f) {
-					var json = JSON.parse(d);
-					if (Object.prototype.toString.call(json) === '[object Array]') {
+					if (Object.prototype.toString.call(d) === '[object Array]') {
 						var list ='<ul style="line-height:18px;list-style-type:none;margin:0;margin-top:6px;">';
-						for (var i = 0, ien = json.length; i < ien; i++) {
-							list += '<li>' + json[i] + '</li>';
+						for (var i = 0, ien = d.length; i < ien; i++) {
+							list += '<li>' + d[i] + '</li>';
 						}
 						list += '</ul>';
 						return list;
@@ -110,7 +101,7 @@ function edit(that) {
 	modify_flag = "mod";
 	getSelected(that);
 	var obj = ObjClone(nodeEdit[0]);
-	obj.ranges = JSON.parse(obj.ranges).join("\n");
+	obj.ranges = obj.ranges.join("\n");
 	jsonTraversal(obj, jsTravSet)
 	$('#modal_edit').modal("show");
 }

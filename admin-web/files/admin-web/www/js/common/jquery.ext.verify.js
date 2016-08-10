@@ -206,6 +206,63 @@
 			},
 			message: "非法DNS格式。"
 		},
+		"ipmask": {
+			method: function(val, ipid, maskid, startid) {
+				var ipstr = $("#" + ipid).val(),
+					maskstr = $("#" + maskid).val(),
+					reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+				function ipToInt(ipstr) {
+					var ip = ipstr.split(".");
+					return (Number(ip[0]) * 16777216) + (Number(ip[1]) * 65536) + (Number(ip[2]) * 256) + (Number(ip[3]) * 1);
+				}
+
+				function checkIpMask(ipstr, maskstr, ipstr1) {
+					var ip = ipToInt(ipstr);
+					var mask = ipToInt(maskstr);
+					var ip1 = ipToInt(ipstr1);
+					return (ip & mask) == (ip1 & mask);
+				}
+				
+				function compareIP(start, end) {  
+					var temp1 = start.split(".");
+					var temp2 = end.split(".");
+					console.log(temp1)
+					console.log(temp2)
+					for (var i = 0; i < 4; i++) {
+						var num1 = parseInt(temp1[i]);
+						var num2 = parseInt(temp2[i]);
+						if (num1 > num2) {
+							return false;
+						} else if (num1 < num2) {  
+							return true;
+						}
+					}
+					return false;
+				}  
+
+				if (!reg.test(val)) {
+					this.message = "非法IP格式。";
+					return false;
+				}
+				
+				if (!checkIpMask(ipstr, maskstr, val)) {
+					this.message = "非法IP地址。根据IP地址和子网掩码，该IP溢出DHCP分配范围。";
+					return false;
+				}
+
+				if (startid) {
+					var startstr = $("#" + startid).val();
+					if (!compareIP(startstr, val)) {
+						this.message = "非法IP地址。结束IP地址应大于起始IP地址。";
+						return false;
+					}
+				}
+				
+				return true;
+			},
+			message: "非法IP格式。"
+		},
 		"num": {
 			method: function(val, from, to) {
 				var reg = /^-?[0-9]\d*$/;
@@ -415,7 +472,7 @@
 
 			if (obj && obj.method) {
 				pars[0] = $(this).val();
-				res = obj.method.apply(this, pars);
+				res = obj.method.apply(obj, pars);
 				if (res != true) {
 					var tips ="",
 						mtip = "",
@@ -423,7 +480,7 @@
 						tip = $(this).closest(".form-group").find("label.control-label").html() || "";
 
 					if (tab_pane.length > 0 && typeof tab_pane.attr("data-mtip") != "undefined") {
-						mtip = tab_pane.attr("data-mtip") + "的";
+						mtip = tab_pane.attr("data-mtip") + "的 ";
 					}
 
 					$(this).closest(".form-group").addClass('has-error');

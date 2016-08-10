@@ -278,14 +278,13 @@ function initHtml(datas) {
 			result = temp.replace(/wan0__/g, eth + "__");
 			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
 			$("#form_wan .tab-content").append(results);
-			this.setValue(eth);
 		} else {
 			temp = $("#tabs_lan0").html();
 			result = temp.replace(/lan0__/g, eth + "__");
 			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
 			$("#form_lan .tab-content").append(results);
-			this.setValue(eth);
 		}
+		this.setValue(eth);
 		$(id + ' [data-toggle="tooltip"]').tooltip();
 		verifyEventsInit(id);
 		$(id).find(".has-error").removeClass("has-error");

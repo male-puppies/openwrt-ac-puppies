@@ -1,5 +1,4 @@
 (function(root, undefined) {
-
 	var cgicall = (function() {
 		var version = "/v1/admin/api/",
 			token = $.cookie("token") ? "?token=" + $.cookie("token") : "",
@@ -73,7 +72,7 @@
 		}
 	}());
 	
-	function cgiTdUrl(str, obj) {
+	function cgiDtUrl(str, obj) {
 		var version = "/v1/admin/api/",
 			token = $.cookie("token") ? "&token=" + $.cookie("token") : "";
 
@@ -86,7 +85,6 @@
 			modalId = "modal_tips",
 			sfunc = success || function() {},
 			ffunc = fail || function() {};
-			
 
 		$(".modal.in").each(function(index, element) {
 			var id = $(element).attr("id");
@@ -104,6 +102,37 @@
 			editModal.one("hidden.bs.modal", ffunc);
 			editModal.modal("hide");
 		}
+	}
+	
+	function initBackDatas(obj) {
+		var sobj = {};
+		if (Object.prototype.toString.call(obj) === '[object Object]') {
+			for (var k in obj) {
+				var o;
+				try {
+					o = JSON.parse(obj[k]);
+				} catch(e) {
+					o = obj[k];
+					if (typeof o === "object") o = initBackDatas(o);
+				}
+				sobj[k] = o;
+			}
+		} else if (Object.prototype.toString.call(obj) === '[object Array]') {
+			sobj = [];
+			for (var i = 0, ien = obj.length; i < ien; i++) {
+				var o;
+				try {
+					o = JSON.parse(obj[i]);
+				} catch(e) {
+					o = obj[i];
+					if (typeof o === "object") o = initBackDatas(o);
+				}
+				sobj.push(o)
+			}
+		} else {
+			return obj;
+		}
+		return sobj;
 	}
 	
 	function jsonTraversal(obj, func) {
@@ -133,8 +162,7 @@
 		}
 		return oset;
 	}
-	
-	
+
 	/*
 		********
 		需要特殊处理的控件:checkbox, radio
@@ -357,6 +385,17 @@
         }
     }
 	
+	function dtDataCallback(d) {
+		var data = initBackDatas(d);
+		if (data.status == 0) {
+			return dtObjToArray(data.data);
+		} else if (data.data.indexOf("timeout") > -1) {
+			window.location.href = "/login/admin_login/login.html";
+		} else {
+			return [];
+		}
+	}
+	
     function dtBindRowSelectEvents(row) {
 		var that = $(row);
 		that.find('td input[type="checkbox"]').off('click', function() {
@@ -416,8 +455,9 @@
 	
 	/* cgi */
 	root.cgicall				= cgicall;					//cgi
-	root.cgiTdUrl				= cgiTdUrl;
-	root.cgicallBack			= cgicallBack;
+	root.cgiDtUrl				= cgiDtUrl;					//datatable的ajax的URL
+	root.cgicallBack			= cgicallBack;				//回调
+	// root.initBackDatas			= initBackDatas;			//初始化回调数据
 	root.jsonTraversal			= jsonTraversal;			//取值赋值入口
 	root.jsTravGet				= jsTravGet;				//取值
 	root.jsTravSet				= jsTravSet;				//赋值
@@ -426,9 +466,9 @@
 	root.ObjCountLength			= ObjCountLength;			//对象长度
 	root.ObjClone				= ObjClone;					//对象克隆
 	root.createModalTips		= createModalTips;			//创建提示模态框
-	root.addUrlParam			= addUrlParam;
-	root.setUrlParam			= setUrlParam;
-	root.getUrlParam			= getUrlParam;
+	root.addUrlParam			= addUrlParam;				//URL添加参数
+	root.setUrlParam			= setUrlParam;				//URL设置参数
+	root.getUrlParam			= getUrlParam;				//URL获取参数
 	
 	/* datatable */
 	root.dtObjToArray			= dtObjToArray;				//对象强制转数组 去适应datatable
@@ -438,4 +478,5 @@
 	root.dtGetSelected			= dtGetSelected;			//获取datatable选中的列
 	root.dtSelectAll			= dtSelectAll;				//选中所有datatable列
 	root.dtBindRowSelectEvents	= dtBindRowSelectEvents;	//绑定选择事件
+	root.dtDataCallback			= dtDataCallback;			//表格ajax回调
 })(this);
