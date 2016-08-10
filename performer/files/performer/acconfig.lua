@@ -1,9 +1,7 @@
---local ski = require("ski")
+local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
-local batch = require("batch")
-local share = require("share")
 local simplesql = require("simplesql")
 
 
@@ -181,7 +179,7 @@ Check whether tm is contained by tmlist
 the tmgrp format is {days = {}, tmlist = []}
 tm is provided by os.time()
 --]]
-local function tm_contained(tmgrp, tm)
+local function tm_contained(tmgrps, tm)
 	local cur_tm = tm
 	local cur_weekday = tostring(os.date("%w", tm)) --0~6 sunday~saturday
 	local cur_year = os.date("%Y", tm)
@@ -197,18 +195,22 @@ local function tm_contained(tmgrp, tm)
 		["5"] = "fri",
 		["6"] = "sat",
 	}
+	local cur_tmgrp
 
 	local day_key = day_map[cur_weekday] assert(day_key)
-	for day_name, day_value in pairs(tmgrp.days) do
-		if day_name == day_key then
-			if day_value ~= 1 then
-				return false
+	for _, tmgrp in ipairs(tmgrps) do
+		for day_name, day_value in pairs(tmgrp.days) do
+			if day_name == day_key then
+				if day_value ~= 1 then
+					return false
+				end
+				cur_tmgrp = tmgrp
+				break
 			end
-			break
 		end
 	end
 
-	for _, tm_item in ipairs(tmgrp.tmlist) do
+	for _, tm_item in ipairs(cur_tmgrp.tmlist) do
 		local start_tm = os.time({year = cur_year, month = cur_month, day = cur_day, 
 									hour = tm_item.hour_start, min = tm_item.min_start})
 		local end_tm = os.time({year = cur_year, month = cur_month, day = cur_day, 
@@ -222,51 +224,7 @@ local function tm_contained(tmgrp, tm)
 end
 
 
---[[
-		"Id":,
-		"SrcZoneIds":[],
-		"SrcIpgrpIds":[],
-		"DstZoneIds":[],
-		"DstIpgrpIds":[],
-		"ProtoIds":[],
-		"Action":["ACCEPT", "AUDIT"]
-		"TmGrp":{days = "{}", tmlist = ""}
---]]
-local function generate_rule_config(rule_config, cur_tm)
-	local tmp_config = {}
-	local tmp_rule = {}
 
-	for _, rule_item in ipairs(rule_config) do 
-		if tm_contained(rule_item["TmGrp"], cur_tm) then
-			tmp_rule["Id"] = rule_item["Id"]
-			tmp_rule["SrcZoneIds"] = rule_item["Id"]
-			tmp_rule["SrcIpgrpIds"] = rule_item["Id"]
-			tmp_rule["DstZoneIds"] = rule_item["Id"]
-			tmp_rule["DstIpgrpIds"] = rule_item["Id"]
-			tmp_rule["ProtoIds"] = table.sort(rule_item["ProtoIds"])
-			tmp_rule["Actions"] = rule_item["Actions"]
-			table.insert(tmp_config, tmp_rule)
-		else
-			print("time diff")
-		end
-	end
-	return tmp_config
-end
-
---[[
-	generate config from all_raw_ac_rules based on current time
---]]
-local function generate_config()
-	local tmp_config = {}
-	local cur_tm = os.time()
-
-	local audit_rule = all_raw_ac_rules[AuditRule]
-	local control_rule = all_raw_ac_rules[ControlRule]
-
-	tmp_config[AuditRule] = generate_rule_config(audit_rule, cur_tm)
-	tmp_config[ControlRule] = generate_rule_config(control_rule, cur_tm)
-	return tmp_config
-end
 
 --[[
 commit config to kernel
@@ -305,7 +263,7 @@ Rule concerns only cate
 --]]
 local compare_config = {} 
 compare_config["Rule"] = function(old, new)
-	local ret, cmp_res = true, {}
+	local cmp_res, ret, err = {}, true
 
 	if old == nil or new == nil then
 		print("new or old is nil")
@@ -315,20 +273,23 @@ compare_config["Rule"] = function(old, new)
 	print("old:", js.encode(old))
 	print("new:", js.encode(new))
 	for _, cate in ipairs(ConfigCate) do
-		
 		if old[cate] == nil or new[cate] == nil then
-			print("old or new ", cate, "is nil")
-			return false
+			err = string.format("old[%s] is %s, new[%s] is %s", 
+								old[cate] and "not nil" or "nil",
+								new[cate] and "not nil" or "nil")
+			return nil, err
 		end
+
 		print("old cate:", js.encode(old[cate]))
 		print("new cate:", js.encode(new[cate]))
-		ret = ac_rule_cmp(old[cate], new[cate])
-		print("ac_rule_cmp:", ret)
-		if ret and ret == true then
-			table.insert(cmp_res, {["cate"] = cate})
+		--maybe a error occured
+		ret, err = ac_rule_cmp(old[cate], new[cate])
+		if not ret and err then
+			return nil, err
 		end
+		local _ = ret and table.insert(cmp_res, {["cate"] = cate})
 	end
-	return ret, cmp_res
+	return cmp_res
 end
 
 --[[
@@ -340,13 +301,55 @@ compare_config["Set"] = function(old, new)
 end
 
 
+	--[[
+		"Id":,
+		"SrcZoneIds":[],
+		"SrcIpgrpIds":[],
+		"DstZoneIds":[],
+		"DstIpgrpIds":[],
+		"ProtoIds":[],
+		"Action":["ACCEPT", "AUDIT"]
+		"TmGrp":{days = "{}", tmlist = ""}
+--]]
+
 local translate_config = {}
 --generate two categories rule config:audit and control
 translate_config["Rule"] = function(raw_rule_config)
-	local rule_config, cur_tm = {}, os.time()
-	for _, cate in ipairs(ConfigCate) do
-		rule_config[cate] = generate_rule_config(raw_rule_config[cate], cur_tm)
+	local generate_rule = function(rule_config, cur_tm)
+		local rule_arr, rule_item = {}, {}
+		print("----translate rule:", js.encode(rule_config))
+		for _, item in ipairs(rule_config) do 
+			print("-----tmgrp:")
+			if tm_contained(item["TmGrp"], cur_tm) then
+				rule_item["Id"] = item["ruleid"]
+				rule_item["SrcZoneIds"] = js.decode(item["srczoneids"])
+				rule_item["SrcIpgrpIds"] = js.decode(item["srcipgrpids"])
+				rule_item["DstZoneIds"] = js.decode(item["dstzoneids"])
+				rule_item["DstIpgrpIds"] = js.decode(item["dstipgrpids"]) or {}
+				rule_item["ProtoIds"] = js.decode(item["protoids"])
+				local _ = #rule_item["ProtoIds"] and table.sort(rule_item["ProtoIds"])
+				rule_item["Actions"] = js.decode(item["actions"]) or {}
+				table.insert(rule_arr, rule_item)
+			else
+				print("time diff")
+			end
+		end
+		print("----translate:", js.encode(rule_arr))
+		return rule_arr
 	end
+
+	local cur_tm, rule_config = os.time(), {}
+	for _, cate in ipairs(ConfigCate) do
+		local tmp_config, err = {}
+		if raw_rule_config[cate] and #raw_rule_config[cate] > 0 then
+	 		tmp_config, err = generate_rule(raw_rule_config[cate], cur_tm)
+			if not tmp_config then
+				return nil, err
+			end
+		end
+		rule_config[cate] = tmp_config 
+	end
+
 	return rule_config
 end
 
@@ -358,41 +361,56 @@ local fetch_raw_config = {}
 --fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
 	local fetch_rule = function(cate)
-		if cate == "Control" then
-			
-			local rule =  {
-					["Id"] = 1, ["SrcZoneIds"]= {1,2}, ["SrcIpgrpIds"] = {3,4},
-					["DstZoneIds"] = {5,6}, ["DstIpgrpIds"]={7,8},
-					["ProtoIds"] = {0,9}, ["Action"] = {"ACCEPT","AUDIT"},
-					["TmGrp"] = {
-									days = {mon = 1, tues = 1, wed = 1, thur = 1, fri = 1, sat = 1, sun = 1}, 
-									tmlist = {{hour_start = 14, min_start = 0, hour_end = 23, min_end = 59}}
-								}
-				}
-
-			local rule_2 = {
-					["Id"] = 1, ["SrcZoneIds"]= {1,2}, ["SrcIpgrpIds"] = {3,4},
-					["DstZoneIds"] = {5,6}, ["DstIpgrpIds"]={7,8},
-					["ProtoIds"] = {0,9}, ["Action"] = {"ACCEPT","AUDIT"},
-					["TmGrp"] = {
-									days = {mon = 1, tues = 1, wed = 1, thur = 1, fri = 1, sat = 1, sun = 1}, 
-									tmlist = {{hour_start = 15, min_start = 0, hour_end = 23, min_end = 59}}
-								}
-				}
-
-			local rule_arr = {}
-			table.insert(rule_arr, rule)
-			table.insert(rule_arr, rule_2)
-			return rule_arr
-		else
-			return {}
+		local sql = string.format("select * from acrule where ruletype='%s' and state='enable' order by priority asc", cate) assert(sql)
+		if not sql then
+			return nil, "construct sql failed"
 		end
+		
+		local rule_arr = {}
+		local tmp_arr, err = simple:mysql_select(sql)
+		print("----sql:", sql, "data:", js.encode(tmp_arr))
+
+		if err then
+			return nil, err
+		end
+
+		for _, rule in ipairs(tmp_arr) do
+			local tmgrpids, tmgrps = js.decode(rule["tmgrpids"]) or {}, {}
+			print("tmpgrpids:", rule["tmgrpids"])
+			for _, tmgrpid in ipairs(tmgrpids) do
+				local sql = string.format("select days, tmlist from timegroup where tmgid=%d", tonumber(tmgrpid)) assert(sql)
+				if not sql then
+					return nil, "construct sql failed"
+				end
+
+				local tminfo, err = simple:mysql_select(sql)
+				if not err and #tminfo > 0 then
+					table.insert(tmgrps, {days=js.decode(tminfo[1].days), tmlist=js.decode(tminfo[1].tmlist)})
+				end
+				print("----sql:", sql, "data:", js.encode(tminfo))
+			end
+
+			if tmgrps and #tmgrps > 0 then
+				rule["TmGrp"] = tmgrps
+				rule["tmgrpids"] = nil
+				table.insert(rule_arr, rule)
+			end
+		end
+		print("-----tmp_arr:",js.encode(tmp_arr))
+		print("-----rule_arr:",js.encode(rule_arr))
+		return rule_arr
 	end
 
 	local rule_config = {}
 	for _, cate in ipairs(ConfigCate) do
-		rule_config[cate] = fetch_rule(cate) or {}
+		local res, err = fetch_rule(cate) 
+		if not res then
+			--if fetch failed, ignore what already have fetched
+			return nil, err
+		end
+		rule_config[cate] = res
 	end
+
 	return rule_config
 end
 
@@ -414,52 +432,73 @@ end
 load config:Rule and set 
 ]]
 local function load_config()
+	local raw_config = {}
 	for _, config_type in ipairs(ConfigType) do
 		local func = fetch_raw_config[config_type] assert(func)
-		local tmp_config = func()
+		local tmp_config, err = func()
 		if not tmp_config then
-			log.err("fetch config(type=%s) failed", config_type)
+			log.error("fetch config(type=%s) failed for %s", config_type, err)
 			return false
 		end
-		all_raw_ac_config[config_type] = tmp_config
-		print("-----------load_config:", config_type, js.encode(all_raw_ac_config[config_type]))
+		raw_config[config_type] = tmp_config
+		print("-----------load_config:", config_type, js.encode(tmp_config))
 	end
+
+	all_raw_ac_config = raw_config
+	log.info("load config sucess")
 	return true
 end
 
 --[[
-check config whether need update and commit
+check config whether need update and commit:
+a.reload config
+b.translate raw config 
+c.compare new and old config
+d.if config updated, commit config
 --]]
 local function check_config_update()
 	if not load_config() then
-		log.err("load config failed")
+		log.error("load config failed")
 		return false
 	end
 
 	for _, config_type in ipairs(ConfigType) do	
-		local ret, cmp_res = false, {}	--a array which contains  {[cate = Audit/Control, sub_cate = xx], []}
+		local res, err 
+		local new_config, old_config
 		local trans_func = translate_config[config_type] 	assert(trans_func)
 		local cmp_func =  compare_config[config_type]		assert(cmp_func)
 		local commit_func = commit_config[config_type]		assert(commit_func)
 
-		print("--------check_config_update------:", config_type, js.encode(all_raw_ac_config[config_type]))
-		new_ac_config[config_type] = (all_raw_ac_config[config_type])
+		new_config, err = trans_func(all_raw_ac_config[config_type])
+		if not new_config then
+			log.error("translate config(type=%s) failed for %s", config_type, err)
+			return false
+		end
+		new_ac_config[config_type] = new_config
+		old_config = cur_ac_config[config_type]
+
+		--a array which contains  {[cate = Audit/Control, sub_cate = xx], []}
+		res, err = cmp_func(old_config, new_config)
+		if not res then
+			log.error("compare config(type=%s) failed for %s", config_type, err)
+			return false
+		end
+		print("----compare res----:", js.encode(res))
+		
+		res, err = commit_func(res) 
+		if not res then
+			log.error("commit config(type=%s) failed for %s", config_type, err)
+			return false
+		end
+		print("----commit_func res----:", js.encode(res))
 
 		print("\n----cur_ac_config:", config_type, js.encode(cur_ac_config[config_type]))
 		print("\n----new_ac_config:", config_type, js.encode(new_ac_config[config_type]))
-		-- ret, cmp_res = cmp_func(cur_ac_config[config_type], new_ac_config[config_type])
-		-- print("cmp res:", ret, cmp_res and js.encode(cmp_res))
-		-- if not ret then
-		-- 	print("cmp failed of ", config_type)
-		-- else
-		-- 	if commit_func(cmp_res) then
-		-- 		print("commit ", config_type, " success")
-		-- 	else
-		-- 		print("commit ", config_type, " failed")
-		-- 	end
-		-- end
-	end
 
+		--notice:update config after commit success
+		cur_ac_config[config_type] = new_ac_config[config_type]
+	end
+	return true
 end
 
 --[[
@@ -471,21 +510,29 @@ local function force_check_config_update()
 end
 
 --periodical routine
-local function run()
+local function run_routine()
 	while true do
 		check_config_update()
 		ski.sleep(60)
 	end
 end
 
---init db and load config from db
+--entrance of acconfig
 local function init(p)	
 	mqtt = p
+	
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	if not dbrpc then
+		log.error("create rpccli failed")
+		return false
+	end
+	
 	simple = simplesql.new(dbrpc)
-	load_config()
+	if not simple then
+		log.error("create simple sql failed")
+		return false
+	end
+	ski.go(run_routine)
 end
 
-
-check_config_update()
--- return {init = init, run = run}
+return {init = init}
