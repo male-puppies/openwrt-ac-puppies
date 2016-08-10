@@ -11,3 +11,7 @@ start_service() {
 	procd_set_param respawn
 	procd_close_instance
 }
+
+stop_service() {
+	ps | grep -E "sands/main.lua" | grep -v grep  | awk '{print $1}' | xargs kill
+}
