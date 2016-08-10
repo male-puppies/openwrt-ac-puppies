@@ -136,7 +136,7 @@
             "dhcpd": {
                 "enabled": 1,
                 "start": "172.18.0.100",
-                "end": "172.17.200.254",
+                "end": "172.18.200.254",
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
@@ -156,7 +156,7 @@
             "dhcpd": {
                 "enabled": 1,
                 "start": "172.19.0.100",
-                "end": "172.17.200.254",
+                "end": "172.19.200.254",
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
