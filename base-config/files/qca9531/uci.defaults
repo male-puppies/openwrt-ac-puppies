@@ -93,9 +93,9 @@ test $version -lt 4 && {
 			uci set wireless.$obj.device='radio0'
 			uci set wireless.$obj.network='lan0'
 			uci set wireless.$obj.mode='ap'
-			uci set wireless.$obj.ssid=\'${SSID}\'
+			uci set wireless.$obj.ssid="${SSID}"
 			uci set wireless.$obj.encryption='psk2'
-			uci set wireless.$obj.key=\'${SSID_PASSWD}\'
+			uci set wireless.$obj.key="${SSID_PASSWD}"
 		}
 	}
 	uci get wireless.radio1 && {
@@ -111,9 +111,9 @@ test $version -lt 4 && {
 			uci set wireless.$obj.device='radio0'
 			uci set wireless.$obj.network='lan0'
 			uci set wireless.$obj.mode='ap'
-			uci set wireless.$obj.ssid=\'${SSID}\'
+			uci set wireless.$obj.ssid="${SSID}"
 			uci set wireless.$obj.encryption='psk2'
-			uci set wireless.$obj.key=\'${SSID_PASSWD}\'
+			uci set wireless.$obj.key="${SSID_PASSWD}"
 		}
 	}
 	uci commit wireless
