@@ -63,6 +63,7 @@ local new_ac_config =  {["Rule"] = {["Audit"] = {}, ["Control"] = {}}, ["Set"] =
 	audit/control rule fromat:
 	{		
 		"Id":,
+
 		"SrcZoneIds":[],
 		"SrcIpgrpIds":[],
 		"DstZoneIds":[],
@@ -74,17 +75,17 @@ local new_ac_config =  {["Rule"] = {["Audit"] = {}, ["Control"] = {}}, ["Set"] =
 	structure of acconfig that ruletable can parse.
 	{
 		"ControlSet":{
-				"MacWhiteListSetName":,
-				"IpWhiteListSetName":,
-				"MacBlackListSetName":,
-				"IpBlackListSetName":,
+				{"MacWhiteListSetName":CtrlMacWhiteListSet, "MacWhite":[]},
+				{"IpWhiteListSetName":CtrlIpWhiteListSet, 	"IpWhite":[]},
+				{"MacBlackListSetName"CtrlMacBlackListSet, "MacBlack":[]},
+				{"IpBlackListSetName":CtrlIpBlackListSet, "IpBlack":[]}
 		},
 
 		"ControlRule": [],
 
 		"AuditSet": {
-				"MacWhiteListSetName":,
-				"IPWhiteListSetName":,
+				{"MacWhiteListSetName":AuditMacWhiteListSet, "MacWhite":[]},
+				{"IpWhiteListSetName":AuditIpWhiteListSet, 	"IpWhite":[]},
 		},
 
 		"AuditRule":[]
@@ -356,8 +357,67 @@ translate_config["Rule"] = function(raw_rule_config)
 	return rule_config
 end
 
+
+
+--[[
+"ControlSet":{
+				{"MacWhiteListSetName":CtrlMacWhiteListSet, "MacWhite":[]},
+				{"IpWhiteListSetName":CtrlIpWhiteListSet, 	"IpWhite":[]},
+				{"MacBlackListSetName"CtrlMacBlackListSet, "MacBlack":[]},
+				{"IpBlackListSetName":CtrlIpBlackListSet, "IpBlack":[]}
+		},
+]]
+
+
 --generate two categories set config:audit and control
-translate_config["Set"] = function()
+translate_config["Set"] = function(raw_set_config)
+	local generate_set = function(set_config)
+		local set_arr = {}
+
+		for _, set_info in ipairs(set_config) do
+			local name_key, list_key, set_content 
+			if set_info["settype"] == "Ip" then
+				if set_info["State"] == "Bypass" then
+					name_key = "IpWhiteListSetName"
+					list_key = "IpWhite"
+				else
+					name_key = "IpBlackListSetName"
+					list_key = "IpBlack"
+				end
+
+
+			else set_info["settype"] == "Mac" then
+				if set_info["State"] == "Bypass" then
+					name_key = "MacWhiteListSetName"
+					list_key = "MacWhite"
+				else
+					name_key = "MacBlackListSetName"
+					list_key = "MacBlack"
+				end
+
+			else
+			
+				return nil, "invalid settype"
+			end
+
+			table.insert(set_arr, {[name_key] = set_info["setname"], [list_key] = set_info["setcontent"]})
+		end
+
+	end
+
+	local set_config = {}
+	for _, cate in ipairs(ConfigCate) do
+		local tmp_config, err = {}
+		if raw_set_config[cate] and #raw_set_config[cate] > 0 then
+			tmp_config, err = generate_set(raw_set_config[cate], cate)
+			if tmp_config then
+				return nil, err
+			end
+		end
+		set_config[cate] = tmp_config
+	end
+
+	return set_config
 end
 
 local fetch_raw_config = {}
@@ -432,15 +492,29 @@ fetch_raw_config["Rule"] = function()
 	return rule_config
 end
 
+
 --fetch two categories set config:audit and control
 fetch_raw_config["Set"] = function()
 	local fetch_set = function(cate)
+		local sql = string.format("select * from acipset where setcate='%s'", cate) assert(sql)
+		if not sql then
+			return nil, "construct sql failed"
+		end
 
+		local set_arr, err = simple:mysql_select(sql)
+		if err then
+			return nil, err
+		end
+		return set_arr
 	end
 
 	local set_config = {}
 	for _, cate in ipairs(ConfigCate) do
-		set_config[cate] = fetch_set(cate) or {}
+		local res, err = fetch_set(cate)
+		if not res then
+			return nil, err
+		end
+		set_config[cate] =  res
 	end
 	return set_config
 end
