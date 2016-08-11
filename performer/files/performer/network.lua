@@ -96,12 +96,6 @@ local function generate_network_cmds(board, network)
 		table.insert(arr, string.format("uci set network.%s.macaddr='%s'", name, uci_network[name].mac))
 		table.insert(arr, string.format("uci set network.%s.ifname='%s'", name, uci_network[name].ifname))
 
-		if uci_network[name].dns and uci_network[name].dns ~= "" then
-			local dns = uci_network[name].dns .. ","
-			for ip in dns:gmatch("(.-),") do
-				table.insert(arr, string.format("uci add_list network.%s.dns='%s'", name, ip))
-			end
-		end
 		if uci_network[name].type and uci_network[name].type ~= "" then
 			table.insert(arr, string.format("uci set network.%s.type='%s'", name, uci_network[name].type))
 		end
@@ -116,6 +110,12 @@ local function generate_network_cmds(board, network)
 			table.insert(arr, string.format("uci set network.%s.ipaddr='%s'", name, uci_network[name].ipaddr))
 			if uci_network[name].gateway and uci_network[name].gateway ~= "" then
 				table.insert(arr, string.format("uci set network.%s.gateway='%s'", name, uci_network[name].gateway))
+			end
+			if uci_network[name].dns and uci_network[name].dns ~= "" then
+				local dns = uci_network[name].dns .. ","
+				for ip in dns:gmatch("(.-),") do
+					table.insert(arr, string.format("uci add_list network.%s.dns='%s'", name, ip))
+				end
 			end
 		elseif uci_network[name].proto == "dhcp" then
 			table.insert(arr, string.format("uci set network.%s.proto='dhcp'", name))
