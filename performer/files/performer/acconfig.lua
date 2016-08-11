@@ -8,7 +8,7 @@ local simplesql = require("simplesql")
 local tcp_map = {}
 
 --database related
-local mqtt, simple
+local mqtt, simple 
 
 local ConfigType = {"Rule", "Set"}		--two type config
 local ConfigCate = {"Control", "Audit"}	--every type contains two categories config
@@ -97,7 +97,7 @@ config map
 --]]
 local function set_name_cmp(old, new, key_arr)
 	for _, key in ipairs(key_arr) do
-		if (old[key] == nil and new[key] ~= nil) or
+		if (old[key] == nil and new[key] ~= nil) or 
 			(old[key] ~= nil and new[key] == nil) then
 			return true
 
@@ -125,7 +125,7 @@ local function ac_rule_cmp(old, new)
 		end
 		return false
 	end
-
+	
 	if #old ~= #new then
 		return true
 	end
@@ -145,11 +145,11 @@ local function ac_rule_cmp(old, new)
 				return true
 			end
 		end
-
-		for _, key in pairs({"ACCEPT", "REJECT", "AUDIT"}) do
-			if old_item[key] ~= new_item[key] then
-				return true
-			end
+ 		
+ 		for _, key in pairs({"ACCEPT", "REJECT", "AUDIT"}) do
+ 			if old_item[key] ~= new_item[key] then
+ 				return true
+ 			end
  		end
 	end
 
@@ -193,15 +193,15 @@ local function tm_contained(tmgrps, tm)
 	end
 
 	for _, tm_item in ipairs(cur_tmgrp.tmlist) do
-		local start_tm = os.time({year = cur_year, month = cur_month, day = cur_day,
+		local start_tm = os.time({year = cur_year, month = cur_month, day = cur_day, 
 									hour = tm_item.hour_start, min = tm_item.min_start})
-		local end_tm = os.time({year = cur_year, month = cur_month, day = cur_day,
+		local end_tm = os.time({year = cur_year, month = cur_month, day = cur_day, 
 									hour = tm_item.hour_end, min = tm_item.min_end})
 		if os.difftime(tm, start_tm) >= 0 and os.difftime(end_tm, tm) >= 0 then
 			return true
 		end
 	end
-
+	
 	return false
 end
 
@@ -227,7 +227,7 @@ commit_config["Rule"] = function(cate_arr, new_config)
 	for _, item in ipairs(cate_arr) do
 		local cate_config = {}
 		local rule_key = item.cate.."Rule"
-
+		
 		cate_config[rule_key] = new_config[item.cate]
 		local cmd_str = string.format("ruletalbe -s '%s'", js.encode(cate_config)) assert(cmd_str)
 		print(cmd_str)
@@ -248,7 +248,7 @@ commit_config["Set"] = function(cate_arr, new_config)
 	for _, item in ipairs(cate_arr) do
 		local cate_config = {}
 		local rule_key = item.cate.."Set"
-
+		
 		-- cate_config[rule_key] = new_config[item.cate]
 		-- local cmd_str = string.format("ruletalbe -s '%s'", js.encode(cate_config)) assert(cmd_str)
 		-- print(cmd_str)
@@ -266,7 +266,7 @@ a.input parameters:old and old[cate] and new and new[cate] must be true
 return format {ret = true/false, list = [{cate = Audit/Control, sub_cate = xx}, {}]}
 Rule concerns only cate
 --]]
-local compare_config = {}
+local compare_config = {} 
 compare_config["Rule"] = function(old, new)
 	local cmp_res, ret, err = {}, true
 
@@ -279,7 +279,7 @@ compare_config["Rule"] = function(old, new)
 	print("new:", js.encode(new))
 	for _, cate in ipairs(ConfigCate) do
 		if old[cate] == nil or new[cate] == nil then
-			err = string.format("old[%s] is %s, new[%s] is %s",
+			err = string.format("old[%s] is %s, new[%s] is %s", 
 								old[cate] and "not nil" or "nil",
 								new[cate] and "not nil" or "nil")
 			return nil, err
@@ -322,7 +322,7 @@ translate_config["Rule"] = function(raw_rule_config)
 	local generate_rule = function(rule_config, cur_tm)
 		local rule_arr, rule_item = {}, {}
 		print("----before translate rule:", js.encode(rule_config))
-		for _, item in ipairs(rule_config) do
+		for _, item in ipairs(rule_config) do 
 			if tm_contained(item["TmGrp"], cur_tm) then
 				rule_item["Id"] = item["ruleid"]
 				rule_item["SrcZoneIds"] = js.decode(item["srczoneids"]) or {}
@@ -345,12 +345,12 @@ translate_config["Rule"] = function(raw_rule_config)
 	for _, cate in ipairs(ConfigCate) do
 		local tmp_config, err = {}
 		if raw_rule_config[cate] and #raw_rule_config[cate] > 0 then
-			tmp_config, err = generate_rule(raw_rule_config[cate], cur_tm)
+	 		tmp_config, err = generate_rule(raw_rule_config[cate], cur_tm)
 			if not tmp_config then
 				return nil, err
 			end
 		end
-		rule_config[cate] = tmp_config
+		rule_config[cate] = tmp_config 
 	end
 
 	return rule_config
@@ -364,11 +364,11 @@ local fetch_raw_config = {}
 --fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
 	local fetch_rule = function(cate)
-		local sql = string.format("select * from acrule where ruletype='%s' and state='enable' order by priority desc", cate)
+		local sql = string.format("select * from acrule where ruletype='%s' and state='enable' order by priority desc", cate) 
 		if not sql then
 			return nil, "construct sql failed"
 		end
-
+		
 		local rule_arr = {}
 		local tmp_arr, err = simple:mysql_select(sql)
 		--print("----sql:", sql, "data:", js.encode(tmp_arr))
@@ -385,8 +385,8 @@ fetch_raw_config["Rule"] = function()
 			if #tmgrpids == 0 then
 				return nil, "tmgrpids is empty"
 			end
-
-			local sql = string.format("select days,tmlist from timegroup where tmgid in (%s)", table.concat(tmgrpids, ","))
+	
+			local sql = string.format("select days,tmlist from timegroup where tmgid in (%s)", table.concat(tmgrpids, ",")) 
 			if not sql then
 				return nil, "construct sql failed"
 			end
@@ -397,9 +397,9 @@ fetch_raw_config["Rule"] = function()
 			end
 
 			for _, detail in ipairs(detail_arr) do
-				local days = js.decode(detail.days)
-				local tmlist = js.decode(detail.tmlist)
-
+				local days = js.decode(detail.days)		
+				local tmlist = js.decode(detail.tmlist)	
+				
 				if days == nil or tmlist == nil then
 					return nil, "decode tm detail failed"
 				end
@@ -421,7 +421,7 @@ fetch_raw_config["Rule"] = function()
 
 	local rule_config = {}
 	for _, cate in ipairs(ConfigCate) do
-		local res, err = fetch_rule(cate)
+		local res, err = fetch_rule(cate) 
 		if not res then
 			--if fetch failed, ignore what already have fetched
 			return nil, err
@@ -447,7 +447,7 @@ end
 
 
 --[[
-load config:Rule and set
+load config:Rule and set 
 ]]
 local function load_config()
 	local raw_config = {}
@@ -470,7 +470,7 @@ end
 --[[
 check config whether need update and commit:
 a.reload config
-b.translate raw config
+b.translate raw config 
 c.compare new and old config
 d.if config updated, commit config
 --]]
@@ -480,8 +480,8 @@ local function check_config_update()
 		return false
 	end
 
-	for _, config_type in ipairs(ConfigType) do
-		local res, err
+	for _, config_type in ipairs(ConfigType) do	
+		local res, err 
 		local new_config, old_config
 		local trans_func = translate_config[config_type] 	assert(trans_func)
 		local cmp_func =  compare_config[config_type]		assert(cmp_func)
@@ -502,8 +502,8 @@ local function check_config_update()
 			return false
 		end
 		print("----compare res----:", js.encode(res))
-
-		res, err = commit_func(res, new_ac_config[config_type])
+		
+		res, err = commit_func(res, new_ac_config[config_type]) 
 		if not res then
 			log.error("commit config(type=%s) failed for %s", config_type, err)
 			return false
@@ -520,7 +520,7 @@ local function check_config_update()
 end
 
 --[[
-fetch config immediately when receiving
+fetch config immediately when receiving 
 --]]
 local function force_check_config_update()
 	load_config()
@@ -565,15 +565,15 @@ local function dispatch_tcp(cmd)
 end
 
 --entrance of acconfig
-local function init(p)
+local function init(p)	
 	mqtt = p
-
+	
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	if not dbrpc then
 		log.error("create rpccli failed")
 		return false
 	end
-
+	
 	simple = simplesql.new(dbrpc)
 	if not simple then
 		log.error("create simple sql failed")
