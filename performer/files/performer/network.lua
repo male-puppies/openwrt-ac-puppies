@@ -83,7 +83,11 @@ local function generate_network_cmds(board, network)
 			table.insert(arr["network"], string.format("obj=`uci add network device`"))
 			table.insert(arr["network"], string.format("test -n \"$obj\" && {"))
 			table.insert(arr["network"], string.format("	uci set network.$obj.name='%s'", ifname))
-			table.insert(arr["network"], string.format("	uci set network.$obj.macaddr='%s'", board.ports[i].mac))
+			if uci_network[name].mac and uci_network[name].mac ~= "" then
+				table.insert(arr["network"], string.format("	uci set network.$obj.macaddr='%s'", uci_network[name].mac))
+			else
+				table.insert(arr["network"], string.format("	uci set network.$obj.macaddr='%s'", board.ports[i].mac))
+			end
 			table.insert(arr["network"], string.format("}"))
 		end
 
