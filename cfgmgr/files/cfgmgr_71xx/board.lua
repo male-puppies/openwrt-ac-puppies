@@ -10,13 +10,16 @@ local function load_board()
 	local ports, options, networks = m.ports, m.options, m.networks	assert(ports and options and networks)
 	local port_map = {}
 
+	local vlan = 1
 	for _, dev in ipairs(ports) do
 		if dev.type == "switch" then
 			for idx, port in ipairs(dev.outer_ports) do
-				table.insert(port_map, {ifname = dev.ifname .. "." .. idx, mac = port.mac})
+				port_map[vlan] = {ifname = dev.ifname .. "." .. vlan, mac = port.mac}
+				vlan = vlan + 1
 			end
 		elseif dev.type == "ether" then
-			table.insert(port_map, {ifname = dev.ifname, mac = dev.outer_ports[1].mac})
+			port_map[vlan] = {ifname = dev.ifname, mac = dev.outer_ports[1].mac}
+			vlan = vlan + 1
 		end
 	end
 
