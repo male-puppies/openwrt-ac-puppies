@@ -50,45 +50,48 @@ local function generate_network_cmds(board, network)
 
 	table.insert(arr["dhcp"], string.format("while uci delete dhcp.@dhcp[0] >/dev/null 2>&1; do :; done"))
 	table.insert(arr["network"], string.format("while uci delete network.@interface[1] >/dev/null 2>&1; do :; done"))
-
+	table.insert(arr["network"], string.format("while uci delete network.@device[0] >/dev/null 2>&1; do :; done"))
 	for name, option in pairs(network) do
 		uci_network[name] = option
 		if name:find("^lan") or #option.ports > 1 then
 			uci_network[name].type = 'bridge'
 		end
 
-		if not option.mac or option.mac == "" then
-			uci_network[name].mac = board.ports[option.ports[1]].mac
-		end
-
 		uci_network[name].ifname = ""
 		local ifnames = {}
-		local vlan = tostring(option.ports[1])
+		local vlan = nil
 		for _, i in ipairs(option.ports) do
 			if board.ports[i].type == 'switch' then
+				vlan = vlan or tostring(i)
 				switchs[board.ports[i].device] = switchs[board.ports[i].device] or {}
 				switchs[board.ports[i].device][vlan] = switchs[board.ports[i].device][vlan] or {}
 				switchs[board.ports[i].device][vlan]["outer_ports"] = switchs[board.ports[i].device][vlan]["outer_ports"] or {}
 				table.insert(switchs[board.ports[i].device][vlan]["outer_ports"], board.ports[i].num)
 				switchs[board.ports[i].device][vlan]["inner_port"] = board.ports[i].inner_port
-
-				ifnames[board.ports[i].ifname .. "." .. vlan] = 1
+				ifnames[board.ports[i].ifname .. "." .. vlan] = tonumber(vlan)
 			else
-				ifnames[board.ports[i].ifname] = 1
+				ifnames[board.ports[i].ifname] = i
 			end
 		end
-		for ifname, _ in pairs(ifnames) do
+		for ifname, i in pairs(ifnames) do
 			if uci_network[name].ifname == "" then
 				uci_network[name].ifname = ifname
 			else
 				uci_network[name].ifname = uci_network[name].ifname .. " " .. ifname
 			end
+
+			table.insert(arr["network"], string.format("obj=`uci add network device`"))
+			table.insert(arr["network"], string.format("test -n \"$obj\" && {"))
+			table.insert(arr["network"], string.format("	uci set network.$obj.name='%s'", ifname))
+			table.insert(arr["network"], string.format("	uci set network.$obj.macaddr='%s'", board.ports[i].mac))
+			table.insert(arr["network"], string.format("}"))
 		end
 
 		table.insert(arr["network"], string.format("uci set network.%s=interface", name))
-		table.insert(arr["network"], string.format("uci set network.%s.macaddr='%s'", name, uci_network[name].mac))
 		table.insert(arr["network"], string.format("uci set network.%s.ifname='%s'", name, uci_network[name].ifname))
-
+		if uci_network[name].mac and uci_network[name].mac ~= "" then
+			table.insert(arr["network"], string.format("uci set network.%s.macaddr='%s'", name, uci_network[name].mac))
+		end
 		if uci_network[name].type and uci_network[name].type ~= "" then
 			table.insert(arr["network"], string.format("uci set network.%s.type='%s'", name, uci_network[name].type))
 		end
