@@ -4,6 +4,7 @@ local js = require("cjson.safe")
 local common = require("common")
 local ipops = require("ipops")
 local bit = require("bit")
+local md5 = require("md5")
 
 local read = common.read
 
@@ -33,26 +34,31 @@ end
 
 local function generate_board_cmds(board)
 	local arr = {}
+	arr["network"] = {}
+	arr["dhcp"] = {}
+	arr["nos-zone"] = {}
+	arr["firewall"] = {}
+
 	for idx, switch in ipairs(board.switchs) do
-		table.insert(arr, string.format("while uci delete network.@switch[0] >/dev/null 2>&1; do :; done"))
-		table.insert(arr, string.format("obj=`uci add network switch`"))
-		table.insert(arr, string.format("test -n \"$obj\" && {"))
-		table.insert(arr, string.format("	uci set network.$obj.name='%s'", switch.device))
-		table.insert(arr, string.format("	uci set network.$obj.reset='1'"))
-		table.insert(arr, string.format("	uci set network.$obj.enable_vlan='1'"))
-		table.insert(arr, string.format("	uci set network.$obj.enable_vlan='1'"))
-		table.insert(arr, string.format("}"))
-		table.insert(arr, string.format("while uci delete network.@switch_vlan[0] >/dev/null 2>&1; do :; done"))
+		table.insert(arr["network"], string.format("while uci delete network.@switch[0] >/dev/null 2>&1; do :; done"))
+		table.insert(arr["network"], string.format("obj=`uci add network switch`"))
+		table.insert(arr["network"], string.format("test -n \"$obj\" && {"))
+		table.insert(arr["network"], string.format("	uci set network.$obj.name='%s'", switch.device))
+		table.insert(arr["network"], string.format("	uci set network.$obj.reset='1'"))
+		table.insert(arr["network"], string.format("	uci set network.$obj.enable_vlan='1'"))
+		table.insert(arr["network"], string.format("	uci set network.$obj.enable_vlan='1'"))
+		table.insert(arr["network"], string.format("}"))
+		table.insert(arr["network"], string.format("while uci delete network.@switch_vlan[0] >/dev/null 2>&1; do :; done"))
 		for i, port in ipairs(switch.ports) do
-			table.insert(arr, string.format("obj=`uci add network switch_vlan`"))
-			table.insert(arr, string.format("test -n \"$obj\" && {"))
-			table.insert(arr, string.format("	uci set network.$obj.device='%s'", switch.device))
-			table.insert(arr, string.format("	uci set network.$obj.vlan='%u'", port.vlan))
-			table.insert(arr, string.format("	uci set network.$obj.ports='%s'", port.ports))
-			table.insert(arr, string.format("}"))
+			table.insert(arr["network"], string.format("obj=`uci add network switch_vlan`"))
+			table.insert(arr["network"], string.format("test -n \"$obj\" && {"))
+			table.insert(arr["network"], string.format("	uci set network.$obj.device='%s'", switch.device))
+			table.insert(arr["network"], string.format("	uci set network.$obj.vlan='%u'", port.vlan))
+			table.insert(arr["network"], string.format("	uci set network.$obj.ports='%s'", port.ports))
+			table.insert(arr["network"], string.format("}"))
 		end
 	end
-	return table.concat(arr, "\n")
+	return arr
 end
 
 local function load_network()
@@ -69,9 +75,13 @@ local function generate_network_cmds(board, network)
 		wan = {id = 1, ifname = {}, network = {}}
 	}
 	local arr = {}
+	arr["network"] = {}
+	arr["dhcp"] = {}
+	arr["nos-zone"] = {}
+	arr["firewall"] = {}
 
-	table.insert(arr, string.format("while uci delete dhcp.@dhcp[0] >/dev/null 2>&1; do :; done"))
-	table.insert(arr, string.format("while uci delete network.@interface[1] >/dev/null 2>&1; do :; done"))
+	table.insert(arr["dhcp"], string.format("while uci delete dhcp.@dhcp[0] >/dev/null 2>&1; do :; done"))
+	table.insert(arr["network"], string.format("while uci delete network.@interface[1] >/dev/null 2>&1; do :; done"))
 
 	for name, option in pairs(network) do
 		uci_network[name] = option
@@ -92,39 +102,39 @@ local function generate_network_cmds(board, network)
 			end
 		end
 
-		table.insert(arr, string.format("uci set network.%s=interface", name))
-		table.insert(arr, string.format("uci set network.%s.macaddr='%s'", name, uci_network[name].mac))
-		table.insert(arr, string.format("uci set network.%s.ifname='%s'", name, uci_network[name].ifname))
+		table.insert(arr["network"], string.format("uci set network.%s=interface", name))
+		table.insert(arr["network"], string.format("uci set network.%s.macaddr='%s'", name, uci_network[name].mac))
+		table.insert(arr["network"], string.format("uci set network.%s.ifname='%s'", name, uci_network[name].ifname))
 
 		if uci_network[name].type and uci_network[name].type ~= "" then
-			table.insert(arr, string.format("uci set network.%s.type='%s'", name, uci_network[name].type))
+			table.insert(arr["network"], string.format("uci set network.%s.type='%s'", name, uci_network[name].type))
 		end
 		if uci_network[name].mtu and uci_network[name].mtu ~= "" then
-			table.insert(arr, string.format("uci set network.%s.mtu='%s'", name, uci_network[name].mtu))
+			table.insert(arr["network"], string.format("uci set network.%s.mtu='%s'", name, uci_network[name].mtu))
 		end
 		if uci_network[name].metric and uci_network[name].metric ~= "" then
-			table.insert(arr, string.format("uci set network.%s.metric='%s'", name, uci_network[name].metric))
+			table.insert(arr["network"], string.format("uci set network.%s.metric='%s'", name, uci_network[name].metric))
 		end
 		if uci_network[name].proto == "static" then
-			table.insert(arr, string.format("uci set network.%s.proto='static'", name))
-			table.insert(arr, string.format("uci set network.%s.ipaddr='%s'", name, uci_network[name].ipaddr))
+			table.insert(arr["network"], string.format("uci set network.%s.proto='static'", name))
+			table.insert(arr["network"], string.format("uci set network.%s.ipaddr='%s'", name, uci_network[name].ipaddr))
 			if uci_network[name].gateway and uci_network[name].gateway ~= "" then
-				table.insert(arr, string.format("uci set network.%s.gateway='%s'", name, uci_network[name].gateway))
+				table.insert(arr["network"], string.format("uci set network.%s.gateway='%s'", name, uci_network[name].gateway))
 			end
 			if uci_network[name].dns and uci_network[name].dns ~= "" then
 				local dns = uci_network[name].dns .. ","
 				for ip in dns:gmatch("(.-),") do
-					table.insert(arr, string.format("uci add_list network.%s.dns='%s'", name, ip))
+					table.insert(arr["network"], string.format("uci add_list network.%s.dns='%s'", name, ip))
 				end
 			end
 		elseif uci_network[name].proto == "dhcp" then
-			table.insert(arr, string.format("uci set network.%s.proto='dhcp'", name))
+			table.insert(arr["network"], string.format("uci set network.%s.proto='dhcp'", name))
 		elseif uci_network[name].proto == "pppoe" then
-			table.insert(arr, string.format("uci set network.%s.proto='pppoe'", name))
-			table.insert(arr, string.format("uci set network.%s.username='%s'", name, uci_network[name].pppoe_account))
-			table.insert(arr, string.format("uci set network.%s.password='%s'", name, uci_network[name].pppoe_password))
+			table.insert(arr["network"], string.format("uci set network.%s.proto='pppoe'", name))
+			table.insert(arr["network"], string.format("uci set network.%s.username='%s'", name, uci_network[name].pppoe_account))
+			table.insert(arr["network"], string.format("uci set network.%s.password='%s'", name, uci_network[name].pppoe_password))
 		else
-			table.insert(arr, string.format("uci set network.%s.proto='none'", name))
+			table.insert(arr["network"], string.format("uci set network.%s.proto='none'", name))
 		end
 
 		if uci_network[name].proto == "static" and uci_network[name].dhcpd and uci_network[name].dhcpd["enabled"] == 1 then
@@ -133,16 +143,16 @@ local function generate_network_cmds(board, network)
 			local endip = ipops.ipstr2int(uci_network[name].dhcpd["end"])
 			local s, e = bit.bxor(startip, bit.band(ipaddr, netmask)), bit.bxor(endip - bit.band(ipaddr, netmask))
 
-			table.insert(arr, string.format("uci set dhcp.%s=dhcp", name))
-			table.insert(arr, string.format("uci set dhcp.%s.interface='%s'", name, name))
-			table.insert(arr, string.format("uci set dhcp.%s.start='%u'", name, s))
-			table.insert(arr, string.format("uci set dhcp.%s.end='%u'", name, e))
-			table.insert(arr, string.format("uci set dhcp.%s.leasetime='%s'", name, uci_network[name].dhcpd["leasetime"]))
-			table.insert(arr, string.format("uci set dhcp.%s.force='1'", name))
-			table.insert(arr, string.format("uci set dhcp.%s.subnet='%s'", name, uci_network[name].ipaddr))
-			table.insert(arr, string.format("uci set dhcp.%s.dynamicdhcp='%u'", name, uci_network[name].dhcpd["dynamicdhcp"] or 1))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s=dhcp", name))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.interface='%s'", name, name))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.start='%u'", name, s))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.limit='%u'", name, 1 + e - s))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.leasetime='%s'", name, uci_network[name].dhcpd["leasetime"]))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.force='1'", name))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.subnet='%s'", name, uci_network[name].ipaddr))
+			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.dynamicdhcp='%u'", name, uci_network[name].dhcpd["dynamicdhcp"] or 1))
 			if uci_network[name].dhcpd["dns"] and uci_network[name].dhcpd["dns"] ~= "" then
-				table.insert(arr, string.format("uci add_list dhcp.%s.dhcp_option='6,%s'", name, uci_network[name].dhcpd["dns"]))
+				table.insert(arr["dhcp"], string.format("uci add_list dhcp.%s.dhcp_option='6,%s'", name, uci_network[name].dhcpd["dns"]))
 			end
 		end
 
@@ -175,61 +185,96 @@ local function generate_network_cmds(board, network)
 		end
 	end
 
-	table.insert(arr, string.format("while uci delete nos-zone.@zone[0] >/dev/null 2>&1; do :; done"))
+	table.insert(arr["nos-zone"], string.format("while uci delete nos-zone.@zone[0] >/dev/null 2>&1; do :; done"))
 	for name, zone in pairs(uci_zone) do
-		table.insert(arr, string.format("obj=`uci add nos-zone zone`"))
-		table.insert(arr, string.format("test -n \"$obj\" && {"))
-		table.insert(arr, string.format("	uci set nos-zone.$obj.name='%s'", name))
-		table.insert(arr, string.format("	uci set nos-zone.$obj.id='%s'", zone.id))
+		table.insert(arr["nos-zone"], string.format("obj=`uci add nos-zone zone`"))
+		table.insert(arr["nos-zone"], string.format("test -n \"$obj\" && {"))
+		table.insert(arr["nos-zone"], string.format("	uci set nos-zone.$obj.name='%s'", name))
+		table.insert(arr["nos-zone"], string.format("	uci set nos-zone.$obj.id='%s'", zone.id))
 		for _, ifname in ipairs(zone.ifname) do
-			table.insert(arr, string.format("	uci add_list nos-zone.$obj.ifname='%s'", ifname))
+			table.insert(arr["nos-zone"], string.format("	uci add_list nos-zone.$obj.ifname='%s'", ifname))
 		end
-		table.insert(arr, string.format("}"))
+		table.insert(arr["nos-zone"], string.format("}"))
 	end
 
-	table.insert(arr, string.format("while uci delete firewall.@zone[0] >/dev/null 2>&1; do :; done"))
+	table.insert(arr["firewall"], string.format("while uci delete firewall.@zone[0] >/dev/null 2>&1; do :; done"))
 	for name, zone in pairs(uci_zone) do
-		table.insert(arr, string.format("obj=`uci add firewall zone`"))
-		table.insert(arr, string.format("test -n \"$obj\" && {"))
-		table.insert(arr, string.format("	uci set firewall.$obj.name='%s'", name))
-		table.insert(arr, string.format("	uci set firewall.$obj.id='%s'", zone.id))
-		table.insert(arr, string.format("	uci set firewall.$obj.input='ACCEPT'"))
-		table.insert(arr, string.format("	uci set firewall.$obj.output='ACCEPT'"))
-		table.insert(arr, string.format("	uci set firewall.$obj.forward='%s'", name:find("^lan") and "ACCEPT" or "REJECT"))
-		table.insert(arr, string.format("	uci set firewall.$obj.mtu_fix='1'"))
+		table.insert(arr["firewall"], string.format("obj=`uci add firewall zone`"))
+		table.insert(arr["firewall"], string.format("test -n \"$obj\" && {"))
+		table.insert(arr["firewall"], string.format("	uci set firewall.$obj.name='%s'", name))
+		table.insert(arr["firewall"], string.format("	uci set firewall.$obj.id='%s'", zone.id))
+		table.insert(arr["firewall"], string.format("	uci set firewall.$obj.input='ACCEPT'"))
+		table.insert(arr["firewall"], string.format("	uci set firewall.$obj.output='ACCEPT'"))
+		table.insert(arr["firewall"], string.format("	uci set firewall.$obj.forward='%s'", name:find("^lan") and "ACCEPT" or "REJECT"))
+		table.insert(arr["firewall"], string.format("	uci set firewall.$obj.mtu_fix='1'"))
 		for _, network in ipairs(zone.network) do
-			table.insert(arr, string.format("	uci add_list firewall.$obj.network='%s'", network))
+			table.insert(arr["firewall"], string.format("	uci add_list firewall.$obj.network='%s'", network))
 		end
 		if name:find("^wan") then
-			table.insert(arr, string.format("	uci set firewall.$obj.masq='1'"))
+			table.insert(arr["firewall"], string.format("	uci set firewall.$obj.masq='1'"))
 		end
-		table.insert(arr, string.format("}"))
+		table.insert(arr["firewall"], string.format("}"))
 	end
 
-	return table.concat(arr, "\n")
+	return arr
 end
 
 local function network_reload()
 	local board = load_board()
 	local network = load_network()
 	local cmd = ""
+	local new_md5, old_md5
 	local arr = {}
+	local arr_cmd = {}
 
-	table.insert(arr, generate_board_cmds(board))
-	table.insert(arr, generate_network_cmds(board, network))
-	table.insert(arr, string.format("uci commit network"))
-	table.insert(arr, string.format("uci commit dhcp"))
-	table.insert(arr, string.format("uci commit nos-zone"))
-	table.insert(arr, string.format("uci commit firewall"))
-	table.insert(arr, string.format("sleep 1"))
-	table.insert(arr, string.format("/etc/init.d/network restart"))
-	table.insert(arr, string.format("/etc/init.d/dnsmasq restart"))
-	table.insert(arr, string.format("/etc/init.d/nos-zone restart"))
-	table.insert(arr, string.format("/etc/init.d/firewall restart"))
+	arr["network"] = {}
+	arr["dhcp"] = {}
+	arr["nos-zone"] = {}
+	arr["firewall"] = {}
 
-	cmd = table.concat(arr, "\n")
-	print(cmd)
-	os.execute(cmd)
+	arr_cmd["network"] = {
+		string.format("uci commit network"),
+		string.format("/etc/init.d/network restart")
+	}
+	arr_cmd["dhcp"] = {
+		string.format("uci commit dhcp"),
+		string.format("/etc/init.d/dnsmasq restart")
+	}
+	arr_cmd["nos-zone"] = {
+		string.format("uci commit nos-zone"),
+		string.format("/etc/init.d/nos-zone restart")
+	}
+	arr_cmd["firewall"] = {
+		string.format("uci commit firewall"),
+		string.format("/etc/init.d/firewall restart")
+	}
+
+	local board_arr = generate_board_cmds(board)
+	local network_arr = generate_network_cmds(board, network)
+
+	for name, cmd_arr in pairs(arr) do
+		for _, line in ipairs(board_arr[name]) do
+			table.insert(cmd_arr, line)
+		end
+		for _, line in ipairs(network_arr[name]) do
+			table.insert(cmd_arr, line)
+		end
+
+		cmd = table.concat(cmd_arr, "\n")
+		new_md5 = md5.sumhexa(cmd)
+		old_md5 = common.read(string.format("uci get %s.@version[0].md5 | head -c32", name), io.popen)
+		print(new_md5, old_md5)
+		if new_md5 ~= old_md5 then
+			table.insert(cmd_arr, string.format("uci get %s.@version[0] || uci add %s version", name, name))
+			table.insert(cmd_arr, string.format("uci set %s.@version[0].md5='%s'", name, new_md5))
+			for _, line in ipairs(arr_cmd[name]) do
+				table.insert(cmd_arr, line)
+			end
+			cmd = table.concat(cmd_arr, "\n")
+			print(cmd)
+			os.execute(cmd)
+		end
+	end
 end
 
 local tcp_map = {}
