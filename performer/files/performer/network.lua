@@ -54,6 +54,7 @@ local function generate_board_cmds(board)
 			table.insert(arr["network"], string.format("test -n \"$obj\" && {"))
 			table.insert(arr["network"], string.format("	uci set network.$obj.device='%s'", switch.device))
 			table.insert(arr["network"], string.format("	uci set network.$obj.vlan='%u'", port.vlan))
+			table.insert(arr["network"], string.format("	uci set network.$obj.vid='%u'", port.vlan))
 			table.insert(arr["network"], string.format("	uci set network.$obj.ports='%s'", port.ports))
 			table.insert(arr["network"], string.format("}"))
 		end
