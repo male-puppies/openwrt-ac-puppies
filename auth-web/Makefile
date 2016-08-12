@@ -47,8 +47,6 @@ exit 0
 endef
 
 define Package/$(PKG_NAME)/install
-	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DATA) ./files/auth-web.defaults $(1)/etc/uci-defaults/96-auth-web
 	$(INSTALL_DIR) $(1)/usr/share
 	$(CP) -r ./files/auth-web $(1)/usr/share/
 endef
