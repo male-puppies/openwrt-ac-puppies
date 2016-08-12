@@ -2,30 +2,16 @@ local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
-local common = require("common")
-
-local read, save_safe, arr2map = common.read, common.save_safe, common.arr2map
+local cfglib = require("cfglib")
 
 local udp_map = {}
 local udpsrv, mqtt, dbrpc
 
+local reply = cfglib.reply
+
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-end
-
-local reply_obj = {status = 0, data = 0}
-local function reply(ip, port, r, d)
-	reply_obj.status, reply_obj.data = r, d
-	udpsrv:send(ip, port, js.encode(reply_obj))
-	return true
-end
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
 end
 
 udp_map["authrule_set"] = function(p, ip, port)
@@ -206,4 +192,5 @@ udp_map["authrule_adjust"] = function(p, ip, port)
 	--local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
-return {init = init, dispatch_udp = dispatch_udp}
+
+return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

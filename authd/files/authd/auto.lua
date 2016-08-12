@@ -2,13 +2,13 @@ local ski = require("ski")
 local log = require("log")
 local cfg = require("cfg")
 local batch = require("batch")
-local share = require("share")
+local common = require("common")
 local js = require("cjson.safe")
-local authlib = require("authlib")
 local rpccli = require("rpccli")
+local authlib = require("authlib")
 local simplesql = require("simplesql")
 
-local map2arr, arr2map, limit, empty = share.map2arr, share.arr2map, share.limit, share.empty
+local map2arr, arr2map, limit, empty = common.map2arr, common.arr2map, common.limit, common.empty
 local find_missing, set_online = authlib.find_missing, authlib.set_online
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
 
@@ -21,13 +21,6 @@ local function init(u, p)
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	simple = simplesql.new(dbrpc)
 	keepalive_trigger = batch.new(on_keepalive_batch)
-end
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
 end
 
 udp_map["auto_keepalive"] = function(p)
@@ -52,5 +45,5 @@ function on_keepalive_batch(count, arr)
 	end
 end
 
-return {init = init, dispatch_udp = dispatch_udp}
+return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
 

@@ -4,28 +4,17 @@ local board = require("board")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local common = require("common")
+local cfglib = require("cfglib")
 
 local read, save_safe, arr2map = common.read, common.save_safe, common.arr2map
 
 local udp_map = {}
-local udpsrv, mqtt, dbrpc
+local udpsrv, mqtt, dbrpc, reply
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
+	reply = cfglib.gen_reply(udpsrv)
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-end
-
-local reply_obj = {status = 0, data = 0}
-local function reply(ip, port, r, d)
-	reply_obj.status, reply_obj.data = r, d
-	udpsrv:send(ip, port, js.encode(reply_obj))
-end
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
 end
 
 udp_map["iface_get"] = function(p, ip, port)
@@ -113,4 +102,4 @@ udp_map["iface_set"] = function(p, ip, port)
 	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "network"}}))
 end
 
-return {init = init, dispatch_udp = dispatch_udp}
+return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

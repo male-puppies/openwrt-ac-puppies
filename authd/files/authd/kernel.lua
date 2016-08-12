@@ -3,6 +3,7 @@ local log = require("log")
 local cfg = require("cfg")
 local nos = require("luanos") 
 local js = require("cjson.safe")
+local authlib = require("authlib")
 
 
 local get_authtype = cfg.get_authtype
@@ -14,19 +15,12 @@ local udpsrv, mqtt
 local keepalive_trigger
 
 local function init(u, p)
-	udpsrv, mqtt =u, p
+	udpsrv, mqtt = u, p
 end
 
 local function set_kernel_cb(cb)
 	dispatch_keepalive = cb 
 end 
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
-end
 
 udp_map["keepalive"] = function(p)
 	local uid, magic = p.uid, p.magic
@@ -42,5 +36,5 @@ udp_map["keepalive"] = function(p)
 	dispatch_keepalive(p)
 end
 
-return {init = init, dispatch_udp = dispatch_udp, set_kernel_cb = set_kernel_cb}
+return {init = init, set_kernel_cb = set_kernel_cb, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
 
