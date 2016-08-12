@@ -2,14 +2,14 @@ local js = require("cjson.safe")
 local log = require("common.log")
 local rds = require("common.rds")
 local query = require("common.query")
-local authlib = require("admin.authlib")
+local adminlib = require("admin.adminlib")
 
 local r1 = log.real1
-local ip_pattern = authlib.ip_pattern
-local mysql_select = authlib.mysql_select
-local reply_e, reply = authlib.reply_e, authlib.reply
-local validate_get, validate_post = authlib.validate_get, authlib.validate_post
-local gen_validate_num, gen_validate_str = authlib.gen_validate_num, authlib.gen_validate_str
+local ip_pattern = adminlib.ip_pattern
+local mysql_select = adminlib.mysql_select
+local reply_e, reply = adminlib.reply_e, adminlib.reply
+local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
+local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local v_ipgid       = gen_validate_num(0, 63)
 local v_ipgids      = gen_validate_str(1, 256)
@@ -38,7 +38,7 @@ function cmd_map.ipgroup_get()
         return reply_e(e) 
     end
 
-    local cond = authlib.search_cond(authlib.search_opt(m, {order = ipgrp_fields, search = ipgrp_fields}))
+    local cond = adminlib.search_cond(adminlib.search_opt(m, {order = ipgrp_fields, search = ipgrp_fields}))
     local sql = string.format("select * from ipgroup %s %s %s", cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
 
     local r, e = mysql_select(sql)

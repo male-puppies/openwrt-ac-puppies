@@ -2,13 +2,13 @@ local js = require("cjson.safe")
 local log = require("common.log")
 local rds = require("common.rds")
 local query = require("common.query")
-local authlib = require("admin.authlib")
+local adminlib = require("admin.adminlib")
 local network = require("admin.network")
 
 local r1 = log.real1
-local reply_e, reply = authlib.reply_e, authlib.reply
-local validate_get, validate_post = authlib.validate_get, authlib.validate_post
-local gen_validate_num, gen_validate_str = authlib.gen_validate_num, authlib.gen_validate_str
+local reply_e, reply = adminlib.reply_e, adminlib.reply
+local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
+local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local validate_type = gen_validate_num(2, 3)
 local validate_zid = gen_validate_num(0, 255) 

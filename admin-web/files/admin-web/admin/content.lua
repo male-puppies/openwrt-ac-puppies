@@ -1,5 +1,5 @@
 package.path = "/usr/share/admin-web/?.lua;" .. package.path
-local reply_e = require("admin.authlib").reply_e
+local reply_e = require("admin.adminlib").reply_e
 
 -- 检查uri格式
 local uri = ngx.var.uri

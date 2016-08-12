@@ -1,9 +1,9 @@
 local js = require("cjson.safe")
 local common = require("common")
-local authlib = require("admin.authlib")
+local adminlib = require("admin.adminlib")
 
 local arr2map = common.arr2map
-local ip_pattern, mac_pattern = authlib.ip_pattern, authlib.mac_pattern
+local ip_pattern, mac_pattern = adminlib.ip_pattern, adminlib.mac_pattern
 
 local validate_map = {
 	mac = function(v) 

@@ -1,8 +1,8 @@
 local js = require("cjson.safe")
 local rds = require("common.rds")
-local authlib = require("admin.authlib")
+local adminlib = require("admin.adminlib")
 
-local reply_e, reply = authlib.reply_e, authlib.reply
+local reply_e, reply = adminlib.reply_e, adminlib.reply
 
 local function check()
 	local p = ngx.req.get_uri_args()

@@ -1,14 +1,14 @@
 local js = require("cjson.safe")
 local log = require("common.log")
 local query = require("common.query")
-local authlib = require("admin.authlib")
+local adminlib = require("admin.adminlib")
 
 local r1 = log.real1
-local mysql_select = authlib.mysql_select
-local reply_e, reply = authlib.reply_e, authlib.reply
-local ip_pattern, mac_pattern = authlib.ip_pattern, authlib.mac_pattern
-local validate_get, validate_post = authlib.validate_get, authlib.validate_post
-local gen_validate_num, gen_validate_str = authlib.gen_validate_num, authlib.gen_validate_str
+local mysql_select = adminlib.mysql_select
+local reply_e, reply = adminlib.reply_e, adminlib.reply
+local ip_pattern, mac_pattern = adminlib.ip_pattern, adminlib.mac_pattern
+local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
+local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local v_rid         = gen_validate_num(0, 15)
 local v_zid         = gen_validate_num(0, 255)
@@ -46,7 +46,7 @@ function cmd_map.authrule_get()
         return reply_e(e) 
     end
 
-    local cond = authlib.search_cond(authlib.search_opt(m, {order = valid_fields, search = valid_fields}))
+    local cond = adminlib.search_cond(adminlib.search_opt(m, {order = valid_fields, search = valid_fields}))
     local sql = string.format("select * from authrule, zone, ipgroup where authrule.zid=zone.zid and authrule.ipgid=ipgroup.ipgid %s %s %s", cond.like and string.format("and %s", cond.like) or "", "order by priority", cond.limit)
     local rs, e = mysql_select(sql)
     return rs and reply(rs) or reply_e(e)

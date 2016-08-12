@@ -1,18 +1,6 @@
 local js = require("cjson.safe")
 local rds = require("common.rds")
-local query = require("common.query")
-
-local r1 = require("common.log").real1
-
-local function reply_e(e)
-	ngx.say(js.encode({status = 1, data = e}))
-	return true
-end
-
-local function reply(d)
-	ngx.say(js.encode({status = 0, data = d}))
-	return true
-end
+local share = require("common.share")
 
 local function check_method_token(expect_method, token)
 	if expect_method ~= ngx.req.get_method() then 
@@ -72,53 +60,6 @@ local function validate_update_token(token)
 	end 
 
 	return nil, "expire fail"
-end
-
-
-
-local mysql_select_code = [[
-    local myconn = require("mgr").ins().myconn
-    return myconn:select(arg)
-]]
-
-local function mysql_select_common(sql, code, timeout)
-	return query.query_u("127.0.0.1", 51234, {cmd = "rpc", k = "mysql_select_code", p = sql, f = code, r = 1}, timeout or 3000)
-end
-
-local function mysql_select(sql, timeout)
-	local r, e = mysql_select_common(sql, nil, timeout)
-	if not r then 
-		return nil, e 
-	end 
-	
-	local r, e = js.decode(r)   
-	if not r then 
-		return nil, e
-	end
-
-	if not r.e then
-		return r.d
-	end
-
-	if r.d ~= "miss" then 
-		return nil, r.d 
-	end
-
-	local r, e = mysql_select_common(sql, mysql_select_code, timeout)
-	if not r then 
-		return nil, e 
-	end 
-
-	local r, e = js.decode(r)
-	if not r then 
-		return nil, e
-	end
-
-	if not r.e then
-		return r.d 
-	end
-
-	return nil, r.d
 end
 
 local function gen_validate_num(min, max)
@@ -263,26 +204,9 @@ local function search_cond(m)
 	return {order = order_s, limit = limit_s, like = like_s}
 end
 
-local mac_pattern = (function()
-    local arr = {}
-    for i = 1, 6 do table.insert(arr, "[0-9a-zA-z][0-9a-zA-z]") end 
-    return string.format("^%s$", table.concat(arr, ":"))
-end)()
-
-local ip_pattern = (function()
-    local arr = {}
-    for i = 1, 4 do table.insert(arr, "[0-9][0-9]?[0-9]?") end 
-    return string.format("^%s$", table.concat(arr, "%."))
-end)()
-
-return { 
-	reply = reply,
-	reply_e = reply_e,
-	ip_pattern = ip_pattern,
-	mac_pattern = mac_pattern,
+local r = {
 	search_opt = search_opt,
 	search_cond = search_cond,
-	mysql_select = mysql_select,
 	validate_get = validate_get,
 	validate_post = validate_post,
 	validate_token = validate_token,
@@ -292,4 +216,5 @@ return {
 	validate_update_token = validate_update_token,
 }
 
-
+local merge = share.merge
+return merge(merge({}, share), r)
