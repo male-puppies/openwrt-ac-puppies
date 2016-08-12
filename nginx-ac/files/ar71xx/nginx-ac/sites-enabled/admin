@@ -14,32 +14,30 @@ server {
 		index	index.html index.htm;
 		access_by_lua_file /usr/share/admin-web/admin/access.lua;
 	}
-	
+
 	location ~ /.*.(js|css|gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma|otf|eot|svg|ttf|woff|json)$ {
 		root  	/usr/share/admin-web/www;
 	}
-	
+
 	location /rpc {
 		#internal;
 		chunked_transfer_encoding off;
 		content_by_lua_file /usr/share/nginx-ac/lualib/app/rpc.lua;
 	}
-	
+
 	location /log {
 		content_by_lua_file /usr/share/nginx-ac/lualib/app/log.lua;
 	}
-	
+
 	location ~ /v1/admin/api/ {
 		default_type 'text/json';
 		content_by_lua_file /usr/share/admin-web/admin/content.lua;
 	}
-	
+
 	location ~ /v1/admin/rs/.*.html$ {
 		default_type 'text/html';
 		access_by_lua_file /usr/share/admin-web/admin/access.lua;
 	}
-	
+
 	location ~ /v1/admin/rs/.*.(gif|jpg|jpeg|png|bmp|swf|ioc|rar|zip|txt|flv|mid|doc|ppt|pdf|xls|mp3|wma)$ {}
 }
-
-#lua_shared_dict log 1k;
