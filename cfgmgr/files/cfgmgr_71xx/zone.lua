@@ -2,28 +2,17 @@ local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
+local cfglib = require("cfglib")
 local simplesql = require("simplesql")
 
 local udp_map = {}
-local myconn, udpsrv, mqtt, dbrpc, simple
+local myconn, udpsrv, mqtt, dbrpc, simple, reply
 
 local function init(m, u, p)
 	myconn, udpsrv, mqtt = m, u, p
+	reply = cfglib.gen_reply(udpsrv)
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	simple = simplesql.new(dbrpc)
-end
-
-local reply_obj = {status = 0, data = 0}
-local function reply(ip, port, r, d)
-	reply_obj.status, reply_obj.data = r, d
-	udpsrv:send(ip, port, js.encode(reply_obj))
-end
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
 end
 
 udp_map["zone_get"] = function(p, ip, port)
@@ -179,4 +168,4 @@ udp_map["zone_del"] = function(p, ip, port)
 	reply(ip, port, 0, r)
 end
 
-return {init = init, dispatch_udp = dispatch_udp}
+return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

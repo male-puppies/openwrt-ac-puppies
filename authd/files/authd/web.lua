@@ -3,21 +3,21 @@ local log = require("log")
 local cfg = require("cfg")
 local nos = require("luanos")
 local batch = require("batch")
-local share = require("share")
+local common = require("common")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local authlib = require("authlib")
 local simplesql = require("simplesql")
 
-local map2arr, arr2map, limit, empty = share.map2arr, share.arr2map, share.limit, share.empty
-local escape_map, escape_arr = share.escape_map, share.escape_arr
+local map2arr, arr2map, limit, empty = common.map2arr, common.arr2map, common.limit, common.empty
+local escape_map, escape_arr = common.escape_map, common.escape_arr
 
 local find_missing, set_online, set_offline = authlib.find_missing, authlib.set_online, authlib.set_offline
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
 local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
 
 local udp_map = {}
-local simple, udpsrv, mqtt
+local simple, udpsrv, mqtt, reply
 local login_trigger, on_login_batch
 local keepalive_trigger, on_keepalive_batch
 local loop_timeout_check
@@ -26,22 +26,10 @@ local function init(u, p)
 	udpsrv, mqtt = u, p
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	simple = simplesql.new(dbrpc)
+	reply = authlib.gen_reply(udpsrv)
 	login_trigger = batch.new(on_login_batch)
 	keepalive_trigger = batch.new(on_keepalive_batch)
 	ski.go(loop_timeout_check)
-end
-
-local reply_obj = {status = 0, data = 0}
-local function reply(ip, port, r, d)
-	reply_obj.status, reply_obj.data = r, d
-	udpsrv:send(ip, port, js.encode(reply_obj))
-end
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
 end
 
 local numb_expire = {["0000-00-00 00:00:00"] = 1, ["1970-01-01 00:00:00"] = 1}
@@ -176,5 +164,5 @@ function loop_timeout_check()
 	end
 end
 
-return {init = init, dispatch_udp = dispatch_udp}
+return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
 

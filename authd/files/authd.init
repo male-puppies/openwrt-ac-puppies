@@ -8,6 +8,14 @@ BIN=/usr/sbin/authd
 USE_PROCD=1
 
 start_service() {
+	if [ ! -e /usr/share/nginx-ac/sites-enabled/userauth ]; then
+		ln -sf /usr/share/auth-web/userauth /usr/share/nginx-ac/sites-enabled/userauth
+	fi
+	
+	if [ ! -e /usr/share/auth-web/www/cloud ]; then
+		ln -sf /tmp/cloud /usr/share/auth-web/www/cloud
+	fi
+
 	procd_open_instance
 	procd_set_param command $BIN start
 	procd_set_param respawn

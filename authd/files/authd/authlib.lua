@@ -1,11 +1,12 @@
 local ski = require("ski")
 local log = require("log")
 local nos = require("luanos")
-local share = require("share")
+local js = require("cjson.safe")
+local common = require("common")
 
-local map2arr, arr2map, limit = share.map2arr, share.arr2map, share.limit 
+local map2arr, arr2map, limit = common.map2arr, common.arr2map, common.limit 
 local set_status, set_gid_ucrc = nos.user_set_status, nos.user_set_gid_ucrc
-local escape_map, escape_arr, empty = share.escape_map, share.escape_arr, share.empty
+local escape_map, escape_arr, empty = common.escape_map, common.escape_arr, common.empty
 
 local function find_missing(simple, ukey_arr)
 	local ukey_map = arr2map(ukey_arr, "ukey")
@@ -51,10 +52,37 @@ local function keepalive(simple, exists)
 	local r, e = simple:mysql_execute(sql) 		assert(r, e)
 end
 
+local function gen_dispatch_udp(udp_map)
+	return function(cmd, ip, port)
+		local f = udp_map[cmd.cmd]
+		if f then
+			return true, f(cmd, ip, port)
+		end
+	end
+end
+
+local function gen_dispatch_tcp(tcp_map)
+	return function(cmd)
+		local f = tcp_map[cmd.cmd]
+		if f then
+			return true, f(cmd.data)
+		end
+	end
+end
+
+local function gen_reply(udpsrv)
+	return function(ip, port, r, d) 
+		udpsrv:send(ip, port, js.encode({status = r, data = d}))
+		return true 
+	end
+end
 return {
-	find_missing = find_missing, 
+	gen_reply = gen_reply,
+	keepalive = keepalive,
 	set_online = set_online, 
 	set_offline = set_offline, 
-	insert_online = insert_online, 
-	keepalive = keepalive,
+	find_missing = find_missing, 
+	insert_online = insert_online,
+	gen_dispatch_udp = gen_dispatch_udp,
+	gen_dispatch_tcp = gen_dispatch_tcp,
 }

@@ -1,5 +1,5 @@
 package.path = "/usr/share/admin-web/?.lua;" .. package.path
-local authlib = require("admin.authlib") 
+local adminlib = require("admin.adminlib") 
 
 local login_html = "/login/admin_login/tologin.html"
 local function redirect()
@@ -18,12 +18,12 @@ end
 
 cookie = cookie .. ";"
 local token = cookie:match("token=(.-);")
-local r, e = authlib.check_method_token("GET", token)
+local r, e = adminlib.check_method_token("GET", token)
 if not r then
 	return redirect()
 end
 
-local r, e = authlib.validate_update_token(token)
+local r, e = adminlib.validate_update_token(token)
 if not r then
 	return redirect()
 end

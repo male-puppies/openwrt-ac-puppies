@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=authd
+PKG_NAME:=auth-web
 PKG_VERSION:=1.0.0
 PKG_RELEASE:=1
 
-PKG_MAINTAINER:=Chen Minqiang <ptpt52@gmail.com>
+PKG_MAINTAINER:=Jinshou Ye <aquariusye@163.com>
 PKG_LICENSE:=GPL-2.0
  
 include $(INCLUDE_DIR)/package.mk
@@ -20,31 +20,35 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +ski +lua-cjson +luasql-mysql +lualib-ac +auth-web
+  DEPENDS:= +nginx-ac
 endef
 
 define Package/$(PKG_NAME)
   $(call Package/$(PKG_NAME)/Default)
-  TITLE:= lua auth daemon
+  TITLE:= web auth ui
 endef
 
 define Package/$(PKG_NAME)/description
-  lua auth daemon
+	web auth ui
 endef
 
-define Package/$(PKG_NAME)/conffiles 
+define Package/$(PKG_NAME)/conffiles
 endef
 
 define Package/$(PKG_NAME)/postinst
+#!/bin/sh
+
+if [ -z "$$IPKG_INSTROOT" ]; then
+  ( . /etc/uci-defaults/96-auth-web )
+  rm -f /etc/uci-defaults/96-auth-web
+fi
+
+exit 0
 endef
 
-define Package/$(PKG_NAME)/install 
-	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/authd.init $(1)/etc/init.d/authd
-	$(INSTALL_DIR) $(1)/usr/share/
-	cp -r files/authd $(1)/usr/share/
-	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/authd.sh $(1)/usr/sbin/authd
+define Package/$(PKG_NAME)/install
+	$(INSTALL_DIR) $(1)/usr/share
+	$(CP) -r ./files/auth-web $(1)/usr/share/
 endef
 
 define Build/Configure
