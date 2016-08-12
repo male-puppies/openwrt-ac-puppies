@@ -1,0 +1,59 @@
+
+server {
+	listen 80;
+	server_name 1.0.0.8;
+
+	#charset koi8-r;
+	#access_log logs/host.access.log  main;
+	#error_log /tmp/error_ac.log  error;
+	
+	location = /index.html {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /webui {
+		root /usr/share/auth-web/www/;
+		#index index.html index.htm;
+		#content_by_lua_block {
+		#	ngx.say(ngx.var.uri)
+		#}
+	}
+	
+	location /cloud {
+		root /usr/share/auth-web/www;
+		index index.html index.htm;
+	}
+	
+	location /auth {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /cloudonline {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /bypass_host {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /cloudlogin {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /authopt {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /wxlogin2info {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /weixin2_login {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+	
+	location /PhoneNo {
+		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
+	}
+}
+

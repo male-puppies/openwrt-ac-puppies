@@ -51,6 +51,16 @@ end
 
 local uri_map = {}
 
+uri_map["/index.html"] = function()
+	local p = ngx.req.get_uri_args()
+	local ip, mac, uid, magic, rid = p.ip, p.mac, p.uid, p.magic, p.rid 
+	if not (ip and mac and uid and magic and rid) then 
+		return ngx.exit(ngx.ERROR)
+	end
+
+	ngx.redirect("/webui/index.html?" .. ngx.var.query_string)
+end
+
 uri_map["/authopt"] = function()
 	return ngx.say("not implement")
 end
@@ -63,13 +73,13 @@ uri_map["/PhoneNo"] = function()
 	return ngx.say("not implement")
 end
 
-uri_map["/webui/login.html"] = function()
-	return ngx.say("not implement")
-end
-
 uri_map["/authopt"] = default
 uri_map["/cloudonline"] = default
-uri_map["/bypass_host"] = default
+uri_map["/bypass_host"] = function()
+	ngx.log(ngx.ERR, "----------------")
+	return ngx.say(js.encode({status = 1, data = "ok"}))
+end
+
 uri_map["/cloudlogin"] = function()
 	local param, e = check_query_vars()
 	if not param then 

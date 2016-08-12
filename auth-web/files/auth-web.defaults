@@ -1,0 +1,5 @@
+#!/bin/sh
+
+ln -sf /usr/share/auth-web/userauth /usr/share/nginx-ac/sites-enabled/userauth
+ln -sf /tmp/cloud /usr/share/auth-web/www/cloud
+exit 0
