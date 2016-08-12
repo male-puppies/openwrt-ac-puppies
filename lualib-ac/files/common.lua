@@ -79,7 +79,7 @@ end
 
 return {
 	read = read,
-	save = safe,
+	save = save,
 	limit = limit, 
 	empty = empty,
 	arr2map = arr2map,
