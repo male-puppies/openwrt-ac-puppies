@@ -18,10 +18,10 @@ local function load_board()
 	for _, dev in ipairs(ports) do
 		if dev.type == "switch" then
 			for idx, port in ipairs(dev.outer_ports) do
-				table.insert(port_map, {ifname=dev.ifname .. "." .. idx, mac = port.mac, type = dev.type, device = dev.device, num = port.num, inner_port = dev.inner_port})
+				table.insert(port_map, {ifname = dev.ifname, mac = port.mac, type = dev.type, device = dev.device, num = port.num, inner_port = dev.inner_port})
 			end
 		elseif dev.type == "ether" then
-			table.insert(port_map, {ifname=dev.ifname, mac = dev.outer_ports[1].mac, type = dev.type})
+			table.insert(port_map, {ifname = dev.ifname, mac = dev.outer_ports[1].mac, type = dev.type, device = dev.device})
 		end
 	end
 
@@ -53,7 +53,7 @@ local function generate_network_cmds(board, network)
 
 	for name, option in pairs(network) do
 		uci_network[name] = option
-		if name:find("^lan") then
+		if name:find("^lan") or #option.ports > 1 then
 			uci_network[name].type = 'bridge'
 		end
 
@@ -61,15 +61,27 @@ local function generate_network_cmds(board, network)
 			uci_network[name].mac = board.ports[option.ports[1]].mac
 		end
 
-		uci_network[name].ifname = board.ports[option.ports[1]].ifname
+		uci_network[name].ifname = ""
+		local ifnames = {}
+		local vlan = tostring(option.ports[1])
 		for _, i in ipairs(option.ports) do
 			if board.ports[i].type == 'switch' then
-				switchs[board.ports[i].device] = switchs[board.ports[1].device] or {}
-				switchs[board.ports[i].device][tostring(option.ports[1])] = switchs[board.ports[i].device][tostring(option.ports[1])] or {}
-				switchs[board.ports[i].device][tostring(option.ports[1])]["outer_ports"] = switchs[board.ports[i].device][tostring(option.ports[1])]["outer_ports"] or {}
-				table.insert(switchs[board.ports[i].device][tostring(option.ports[1])]["outer_ports"], board.ports[i].num)
+				switchs[board.ports[i].device] = switchs[board.ports[i].device] or {}
+				switchs[board.ports[i].device][vlan] = switchs[board.ports[i].device][vlan] or {}
+				switchs[board.ports[i].device][vlan]["outer_ports"] = switchs[board.ports[i].device][vlan]["outer_ports"] or {}
+				table.insert(switchs[board.ports[i].device][vlan]["outer_ports"], board.ports[i].num)
+				switchs[board.ports[i].device][vlan]["inner_port"] = board.ports[i].inner_port
 
-				switchs[board.ports[i].device][tostring(option.ports[1])]["inner_port"] = board.ports[option.ports[1]].inner_port
+				ifnames[board.ports[i].ifname .. "." .. vlan] = 1
+			else
+				ifnames[board.ports[i].ifname] = 1
+			end
+		end
+		for ifname, _ in pairs(ifnames) do
+			if uci_network[name].ifname == "" then
+				uci_network[name].ifname = ifname
+			else
+				uci_network[name].ifname = uci_network[name].ifname .. " " .. ifname
 			end
 		end
 
@@ -163,7 +175,6 @@ local function generate_network_cmds(board, network)
 		table.insert(arr["network"], string.format("test -n \"$obj\" && {"))
 		table.insert(arr["network"], string.format("	uci set network.$obj.name='%s'", device))
 		table.insert(arr["network"], string.format("	uci set network.$obj.reset='1'"))
-		table.insert(arr["network"], string.format("	uci set network.$obj.enable_vlan='1'"))
 		table.insert(arr["network"], string.format("	uci set network.$obj.enable_vlan='1'"))
 		table.insert(arr["network"], string.format("}"))
 		for vid, port in pairs(switch) do
