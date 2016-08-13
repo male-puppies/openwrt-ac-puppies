@@ -130,7 +130,7 @@ local function generate_network_cmds(board, network)
 			local ipaddr, netmask = ipops.get_ip_and_mask(uci_network[name].ipaddr)
 			local startip = ipops.ipstr2int(uci_network[name].dhcpd["start"])
 			local endip = ipops.ipstr2int(uci_network[name].dhcpd["end"])
-			local s, e = ipops.bxor(startip, ipops.band(ipaddr, netmask)), ipops.bxor(endip - ipops.band(ipaddr, netmask))
+			local s, e = ipops.bxor(startip, ipops.band(ipaddr, netmask)), ipops.bxor(endip, ipops.band(ipaddr, netmask))
 
 			table.insert(arr["dhcp"], string.format("uci set dhcp.%s=dhcp", name))
 			table.insert(arr["dhcp"], string.format("uci set dhcp.%s.interface='%s'", name, name))
