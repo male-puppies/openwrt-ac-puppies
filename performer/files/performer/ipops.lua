@@ -5,7 +5,7 @@ local function _lshift(a, i)
 end
 
 local function _rshift(a, i)
-	return a / 2^i
+	return math.floor(a / 2^i)
 end
 
 local function _band(a, b)
@@ -177,15 +177,6 @@ local function ipgroup_add(ipgrp, ipstr)
 	return ipgrp_new
 end
 
---[[
-local ipranges = {
-	"1.1.1.1-2.2.2.2",
-	"192.168.0.0/16",
-	"192.168.0.1-192.168.0.2",
-	"192.168.255.254-192.169.0.100",
-	"172.16.0.1-172.16.0.100"
-}
-]]
 local function ipranges2ipgroup(ipranges)
 	local ipgrp = {}
 	for _, ipstr in ipairs(ipranges) do
@@ -203,7 +194,19 @@ local function ipgroup2ipranges(ipgrp)
 end
 
 --[[
+local ipranges = {
+	"1.1.1.1-2.2.2.2",
+	"192.168.0.0/16",
+	"192.168.0.1-192.168.0.2",
+	"192.168.255.254-192.169.0.100",
+	"172.16.0.1-172.16.0.100",
+	"0.0.0.0-255.255.255.255"
+}
+
 local ipgrp = ipranges2ipgroup(ipranges)
+for _, r in ipairs(ipgrp) do
+	print(r[1], r[2])
+end
 ipranges = ipgroup2ipranges(ipgrp)
 for _, ipstr in ipairs(ipranges) do
 	print(ipstr)
