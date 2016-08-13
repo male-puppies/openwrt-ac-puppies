@@ -5,6 +5,7 @@ local rpccli = require("rpccli")
 local simplesql = require("simplesql")
 local md5 = require("md5")
 local common = require("common")
+local ipops = require("ipops")
 
 local tcp_map = {}
 local mqtt, simple
@@ -27,6 +28,9 @@ local function generate_ipgrp_cmds()
 		if ipgroup.ipgid == 255 then
 			type = "all"
 		end
+
+		local ipgrp = ipops.ipranges2ipgroup(ranges)
+		ranges = ipops.ipgroup2ipranges(ipgrp)
 		for _, range in ipairs(ranges) do
 			if range == "0.0.0.0-255.255.255.255" then
 				type = 'all'
