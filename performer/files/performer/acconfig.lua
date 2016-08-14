@@ -3,7 +3,7 @@ local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local simplesql = require("simplesql")
-
+local ipops = require("ipops")
 
 local tcp_map = {}
 
@@ -100,9 +100,8 @@ compare array
 local function array_cmp(old, new)
 	local _ = assert(old), assert(new)
 	local old_map, new_map = {}, {}
-	if type(old) ~= "table" or type(new) ~= "table" or
-		(cmp_func and type(cmp_func) ~= "table") then
-		return nil, "invalid parameters"
+	if type(old) ~= "table" or type(new) ~= "table" then
+		return nil, "invalid parameters:not table"
 	end
 
 	if #old ~= #new then
@@ -125,19 +124,28 @@ local function array_cmp(old, new)
 	return false
 end
 
+--remove repeated items in array
+local function array2set(array)
+	local new_set, set_map = {}, {}
+	if type(array) ~= "table" then
+		return nil, "invalid parameter:not table"
+	end
 
---[[
-config map:
-@set_type: Mac or Ip
---]]
-local function set_list_cmp(old, new, set_type)
+	if #array == 0 then
+		return new_set
+	end
 
+	for _, v in ipairs(array) do
+		set_map[v] = 1
+	end
 
-
-	print("set_list_cmp old:", js.encode(old))
-	print("set_list_cmp new:", js.encode(new))
-	return true
+	for k, v in pairs(set_map) do
+		table.insert(new_set, k)
+	end
+	return new_set
 end
+
+
 
 --[[
 compare rule one by one
@@ -164,7 +172,7 @@ local function ac_rule_cmp(old, new)
 		end
 
 		for _, key in ipairs(sorted_arr_keys) do
-			if array_cmp(old_item[key], old_item[key]) then
+			if array_cmp(old_item[key], new_item[key]) then
 				return true
 			end
 		end
@@ -228,40 +236,6 @@ local function tm_contained(tmgrps, tm)
 	return false
 end
 
-
---[[
-commit config to kernel
-cate:audit or control
-sub_cate:ipblack/white, macblack/white
-
-{
-	"Id":1,"SrcZoneIds":[1,2],"SrcIpgrpIds":[3,4],
-	"DstZoneIds":[5,6],"DstIpgrpIds":[7,8],
-	"ProtoIds":[0,9],"Action":["ACCEPT","AUDIT"]
-}
---]]
-local commit_config = {}
---[[
-commit rule config to kernel:
-@cate_arr {{cate = Control/Audit}, {}}
-@new_config {Control = {}, Audit = {}}
-]]
-commit_config["Rule"] = function(cate_arr, new_config)
-	for _, item in ipairs(cate_arr) do
-		local cate_config = {}
-		local rule_key = item.cate.."Rule"
-		
-		cate_config[rule_key] = new_config[item.cate]
-		local cmd_str = string.format("ruletalbe -s '%s'", js.encode(cate_config)) assert(cmd_str)
-		print(cmd_str)
-		--os.execute(cmd_str)
-		return true
-	end
-
-	return true
-end
-
-
 --[[ 
 {
 ["ipset_key"] = ipset_key, ["ipset_name"] = item.sub_cate, 
@@ -297,14 +271,46 @@ local function create_ipset(config)
 	return true
 end
 
-
 local function update_ipset(config)
+	print("ipset:----",js.encode(config))
 	for _, info in ipairs(config) do
 		for _, item in ipairs(info.ipset_list) do
 			local add_cmd = string.format("ipset add '%s' '%s'", info.ipset_name, item)
 			print("add:", add_cmd)
 		end
 	end
+	return true
+end
+
+
+--[[
+commit config to kernel
+cate:audit or control
+sub_cate:ipblack/white, macblack/white
+
+{
+	"Id":1,"SrcZoneIds":[1,2],"SrcIpgrpIds":[3,4],
+	"DstZoneIds":[5,6],"DstIpgrpIds":[7,8],
+	"ProtoIds":[0,9],"Action":["ACCEPT","AUDIT"]
+}
+--]]
+local commit_config = {}
+--[[
+commit rule config to kernel:
+@cate_arr {{cate = Control/Audit}, {}}
+@new_config {Control = {}, Audit = {}}
+]]
+commit_config["Rule"] = function(cate_arr, new_config)
+	for _, item in ipairs(cate_arr) do
+		local cate_config = {}
+		local rule_key = item.cate.."Rule"
+		print("\n---!!!!------rule_cnt:", #(new_config[item.cate]))
+		cate_config[rule_key] = new_config[item.cate]
+		local cmd_str = string.format("ruletalbe -s '%s'", js.encode(cate_config)) assert(cmd_str)
+		print("\n\n",cmd_str)
+		--os.execute(cmd_str)
+	end
+
 	return true
 end
 
@@ -395,8 +401,8 @@ compare_config["Rule"] = function(old, new)
 		return cmp_res
 	end
 
-	print("old:", js.encode(old))
-	print("new:", js.encode(new))
+	-- print("\n\n\nold:", js.encode(old))
+	-- print("\n\n\nnew:", js.encode(new))
 	for _, cate in ipairs(ConfigCate) do
 		if old[cate] == nil or new[cate] == nil then
 			err = string.format("old[%s] is %s, new[%s] is %s", 
@@ -405,8 +411,6 @@ compare_config["Rule"] = function(old, new)
 			return nil, err
 		end
 
-		print("old cate:", js.encode(old[cate]))
-		print("new cate:", js.encode(new[cate]))
 		--maybe a error occured
 		ret, err = ac_rule_cmp(old[cate], new[cate])
 		if not ret and err then
@@ -444,8 +448,8 @@ compare_config["Set"] = function(old, new)
 		return cmp_res
 	end
 
-	print("\n\n\ncompare_config[set] old:", js.encode(old))
-	print("\n\n\ncompare_config[set] new:", js.encode(new))
+	-- print("\n\n\ncompare_config[set] old:", js.encode(old))
+	-- print("\n\n\ncompare_config[set] new:", js.encode(new))
 	for _, cate in ipairs(ConfigCate) do
 		local new_cate_config, old_cate_config = new[cate], old[cate]
 		for name, info in pairs(new_cate_config) do
@@ -477,24 +481,25 @@ local translate_config = {}
 --generate two categories rule config:audit and control
 translate_config["Rule"] = function(raw_rule_config)
 	local generate_rule = function(rule_config, cur_tm)
-		local rule_arr, rule_item = {}, {}
-		print("----before translate rule:", js.encode(rule_config))
+		local rule_arr = {}
+		--print("----before translate rule:", js.encode(rule_config))
 		for _, item in ipairs(rule_config) do 
 			if tm_contained(item["TmGrp"], cur_tm) then
+				local rule_item = {}
 				rule_item["Id"] = item["ruleid"]
-				rule_item["SrcZoneIds"] = js.decode(item["srczoneids"]) or {}
-				rule_item["SrcIpgrpIds"] = js.decode(item["srcipgrpids"]) or {}
-				rule_item["DstZoneIds"] = js.decode(item["dstzoneids"])	or {}
-				rule_item["DstIpgrpIds"] = js.decode(item["dstipgrpids"]) or {}
-				rule_item["ProtoIds"] = js.decode(item["protoids"])	or {}
-				local _ = #rule_item["ProtoIds"] and table.sort(rule_item["ProtoIds"])
-				rule_item["Actions"] = js.decode(item["actions"]) or {}
+				rule_item["SrcZoneIds"] = js.decode(item["srczoneids"]) 	assert(rule_item["SrcZoneIds"])
+				rule_item["SrcIpgrpIds"] = js.decode(item["srcipgrpids"]) 	assert(rule_item["SrcIpgrpIds"])
+				rule_item["DstZoneIds"] = js.decode(item["dstzoneids"])		assert(rule_item["DstZoneIds"])
+				rule_item["DstIpgrpIds"] = js.decode(item["dstipgrpids"]) 	assert(rule_item["DstIpgrpIds"])
+				rule_item["ProtoIds"] = js.decode(item["protoids"])			assert(rule_item["ProtoIds"])
+				rule_item["Actions"] = js.decode(item["actions"]) 			assert(rule_item["Actions"])
+				local _ = #rule_item["ProtoIds"] > 0 and table.sort(rule_item["ProtoIds"])
 				table.insert(rule_arr, rule_item)
 			else
 				print("----time diff:", js.encode(item["TmGrp"]), os.date("%Y%h%m %H%M%s",cur_tm))
 			end
 		end
-		print("----after translate rule:", js.encode(rule_arr))
+		--print("----after translate rule:", js.encode(rule_arr))
 		return rule_arr
 	end
 
@@ -528,7 +533,7 @@ translate_config["Set"] = function(raw_set_config)
 	local generate_set = function(set_config)
 		local set_map = {}
 		for _, set_info in ipairs(set_config) do
-			local ipset_key
+			local ipset_key, set_content
 			if set_info["settype"] == "Ip" then
 				ipset_key = (set_info["actions"] == "Bypass") and  "IpWhiteList" or "IpBlackList"
 
@@ -538,11 +543,26 @@ translate_config["Set"] = function(raw_set_config)
 			else
 				return nil, "invalid settype"
 			end
-			
-			set_content = set_info["state"] == "enable" and js.decode(set_info["setcontent"]) or {}
-			if set_info["settype"] == "Ip" and #set_content > 0 then
-				print("todo:correct ip list!!!!!!")
+
+			if set_info["state"] == "enable" then
+				set_content = js.decode(set_info["setcontent"])
+			else
+				set_content = {}
 			end
+
+			if type(set_content) ~= "table" then
+				return nil, "invalid setcontent"
+			end
+
+			if set_info["settype"] == "Ip" and #set_content > 0 then
+				local ipgrp = ipops.ipranges2ipgroup(set_content)
+				set_content = ipops.ipgroup2ipranges(ipgrp)
+
+			elseif set_info["settype"] == "Mac" and #set_content > 0 then
+				set_content = array2set(set_content)
+
+			end
+			assert(set_content)
 			set_map[set_info["setname"]] = {["map_key"] = ipset_key, ["set_list"] = set_content}
 		end
 
@@ -577,18 +597,16 @@ fetch_raw_config["Rule"] = function()
 		
 		local rule_arr = {}
 		local tmp_arr, err = simple:mysql_select(sql)
-		--print("----sql:", sql, "data:", js.encode(tmp_arr))
 
 		if err then
 			return nil, err
 		end
 
 		for _, rule in ipairs(tmp_arr) do
-			--print("tmpgrpids:", rule["tmgrpids"])
 			local tmgrps = {}
-			local tmgrpids = rule["tmgrpids"] and js.decode(rule["tmgrpids"]) or {}
+			local tmgrpids = rule["tmgrpids"] and js.decode(rule["tmgrpids"])
 
-			if #tmgrpids == 0 then
+			if type(tmgrpids) ~= "table" or #tmgrpids == 0 then
 				return nil, "tmgrpids is empty"
 			end
 	
@@ -600,6 +618,12 @@ fetch_raw_config["Rule"] = function()
 			local detail_arr, err = simple:mysql_select(sql)
 			if not detail_arr or #detail_arr == 0 then
 				return nil, err or string.format("invalid time groups:(%s)", table.concat(tmgrpids, ","))
+			end
+
+			--notice, it's an error, but not a fatal one
+			if #detail_arr ~= #tmgrpids then
+				log.error("tmgrp number:expected %d ~= real %d", #tmgrpids, #detail_arr)
+				print(string.format("tmgrp number:expected %d ~= real %d", #tmgrpids, #detail_arr))
 			end
 
 			for _, detail in ipairs(detail_arr) do
@@ -620,7 +644,7 @@ fetch_raw_config["Rule"] = function()
 				table.insert(rule_arr, rule)
 			end
 		end
-		-- print("-----tmp_arr:",js.encode(tmp_arr))
+		---print("-----tmp_arr:",js.encode(tmp_arr))
 		-- print("-----rule_arr:",js.encode(rule_arr))
 		return rule_arr
 	end
@@ -673,7 +697,6 @@ fetch_raw_config["Set"] = function()
 	return set_config
 end
 
-
 --load config:Rule and set
 local function load_config()
 	local raw_config = {}
@@ -719,6 +742,7 @@ local function check_config_update()
 			log.error("translate config(type=%s) failed for %s", config_type, err)
 			return false
 		end
+
 		new_ac_config[config_type] = new_config
 		old_config = cur_ac_config[config_type]
 
@@ -728,32 +752,24 @@ local function check_config_update()
 			log.error("compare config(type=%s) failed for %s", config_type, err)
 			return false
 		end
-		print("----compare res----:", js.encode(res))
-		local _ = #res == 0 and print("nothing changed, no need to reset!")
+		--print("\n\n\n----compare res----:", js.encode(res))
+		local _ = #res == 0 and print("nothing changed, no need to reset for ",config_type)
 
 		if #res > 0 then
 			res, err = commit_func(res, new_ac_config[config_type])
 			if not res then
 				log.error("commit config(type=%s) failed for %s", config_type, err)
-				print("commit config error: ", config_type, " ", err)
+				--print("commit config error: ", config_type, " ", err)
 				return false
 			end
-			print("----commit_func res----:", js.encode(res))
-			print("\n\n\n--1--cur_ac_config:", config_type, js.encode(cur_ac_config[config_type]))
-			print("\n\n\n--1--new_ac_config:", config_type, js.encode(new_ac_config[config_type]))
+			--print("----commit_func res----:", js.encode(res))
+			-- print("\n\n\n--1--cur_ac_config:", config_type, js.encode(cur_ac_config[config_type]))
+			-- print("\n\n\n--1--new_ac_config:", config_type, js.encode(new_ac_config[config_type]))
 			--notice:update config after commit success
 			cur_ac_config[config_type] = new_ac_config[config_type]
 		end
 	end
 	return true
-end
-
---[[
-fetch config immediately when receiving
---]]
-local function force_check_config_update()
-	load_config()
-	check_config_update()
 end
 
 --periodical routine
@@ -767,28 +783,28 @@ end
 
 tcp_map["dbsync_ipgroup"] = function(p)
 	print("-----acconfig:", js.encode(p))
-	force_check_config_update()
+	check_config_update()
 	return true
 end
 
 
 tcp_map["dbsync_timegroup"] = function(p)
 	print("-----acconfig:", js.encode(p))
-	force_check_config_update()
+	check_config_update()
 	return true
 
 end
 
 tcp_map["dbsync_acrule"] = function(p)
 	print("-----acconfig:", js.encode(p))
-	force_check_config_update()
+	check_config_update()
 	return true
 end
 
 
 tcp_map["dbsync_acipset"] = function(p)
 	print("-----acconfig:", js.encode(p))
-	force_check_config_update()
+	check_config_update()
 	return true
 end
 
