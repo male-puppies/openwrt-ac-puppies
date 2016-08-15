@@ -30,7 +30,7 @@ np_rule_t inner_ssl = {
 	.ID = NP_INNER_RULE_SSL,
 	.priority = NP_RULE_PRI_MAX,
 
-	.rule_type = TP_RULE_BASE | TP_RULE_FIN,
+	.rule_type = TP_RULE_BASE,
 	.refs_type = NP_REF_NONE,
 
 	.enable_http = 0,

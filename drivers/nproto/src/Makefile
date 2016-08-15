@@ -5,7 +5,7 @@
 obj-${CONFIG_NPROTO} += nproto.o
 nproto-y	+= main.o rules.o rules-inner.o \
 	wu-manber.o mwm.o bmh.o QSORT.o \
-	test.o
+	test.o debug.o
 
 # pcre2 in kernel
 KLIBS_DEBUG ?= 0

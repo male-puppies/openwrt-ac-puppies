@@ -145,6 +145,8 @@ typedef struct {
 struct nproto_rule {
 	/* rule name, app name(xunlei, web-chrome), service: http, mail, game. */
 	char *name_rule, *name_app, *name_service;
+	/* Rule identify crc */
+	uint32_t crc;
 
 	/* match pri, but as mwm search, this not used... */
 	uint16_t priority;

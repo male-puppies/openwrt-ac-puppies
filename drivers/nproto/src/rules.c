@@ -2,6 +2,7 @@
 
 #include <linux/udp.h>
 #include <linux/tcp.h>
+#include <linux/crc32.h>
 #include <linux/nos_track.h>
 
 #include <nproto/http.h>
@@ -12,12 +13,15 @@
 #include "pcre.h"
 #include "nproto_private.h"
 
-#define RULE_DBG_ID NP_INNER_RULE_HTTP_WEIBO
+#define RULE_DBG_TRACE 
 
+int rule_trace_id = NP_INNER_RULE_HTTP_WEIBO;
+module_param(rule_trace_id, int, 0444);
+MODULE_PARM_DESC(rule_trace_id, "debug rule trace id.");
 /* ... */
-#ifdef RULE_DBG_ID
+#ifdef RULE_DBG_TRACE
 #define RULE_DBG(rule, npt, fmt...)  do { \
-		if(rule->ID == RULE_DBG_ID){ \
+		if(rule->ID == rule_trace_id){ \
 			if(npt){ \
 				np_print("%d: "FMT_PKT_STR"\n\t", __LINE__, FMT_PKT((nt_packet_t*)npt)); \
 			} \
@@ -131,6 +135,7 @@ static int rule_compile(np_rule_t *rule)
 			}
 		}
 	}
+	rule->crc = crc32(0, rule->name_rule, strlen(rule->name_rule));
 	return 0;
 }
 
@@ -448,6 +453,32 @@ static void set_dump(np_rule_set_t *set, int stage)
 	return;
 }
 
+int nproto_rules_dump_name(char *out, int olen, char *buffer, int bufsz, int offset)
+{
+	int i, len = 0;
+
+	for (i = 0; i < RULES_ALL.count; ++i) {
+		np_rule_t *rule = RULES_ALL.array[i];
+		
+		len += snprintf(buffer, bufsz - len, "[%08u] %s\n", rule->crc, rule->name_rule);
+		if(len <= 0) {
+			/* overflow */
+			np_error("io buffer overflow. %d\n", len);
+		}
+	}
+	if(offset >= len) {
+		/* finished */
+		return 0;
+	}
+	/* copy to user */
+	if(len > olen) {
+		len = olen;
+	}
+	memcpy(out, buffer + offset, len);
+
+	return len;
+}
+
 void rules_cleanup(void)
 {
 	int i, j;
@@ -729,7 +760,7 @@ static uint8_t* ctm_do(np_rule_t *rule, match_t *ctm, uint8_t *data, int dlen)
 				RULE_DBG(rule, NULL, "l7: rex match at: %d\n", m);
 				return data + offset + m;
 			} else {
-				RULE_DBG(rule, NULL, "l7: rex miss %d.\n", m);
+				RULE_DBG(rule, NULL, "l7: rex[%s] miss %d.\n", ctm->patt, m);
 				np_dump(data + offset, 16, "rex:");
 			}
 			return NULL;

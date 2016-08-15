@@ -254,6 +254,7 @@ static int __init nproto_module_init(void)
 		goto __error;
 	}
 
+	nproto_proc_init();
 	// rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
 	return 0;
 
@@ -267,6 +268,7 @@ __error:
 
 static void __exit nproto_module_exit(void)
 {
+	nproto_proc_exit();
 	nf_unregister_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
 	// rcu_assign_pointer(nt_cck_fn, NULL);
 
