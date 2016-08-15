@@ -10,14 +10,10 @@ local tcp_map = {}
 --database related
 local mqtt, simple
 
-local ConfigType = {"Rule", "Set"}		--two type config
-local ConfigCate = {"Control", "Audit"}	--every type contains two categories config
-
-local ControlSet 		= "ControlSet"
-local ControlRule 		= "ControlRule"
-local AuditSet 			= "AuditSet"
-local AuditRule 		= "AuditRule"
-
+--two type config
+local ConfigType = {"Rule", "Set"}
+--every type contains two categories config
+local ConfigCate = {"Control", "Audit"}
 local ipset_map = {
 	["MacWhiteList"] = {set_key = "MacWhiteListSetName", set_type = "hash:mac"},
 	["IpWhiteList"] = {set_key = "IpWhiteListSetName", set_type = "hash:ip"} ,
@@ -62,7 +58,6 @@ local new_ac_config = {}
 	audit/control rule fromat:
 	{
 		"Id":,
-
 		"SrcZoneIds":[],
 		"SrcIpgrpIds":[],
 		"DstZoneIds":[],
@@ -161,7 +156,7 @@ local function ac_rule_cmp(old, new)
 		return true
 	end
 
-	local sorted_arr_keys = {"SrcZoneIds", "SrcIpgrpIds", "DstZoneIds", "DstIpgrpIds", "ProtoIds"}
+	local sorted_arr_keys = {"SrcZoneIds", "SrcIpgrpIds", "DstZoneIds", "DstIpgrpIds", "ProtoIds", "Actions"}
 
 	for i=1, #old do
 		local old_item, new_item = old[i], new[i]
@@ -176,12 +171,6 @@ local function ac_rule_cmp(old, new)
 				return true
 			end
 		end
-
-		for _, key in pairs({"ACCEPT", "REJECT", "AUDIT"}) do
- 			if old_item[key] ~= new_item[key] then
- 				return true
- 			end
- 		end
 	end
 
 	return false
@@ -487,11 +476,11 @@ translate_config["Rule"] = function(raw_rule_config)
 			if tm_contained(item["TmGrp"], cur_tm) then
 				local rule_item = {}
 				rule_item["Id"] = item["ruleid"]
-				rule_item["SrcZoneIds"] = js.decode(item["srczoneids"]) 	assert(rule_item["SrcZoneIds"])
-				rule_item["SrcIpgrpIds"] = js.decode(item["srcipgrpids"]) 	assert(rule_item["SrcIpgrpIds"])
-				rule_item["DstZoneIds"] = js.decode(item["dstzoneids"])		assert(rule_item["DstZoneIds"])
-				rule_item["DstIpgrpIds"] = js.decode(item["dstipgrpids"]) 	assert(rule_item["DstIpgrpIds"])
-				rule_item["ProtoIds"] = js.decode(item["protoids"])			assert(rule_item["ProtoIds"])
+				rule_item["SrcZoneIds"] = js.decode(item["src_zids"]) 		assert(rule_item["SrcZoneIds"])
+				rule_item["SrcIpgrpIds"] = js.decode(item["src_ipgids"]) 	assert(rule_item["SrcIpgrpIds"])
+				rule_item["DstZoneIds"] = js.decode(item["dest_zids"])		assert(rule_item["DstZoneIds"])
+				rule_item["DstIpgrpIds"] = js.decode(item["dest_ipgids"]) 	assert(rule_item["DstIpgrpIds"])
+				rule_item["ProtoIds"] = js.decode(item["proto_ids"])		assert(rule_item["ProtoIds"])
 				rule_item["Actions"] = js.decode(item["actions"]) 			assert(rule_item["Actions"])
 				local _ = #rule_item["ProtoIds"] > 0 and table.sort(rule_item["ProtoIds"])
 				table.insert(rule_arr, rule_item)
@@ -534,18 +523,18 @@ translate_config["Set"] = function(raw_set_config)
 		local set_map = {}
 		for _, set_info in ipairs(set_config) do
 			local ipset_key, set_content
-			if set_info["settype"] == "Ip" then
-				ipset_key = (set_info["actions"] == "Bypass") and  "IpWhiteList" or "IpBlackList"
+			if set_info["settype"] == "ip" then
+				ipset_key = (set_info["action"] == "bypass") and  "IpWhiteList" or "IpBlackList"
 
-			elseif set_info["settype"] == "Mac" then
-				ipset_key = (set_info["actions"] == "Bypass") and  "MacWhiteList" or "MacBlackList"
+			elseif set_info["settype"] == "mac" then
+				ipset_key = (set_info["action"] == "bypass") and  "MacWhiteList" or "MacBlackList"
 			
 			else
 				return nil, "invalid settype"
 			end
 
-			if set_info["state"] == "enable" then
-				set_content = js.decode(set_info["setcontent"])
+			if set_info["enable"] and tonumber(set_info["enable"]) == 1 then
+				set_content = js.decode(set_info["content"])
 			else
 				set_content = {}
 			end
@@ -554,11 +543,11 @@ translate_config["Set"] = function(raw_set_config)
 				return nil, "invalid setcontent"
 			end
 
-			if set_info["settype"] == "Ip" and #set_content > 0 then
+			if set_info["settype"] == "ip" and #set_content > 0 then
 				local ipgrp = ipops.ipranges2ipgroup(set_content)
 				set_content = ipops.ipgroup2ipranges(ipgrp)
 
-			elseif set_info["settype"] == "Mac" and #set_content > 0 then
+			elseif set_info["settype"] == "mac" and #set_content > 0 then
 				set_content = array2set(set_content)
 
 			end
@@ -590,7 +579,7 @@ local fetch_raw_config = {}
 --fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
 	local fetch_rule = function(cate)
-		local sql = string.format("select * from acrule where ruletype='%s' and state='enable' order by priority desc", cate) 
+		local sql = string.format("select * from acrule where ruletype='%s' and enable=1 order by priority desc", cate) 
 		if not sql then
 			return nil, "construct sql failed"
 		end
@@ -604,7 +593,7 @@ fetch_raw_config["Rule"] = function()
 
 		for _, rule in ipairs(tmp_arr) do
 			local tmgrps = {}
-			local tmgrpids = rule["tmgrpids"] and js.decode(rule["tmgrpids"])
+			local tmgrpids = rule["tmgrp_ids"] and js.decode(rule["tmgrp_ids"])
 
 			if type(tmgrpids) ~= "table" or #tmgrpids == 0 then
 				return nil, "tmgrpids is empty"
@@ -640,7 +629,7 @@ fetch_raw_config["Rule"] = function()
 			if tmgrps and #tmgrps > 0 then
 				--notice: translate ids to detail info
 				rule["TmGrp"] = tmgrps
-				rule["tmgrpids"] = nil
+				rule["tmgrp_ids"] = nil
 				table.insert(rule_arr, rule)
 			end
 		end
@@ -651,7 +640,7 @@ fetch_raw_config["Rule"] = function()
 
 	local rule_config = {}
 	for _, cate in ipairs(ConfigCate) do
-		local res, err = fetch_rule(cate) 
+		local res, err = fetch_rule(string.lower(cate)) 
 		if not res then
 			--if fetch failed, ignore what already have fetched
 			return nil, err
@@ -666,7 +655,7 @@ end
 fetch_raw_config["Set"] = function()
 	local fetch_set = function(cate)
 		--notice:we need all setname, so ignore whether state is enable or disable
-		local sql = string.format("select * from acipset where setcate='%s'", cate) assert(sql)
+		local sql = string.format("select * from acset where setclass='%s'", cate) assert(sql)
 		if not sql then
 			return nil, "construct sql failed"
 		end
@@ -684,7 +673,7 @@ fetch_raw_config["Set"] = function()
 	local check_number = {["Control"] = 4, ["Audit"] = 2}
 	for _, cate in ipairs(ConfigCate) do
 		local number = 0
-		local res, err = fetch_set(cate)
+		local res, err = fetch_set(string.lower(cate))
 		if not res then
 			return nil, err
 		end
