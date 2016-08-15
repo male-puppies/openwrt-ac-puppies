@@ -44,5 +44,11 @@ if cmd:find("^kv_") then
 	return require("admin.kv").run(cmd)
 end
 
-
-
+-- curl 'http://127.0.0.1/v1/admin/api/timegroup_del?token=857a6d143d1982d267b7b989f5e9f692' -d 'tmgids=[0,1,2,3,4,5]'
+-- curl 'http://127.0.0.1/v1/admin/api/timegroup_set?token=857a6d143d1982d267b7b989f5e9f692' -d 'tmgid=0&tmgrpname=xxx&tmgrpdesc=yyy&days={"mon":1,"tues":1,"wed":1,"thur":1,"fri":1,"sat":0,"sun":0}&tmlist=[{"hour_start":8,"min_start":0,"hour_end":16,"min_end":0}, {"hour_start":14,"min_start":0,"hour_end":16,"min_end":0}]'
+-- curl 'http://127.0.0.1/v1/admin/api/timegroup_add?token=857a6d143d1982d267b7b989f5e9f692' -d 'tmgid=1&tmgrpname=ggg&tmgrpdesc=yyy&days={"mon":0,"tues":0,"wed":0,"thur":0,"fri":0,"sat":0,"sun":0}&tmlist=[{"hour_start":0,"min_start":0,"hour_end":0,"min_end":0}]'
+-- curl 'http://192.168.9.222/v1/admin/api/timegroup_get?token=857a6d143d1982d267b7b989f5e9f692&page=1&count=10&order=tmgrpname&desc=1&search=tmgrpname&like=ALL'
+-- curl 'http://192.168.9.222/v1/admin/api/timegroup_get?token=857a6d143d1982d267b7b989f5e9f692&page=1&count=10'
+if cmd:find("^timegroup_") then
+	return require("admin.timegroup").run(cmd)
+end

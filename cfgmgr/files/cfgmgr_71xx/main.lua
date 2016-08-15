@@ -17,6 +17,7 @@ local modules = {
 	iface = 	require("iface"),
 	ipgroup = 	require("ipgroup"),
 	dbevent = 	require("dbevent"),
+	timegroup= 	require("timegroup"),
 }
 
 local encode, decode = js.encode, js.decode
