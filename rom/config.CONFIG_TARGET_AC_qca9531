@@ -5399,10 +5399,8 @@ CONFIG_PACKAGE_iw=y
 # CONFIG_PACKAGE_nut is not set
 # CONFIG_PACKAGE_nuttcp is not set
 # CONFIG_PACKAGE_nuttcp-xinetd is not set
-CONFIG_PACKAGE_odhcp6c=y
-CONFIG_PACKAGE_odhcp6c_ext_cer_id=0
-CONFIG_PACKAGE_odhcpd=y
-CONFIG_PACKAGE_odhcpd_ext_cer_id=0
+# CONFIG_PACKAGE_odhcp6c is not set
+# CONFIG_PACKAGE_odhcpd is not set
 # CONFIG_PACKAGE_oidentd is not set
 # CONFIG_PACKAGE_ola is not set
 # CONFIG_PACKAGE_omcproxy is not set
