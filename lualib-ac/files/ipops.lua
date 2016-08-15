@@ -59,7 +59,7 @@ end
 local function get_parts_as_number(ipstr)
 	local t = {}
 	for part in string.gmatch(ipstr, "%d+") do
-		t[#t+1] = tonumber(part, 10)
+		table.insert(t, tonumber(part, 10))
 	end
 	return t
 end
@@ -73,25 +73,24 @@ local function ipstr2int(ipstr)
 end
 
 local function int2ipstr(ip)
-	local n = {}
-	n[1] = _band(_rshift(ip, 24), 0x000000FF)
-	n[2] = _band(_rshift(ip, 16), 0x000000FF)
-	n[3] = _band(_rshift(ip, 8), 0x000000FF)
-	n[4] = _band(_rshift(ip, 0), 0x000000FF)
-
-	return string.format("%u.%u.%u.%u", n[1], n[2], n[3], n[4])
+	local a = _band(_rshift(ip, 24), 0x000000FF)
+	local b = _band(_rshift(ip, 16), 0x000000FF)
+	local c = _band(_rshift(ip, 8), 0x000000FF)
+	local d = _band(_rshift(ip, 0), 0x000000FF)
+	
+	return string.format("%u.%u.%u.%u", a, b, c, d)
 end
 
 local function cidr2int(cidr)
-	local x = 0;
-	for i = 0, cidr - 1, 1 do
+	local x = 0
+	for i = 0, cidr - 1 do
 		x = x + _lshift(1, 31 - i)
 	end
 	return x
 end
 
 local function int2cidr(ip)
-	for i = 0, 31, 1 do
+	for i = 0, 31 do
 		if _band(ip, _lshift(1, 31 - i)) == 0 then
 			return i
 		end
@@ -99,14 +98,12 @@ local function int2cidr(ip)
 	return 32
 end
 
-local function cidr2maskstr(cidr)
-	local ip = cidr2int(cidr)
-	return int2ipstr(ip)
+local function cidr2maskstr(cidr) 
+	return int2ipstr(cidr2int(cidr))
 end
 
-local function maskstr2cidr(maskstr)
-	local ip = ipstr2int(maskstr)
-	return int2cidr(ip)
+local function maskstr2cidr(maskstr) 
+	return int2cidr(ipstr2int(maskstr))
 end
 
 local function get_ip_and_mask(ipaddr)
@@ -124,13 +121,17 @@ local function ipstr2range(ipstr)
 	if #ip == 4 then
 		local i = (((ip[1] * 256 + ip[2]) * 256 + ip[3]) * 256 + ip[4])
 		return {i, i}
-	elseif #ip == 5 and ip[5] >=1 and ip[5] <= 32 then
+	end 
+
+	if #ip == 5 and ip[5] >=1 and ip[5] <= 32 then
 		local i = (((ip[1] * 256 + ip[2]) * 256 + ip[3]) * 256 + ip[4])
 		local m = cidr2int(ip[5])
 		local s = _band(i, m)
 		local e = _bor(i, _bnot(m))
 		return {s, e}
-	elseif #ip == 8 then
+	end 
+	
+	if #ip == 8 then
 		local s = (((ip[1] * 256 + ip[2]) * 256 + ip[3]) * 256 + ip[4])
 		local e = (((ip[5] * 256 + ip[6]) * 256 + ip[7]) * 256 + ip[8])
 		if s <= e then
@@ -214,24 +215,24 @@ end
 ]]
 
 return {
-	ipstr2int = ipstr2int,
-	int2ipstr = int2ipstr,
-	cidr2int = cidr2int,
-	int2cidr = int2cidr,
-	cidr2maskstr = cidr2maskstr,
-	maskstr2cidr = maskstr2cidr,
-	get_ip_and_mask = get_ip_and_mask,
-	get_ipstr_and_maskstr = get_ipstr_and_maskstr,
+	ipstr2int 				= ipstr2int,
+	int2ipstr 				= int2ipstr,
+	cidr2int 				= cidr2int,
+	int2cidr 				= int2cidr,
+	cidr2maskstr 			= cidr2maskstr,
+	maskstr2cidr 			= maskstr2cidr,
+	get_ip_and_mask 		= get_ip_and_mask,
+	get_ipstr_and_maskstr 	= get_ipstr_and_maskstr,
 
-	lshift = _lshift,
-	rshift = _rshift,
-	band = _band,
-	bor = _bor,
-	bxor = _bxor,
-	bnot = _bnot,
+	lshift 					= _lshift,
+	rshift 					= _rshift,
+	band 					= _band,
+	bor 					= _bor,
+	bxor 					= _bxor,
+	bnot 					= _bnot,
 
-	ipranges2ipgroup = ipranges2ipgroup,
-	ipgroup2ipranges = ipgroup2ipranges,
-	ipgroup_add = ipgroup_add,
-	ipstr2range = ipstr2range
+	ipranges2ipgroup 		= ipranges2ipgroup,
+	ipgroup2ipranges 		= ipgroup2ipranges,
+	ipgroup_add 			= ipgroup_add,
+	ipstr2range 			= ipstr2range
 }
