@@ -14,6 +14,7 @@ local modules = {
 	ipgroup = 	require("ipgroup"),
 	network = 	require("network"),
 	dbevent = 	require("dbevent"),
+	acconfig = 	require("acconfig"),
 }
 
 local encode, decode = js.encode, js.decode
@@ -40,14 +41,27 @@ local function dispatch_tcp_loop()
 	end
 end
 
+local handlers = {}
 local function on_db_event(cmd)
+	local arr = handlers[cmd.cmd]
+	if arr then 
+		for _, f in ipairs(arr) do 
+			f(cmd)
+		end 
+		return
+	end
+
+	-- 第一次收到命令cmd.cmd时，遍历所有模块，把接收模块的处理函数缓存起来
+	local arr = {}
 	for _, mod in pairs(modules) do
 		local f = mod.dispatch_tcp
 		if f and f(cmd) then
-			return
+			table.insert(arr, f)
 		end
 	end
-	print("no one deal with cmd", js.encode(cmd))
+
+	handlers[cmd.cmd] = arr
+	local _ = #arr == 0 and print("no one deal with cmd", js.encode(cmd))	
 end
 
 local function start_sand_server()

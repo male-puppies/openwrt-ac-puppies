@@ -554,6 +554,33 @@ static int translate_set(
 }
 
 
+static int  __do_replace_set(struct ac_table *table, struct ac_set_info *new_info)
+{
+	struct ac_set_info *old_info = NULL;
+
+	write_lock_bh(&table->lock);
+	old_info = table->priv_sets[new_info->category];
+	table->priv_sets[new_info->category] = new_info;
+	write_unlock_bh(&table->lock);
+	if (old_info) {
+		int i = 0, entry_offset = 0;
+		void *entry_base = NULL;
+		struct ac_hybrid_entry *entry = NULL;
+
+		entry_base = old_info->entries;
+		entry_offset = AC_ALIGN(sizeof(struct ac_hybrid_entry));
+		for (i = 0; i < old_info->number; ++i) {
+			entry = (struct ac_hybrid_entry*)(entry_base + i * entry_offset);
+			if (entry->ipset_id != IPSET_INVALID_ID) {
+				ip_set_put_byindex(&init_net, entry->ipset_id);
+			}
+		}
+		kvfree(old_info);
+	}
+	display_ac_set_kernel(table->priv_sets[new_info->category]);
+	return 0;
+}
+
 /*replace ipsets
 *notice:take care of clearing sets
 */
@@ -598,11 +625,14 @@ int do_replace_set(const void __user *user, unsigned int len)
 	if (ret < 0) {
 		goto free_newinfo;
 	}
-	display_ac_set(new_info);
+
 	table = get_table_withlock();
-	table->priv_sets[tmp.category] = new_info;
+	ret = __do_replace_set(table, new_info);
+	if (ret < 0) {
+		table_unlock();
+		goto free_newinfo;
+	}
 	table_unlock();
-	display_ac_set_kernel(table->priv_sets[tmp.category]);
 	return 0;
 
 free_newinfo:
@@ -947,7 +977,6 @@ static int is_need_check(
 {
 	return 0;
 }
-
 
 static int __do_set(
 	const struct net_device *in,
