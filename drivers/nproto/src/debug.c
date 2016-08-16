@@ -56,7 +56,7 @@ static ssize_t nproto_write(struct file *file,
 	char *buf = file->private_data;
 
 	if(count > PROC_DBG_BUFF_SIZE) {
-		np_error("io buffer overflow: %d->%d\n", PROC_DBG_BUFF_SIZE, count);
+		np_error("io buffer overflow: %d->%d\n", PROC_DBG_BUFF_SIZE, (unsigned int)count);
 		return -EIO;
 	}
 	if (copy_from_user(buf, buffer, count)) {
