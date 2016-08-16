@@ -55,6 +55,6 @@ create_mysql_disk_table "create table $tbname ( \
 		remax		char(8)				not null default '4', \
 		rts 		char(8)				not null default '2347', \
 		shortgi 	char(8)				not null default '1', \
-		usrlimit 	char(8)				not null default '30', \
+		usrlimit 	char(8)				not null default '30' \
 	)"
 	
