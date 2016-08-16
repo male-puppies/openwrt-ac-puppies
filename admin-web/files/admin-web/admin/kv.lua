@@ -4,30 +4,13 @@ local log = require("common.log")
 local query = require("common.query")
 local adminlib = require("admin.adminlib")
 
-local r1 = log.real1
 local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
 local ip_pattern, mac_pattern = adminlib.ip_pattern, adminlib.mac_pattern
 local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
-local v_rid         = gen_validate_num(0, 15)
-local v_zid         = gen_validate_num(0, 255)
-local v_ipgid       = gen_validate_num(0, 255)
-local v_iscloud     = gen_validate_num(0, 1)
-local v_enable      = gen_validate_num(0, 1)
-local v_rulename    = gen_validate_str(1, 64, true)
-local v_ruledesc    = gen_validate_str(0, 128)
-local v_authtype    = gen_validate_str(1, 16, true)
-local v_modules     = gen_validate_str(2, 32)
-local v_while_ip    = gen_validate_str(2, 10240)
-local v_while_mac   = gen_validate_str(2, 10240)
-local v_wechat      = gen_validate_str(2, 1024)
-local v_sms         = gen_validate_str(2, 1024)
-local v_rids        = gen_validate_str(2, 256)
-local v_priority    = gen_validate_num(0, 99999)
-
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -49,23 +32,62 @@ function cmd_map.kv_get()
 	local keys = js.decode(m.keys)
 	if not keys then
 		return reply_e("invalid param")
-	end 
+	end
 
-	if fp.contains_any(fp.tomap(keys), {"username", "password"}) then 
+	if fp.contains_any(fp.tomap(keys), {"username", "password"}) then
 		return reply_e("invalid param")
 	end
 
 	local karr = fp.map(keys, function(k, v) return string.format("'%s'", v) end)
 	local rs, e = mysql_select(string.format("select * from kv where k in (%s)", table.concat(karr, ",")))
-	if not rs then 
+	if not rs then
 		return reply_e(e)
-	end 
+	end
 
-	return reply(fp.reduce(rs, function(m, r) return fp.set(m, r.k, r.v) end, {}))
+	return reply(fp.reduce(rs, function(m, r) return rawset(m, r.k, r.v) end, {}))
+end
+
+local kvmap = {
+	offline_time = gen_validate_num(1, 86400),
+	now_flow_timeout = gen_validate_num(1, 86400),
+}
+
+function kvmap.redirect_ip(ip)
+	if ip:find(ip_pattern) then
+		return ip
+	end
+
+	return nil, "invalid redirect_ip"
+end
+
+function kvmap.bypass_dst(s)
+	local m = js.decode(s)
+	if not m then
+		return nil, "invalid bypass_dst"
+	end
+	return s
 end
 
 function cmd_map.kv_set()
-	reply_e("not implement")
+ 	local m, e = validate_post({})
+    if not m then
+        return reply_e(e)
+    end
+
+    local p, e = ngx.req.get_post_args()
+
+    local m = {}
+    for k, v in pairs(p) do
+    	local f = kvmap[k]
+    	if f then
+    		local v, e = f(v)
+    		if not v then
+    			return reply_e(e)
+    		end
+    		m[k] = v
+    	end
+    end
+	query_common(m, "kv_set")
 end
 
 return {run = run}
