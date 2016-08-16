@@ -99,7 +99,6 @@ local function new(clientid)
 		proxy_topic = "a/ac/proxy",
 	}
 
-	local content = {}
 	mqtt:set_callback("on_message", function(topic, payload)
 		if topic ~= obj.cli_topic then
 			return obj.on_message(topic, payload)
@@ -113,8 +112,7 @@ local function new(clientid)
 		local seq = math.floor(tonumber(map.seq))
 		local n = obj.out_seq_map[seq]
 		if n then
-			content[1] = map.pld
-			n.ch:write(content)
+			n.ch:write({map.pld})
 		end
 	end)
 
