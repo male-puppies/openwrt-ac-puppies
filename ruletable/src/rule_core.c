@@ -160,7 +160,7 @@ int do_commit_config(const char *config_str, unsigned int len)
 	}
 
 	if (s_config.control->rule.updated) {
-		struct ac_repl_table_info *control_table_info = generate_ac_table(&s_config.control->rule, RULE_TYPE_CONTROL);
+		control_table_info = generate_ac_table(&s_config.control->rule, RULE_TYPE_CONTROL);
 		if (control_table_info) {
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_TABLE, control_table_info, sizeof(struct ac_repl_table_info) + control_table_info->size) != 0) {
 				goto out;
@@ -169,7 +169,7 @@ int do_commit_config(const char *config_str, unsigned int len)
 	}
 
 	if (s_config.control->set.updated) {
-		struct ac_repl_set_info *control_set_info = generate_ac_set(&s_config.control->set, RULE_TYPE_CONTROL);
+		control_set_info = generate_ac_set(&s_config.control->set, RULE_TYPE_CONTROL);
 		if (control_set_info) {
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_SET, control_set_info, sizeof(struct ac_repl_set_info) + control_set_info->size) != 0) {
 				goto out;
@@ -178,7 +178,7 @@ int do_commit_config(const char *config_str, unsigned int len)
 	}
 
 	if (s_config.audit->rule.updated) {
-		struct ac_repl_table_info *audit_table_info = generate_ac_table(&s_config.audit->rule, RULE_TYPE_AUDIT);
+		audit_table_info = generate_ac_table(&s_config.audit->rule, RULE_TYPE_AUDIT);
 		if (audit_table_info) {
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_TABLE, audit_table_info, sizeof(struct ac_repl_table_info) + audit_table_info->size) != 0) {
 				goto out;
@@ -187,7 +187,7 @@ int do_commit_config(const char *config_str, unsigned int len)
 	}
 
 	if (s_config.audit->set.updated) {
-		struct ac_repl_set_info *audit_set_info = generate_ac_set(&s_config.audit->set, RULE_TYPE_AUDIT);
+		audit_set_info = generate_ac_set(&s_config.audit->set, RULE_TYPE_AUDIT);
 		if (audit_set_info) {
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_SET, audit_set_info, sizeof(struct ac_repl_set_info) + audit_set_info->size) != 0) {
 				goto out;
