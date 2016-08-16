@@ -50,7 +50,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DIR) $(1)/usr/share
 	$(INSTALL_DIR) $(1)/usr/lib/lua
-	
+	$(INSTALL_DIR) $(1)/usr/share/nginx-ac/sites-enabled
 ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(INSTALL_DATA) ./files/ar71xx/nginx-ac.defaults $(1)/etc/uci-defaults/95-nginx-ac
 	$(CP) -r ./files/ar71xx/nginx-ac $(1)/usr/share/
