@@ -8,6 +8,9 @@ BIN=/usr/sbin/cfgmgr
 USE_PROCD=1
 
 start_service() {
+	if [ ! -e /usr/share/nginx-ac/sites-enabled/admin ]; then
+		ln -sf /usr/share/admin-web/admin-ac /usr/share/nginx-ac/sites-enabled/admin
+	fi
 	procd_open_instance
 	procd_set_param command $BIN start
 	procd_set_param respawn
