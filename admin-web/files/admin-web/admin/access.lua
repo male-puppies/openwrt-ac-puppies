@@ -1,7 +1,7 @@
 package.path = "/usr/share/admin-web/?.lua;" .. package.path
 local adminlib = require("admin.adminlib") 
 
-local login_html = "/login/admin_login/tologin.html"
+local login_html = "/view/admin_login/login.html"
 local function redirect()
 	ngx.redirect(login_html)
 end
