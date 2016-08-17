@@ -1,4 +1,5 @@
 #!/bin/sh 
+exit 0
 . ./init_template_lib.sh
 tbname=device
 keyname=devid
