@@ -1,4 +1,5 @@
 #!/bin/sh 
+exit 0
 . ./init_template_lib.sh
 tbname=wlan
 keyname=wlanid
