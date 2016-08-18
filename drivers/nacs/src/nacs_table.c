@@ -8,6 +8,8 @@
 #include <linux/spinlock.h>
 #include <linux/rwlock.h>
 #include <linux/export.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 #include <asm/uaccess.h>
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
@@ -16,16 +18,15 @@
 #include <linux/mutex.h>
 #include <linux/netfilter/ipset/ip_set.h>
 #include <linux/netdevice.h>
+#include <ntrack_flow.h>
+#include <ntrack_packet.h>
+#include <rule_table.h>
 #include "nacs_table.h"
-#include "rule_table.h"
 #include "nacs_debug.h"
 #include "nacs_comm.h"
 
 /*just for test, it will be removed*/
 #include "rule_parse.h"
-
-/*todo:support update*/
-uint8_t cur_loglevel = NACS_ALL_LVL;
 
 /*nac_mutex syn access to nac_table*/
 static DEFINE_MUTEX(nac_mutex);
@@ -398,6 +399,7 @@ static int  __do_replace_table(struct ac_table *table, struct ac_table_info *new
 	old_info = table->priv_tables[new_info->category];
 	table->priv_tables[new_info->category] = new_info;
 	write_unlock_bh(&table->lock);
+	atomic_inc(&table->magic);
 	if (old_info) {
 		kvfree(old_info);
 	}
@@ -562,6 +564,7 @@ static int  __do_replace_set(struct ac_table *table, struct ac_set_info *new_inf
 	old_info = table->priv_sets[new_info->category];
 	table->priv_sets[new_info->category] = new_info;
 	write_unlock_bh(&table->lock);
+	atomic_inc(&table->magic);
 	if (old_info) {
 		int i = 0, entry_offset = 0;
 		void *entry_base = NULL;
@@ -951,12 +954,11 @@ static int flow_match_check(struct ac_flow_match *match, struct dpi_flow *flow)
 
 
 /*notice:ac_proto_match contains a asc sorted array which contains several proto_ids*/
-static int proto_match_check(struct ac_proto_match *match, struct dpi_proto *proto)
+static int proto_match_check(struct ac_proto_match *match, __u32 proto_id)
 {
 	int match_idx = 0;
-	proto_id_t *proto_ids = NULL, proto_id = 0;
-	
-	proto_id = proto->sub_proto_id == 0 ? proto->proto_id : proto->sub_proto_id;
+	proto_id_t *proto_ids = NULL;
+
 	/*Notice: all arraies are sorted by asc*/
 	proto_ids = (proto_id_t*)match->elems;
 	match_idx = binary_search(proto_ids, match->number, proto_id);
@@ -965,24 +967,11 @@ static int proto_match_check(struct ac_proto_match *match, struct dpi_proto *pro
 }
 
 
-/*
-*whether need check
-*a:whether this flow has been processed before
-*c:whether this flow isn't avaliable to check
-*/
-static int is_need_check(	
-	const struct net_device *in,
-	const struct net_device *out,
-	struct sk_buff *skb )
-{
-	return 0;
-}
-
 static int __do_set(
 	const struct net_device *in,
 	const struct net_device *out,
 	struct sk_buff *skb, 
-	struct ac_set_info *set_info, struct ac_check_result *result)
+	struct ac_set_info *set_info, nacs_msg_t *result)
 {
 	int ret = -1, i = 0, entry_offset = 0;
 	void *set_base = NULL;
@@ -1028,8 +1017,8 @@ static int __do_set(
 	if (ret != -1) {
 		result->rule_sub_type = RULE_SUB_TYPE_SET;
 		result->u.set.set_type = ret;
-		result->action = entry->flags;
-		do_gettimeofday(&result->tv);
+		result->actions = entry->flags;
+		result->time_stamp = jiffies;
 	}
 
 	return ret;
@@ -1037,11 +1026,9 @@ static int __do_set(
 
 
 static int __do_table(
-	const struct net_device *in,
-	const struct net_device *out,
-	struct sk_buff *skb, 
+	struct nac_table_req *req,
 	struct ac_table_info *table_info,
-	struct ac_check_result *result)
+	nacs_msg_t *result)
 {
 	int ret = -1;
 	void *table_info_base = NULL;
@@ -1051,29 +1038,32 @@ static int __do_table(
 	struct ac_entry *entry = NULL;
 
 	struct dpi_flow flow = {
-		.src_ip = 174320,
-		.dst_ip = 174322,
-		.src_zone = 2,
-		.dst_zone = 3,
-		.src_ipgrp_bits = 0x10,
-		.dst_ipgrp_bits = 0x10
+		.src_zone = req->src_zone,
+		.dst_zone = req->dst_zone,
+		.src_ipgrp_bits = req->src_ipgrp_bits,
+		.dst_ipgrp_bits = req->dst_ipgrp_bits
 	};
-	struct dpi_proto proto = {9,0,1}; 
 	
 	table_info_base = table_info->entries + SMP_ALIGN(table_info->size) * smp_processor_id();
 	ac_entry_foreach(entry, table_info_base, table_info->size) {
 		flow_match = (struct ac_flow_match*)entry->elems;
 		proto_match = (struct ac_proto_match*)((void*)entry + entry->proto_match_offset);
 		target = (struct ac_target*)((void*)entry + entry->target_offset);
-		if (flow_match_check(flow_match, &flow) && proto_match_check(proto_match, &proto)) {
+		if (flow_match_check(flow_match, &flow) && proto_match_check(proto_match, req->proto_id)) {
 			ret = target->flags;
 			break;
 		}
 	}
 	if (ret != -1) {
 		result->rule_sub_type = RULE_SUB_TYPE_RULE;
-		memcpy(&result->u.rule.proto, &proto, sizeof(struct dpi_proto));
-		result->action = target->flags;
+		result->u.rule.rule_id = entry->entry_id;
+		result->u.rule.src_zone = req->src_zone;
+		result->u.rule.dst_zone = req->dst_zone;
+		result->u.rule.src_ipgrp_bits = req->src_ipgrp_bits;
+		result->u.rule.dst_ipgrp_bits = req->dst_ipgrp_bits;
+		result->u.rule.proto_id = req->proto_id;
+		result->actions = target->flags;
+		result->time_stamp = jiffies;
 	}
 	return ret;
 }
@@ -1084,33 +1074,75 @@ static int __do_table(
 *and then, generate check result
 */
 static int __do_ac_table(
-	const struct net_device *in,
-	const struct net_device *out,
-	struct sk_buff *skb, 
+	struct nac_check_req *req, 
 	struct ac_table *table,
-	int rule_type, struct ac_check_result *result) 
+	int rule_type, nacs_msg_t *result) 
 {
 
 	int ret = -1;
 	struct ac_set_info *set_info = NULL;
 	struct ac_table_info *table_info = NULL;
+	struct nac_table_req table_req = {
+		.src_zone 	= req->ui->hdr.zone_id,
+		.dst_zone 	= req->pi->hdr.zone_id,
+		.src_ipgrp_bits = req->ui->hdr.ipgrp_bits,
+		.dst_ipgrp_bits = req->pi->hdr.ipgrp_bits,
+		.proto_id 		= req->proto_id,
+	};
 
 	read_lock_bh(&table->lock);
 	/*check ipset*/
 	set_info = table->priv_sets[rule_type];
-	ret = __do_set(in, out, skb, set_info, result);
+	ret = __do_set(req->in, req->out, req->skb, set_info, result);
 	if (ret != -1) {
 		/*matched in set, no need to check rule*/
-		goto out;
+		goto fill_flow;
 	}
 
 	/*check table rule*/
 	table_info = table->priv_tables[rule_type];
-	ret = __do_table(in, out, skb, table_info, result);
+	ret = __do_table(&table_req, table_info, result);
+	if (ret == -1) {
+		/*mismatch, no need to fill res*/
+		goto out;
+	}
+
+	/*matched fill flow info*/
+fill_flow:	
+	result->rule_type = rule_type;
+	result->src_ip = req->fi->tuple.ip_src;
+	result->dst_ip = req->fi->tuple.ip_dst;
+	result->src_port = req->fi->tuple.port_src;
+	result->dst_port = req->fi->tuple.port_dst;
+	result->proto = req->fi->tuple.proto;
 
 out:
 	read_unlock_bh(&table->lock);
 	return ret;
+}
+
+
+static int flow_flags_clr(flow_info_t *fi)
+{
+	/*fixme:we keep audit flag for special purpose*/
+	nt_flow_audit_fin_clr(fi);
+	nt_flow_control_fin_clr(fi);
+	nt_flow_drop_clr(fi, FG_FLOW_DROP_L4_FW);
+	nt_flow_drop_clr(fi, FG_FLOW_DROP_L7_FW);
+	nt_flow_accept_clr(fi, FG_FLOW_ACCEPT_L4_FW);
+	nt_flow_accept_clr(fi, FG_FLOW_ACCEPT_L7_FW);
+	return 0;
+}
+
+/*No need to set accept, it will check accept,and then drop flag*/
+static int flow_flags_setdef(flow_info_t *fi, __u8 rule_type)
+{
+	if (rule_type == RULE_TYPE_CONTROL) {
+		nt_flow_control_fin_set(fi);
+		return 0;	
+	}
+	nt_flow_audit_fin_set(fi);
+	return 0;
 }
 
 
@@ -1119,18 +1151,41 @@ out:
 *a.set action flag and processed flag
 *b.log the event
 */
-static int process_check_result(struct ac_check_result *result) 
+static int process_check_result(flow_info_t *fi, nacs_msg_t *result) 
 {
+	__u32 rejected = 0;
+	nt_msghdr_t hdr;
+
+	flow_flags_setdef(fi, result->rule_type);
+	if (result->rule_type == RULE_TYPE_CONTROL) {
+		/*accept priority higher than reject*/
+		if (result->actions & AC_REJECT) {
+			rejected = 1;
+		}
+		if (result->actions & AC_ACCEPT) {
+			rejected = 0;
+		}
+
+		if (result->rule_sub_type == RULE_SUB_TYPE_SET) {
+			rejected ? nt_flow_drop_set(fi, FG_FLOW_DROP_L4_FW) : nt_flow_accept_set(fi, FG_FLOW_ACCEPT_L4_FW);
+		} 
+		else {
+			rejected ? nt_flow_drop_set(fi, FG_FLOW_DROP_L7_FW) : nt_flow_accept_set(fi, FG_FLOW_ACCEPT_L7_FW);
+		}
+	} 
+
+	/*fixme:we keep audit flag for special purpose*/
+	if ((result->rule_type == RULE_TYPE_AUDIT) && (result->actions & AC_AUDIT)) {
+		nt_flow_audit_set(fi);
+	}
+
 	NACS_DEBUG("----------process check result start-----\n");
 	NAC_PRINT_DEBUG("Match in:[%s %s]\n", 
 		result->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT", 
 		result->rule_sub_type == RULE_SUB_TYPE_SET ? "SET" :"RULE");
 	
 	if (result->rule_sub_type == RULE_SUB_TYPE_RULE) {
-		NAC_PRINT_DEBUG("proto:type=%u, proto_id=%u, sub_proto_id=%u\n",
-			result->u.rule.proto.type, 
-			result->u.rule.proto.proto_id, 
-			result->u.rule.proto.sub_proto_id);
+		NAC_PRINT_DEBUG("proto_id=%u\n", result->u.rule.proto_id);
 	}
 	else {
 		switch(result->u.set.set_type) {
@@ -1154,8 +1209,16 @@ static int process_check_result(struct ac_check_result *result)
 				break;
 		}
 	}
-	NAC_PRINT_DEBUG("Action:%u\n", result->action);
+	NAC_PRINT_DEBUG("src(%u:%d), dst_ip(%u:%d)\n", 
+				result->src_ip, result->src_port,
+				result->dst_ip, result->dst_port);
+	NAC_PRINT_DEBUG("Actions:%u\n", result->actions);
 	NACS_DEBUG("----------process check result end--------\n");
+
+	nt_msghdr_init(&hdr, en_MSG_NACS, sizeof(nacs_msg_t));
+	if (nt_msg_enqueue(&hdr, result, 0)) {
+		NACS_ERROR("skb cap failed.\n");
+	}
 	return 0;
 }
 
@@ -1166,32 +1229,98 @@ static int process_check_result(struct ac_check_result *result)
 *b:check set and rule of control, if matched, result hold the check result, then processit
 *c:check set and rule of audit, process flow just like control
 */
-int do_ac_table(	
-	const struct net_device *in,
-	const struct net_device *out,
-	struct sk_buff *skb)
+static int do_ac_table(	
+	struct net_device *in,
+	struct net_device *out,
+	struct sk_buff *skb,
+	flow_info_t *fi, 
+	user_info_t *ui,
+	user_info_t *pi,
+	__u32 proto)
 {
+	nacs_msg_t result;
 	int rule_type = 0, ret = 0;
-	struct ac_check_result result;
-
-	if (is_need_check(in, out, skb) == 0) {
-		return ret;
-	}
-
+	struct nac_check_req check_req = {
+		.in 	= in,
+		.out 	= out,
+		.skb 	= skb,
+		.fi 	= fi,
+		.ui 	= ui,
+		.pi 	= pi,
+		.proto_id = proto,
+	};
+	memset(&result, 0, sizeof(nacs_msg_t));
 	for (rule_type = 0; rule_type < RULE_TYPE_MAX; ++rule_type) {
-		result.rule_type = rule_type;
-		if (__do_ac_table(in, out, skb, &nac_table, rule_type, &result) != -1) {
-			ret = process_check_result(&result);
+		if (__do_ac_table(&check_req, &nac_table, rule_type, &result) != -1) {
+			ret = process_check_result(fi, &result);
 		}
 	}
 	return ret;
 }
 
 
+int do_ac_table_hk(	
+	struct net_device *in,
+	struct net_device *out,
+	struct sk_buff *skb, 
+	flow_info_t *fi, 
+	user_info_t *ui,
+	user_info_t *pi)
+{
+	__u32 magic = 0, proto = 0;
+	nt_flow_nacs_t *flow_nacs = NULL;
+	
+	BUG_ON(!in || !out || !skb || !fi  || !ui || !pi);
+	flow_nacs = nt_flow_priv_nacs(fi); BUG_ON(!flow_nacs);
+	magic = atomic_read(&nac_table.magic);
+	proto = fi->hdr.proto;
+	/*only magic updated will occur do table*/
+	if (magic == flow_nacs->magic) {
+		return 0;
+	}
+	flow_flags_clr(fi);
+	if (do_ac_table(in, out, skb, fi, ui, pi, proto) != 0){
+		return -1;
+	}
+	flow_nacs->magic = magic;
+	return 0;
+}
+EXPORT_SYMBOL(do_ac_table_hk);
+
+
+int do_ac_table_cb(nt_packet_t *pkt, __u32 proto_new)
+{
+	struct net_device *in = NULL, *out = NULL;
+	struct sk_buff *skb = NULL;
+	flow_info_t *fi = NULL; 
+	user_info_t *ui = NULL, *pi = NULL;
+	__u32 proto_old = 0, magic = 0;
+	nt_flow_nacs_t *flow_nacs = NULL;
+
+	BUG_ON(!pkt);
+	in = pkt->in;	BUG_ON(!in);
+	out = pkt->out;	BUG_ON(!out);
+	skb = pkt->skb; BUG_ON(!skb);
+	fi = pkt->fi;	BUG_ON(!fi);
+	ui = pkt->ui;	BUG_ON(!ui);
+	pi = pkt->pi;	BUG_ON(!pi);
+
+	proto_old = fi->hdr.proto; BUG_ON(proto_old == proto_new);
+	/*when proto change, we will clear check flags and do table*/
+	flow_nacs = nt_flow_priv_nacs(fi); BUG_ON(!flow_nacs);
+	magic = atomic_read(&nac_table.magic);
+	if (magic != flow_nacs->magic) {
+		flow_nacs->magic = magic;
+	}
+	flow_flags_clr(fi);
+	return do_ac_table(in, out, skb, fi, ui, pi, proto_new);
+}
+EXPORT_SYMBOL(do_ac_table_cb);
 /**************************************init & fini Start**************************/
 static int table_init(void)
 {
 	int i = 0;
+	atomic_set(&nac_table.magic, 999);
 	rwlock_init(&nac_table.lock);
 	for (i = 0; i < RULE_TYPE_MAX; ++i) {
 		nac_table.priv_tables[i] = (struct ac_table_info*)kzalloc(sizeof(struct ac_table_info), GFP_KERNEL | __GFP_NOWARN);
@@ -1208,9 +1337,7 @@ static int table_init(void)
 		}
 		nac_table.priv_sets[i]->category = i;
 	}
-
 	return 0;
-	
 fail:
 	for (i = 0; i < RULE_TYPE_MAX; ++i) {
 		if (nac_table.priv_tables[i]) {

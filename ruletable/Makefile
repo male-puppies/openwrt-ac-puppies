@@ -16,6 +16,7 @@ define Package/$(PKG_NAME)
   SECTION:=Applications
   CATEGORY:=Puppies
   TITLE:=Administration tool for Access control 
+  DEPENDS:= +pps_comm
 endef
 
 define Package/$(PKG_NAME)/description

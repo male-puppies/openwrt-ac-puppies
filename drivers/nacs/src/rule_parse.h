@@ -1,7 +1,7 @@
 /**/
 #ifndef _RULE_PARSE_H
 #define _RULE_PARSE_H
-#include "rule_table.h"
+#include <rule_table.h>
 
 /*There are four categories of config, of course, you can add more categories here.*/
 #define RULE_MAXNUM			AC_RULE_MAXID

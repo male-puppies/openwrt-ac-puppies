@@ -1,6 +1,6 @@
 #include <linux/netfilter.h>
 #include <net/sock.h>
-#include "rule_table.h"
+#include <rule_table.h>
 #include "nacs_ipc.h"
 #include "nacs_table.h"
 #include "nacs_debug.h"

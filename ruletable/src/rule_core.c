@@ -6,7 +6,7 @@
 #include <string.h>
 #include <strings.h>
 #include "rule_print.h"
-#include "rule_table.h"
+#include <rule_table.h>
 #include "rule_parse.h"
 #include "audit_control.h"
 #include "rule_entry.h"

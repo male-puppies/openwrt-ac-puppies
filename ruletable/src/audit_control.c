@@ -3,9 +3,9 @@
 */
 #include <stdlib.h>
 #include <strings.h>
+#include <rule_table.h>
 #include "rule_parse.h"
 #include "json_utility.h"
-#include "rule_table.h"
 #include "rule_print.h"
 
 static const char ipset_key_map[CONTROL_IPSET_TYPE_MAX][AC_IPSET_SETKEY_MAXLEN + 1] = {

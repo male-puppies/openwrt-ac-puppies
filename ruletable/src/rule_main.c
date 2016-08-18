@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <getopt.h>
-#include "rule_table.h"
+#include <rule_table.h>
 #include "rule_print.h"
 #include "rule_core.h"
 

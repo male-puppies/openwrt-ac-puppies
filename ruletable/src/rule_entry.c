@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <rule_table.h>
 #include "rule_print.h"
-#include "rule_table.h"
 #include "rule_parse.h"
 #include "match_target.h"
 #include "rule_ipc.h"

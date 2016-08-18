@@ -314,7 +314,8 @@ struct ac_get_sets_info {
 #define SMP_ALIGN(x) (((x) + SMP_CACHE_BYTES-1) & ~(SMP_CACHE_BYTES-1))
 struct ac_table
 {	/* Lock for the curtain */
-	rwlock_t lock;				
+	rwlock_t lock;	
+	atomic_t magic;	/*magic of table version*/			
 	/* Man behind the curtain... */	
 	struct ac_table_info *priv_tables[RULE_TYPE_MAX];	
 	struct ac_set_info *priv_sets[RULE_TYPE_MAX];

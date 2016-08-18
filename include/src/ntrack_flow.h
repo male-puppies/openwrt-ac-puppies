@@ -37,16 +37,24 @@ static inline uint16_t flow_dport(flow_info_t *fi)
 #define FLOW_STAT_MASK		(0x000000FFU << FLOW_STAT_SHIFT)
 #define FLOW_DROP_SHIFT 	(8)
 #define FLOW_DROP_MASK 		(0x000000FFU << FLOW_DROP_SHIFT)
+#define FLOW_ACCEPT_SHIFT	(16)
+#define FLOW_ACCEPT_MASK 	(0x000000FFU << FLOW_ACCEPT_SHIFT)
 enum em_flow_flags {
 	/* byte: normal flags. */
 	FG_FLOW_NPROTO_FIN		= 1<<(FLOW_STAT_SHIFT + 0), /* identify finished. */
 	FG_FLOW_NPROTO_BEHIVOR	= 1<<(FLOW_STAT_SHIFT + 1), /* behivor identify need. */
 	FG_FLOW_TRACE			= 1<<(FLOW_STAT_SHIFT + 2), /* recored url/content need. */
+	FG_FLOW_AUDIT			= 1<<(FLOW_STAT_SHIFT + 3), /* audit need. */
+	FG_FLOW_AUDIT_FIN		= 1<<(FLOW_STAT_SHIFT + 4), /* do audit table finished . */
+	FG_FLOW_CONTROL_FIN		= 1<<(FLOW_STAT_SHIFT + 5), /* do control table finished. */
 	/* next byte: drop flags. */
 	FG_FLOW_DROP_AUTH		= 1<<(FLOW_DROP_SHIFT + 0), /* droped by auth not successued */
-	FG_FLOW_DROP_L4_FW		= 1<<(FLOW_DROP_SHIFT + 1), /* droped by layer 4 firewall. */
+	FG_FLOW_DROP_L4_FW		= 1<<(FLOW_DROP_SHIFT + 1), /* droped by layer 4 firewall, such as blacklist. */
 	FG_FLOW_DROP_L7_FW		= 1<<(FLOW_DROP_SHIFT + 2), /* droped by layer 7 firewall, such as user ACL rules. */
 	FG_FLOW_DROP_CTX_FILTER	= 1<<(FLOW_DROP_SHIFT + 3), /* droped by content filter, eg: keywords filter... */
+	/* next byte: accept flags. */
+	FG_FLOW_ACCEPT_L4_FW	= 1<<(FLOW_ACCEPT_SHIFT + 0), /* accepted by layer 4 firewall, such as whitelist*/
+	FG_FLOW_ACCEPT_L7_FW	= 1<<(FLOW_ACCEPT_SHIFT + 1), /* accepted by layer 7 firewall, such as user ACL rules. */
 };
 
 static inline int nt_flow_nproto_fin(const flow_info_t *fi)
@@ -69,14 +77,79 @@ static inline void nt_flow_track_set(flow_info_t *fi)
 	fi->hdr.flags |= FG_FLOW_TRACE;
 }
 
+static inline int nt_flow_audited(const flow_info_t *fi)
+{
+	return fi->hdr.flags & FG_FLOW_AUDIT;
+}
+
+static inline void nt_flow_audit_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FG_FLOW_AUDIT;
+}
+
+static inline void nt_flow_audit_clr(flow_info_t *fi)
+{
+	fi->hdr.flags &= ~FG_FLOW_AUDIT;
+}
+
+static inline int nt_flow_audit_fin(const flow_info_t *fi)
+{
+	return fi->hdr.flags & FG_FLOW_AUDIT_FIN;
+}
+
+static inline void nt_flow_audit_fin_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FG_FLOW_AUDIT_FIN;
+}
+
+static inline void nt_flow_audit_fin_clr(flow_info_t *fi)
+{
+	fi->hdr.flags &= ~FG_FLOW_AUDIT_FIN;
+}
+
+static inline int nt_flow_control_fin(const flow_info_t *fi)
+{
+	return fi->hdr.flags & FG_FLOW_CONTROL_FIN;
+}
+
+static inline void nt_flow_control_fin_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FG_FLOW_CONTROL_FIN;
+}
+
+static inline void nt_flow_control_fin_clr(flow_info_t *fi)
+{
+	fi->hdr.flags &= ~FG_FLOW_CONTROL_FIN;
+}
+
 static inline void nt_flow_drop_set(flow_info_t *fi, uint32_t drop)
 {
 	fi->hdr.flags |= FLOW_DROP_MASK & drop;
 }
 
+static inline void nt_flow_drop_clr(flow_info_t *fi, uint32_t drop)
+{
+	fi->hdr.flags &= ~(FLOW_DROP_MASK & drop);
+}
+
 static inline int nt_flow_droped(flow_info_t *fi)
 {
 	return fi->hdr.flags & FLOW_DROP_MASK;
+}
+
+static inline void nt_flow_accept_set(flow_info_t *fi, uint32_t drop)
+{
+	fi->hdr.flags |= FLOW_ACCEPT_MASK & drop;
+}
+
+static inline void nt_flow_accept_clr(flow_info_t *fi, uint32_t drop)
+{
+	fi->hdr.flags &= ~(FLOW_ACCEPT_MASK & drop);
+}
+
+static inline int nt_flow_accepted(flow_info_t *fi)
+{
+	return fi->hdr.flags & FLOW_ACCEPT_MASK;
 }
 
 /* ########################## */
@@ -100,6 +173,16 @@ typedef struct {
 } nt_flow_authd_t;
 /* END USER AUTHD */
 
+/* ########################## */
+/* NACS in Flow node. */
+typedef struct {
+	/*
+	** NACS stored in flow private area.
+	*/
+	uint32_t magic;	/* version of nacs config */
+}nt_flow_nacs_t;
+/* END NACS */
+
 static inline uint16_t nt_flow_nproto(const flow_info_t *fi)
 {
 	return fi->hdr.proto;
@@ -115,7 +198,12 @@ static inline nt_flow_authd_t* nt_flow_priv_authd(flow_info_t *fi)
 	return (nt_flow_authd_t*)&fi->private[sizeof(nt_flow_nproto_t)];
 }
 
-#define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) + sizeof(nt_flow_authd_t)
+static inline nt_flow_nacs_t* nt_flow_priv_nacs(flow_info_t *fi)
+{
+	return (nt_flow_nacs_t*)&fi->private[sizeof(nt_flow_nproto_t) + sizeof(nt_flow_nacs_t)];
+}
+
+#define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) + sizeof(nt_flow_authd_t) + sizeof(nt_flow_nacs_t)
 static inline void* nt_flow_priv_data(flow_info_t *fi, size_t *size)
 {
 	/* assert size */

@@ -23,12 +23,17 @@
 		//FMT_PKT(p) (...)
 #endif
 
+
 typedef struct {
 #ifdef __KERNEL__
 	/* ntarck */
 	flow_info_t *fi;
 	user_info_t *ui;
 	user_info_t *pi; /* peer info */
+	/*ext for nacs*/
+	struct sk_buff *skb;
+	struct net_device *in;
+	struct net_device *out;
 #else
 	uint32_t fid, fmagic;
 #endif

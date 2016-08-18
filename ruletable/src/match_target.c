@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <strings.h>
+#include <rule_table.h>
 #include "rule_parse.h"
-#include "rule_table.h"
 #include "rule_print.h"
 
 static char flow_match_map[AC_FLOW_TYPE_MAX][AC_FLOW_MATCH_KEY_MAXLEN + 1]= {
