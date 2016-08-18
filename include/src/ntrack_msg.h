@@ -16,6 +16,7 @@ enum {
 	en_MSG_PCAP = 1,
 	en_MSG_NODE,
 	en_MSG_AUTH,
+	en_MSG_NACS,
 };
 
 typedef struct {

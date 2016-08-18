@@ -30,7 +30,7 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 	int ret = NF_ACCEPT;
 	struct nf_conn *ct;
 	flow_info_t *fi;
-	user_info_t *ui;
+	user_info_t *ui, *pi;
 	// struct iphdr *iph;
 	// struct sk_buff *linear_skb = NULL, *use_skb = NULL;
 	enum ip_conntrack_info ctinfo;
@@ -52,10 +52,15 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 
 	fi = nt_flow(nos);
 	ui = nt_user(nos);
-	if(!fi || !ui) {
+	pi = nt_peer(nos);
+	if(!fi || !ui || !pi) {
 		return NF_ACCEPT;
 	}
-	
+	do_ac_table_hk(in, out, skb, fi, ui, pi);
+	if (nt_flow_accepted(fi)) {
+		return NF_ACCEPT;
+	}
+
 	/* lookup flow drop flags here */
 	ret = nt_flow_droped(fi);
 	if(ret != 0) {
@@ -95,7 +100,7 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 static int fw_nproto_callback(flow_info_t *fi, uint32_t proto_crc)
 {
 	/*TODO: check the config rule's, markup fi->flags.*/
-	if(/*fw_check_rule(fi, proto_new)*/0) {
+	if(/*do_ac_table_cb(nt_packet_t, proto_new)*/0) {
 		nt_flow_drop_set(fi, FG_FLOW_DROP_L7_FW);
 	}
 	return 0;

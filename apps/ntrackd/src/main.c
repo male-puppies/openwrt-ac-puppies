@@ -24,6 +24,7 @@
 #include <ntrack_log.h>
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
+#include <ntrack_nacs.h>
 
 /* kernel user node message delivery to authd. */
 extern int nt_unotify_init(void);
@@ -74,6 +75,14 @@ static int fn_message_disp(void *p)
 			}
 		}
 		break;
+
+		case en_MSG_NACS:
+			{
+				nacs_msg_t *nacs = nt_msg_data(hdr);
+				/*todo transmit to other process*/
+			}
+			break;
+
 		default:
 		{
 			nt_error("unknown message. %d\n", hdr->type);
