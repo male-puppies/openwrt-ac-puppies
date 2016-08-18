@@ -1,6 +1,7 @@
 #ifndef _NTRACK_NACS_H
 #define _NTRACK_NACS_H
-
+#include <ntrack_flow.h>
+#include <ntrack_packet.h>
 typedef struct {
 	/*table related*/
 	uint8_t rule_type, rule_sub_type;
@@ -23,5 +24,15 @@ typedef struct {
 	uint8_t 	actions;	/*accept, reject, audit*/
 	unsigned long time_stamp;
 }nacs_msg_t;
+
+int do_ac_table_hk(	
+	struct net_device *in,
+	struct net_device *out,
+	struct sk_buff *skb, 
+	flow_info_t *fi, 
+	user_info_t *ui,
+	user_info_t *pi);
+
+int do_ac_table_cb(nt_packet_t *pkt, __u32 proto_new);
 
 #endif

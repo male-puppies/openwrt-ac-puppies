@@ -5,6 +5,7 @@
 
 #include <net/ip.h>
 #include <net/netfilter/nf_conntrack.h>
+#include <ntrack_nacs.h>
 
 #include "nfw_private.h"
 
@@ -24,7 +25,7 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 #endif
 {
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
-	// struct net_device *in = state->in, *out = state->out;
+	 struct net_device *in = state->in, *out = state->out;
 #endif
 
 	int ret = NF_ACCEPT;
