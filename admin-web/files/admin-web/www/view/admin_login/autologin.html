@@ -1,0 +1,124 @@
+<!DOCTYPE html> 
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>一键认证</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<script src="../../js/black/jquery-1.11.3.min.js"></script>
+<script src="../../js/black/bootstrap.min.js"></script>
+<style>
+body {
+	font-family: Microsoft YaHei,"微软雅黑",Helvitica,Verdana,Tohoma,Arial,san-serif;
+    background-color: #398de3;
+    font-size: 20px;
+    padding-bottom: 54px;
+    margin: 0;
+}
+.big {
+	margin: 0;
+}
+.main {
+	width: 320px;
+	height: 220px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-left: -160px;
+	margin-top: -110px;
+	text-align: center;
+}
+.font {
+	height: 40px;
+	margin: 5px 0 14px 0;
+}
+.font p {
+	font-size: 20px;
+	line-height: 40px;
+	height: 40px;
+	color: #fff;
+	margin: 0;
+}
+.pic i {
+	color: #fff;
+}
+.btns .btn {
+	color: #398de3;
+	padding: 15px 16px;
+	border-radius: 28px;
+	display: none;
+}
+</style>
+<script>
+var g_redirect = "";
+var g_timeout;
+function nodeTimesAuto(count) {
+	$(".btns .btn").val("点击这里开始上网 " + (count));
+	g_timeout = setTimeout(function() {
+		count--;
+		if (count >= 0) {
+			nodeTimesAuto(count);
+		} else {
+			onHref();
+		}
+	}, 1000);
+}
+
+function onHref() {
+	clearTimeout(g_timeout);
+	if (g_redirect != "" && g_redirect.substring(0, 4) == "http") {
+		window.location.href = g_redirect;
+	} else {
+		window.location.href = "http://www.baidu.com";
+	}
+}
+
+$(function() {
+	var params = window.location.search || "";
+	$.post(
+		"/auto_login" + params,
+		function(d) {
+			if (d.status == 0) {
+				g_redirect = d.data || "";
+				$(".pic i").attr("class", "icon-ok-sign icon-4x");
+				$(".font p").html("认证成功！");
+				$(".btns .btn").css("display", "inline-block");
+				nodeTimesAuto(3);
+			} else {
+				$(".pic i").attr("class", "icon-remove-sign icon-4x");
+				if (typeof d.data != "undefined" && d.data == "未开启一键认证") {
+					$(".font p").html("认证失败！未开启一键认证");
+				} else {
+					$(".font p").html("认证失败！");
+				}
+			}
+		},
+		"json"
+	);
+})
+
+</script>
+</head>
+
+<body>
+<div class="big">
+	<div class="main">
+		<div class="pic">
+			<i class="icon-spinner icon-spin icon-4x"></i>
+		</div>
+		<!-- icon-remove-sign -->
+		<div class="font">
+			<p></p>
+		</div>
+		<div class="btns">
+			<input class="btn btn-default btn-lg" type="button" onclick="onHref()" value="点击这里开始上网 3" />
+		</div>
+	</div>
+</div>
+</body>
+</html>

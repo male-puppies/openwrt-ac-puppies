@@ -1,11 +1,12 @@
 (function(root, undefined) {
 	var cgicall = (function() {
 		var version = "/v1/admin/api/",
-			token = $.cookie("token") ? "?token=" + $.cookie("token") : "",
+			token = $.cookie("token") ? "?token=" + $.cookie("token") : "?",
 			callfn = function(d, x, s) {},
 			callback = function(d, x, s) {
+				d = initBackDatas(d);
 				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
-					window.location.href = "/admin/view/admin_login/login.html";
+					window.location.href = "/view/admin_login/login.html";
 				}
 				callfn(d, x, s);
 			};
@@ -13,7 +14,7 @@
 		function get() {
 			var obj,
 				url,
-				objstr,
+				objstr = "",
 				argc = arguments.length;
 
 			callfn = function(d, x, s) {};
@@ -26,8 +27,6 @@
 				for (var k in arguments[1]) {
 					objstr += "&" + k + "=" + arguments[1][k];
 				}
-			} else {
-				objstr = "";
 			}
 			
 			url = version + arguments[0] + token + "&_=" + new Date().getTime() + objstr;
@@ -82,6 +81,7 @@
 	
 	function cgicallBack(d, success, fail) {
 		var editModal,
+			modal_true = false,
 			modalId = "modal_tips",
 			sfunc = success || function() {},
 			ffunc = fail || function() {};
@@ -90,17 +90,26 @@
 			var id = $(element).attr("id");
 			if (typeof id != "undefined") {
 				modalId = id;
+				modal_true = true;
 				return false;
 			}
 		});
 
 		editModal = $("#" + modalId);
 		if (d.status == 0) {
-			editModal.one("hidden.bs.modal", sfunc);
-			editModal.modal("hide");
+			if (modal_true) {
+				editModal.one("hidden.bs.modal", sfunc);
+				editModal.modal("hide");
+			} else {
+				sfunc();
+			}
 		} else {
-			editModal.one("hidden.bs.modal", ffunc);
-			editModal.modal("hide");
+			if (modal_true) {
+				editModal.one("hidden.bs.modal", ffunc);
+				editModal.modal("hide");
+			} else {
+				ffunc();
+			}
 		}
 	}
 	
@@ -110,7 +119,11 @@
 			for (var k in obj) {
 				var o;
 				try {
-					o = JSON.parse(obj[k]);
+					if (typeof obj[k] === "object") {
+						throw new Error("");
+					} else {
+						o = JSON.parse(obj[k]);
+					}
 				} catch(e) {
 					o = obj[k];
 					if (typeof o === "object") o = initBackDatas(o);
@@ -122,7 +135,11 @@
 			for (var i = 0, ien = obj.length; i < ien; i++) {
 				var o;
 				try {
-					o = JSON.parse(obj[i]);
+					if (typeof obj[i] === "object") {
+						throw new Error("");
+					} else {
+						o = JSON.parse(obj[i]);
+					}
 				} catch(e) {
 					o = obj[i];
 					if (typeof o === "object") o = initBackDatas(o);

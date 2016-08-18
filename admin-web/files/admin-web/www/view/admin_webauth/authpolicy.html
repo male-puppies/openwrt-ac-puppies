@@ -12,32 +12,64 @@
 <!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
 <link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
 <link rel="stylesheet" href="../../css/manage.css" />
-<script src="../../js/black/jquery-1.11.3.min.js"></script>
-<script src="../../js/black/jquery.cookie.js"></script>
-<script src="../../js/black/json2.js"></script>
-<script src="../../js/black/bootstrap.min.js"></script>
-<script src="../../js/black/jquery.dataTables.min.js"></script>
-<script src="../../js/jquery.ext.verify.js"></script>
-<script src="../../js/commin.js"></script>
-<script src="../../js/authpolicy.js"></script>
+<style>
+.tab-content {
+    padding-top: 20px;
+	padding-bottom: 15px;
+	border-left: 1px solid #ddd;
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+	margin-top: -1px;
+}
+.auth-modules .form-control[disabled],
+.auth-modules fieldset[disabled] .form-control {
+	background-color: #fff;
+}
+</style>
+<script src="../../js/lib/jquery-1.11.3.min.js"></script>
+<script src="../../js/lib/jquery.cookie.js"></script>
+<script src="../../js/lib/json2.js"></script>
+<script src="../../js/lib/bootstrap.min.js"></script>
+<script src="../../js/lib/jquery.dataTables.min.js"></script>
+<script src="../../js/common/common.js"></script>
+<script src="../../js/common/jquery.ext.verify.js"></script>
+<script src="../../js/admin_webauth/authpolicy.js"></script>
 </head>
 <body>
 <!-- header -->
-<div id="header_ajax"></div>
-<script src="../../js/black/header.ajax.js"></script>
+<script src="../../js/common/header.ajax.js"></script>
 
 <!-- main Start -->
 <div id="main" class="main">
 	<div class="container-fluid">
 		<div class="main-wrapper clearfix">
 			<div class="main-top">
-				<span class="title"><i class="icon-align-justify"></i> Portal认证选项</span>
+				<span class="title"><i class="icon-align-justify"></i> 认证选项</span>
 			</div>
-			<form class="form-horizontal">
+			<form class="form-horizontal g-config">
 				<div class="form-group clearfix">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="AuthUrl">成功后重定向至</label>
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="redirect_ip">重定向IP</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
-						<input type="text" id="AuthUrl" class="form-control" />
+						<input type="text" id="redirect_ip" class="form-control" verify="ip" />
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="offline_time">无流量超时下线</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<input type="text" id="offline_time" class="form-control" verify="num 1 1440" />
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="units">分钟</span>
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1440。"><i class="icon-question-sign"></i></span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="bypass_dst">放通网站列表</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<textarea class="form-control" id="bypass_dst"></textarea>
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入放通的网站列表，一行一个，如：www.qq.com&#10;www.baidu.com。"><i class="icon-question-sign"></i></span>
 					</div>
 				</div>
 			</form>
@@ -54,20 +86,23 @@
 					<tr>
 						<th>序号</th>
 						<th>认证名</th>
-						<th>IP范围</th>
+						<th>IP组</th>
 						<th>认证方式</th>
 						<th>调整优先级</th>
+						<th>状态</th>
 						<th>操作</th>
+						<th data-toggle="tooltip" data-container="body" data-trigger="hover" title="仅勾选当前页"><input type="checkbox" class="checkall" value="1 0" /></th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td colspan="6"></td>
+						<td colspan="8"></td>
 					</tr>
 				</tbody>
 			</table>
 			<div class="btn-group">
 				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+				<a class="btn btn-default delete" value=""><i class="icon-trash"></i>删除</a>
 			</div>
 		</div>
 	</div>
@@ -87,39 +122,169 @@
 					<fieldset>
 						<legend>基本配置</legend>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="name">认证名</label>
+							<label class="col-xs-4 control-label" for="enable">启用</label>
 							<div class="col-xs-5">
-								<input type="text" id="name" class="form-control" verify="name" />
+								<div class="checkbox">
+									<label><input type="checkbox" id="enable" value="1 0" /></label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="rulename">认证名</label>
+							<div class="col-xs-5">
+								<input type="text" id="rulename" class="form-control" verify="name" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="iprange">IP范围</label>
+							<label class="col-xs-4 control-label" for="ruledesc">描述</label>
 							<div class="col-xs-5">
-								<input type="text" id="iprange" class="form-control" verify="ips" />
+								<input type="text" id="ruledesc" class="form-control" verify="name" />
 							</div>
 							<div class="col-xs-3 tip-icons">
-								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="指定‘自动认证用户’自动划分到哪个组，&#10;支持单个IP地址或地址范围。例如：&#10;192.168.0.100 或者&#10;192.168.0.1-192.168.0.255。"><i class="icon-question-sign"></i></span>
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label">认证方式</label>
+							<label class="col-xs-4 control-label" for="ipgid">IP组</label>
 							<div class="col-xs-5">
-								<div class="radio">
-									<label><input type="radio" id="type" name="type" checked="checked" value="auto" />自动认证</label>
+								<select id="ipgid" class="form-control">
+									<option value="63">ALL</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="iscloud">是否从属云模版</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="iscloud" value="1 0" /></label>
 								</div>
-								<div class="radio">
-									<label><input type="radio" name="type" value="web" />Portal认证</label>
+							</div>
+						</div>
+						<div class="iscloud">
+							<div class="form-group clearfix">
+								<label class="col-xs-4 control-label">认证方式</label>
+								<div class="col-xs-8">
+									<div class="radio">
+										<label><input type="radio" id="authtype" name="authtype" checked="checked" value="auto" />自动认证</label>
+									</div>
+									<div class="radio">
+										<label><input type="radio" name="authtype" value="web" />Portal认证</label>
+										<div class="checkbox modules">
+											<label style="margin-left:20px;"><input type="checkbox" id="modules__web" value="1 0" />web认证</label>
+											<label style="margin-left:12px;"><input type="checkbox" id="modules__wechat" value="1 0" />微信认证</label>
+											<label style="margin-left:12px;"><input type="checkbox" id="modules__sms" value="1 0" />短信认证</label>
+										</div>
+									</div>
+								</div>
+							</div>
+							
+							<div class="form-group clearfix auth-modules" style="margin:25px;">
+								<ul class="nav nav-tabs">
+									<li class="tabs_wechat active">
+										<a href="#tabs_wechat" data-toggle="tab">微信认证</a>
+									</li>
+									<li class="tabs_sms">
+										<a href="#tabs_sms" data-toggle="tab">短信认证</a>
+									</li>
+								</ul>
+
+								<div class="tab-content">
+									<div class="tab-pane active" id="tabs_wechat" data-mtip="微信认证">
+										<div class="form-group clearfix">
+											<div class="col-md-12 col-sm-12 col-xs-12">
+												<p style="line-height:34px;font-size:14px;text-indent:3em;">以下信息来自微信公众号后台的微信连WiFi的设备管理的设备改造信息。</p>
+											</div>
+										</div>
+										<div class="form-group clearfix">
+											<label class="col-xs-4 control-label" for="wechat__shop_name">门店名称</label>
+											<div class="col-xs-5">
+												<input type="text" id="wechat__shop_name" class="form-control" verify="notspace" />
+											</div>
+										</div>
+										<div class="form-group clearfix">
+											<label class="col-xs-4 control-label" for="wechat__ssid">SSID</label>
+											<div class="col-xs-5">
+												<input type="text" id="wechat__ssid" class="form-control" verify="notspace" />
+											</div>
+											<div class="col-xs-3 tip-icons">
+												<!--<span class="units">dBm</span>-->
+												<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="该SSID需要在WLAN管理创建并下发给AP。"><i class="icon-question-sign"></i></span>
+											</div>
+										</div>
+										<div class="form-group clearfix">
+											<label class="col-xs-4 control-label" for="wechat__shop_id">Shop Id</label>
+											<div class="col-xs-5">
+												<input type="text" id="wechat__shop_id" class="form-control" verify="num 1000000 9999999" />
+											</div>
+											<div class="col-xs-3 tip-icons">
+												<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入7位数字。"><i class="icon-question-sign"></i></span>
+											</div>
+										</div>
+										<div class="form-group clearfix">
+											<label class="col-xs-4 control-label" for="wechat__appid">AppId</label>
+											<div class="col-xs-5">
+												<input type="text" id="wechat__appid" class="form-control" verify="strlen 18" />
+											</div>
+											<div class="col-xs-3 tip-icons">
+												<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入18位字符。"><i class="icon-question-sign"></i></span>
+											</div>
+										</div>
+										<div class="form-group clearfix">
+											<label class="col-xs-4 control-label" for="wechat__secretkey">SecretKey</label>
+											<div class="col-xs-5">
+												<input type="text" id="wechat__secretkey" class="form-control" verify="strlen 32" />
+											</div>
+											<div class="col-xs-3 tip-icons">
+												<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入32位字符。"><i class="icon-question-sign"></i></span>
+											</div>
+										</div>
+									</div>
+									
+									<div class="tab-pane" id="tabs_sms" data-mtip="短信认证">
+										<div class="form-group clearfix">
+											<label class="col-xs-4 control-label" for="sms__sms">短信认证</label>
+											<div class="col-xs-5">
+												<input type="text" id="sms__sms" class="form-control" verify="" />
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
 					</fieldset>
+					
+					<fieldset class="form-ff">
+						<legend>高级配置<span class="pull-right"><i class="icon-double-angle-down"></i></span></legend>
+						<div class="form-hh">
+							<div class="form-group clearfix">
+								<label class="col-xs-4 control-label" for="white_mac">MAC白名单</label>
+								<div class="col-xs-5">
+									<textarea class="form-control" id="white_mac" verify="white_macs"></textarea>
+								</div>
+								<div class="col-xs-3 tip-icons">
+									<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入MAC，每行一个，不允许多余空格和回车，例如：00:11:22:33:44:55。"><i class="icon-question-sign"></i></span>
+								</div>
+							</div>
+							<div class="form-group clearfix">
+								<label class="col-xs-4 control-label" for="white_ip">IP白名单</label>
+								<div class="col-xs-5">
+									<textarea class="form-control" id="white_ip" verify="white_ips"></textarea>
+								</div>
+								<div class="col-xs-3 tip-icons">
+									<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入IP地址，每行一个，不允许多余空格和回车，例如：172.16.0.1。"><i class="icon-question-sign"></i></span>
+								</div>
+							</div>
+						</div>
+					</fieldset>
+					
+					<input type="hidden" id="rid" value="" />
+					<input type="hidden" id="zid" value="0" />
 				</form>
 			</div>
 			<div class="modal-footer">
-				
 				<div class="pull-right">
 					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
 					<button type="button" class="btn btn-zx" onclick="DoSave();">保存</button>

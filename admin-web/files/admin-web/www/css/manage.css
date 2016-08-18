@@ -582,7 +582,8 @@ fieldset[disabled] .btn-zx.active {
 }
 input,
 textarea,
-input.form-control {
+input.form-control,
+textarea.form-control {
     padding: 6px 4px;
 }
 select,
@@ -734,6 +735,12 @@ label {
 	line-height: 34px;
 	font-size: 14px;
 	padding-right: 20px;
+}
+.modal-open .modal {
+    overflow-y: scroll;
+}
+.modal-open .header-top {
+	padding-right: 17px;
 }
 .has-error .form-control.file {
 	color: #a94442;

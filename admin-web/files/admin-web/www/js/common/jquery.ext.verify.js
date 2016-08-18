@@ -16,6 +16,21 @@
 			},
 			message: "非法IP格式。"
 		},
+		"white_ips": {
+			method: function(val) {
+				if (val == "") return true;
+				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+				
+				var arr = val.split('\n');
+				for (var k = 0; k < arr.length; k++) {
+					if (!reg.test(arr[k])) {
+						return false;
+					}
+				}
+				return true;
+			},
+			message: "非法IP格式。"
+		},
 		"mask": {
 			method: function(val) {
 				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -149,8 +164,6 @@
 					var ips = val.split('-');
 					var arr1 = ips[0].split('.');
 					var arr2 = ips[1].split('.');
-					console.log(arr1)
-					console.log(arr2)
 					for (var i = 0; i < arr1.length; i++) {
 						if (parseInt(arr1[i]) > parseInt(arr2[i])) {
 							return false;
@@ -180,6 +193,21 @@
 		},
 		"macs": {
 			method: function(val) {
+				var reg = /^([0-9a-fA-F]{2}(:)){5}[0-9a-fA-F]{2}$/;
+
+				var arr = val.split('\n');
+				for (var k = 0; k < arr.length; k++) {
+					if (!reg.test(arr[k])) {
+						return false;
+					}
+				}
+				return true;
+			},
+			message: "非法MAC格式。"
+		},
+		"white_macs": {
+			method: function(val) {
+				if (val == "") return true;
 				var reg = /^([0-9a-fA-F]{2}(:)){5}[0-9a-fA-F]{2}$/;
 
 				var arr = val.split('\n');
@@ -251,7 +279,7 @@
 					return false;
 				}
 
-				if (startid) {
+				if (startid && startid != "none") {
 					var startstr = $("#" + startid).val();
 					if (!compareIP(startstr, val)) {
 						this.message = "非法IP地址。结束IP地址应大于起始IP地址。";
@@ -290,7 +318,7 @@
 		},
 		"strlen": {
 			method: function(val, from, to) {
-				if (typeof to == "undefined") {
+				if (arguments.length < 4) {
 					return $.trim(val).length == parseInt(from) ? true : false;
 				} else {
 					if ($.trim(val).length >= parseInt(from) && $.trim(val).length <= parseInt(to)) {
@@ -429,6 +457,37 @@
 				}
 			},
 			message: "上传文件格式非法。"
+		},
+		"time_group": {
+			method: function(val) {
+				var node = arguments[arguments.length - 1],
+					stime = $(node).siblings("input").val(),
+					star = parseInt(stime.replace(/:/g,"")),
+					end = parseInt(val.replace(/:/g,""));
+
+				if (val == "") {
+					this.message = "不能为空。";
+					return false;
+				}
+				if (star >= end) {
+					this.message = "结束时间必须大于开始时间。";
+					return false;
+				}
+
+				return true;
+			},
+			message: "非法格式。"
+		},
+		"days_active": {
+			method: function(val) {
+				var node = arguments[arguments.length - 1];
+				if ($(node).closest("div").find("label.active").length == 0) {
+					return false;
+				}
+				
+				return true;
+			},
+			message: "至少选择一个。"
 		}
 	}
 
@@ -472,6 +531,7 @@
 
 			if (obj && obj.method) {
 				pars[0] = $(this).val();
+				pars.push(this);
 				res = obj.method.apply(obj, pars);
 				if (res != true) {
 					var tips ="",
@@ -560,7 +620,10 @@
 				$(that).on("blur keyup", function(e) {
 					if (e.type == "keyup" && !$(that).closest(".form-group").hasClass("has-error")) return false;
 					pars[0] = $(that).val();
-					res = obj.method.apply(that, pars);
+					if (pars[pars.length - 1] !== that) {
+						pars.push(that);
+					}
+					res = obj.method.apply(obj, pars);
 					if (res != true) {
 						$(that).closest(".form-group").addClass('has-error');
 					} else {

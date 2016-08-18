@@ -31,6 +31,7 @@
 						<ul class="dropdown-menu">
 							<li><a href="/view/admin_network/network.html"><i></i>网络设置</a></li>
 							<li><a href="/view/admin_network/ipgroup.html"><i></i>IP组设置</a></li>
+							<li><a href="/view/admin_network/timegroup.html"><i></i>时间组设置</a></li>
 							<li><a href="/view/admin_network/wanconfig.html"><i></i>WAN设置</a></li>
 							<li><a href="/view/admin_network/lanconfig.html"><i></i>LAN设置</a></li>
 							<!--li><a href="/view/admin_network/dhcpconfig.html"><i></i>DHCP设置</a></li-->
@@ -142,8 +143,8 @@ $("header ul.nav").on("click", "ul.dropdown-menu li", function() {
 });
 
 $(".sign_out").on("click", function() {
-	$.cookie('md5psw', '', {expires: -1, path: "/"});
-	window.location.href = "/admin/login/admin_login/login.html";
+	$.cookie('token', '', {expires: -1, path: "/"});
+	window.location.href = "/view/admin_login/login.html";
 });
 
 $(function() {
