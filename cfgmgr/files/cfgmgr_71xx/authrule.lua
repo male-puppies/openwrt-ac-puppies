@@ -62,7 +62,7 @@ udp_map["authrule_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_set", code, p)
+	local r, e = dbrpc:fetch("cfgmgr_authrule_set", code, p)
 	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
@@ -117,7 +117,7 @@ udp_map["authrule_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_add", code, p)
+	local r, e = dbrpc:fetch("cfgmgr_authrule_add", code, p)
 	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
@@ -142,7 +142,7 @@ udp_map["authrule_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_del", code, p)
+	local r, e = dbrpc:fetch("cfgmgr_authrule_del", code, p)
 	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
@@ -189,7 +189,7 @@ udp_map["authrule_adjust"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_adjust", code, p)
+	local r, e = dbrpc:fetch("cfgmgr_authrule_adjust", code, p)
 	--local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end

@@ -2,30 +2,15 @@ local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
-local common = require("common")
-
-local read, save_safe, arr2map = common.read, common.save_safe, common.arr2map
+local cfglib = require("cfglib")
 
 local udp_map = {}
-local udpsrv, mqtt, dbrpc
+local udpsrv, mqtt, dbrpc, reply
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
+	reply = cfglib.gen_reply(udpsrv)
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-end
-
-local reply_obj = {status = 0, data = 0}
-local function reply(ip, port, r, d)
-	reply_obj.status, reply_obj.data = r, d
-	udpsrv:send(ip, port, js.encode(reply_obj))
-	return true
-end
-
-local function dispatch_udp(cmd, ip, port)
-	local f = udp_map[cmd.cmd]
-	if f then
-		return true, f(cmd, ip, port)
-	end
 end
 
 udp_map["timegroup_add"] = function(p, ip, port)
@@ -81,15 +66,16 @@ udp_map["timegroup_del"] = function(p, ip, port)
 
 		-- TODO check more related tables
 		local in_part = table.concat(tmgids, ",")
-		local sql = string.format("select tmgrpids from acrule")
+		local sql = string.format("select tmgrp_ids from acrule")
 		local rs, e = conn:select(sql)
 		 if not rs then 
 		 	return nil, e
 		 end
 
+		 -- judge cited id 判断被引用的id号
 		local refer_tmgids = {}
 		for _, tmgrp in ipairs(rs) do
-			local detail = js.decode(tmgrp["tmgrpids"])  assert(detail)
+			local detail = js.decode(tmgrp.tmgrp_ids)  assert(detail)
 			for _, tmgrpid in ipairs(detail) do
 				table.insert(refer_tmgids, tmgrpid)
 			end
@@ -165,4 +151,4 @@ udp_map["timegroup_set"] = function(p, ip, port)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
-return {init = init, dispatch_udp = dispatch_udp}
+return {init = init, dispatch_udp =  cfglib.gen_dispatch_udp(udp_map)}

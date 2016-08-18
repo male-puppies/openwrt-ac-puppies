@@ -243,6 +243,34 @@ cmd_map.timegroup = {
 	end
 }
 
+cmd_map.acset = {
+	priority = 10,
+	func = function(conn)
+		local sql = "select count(*) as count from acset"
+		local rs, e = conn:select(sql) 				assert(rs, e)
+		if rs[1].count ~= 0 then 
+			return 
+		end 
+
+		local arr = {
+			{setid = 0, setname = "access_white_mac", setdesc = "access white mac", setclass = "control", settype = "mac", content = "[]", action = "bypass", enable = 1},
+			{setid = 1, setname = "access_black_mac", setdesc = "access balck mac", setclass = "control", settype = "mac", content ="[]", action = "check", enable = 1},
+			{setid = 2, setname = "access_white_ip", setdesc = "access white ip", setclass = "control", settype = "ip", content = "[]", action = "bypass", enable = 1},
+			{setid = 3, setname = "access_black_ip", setdesc = "access balck ip", setclass = "control", settype = "ip", content = "[]", action = "check", enable = 1},
+			{setid = 4, setname = "audit_white_mac", setdesc = "audit white mac", setclass = "audit", settype = "mac", content = "[]", action = "bypass", enable = 0},
+			{setid = 5, setname = "audit_white_ip", setdesc = "audit white ip", setclass = "audit", settype = "ip", content = "[]", action = "bypass", enable = 0},
+		}
+		
+		local narr = {}
+		for _, r in ipairs(arr) do
+			table.insert(narr, string.format("('%s','%s','%s','%s','%s','%s','%s','%s')", r.setid, r.setname, r.setdesc, r.setclass, r.settype, r.content, r.action, r.enable))
+		end
+		local sql = string.format("insert into acset (setid,setname,setdesc,setclass,settype,content,action,enable) values %s", table.concat(narr, ","))
+		local r, e = conn:execute(sql) 	
+		local _ = r or fatal("%s %s", sql , e)
+		return true
+	end
+}
 
 local function main()
 	local cfg, e = config.ins() 					assert(cfg, e)

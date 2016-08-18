@@ -12,12 +12,16 @@ js.encode_sparse_array(true)
 
 local read = common.read 
 local modules = {
-	kv = 		require("kv"),
-	authrule = 	require("authrule"),
-	iface = 	require("iface"),
-	ipgroup = 	require("ipgroup"),
-	dbevent = 	require("dbevent"),
-	timegroup= 	require("timegroup"),
+	kv 			= 	require("kv"),
+	authrule 	= 	require("authrule"),
+	iface		= 	require("iface"),
+	ipgroup 	= 	require("ipgroup"),
+	dbevent 	= 	require("dbevent"),
+	firewall 	= 	require("firewall"),
+	acrule		=	require("acrule"),
+	timegroup 	= 	require("timegroup"),
+	acset 		= 	require("acset"),
+	wlanssid 	= 	require("wlanssid"),
 }
 
 local encode, decode = js.encode, js.decode

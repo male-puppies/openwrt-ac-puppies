@@ -2,14 +2,14 @@ local js = require("cjson.safe")
 local log = require("common.log")
 local rds = require("common.rds")
 local query = require("common.query")
-local authlib = require("admin.authlib")
+local adminlib = require("admin.adminlib")
 
 local TMGRP_MAX_ID = 255
 local r1 = log.real1
-local mysql_select = authlib.mysql_select
-local reply_e, reply = authlib.reply_e, authlib.reply
-local validate_get, validate_post = authlib.validate_get, authlib.validate_post
-local gen_validate_num, gen_validate_str = authlib.gen_validate_num, authlib.gen_validate_str
+local mysql_select = adminlib.mysql_select
+local reply_e, reply = adminlib.reply_e, adminlib.reply
+local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
+local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local v_tmgid       = gen_validate_num(0, TMGRP_MAX_ID)
 local v_tmgids      = gen_validate_str(1, 256)    
@@ -32,9 +32,7 @@ local function query_common(m, cmd)
 end
 
 -- 检测数据格式内容正确性
-
-
---遍历数据标准表
+-- 遍历数据标准表
 local function validate_keys(s, m)
     if not s then
         return nil, "invalid data structure"
@@ -186,23 +184,22 @@ function cmd_map.timegroup_set() -- 设置时间组
     return query_common(m, "timegroup_set")
 end
 
-local tmgrp_fields = {tmgid = 1, tmgrpname = 1, tmgrpdesc = 1, days = 1, tmlist = 1}
---local tmgrp_fields = {tmgid = 1, tmgrpname = 1}
 function cmd_map.timegroup_get()
     local m, e = validate_get({page = 1, count = 1})
     if not m then 
         return reply_e(e) 
     end
 
-    local cond = authlib.search_cond(authlib.search_opt(m, {order = tmgrp_fields, search = tmgrp_fields}))
+    local tmgrp_fields = {tmgid = 1, tmgrpname = 1, tmgrpdesc = 1, days = 1, tmlist = 1}
+    local cond = adminlib.search_cond(adminlib.search_opt(m, {order = tmgrp_fields, search = tmgrp_fields}))
     local sql = string.format("select * from timegroup %s %s %s", cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
 
     local r, e = mysql_select(sql)
     return r and reply(r) or reply_e(e)
 end
 
-
-function cmd_map.timegroup_del()--删除时间组
+-- 删除时间组
+function cmd_map.timegroup_del()
     local m, e = validate_post({tmgids = v_tmgids})
 
     if not m then 
