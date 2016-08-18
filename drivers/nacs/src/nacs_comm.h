@@ -1,8 +1,15 @@
 #ifndef _NACS_COMM_H
 #define _NACS_COMM_H
 #include <linux/timer.h>
-#include <ntrack_msg.h>
 #include <ntrack_nacs.h>
+
+/*fixme:just for compile error caused by ntrack_log.h*/
+#define nt_debug(fmt...) do{}while(0)
+#define nt_info(fmt...) do{}while(0)
+#define nt_warn(fmt...) do{}while(0)
+#define nt_error(fmt...) do{}while(0)
+#define nt_dump(fmt...) do{}while(0)
+#include <ntrack_msg.h>
 
 #define KERNEL_VERSION(a,b,c) (a+b+c)
 #define LINUX_VERSION_CODE  8
