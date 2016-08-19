@@ -60,6 +60,7 @@ int nt_unotify(void *buff, int len)
 	io.iov_base = buff;
 	io.iov_len = len;
 
+	memset(&message, 0, sizeof(message));
 	message.msg_iov = &io;
 	message.msg_iovlen = 1;
 	message.msg_name = &addr_authd;
