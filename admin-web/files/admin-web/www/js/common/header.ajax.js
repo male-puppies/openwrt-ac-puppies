@@ -7,7 +7,7 @@ $.ajax("../admin_header/sidebar.html", {
 		console.log("error ajax sidebar.html!")
 	},
 	success: function(data, textStatus, jqXHR) {
-		document.write(data);
+		$("#header_ajax").html(data);
 	},
 	complete: function(jqXHR, textStatus) {}
 });

@@ -1,6 +1,6 @@
 var oTabFlow,
 	nodeEdit = [],
-	opr = "add";
+	modify_flag = "add";
 
 $(function(){
 	oTabFlow = createDtFlow();
@@ -10,27 +10,23 @@ $(function(){
 });
 
 function createDtFlow(){
-	var cmd = {"key": "GetFlow"}
+	var cgiobj = {
+		"page": 1,
+		"count": 10000
+	}
 	return $("#table_flowctrl").dataTable({
 		"pagingType": "full_numbers",
 		"order": [[1, 'asc']],
-		"language": {"url": '../../js/black/dataTables.chinese.json'},
+		"language": {"url": '../../js/lib/dataTables.chinese.json'},
 		"ajax": {
-			"url": "/call/cgicall",
-			"type": "POST",
-			"data": {
-				"cmd": JSON.stringify(cmd)
-			},
-			"dataSrc": function(json) {
-				if (json.status == 0) {
-					$("#GlobalSharedDownload").val(parseInt(json.data.GlobalSharedDownload));
-					$("#GlobalSharedUpload").val(parseInt(json.data.GlobalSharedUpload));
-					return dtObjToArray(json.data.Rules);
-				} else if (json.data == "login") {
-					window.location.href = "/login/admin_login/login.html";
-				} else {
-					return [];
+			"url": cgiDtUrl("tc_get", cgiobj),
+			"type": "GET",
+			"dataSrc": function(d) {
+				if (d.status == 0) {
+					$("#GlobalSharedDownload").val(parseInt(d.data.GlobalSharedDownload));
+					$("#GlobalSharedUpload").val(parseInt(d.data.GlobalSharedUpload));
 				}
+				return dtDataCallback(d);
 			}
 		},
 		"columns": [
@@ -103,7 +99,7 @@ function edit(that) {
 	getSelected(that)
 	jsonTraversal(nodeEdit[0], jsTravSet);
 	fixUnit(nodeEdit[0]);
-	opr = "mod";
+	modify_flag = "mod";
 	$("#Name").prop("disabled", true);
 	$("#modal_edit").modal("show");	
 }
@@ -114,12 +110,10 @@ function set_enable(that) {
 		"Name": nodeEdit[0].Name,
 		"Enabled": nodeEdit[0].Enabled.toString() == 'true' ? false : true
 	}
-	cgicall("UpdateRules", obj, function(d) {
-		if (d.status == "0") {
-			initData();
-		} else {
-			createModalTips("修改失败！");
-		}
+	cgicall.post("tc_set", obj, function(d) {
+		cgicallBack(d, initData, function() {
+			createModalTips("修改失败！" + (d.data ? d.data : ""));
+		});
 	});
 }
 
@@ -129,7 +123,7 @@ function DoSave() {
 	var obj = jsonTraversal(nodeEdit[0], jsTravGet);
 	var o = combUnit(obj);
 
-	if (opr == "add") {
+	if (modify_flag == "add") {
 		var data = oTabFlow.api().rows().data();
 		for (var i = data.length - 1; i >= 0; i--) {
 			if (data[i].Name == o.Name) {
@@ -137,28 +131,16 @@ function DoSave() {
 				return;
 			}
 		}
-		cgicall("InsRules", o, function(d) {
-			var func = {
-				"sfunc": function() {
-					initData();
-				},
-				"ffunc": function() {
-					createModalTips("添加失败！" + (d.data ? d.data : ""));
-				}
-			}
-			cgicallBack(d, "#modal_edit", func);
+		cgicall.post("tc_add", o, function(d) {
+			cgicallBack(d, initData, function() {
+				createModalTips("添加失败！" + (d.data ? d.data : ""));
+			});
 		});
 	} else {
-		cgicall("UpdateRules", o, function(d) {
-			var func = {
-				"sfunc": function() {
-					initData();
-				},
-				"ffunc": function() {
-					createModalTips("修改失败！" + (d.data ? d.data : ""));
-				}
-			}
-			cgicallBack(d, "#modal_edit", func);
+		cgicall.post("tc_set", o, function(d) {
+			cgicallBack(d, initData, function() {
+				createModalTips("修改失败！" + (d.data ? d.data : ""));
+			});
 		});
 	}
 }
@@ -169,17 +151,11 @@ function DoDelete() {
 		arr.push(nodeEdit[i].Name);
 	}
 
-	cgicall('DeleteRules', arr, function(d) {
-		var func = {
-			"sfunc": function() {
-				initData();
-			},
-			"ffunc": function() {
-				createModalTips("删除失败！" + (d.data ? d.data : ""));
-			}
-		}
-		cgicallBack(d, "#modal_tips", func);
-	})
+	cgicall.post('tc_del', arr, function(d) {
+		cgicallBack(d, initData, function() {
+			createModalTips("删除失败！" + (d.data ? d.data : ""));
+		});
+	});
 }
 
 function initData() {
@@ -191,7 +167,6 @@ function initEvents(){
 	$('.delete').on('click', function() {OnDelete()}); //删除
 	$('.add').on('click', onAdd);
 	$('.submit').on('click', OnSubmit);
-	
 	$('[data-toggle="tooltip"]').tooltip();
 }
 
@@ -208,7 +183,7 @@ function onAdd() {
 	
 	nodeEdit = [];
 	nodeEdit.push(oRule);
-	opr = "add";
+	modify_flag = "add";
 	jsonTraversal(oRule, jsTravSet);
 	fixUnit(oRule);
 	$('#Name').prop('disabled', false);
@@ -233,7 +208,7 @@ function OnSubmit() {
 
 	s.GlobalSharedUpload = upload + 'Mbps';
 	s.GlobalSharedDownload = download + 'Mbps';
-	cgicall("SetGlobal", s, function(d) {
+	cgicall.post("tc_gset", s, function(d) {
 		if (d.status == '0') {
 			createModalTips('保存成功!');
 		} else {

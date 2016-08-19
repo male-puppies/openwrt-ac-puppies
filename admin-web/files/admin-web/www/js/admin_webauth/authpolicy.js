@@ -151,7 +151,6 @@ function edit(that) {
 	$('#rulename').prop("disabled", true);
 	
 	getIpgroup(function(d) {
-		console.log(d)
 		if (d.status == 0) {
 			var str = "",
 				data = d.data,

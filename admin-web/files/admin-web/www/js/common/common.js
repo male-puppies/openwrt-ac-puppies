@@ -408,9 +408,8 @@
 			return dtObjToArray(data.data);
 		} else if (data.data.indexOf("timeout") > -1) {
 			window.location.href = "/login/admin_login/login.html";
-		} else {
-			return [];
 		}
+		return [];
 	}
 	
     function dtBindRowSelectEvents(row) {
@@ -497,3 +496,18 @@
 	root.dtBindRowSelectEvents	= dtBindRowSelectEvents;	//绑定选择事件
 	root.dtDataCallback			= dtDataCallback;			//表格ajax回调
 })(this);
+
+$(function() {
+	$("table.table").on("mouseover", "tbody tr", function() {
+		$(this).addClass("highlight");
+		$(this).siblings("tr").removeClass("highlight");
+	})
+	.on("mouseleave", "tbody tr", function() {
+		$(this).removeClass("highlight");
+	});
+	
+	$("body > .modal").on("hidden.bs.modal", function() {
+		$(".has-error", this).removeClass("has-error");
+		$(".modal-footer .tip", this).html("");
+	})
+});

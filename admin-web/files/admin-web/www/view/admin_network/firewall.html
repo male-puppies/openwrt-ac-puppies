@@ -12,19 +12,19 @@
 <!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
 <link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
 <link rel="stylesheet" href="../../css/manage.css" />
-<script src="../../js/black/jquery-1.11.3.min.js"></script>
-<script src="../../js/black/jquery.cookie.js"></script>
-<script src="../../js/black/json2.js"></script>
-<script src="../../js/black/bootstrap.min.js"></script>
-<script src="../../js/black/jquery.dataTables.min.js"></script>
-<script src="../../js/jquery.ext.verify.js"></script>
-<script src="../../js/commin.js"></script>
-<script src="../../js/firewall.js"></script>
+<script src="../../js/lib/jquery-1.11.3.min.js"></script>
+<script src="../../js/lib/jquery.cookie.js"></script>
+<script src="../../js/lib/json2.js"></script>
+<script src="../../js/lib/bootstrap.min.js"></script>
+<script src="../../js/lib/jquery.dataTables.min.js"></script>
+<script src="../../js/common/jquery.ext.verify.js"></script>
+<script src="../../js/common/common.js"></script>
+<script src="../../js/admin_network/firewall.js"></script>
 </head>
 <body>
 <!-- header -->
 <div id="header_ajax"></div>
-<script src="../../js/black/header.ajax.js"></script>
+<script src="../../js/common/header.ajax.js"></script>
 
 <!-- main Start -->
 <div id="main" class="main">
@@ -35,22 +35,26 @@
 					<tr>
 						<th>序号</th>
 						<th>名称</th>
+						<th>描述</th>
 						<th>协议</th>
 						<th>外部端口</th>
 						<th>内部IP地址</th>
 						<th>内部端口</th>
+						<th>调整优先级</th>
 						<th>当前状态</th>
 						<th>操作</th>
+						<th data-toggle="tooltip" data-container="body" data-trigger="hover" title="仅勾选当前页"><input type="checkbox" class="checkall" value="1 0" /></th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td colspan="8"></td>
+						<td colspan="11"></td>
 					</tr>
 				</tbody>
 			</table>
 			<div class="btn-group">
 				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+				<a class="btn btn-default delete"><i class="icon-trash"></i>删除</a>
 			</div>
 		</div>
 	</div>
@@ -69,20 +73,29 @@
 					<fieldset>
 						<legend>基本参数</legend>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="enabled">启用</label>
+							<label class="col-xs-4 control-label" for="enable">启用</label>
 							<div class="col-xs-5">
 								<div class="checkbox">
-									<label><input type="checkbox" checked="checked" id="enabled" value="1 0" /></label>
+									<label><input type="checkbox" checked="checked" id="enable" value="1 0" /></label>
 								</div>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="name">名称</label>
+							<label class="col-xs-4 control-label" for="fwname">名称</label>
 							<div class="col-xs-5">
-								<input type="text" id="name" class="form-control" verify="name" />
+								<input type="text" id="fwname" class="form-control" verify="name" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-4 control-label" for="fwdesc">描述</label>
+							<div class="col-xs-5">
+								<input type="text" id="fwdesc" class="form-control" verify="desc" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="输入字符串长度小于32个字符，不超过十个中文。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 						<div class="form-group clearfix">
@@ -96,40 +109,40 @@
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="src">外部区域</label>
+							<label class="col-xs-4 control-label" for="src_zid">源区域</label>
 							<div class="col-xs-5">
-								<select id="src" class="form-control">
-									<option value="wan">WAN</option>
+								<select id="src_zid" class="form-control">
+									<option value="0">WAN</option>
 								</select>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="src_dport">外部端口</label>
+							<label class="col-xs-4 control-label" for="dest_port">外部端口</label>
 							<div class="col-xs-5">
-								<input type="text" id="src_dport" class="form-control" verify="num 1 65535" />
+								<input type="text" id="dest_port" class="form-control" verify="num 1 65535" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~65535。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="dest">内部区域</label>
+							<label class="col-xs-4 control-label" for="target_zid">目标区域</label>
 							<div class="col-xs-5">
-								<select id="dest" class="form-control">
-									<option value="lan">LAN</option>
+								<select id="target_zid" class="form-control">
+									<option value="0">LAN</option>
 								</select>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="dest_ip">内部IP地址</label>
+							<label class="col-xs-4 control-label" for="target_ip">内部IP地址</label>
 							<div class="col-xs-5">
-								<input type="text" id="dest_ip" class="form-control" verify="ip" />
+								<input type="text" id="target_ip" class="form-control" verify="ip" />
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="dest_port">内部端口</label>
+							<label class="col-xs-4 control-label" for="target_port">内部端口</label>
 							<div class="col-xs-5">
-								<input type="text" id="dest_port" class="form-control" verify="num 1 65535" />
+								<input type="text" id="target_port" class="form-control" verify="num 1 65535" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~65535。"><i class="icon-question-sign"></i></span>

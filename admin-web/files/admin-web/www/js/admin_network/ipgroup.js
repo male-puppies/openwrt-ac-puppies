@@ -165,7 +165,7 @@ function OnDelete(that) {
 		return;
 	}
 	createModalTips("删除后不可恢复。</br>确定要删除？", "DoDelete");
-	$('#modal_tips').modal("show");
+	// $('#modal_tips').modal("show");
 }
 
 function OnSelectAll() {
