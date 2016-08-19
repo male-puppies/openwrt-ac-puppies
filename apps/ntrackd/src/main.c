@@ -66,8 +66,10 @@ static int fn_message_disp(void *p)
 			ui = nt_get_user_by_id(&ntrack, auth->id, auth->magic);
 			if(ui) {
 				dump_user(ui);
-				nt_unotify(buf, n);
-			}else{
+				if (nt_unotify(buf, n) != 0) {
+					nt_error("nt_unotify failed: %s\n", strerror(errno));
+				}
+			} else {
 				nt_error("[%u:%u]->not found userinfo.\n", auth->id, auth->magic);
 			}
 		}
