@@ -6,7 +6,7 @@ server {
 	#charset koi8-r;
 	#access_log logs/host.access.log  main;
 	#error_log /tmp/error_ac.log  error;
-	
+	lua_code_cache 	off;
 	location = /index.html {
 		content_by_lua_file /usr/share/auth-web/auth/auth.lua;
 	}

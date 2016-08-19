@@ -1,14 +1,16 @@
 local ski = require("ski")
 local log = require("log")
 local cfg = require("cfg")
-local nos = require("luanos") 
+local nos = require("luanos")
 local js = require("cjson.safe")
 local authlib = require("authlib")
 
-
 local get_authtype = cfg.get_authtype
 local get_ip_mac, get_status, get_rule_id = nos.user_get_ip_mac, nos.user_get_status, nos.user_get_rule_id
-local dispatch_keepalive = function() end 
+local set_status = nos.user_set_status
+local get_module = cfg.get_module
+
+local dispatch_keepalive = function() end
 
 local udp_map = {}
 local udpsrv, mqtt
@@ -19,20 +21,33 @@ local function init(u, p)
 end
 
 local function set_kernel_cb(cb)
-	dispatch_keepalive = cb 
-end 
+	dispatch_keepalive = cb
+end
 
+--[[
+ntrackd发送来的内核上报道心跳
+@param p : {"cmd":"keepalive","magic":1510,"uid":754}
+]]
 udp_map["keepalive"] = function(p)
 	local uid, magic = p.uid, p.magic
-	local rid = get_rule_id(uid, magic) 	assert(rid)
-	local ip, mac = get_ip_mac(uid, magic) 	assert(ip)
-	local authtype = get_authtype(rid)
-	if not authtype then 
-		print("miss authtype for ", rid)
+	local ukey = string.format("%s_%s", uid, magic)
+
+	local mod = get_module(ukey)
+	if not mod then
+		-- TODO offline 先放到cache，一定次数后，还找不到就下线
+		-- set_status(uid, magic, 0)
+		-- log.error("miss ukey %s. force offline", ukey)
 		return
 	end
 
-	p.ip, p.mac, p.rid, p.cmd, p.ukey = ip, mac, rid, authtype .. "_keepalive", string.format("%s_%s", uid, magic)
+	-- 查询参数rid，ip，mac
+	local rid = get_rule_id(uid, magic)
+	local ip, mac = get_ip_mac(uid, magic)
+	if not (rid and ip) then
+		return
+	end
+
+	p.ip, p.mac, p.rid, p.cmd, p.ukey = ip, mac, rid, mod .. "_keepalive", ukey
 	dispatch_keepalive(p)
 end
 

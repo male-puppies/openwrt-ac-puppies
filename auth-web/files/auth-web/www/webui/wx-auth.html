@@ -5,7 +5,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
-<title>微信连Wi-Fi</title>
+<title> </title>
 <style>
 *{margin:0;padding:0;}body{margin:0;padding:0;background:#F1F1F1;font:14px/160% arial,"Hiragino Sans GB","Microsoft Yahei","微软雅黑","宋体",Tahoma,Arial,Helvetica,STHeiti;}.main{min-height:390px;}.main .i{padding-top:90px;width:100%;}.main img{width:77px;height:68px;display:block;margin:0 auto;}.main .i p{color:#333;font-size:18px;line-height:20px;text-align:center;margin-top:18px;}.main .b{margin-top:80px;text-align:center;}.main .b .btn{cursor:pointer;display:inline-block;width:290px;-webkit-border-radius:5px;-moz-border-radius:5px;border-radius:5px;-webkit-background-clip:padding-box;-moz-background-clip:padding-box;background-clip:padding-box;height:40px;line-height:40px;background-color:#04be01;color:#fff;text-align:center;font-size:16px;border:none;margin-left:auto;margin-right:auto;}.main .b .btn b{font-size:18px;padding-left:12px;}.main .b .left{display:none;padding:0 15px;line-height:42px;font-size:15px;}.main .b p.left {margin-top:20px;color:red;font-size:16px;}.footer{clear:left;margin:50px auto 10px;text-align: center;}.footer a{color:#0066ff;text-decoration:none;}
 </style>
@@ -82,13 +82,14 @@ function weixin_login_action(d) {
 	if (typeof d.status != "undefined") {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			info = d.data;
-			d = d.data;
+			d = d.data; 
 		} else {
 			console.log("error get wxlogin2info")
 		}
 	} else {
 		info = d;
 	}
+	
 	Wechat_GotoRedirect(d.AppID, d.Extend, d.TimeStamp, d.Sign, d.ShopID, d.AuthUrl, d.Mac, d.SSID, d.BSSID); 
 }
 
@@ -118,7 +119,7 @@ function nodeTimesAuto(count) {
 
 function doShowAutoAuth() {
 	$(".main .btn b").css("display", "none");
-	$(".main .btn span").html("尝试再次打开微信");
+	$(".main .btn span").html("尝试再次打开");
 	$(".main .btn").attr("onclick", "againCallWechat()");
 	if (is_phone()) {
 		$(".main .left").css("display", "block");
@@ -248,15 +249,14 @@ function Wechat_GotoRedirect(appId, extend, timestamp, sign, shopId, authUrl, ma
 
 <body>
 <div class="main">
-	<div class="i">
-		<img src="images/wx-wifi.png" />
-		<p>微信连Wi-Fi</p>
+	<div class="i"> 
+		<p>xxxxx</p>
 	</div>
 	
 	<div class="b">
-		<a class="btn"><span>正在打开微信...</span><b>5</b></a>
-		<p class="left tips">无法打开微信？试试手动打开</p>
-		<a class="left auth" href="javascript:;" onclick="macAutoAuth();">或者点击这里，进行微信离线认证</a>
+		<a class="btn"><span>正在打开...</span><b>2</b></a>
+		<p class="left tips">无法打开？试试手动打开</p>
+		<a class="left auth" href="javascript:;" onclick="macAutoAuth();">或者点击这里，进行离线认证</a>
 	</div>
 </div>
 <!--
