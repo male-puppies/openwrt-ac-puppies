@@ -7,11 +7,12 @@ local cfglib = require("cfglib")
 local udp_map = {}
 local udpsrv, mqtt, dbrpc
 
-local reply = cfglib.reply
+local reply
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	reply = cfglib.gen_reply(udpsrv)
 end
 
 udp_map["authrule_set"] = function(p, ip, port)
