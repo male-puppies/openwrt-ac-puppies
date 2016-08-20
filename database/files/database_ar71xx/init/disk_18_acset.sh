@@ -25,4 +25,3 @@ create_mysql_disk_table "create table $tbname(\
 		action		char(8)		not null default '',\
 		enable		integer 		not null default 1 \
 	)"
-
