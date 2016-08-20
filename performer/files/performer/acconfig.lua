@@ -769,34 +769,26 @@ local function run_routine()
 	end
 end
 
-
 tcp_map["dbsync_ipgroup"] = function(p)
-	print("-----acconfig:", js.encode(p))
 	check_config_update()
 	return true
 end
 
-
 tcp_map["dbsync_timegroup"] = function(p)
-	print("-----acconfig:", js.encode(p))
 	check_config_update()
 	return true
 
 end
 
 tcp_map["dbsync_acrule"] = function(p)
-	print("-----acconfig:", js.encode(p))
 	check_config_update()
 	return true
 end
 
-
-tcp_map["dbsync_acipset"] = function(p)
-	print("-----acconfig:", js.encode(p))
+tcp_map["dbsync_acset"] = function(p)
 	check_config_update()
 	return true
 end
-
 
 local function dispatch_tcp(cmd)
 	local f = tcp_map[cmd.cmd]
