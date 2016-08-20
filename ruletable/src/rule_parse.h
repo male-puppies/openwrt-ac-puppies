@@ -33,7 +33,7 @@
 #define AC_RULE_DST_ZONEIDS_KEY		"DstZoneIds"
 #define AC_RULE_DST_IPGRPIDS_KEY	"DstIpgrpIds"
 #define AC_RULE_PROTOIDS_KEY		"ProtoIds"
-#define AC_ACTION_KEY				"Action"
+#define AC_ACTION_KEY				"Actions"
 
 #define AC_ACTION_MAXNUM		3
 #define AC_ACTION_MAXNAMELEN	15
