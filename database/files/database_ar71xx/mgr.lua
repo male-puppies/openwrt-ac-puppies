@@ -5,6 +5,6 @@ end
 
 local function ins()
 	return g_ins
-end 
+end
 
 return {new = new, ins = ins}

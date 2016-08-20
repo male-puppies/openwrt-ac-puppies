@@ -4,9 +4,9 @@
 #include <assert.h>
 #include "rdsparser.h"
 
-#ifdef _WIN32 
+#ifdef _WIN32
 #define snprintf _snprintf
-#endif 
+#endif
 
 #define BUG_ON(conn) do{\
 	if((conn)) {\
@@ -15,13 +15,13 @@
 	}}while(0)
 
 void *mnew(int size) {
-	void *buff = malloc(size);	BUG_ON(!buff); 
+	void *buff = malloc(size);	BUG_ON(!buff);
 	return buff;
 }
 
 enum {
 	RDS_NEW,
-	RDS_RUN, 
+	RDS_RUN,
 	RDS_ERR,
 };
 
@@ -53,14 +53,14 @@ char *rds_encode(rds_str *arr, int count, int *len) {
 	int i, pos, ret, total;
 
 	total = count * 10 + (count * 2 + 1) * 2; /* 参数个数和每段长度最长为10位数字；\r\n长度为2，每个段有2个，参数个数带一个\r\n */
-	
+
 	for (i = 0; i < count; i++) {
 		total += arr[i].len;	assert(arr[i].p && arr[i].len > 0 && arr[i].len <= 256 * 1024 * 1024);
 	}
 
 	pos = 0;
 	buff = (char *)mnew(total);
-	
+
 	ret = snprintf(buff + pos, total - pos, "*%d\r\n", count);		BUG_ON(ret >= total);
 	pos += ret;
 
@@ -69,7 +69,7 @@ char *rds_encode(rds_str *arr, int count, int *len) {
 		pos += ret;
 
 		BUG_ON(pos + arr[i].len + 2 >= total);
-		
+
 		memcpy(buff + pos, arr[i].p, arr[i].len);
 		pos += arr[i].len;
 
@@ -124,7 +124,7 @@ static void shrink_buff(rdsst *rds) {
 		return;
 	}
 
-	printf("shrink %d %d %d\n", rds->cursize, rds->maxsize, EXPECT_BUFF_SIZE); 
+	printf("shrink %d %d %d\n", rds->cursize, rds->maxsize, EXPECT_BUFF_SIZE);
 
 	rds->maxsize = EXPECT_BUFF_SIZE;
 	rds->buff = (char *)realloc(rds->buff, rds->maxsize);		BUG_ON(!(rds->buff));
@@ -133,7 +133,7 @@ static void shrink_buff(rdsst *rds) {
 int static read_rds_len(const char *base, const char *last, char ch, char **pp, int *out) {
 	BUG_ON(!base || !last || base > last);
 
-	if (*base != ch) { 
+	if (*base != ch) {
 		return -1;
 	}
 
@@ -149,7 +149,7 @@ int static read_rds_len(const char *base, const char *last, char ch, char **pp, 
 			return 1;	// not read enough
 		}
 
-		if (*p == '\r' && *(p + 1) == '\n') { 
+		if (*p == '\r' && *(p + 1) == '\n') {
 			p += 2;
 			break;		//match "\r\n"
 		}
@@ -164,30 +164,30 @@ int static read_rds_len(const char *base, const char *last, char ch, char **pp, 
 		p++;
 	} while(1);
 
-	if (count >= 100000000) { 
+	if (count >= 100000000) {
 		return -1;	// error : too large
 	}
 
 	*pp = (char *)p;
 	*out = count;
-	
+
 	return 0;
 }
 
 int static read_param_content(rdsst *rds) {
 	BUG_ON(rds->state != RDS_RUN || rds->res.res_idx >= rds->res.res_count);
-	
+
 	int i;
 	for (i = rds->res.res_idx; i < rds->res.res_count; i++) {
 		char  *p;
 		int len, ret;
-		
+
 		if (!rds->cursize) {
 			return 1;
 		}
-		
+
 		ret = read_rds_len(rds->buff, rds->buff + rds->cursize, '$', &p, &len);
-		if (ret < 0) { 
+		if (ret < 0) {
 			return -1;
 		}
 
@@ -216,14 +216,14 @@ int static read_param_content(rdsst *rds) {
 
 		rds->cursize -= p - rds->buff;
 		memmove(rds->buff, p, left);
-		
+
 		rds->res.res_idx++;
 	}
 
 	return 0;
 }
 
-int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *out) { 
+int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *out) {
 	BUG_ON(rds->state == RDS_ERR);
 
 	if (buff && bufsize > 0) {
@@ -237,7 +237,7 @@ int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *out) {
 	if (rds->state == RDS_NEW) {
 		char *p;
 		int count, ret;
-		rds_result *res; 
+		rds_result *res;
 
 		ret = read_rds_len(rds->buff, rds->buff + rds->cursize, '*', &p, &count);
 		if (ret < 0) {
@@ -256,7 +256,7 @@ int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *out) {
 		rds->state = RDS_RUN;
 
 		rds->cursize -= p - rds->buff;		BUG_ON(rds->cursize < 0);
-		memmove(rds->buff, p, rds->cursize); 
+		memmove(rds->buff, p, rds->cursize);
 	}
 
 	int ret = read_param_content(rds);

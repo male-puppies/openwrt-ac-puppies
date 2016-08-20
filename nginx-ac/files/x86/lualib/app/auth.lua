@@ -33,21 +33,21 @@ local function check_query_vars()
 	return {cmd = uri, magic = magic, uid = uid, ip = ip, mac = mac, rid = rid}
 end
 
-local function query_common(param) 
-	local r, e = query_u(param) 
+local function query_common(param)
+	local r, e = query_u(param)
 	if not r then
-		return reply(1, e) 
+		return reply(1, e)
 	end
 	return ngx.say(r)
 end
 
 local function default()
 	local param, e = check_query_vars()
-	if not param then 
+	if not param then
 		return reply(1, e)
 	end
 	return query_common(param)
-end 
+end
 
 local uri_map = {}
 
@@ -72,18 +72,18 @@ uri_map["/cloudonline"] = default
 uri_map["/bypass_host"] = default
 uri_map["/cloudlogin"] = function()
 	local param, e = check_query_vars()
-	if not param then 
+	if not param then
 		return reply(1, e)
 	end
 
 	ngx.req.read_body()
 	local p = ngx.req.get_post_args()
-	if not p then 
+	if not p then
 		return reply(1, "invalid param")
 	end
 
 	local username, password = p.username, p.password
-	if not (username and password and #username > 0 and #password > 0) then 
+	if not (username and password and #username > 0 and #password > 0) then
 		return reply(1, "invalid param")
 	end
 	param.username, param.password = username, password

@@ -69,7 +69,7 @@ function kvmap.bypass_dst(s)
 end
 
 function cmd_map.kv_set()
- 	local m, e = validate_post({})
+	local m, e = validate_post({})
     if not m then
         return reply_e(e)
     end
@@ -78,14 +78,14 @@ function cmd_map.kv_set()
 
     local m = {}
     for k, v in pairs(p) do
-    	local f = kvmap[k]
-    	if f then
-    		local v, e = f(v)
-    		if not v then
-    			return reply_e(e)
-    		end
-    		m[k] = v
-    	end
+		local f = kvmap[k]
+		if f then
+			local v, e = f(v)
+			if not v then
+				return reply_e(e)
+			end
+			m[k] = v
+		end
     end
 	query_common(m, "kv_set")
 end

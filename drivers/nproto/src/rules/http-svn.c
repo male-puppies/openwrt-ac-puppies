@@ -22,7 +22,7 @@ np_rule_t inner_http_svn = {
 
 	.ID = NP_INNER_RULE_HTTP_SVN,
 	.priority = NP_RULE_PRI_MAX,
-	
+
 	.rule_type = TP_RULE_FIN,
 	/* just match the http matched packet's */
 	.refs_type = NP_REF_PACKET,

@@ -138,7 +138,7 @@ static const struct file_operations dump_ops = {
 int nproto_proc_init(void)
 {
 	struct proc_dir_entry *dir, *file;
-	
+
 	mutex_init(&io_lock);
 	/* create proc dir */
 	if(nproto_proc_dir) {

@@ -7,7 +7,7 @@
 #define PROC_DBG_FNAME "debug"
 #define PROC_DBG_DNAME DRIVER_NAME
 
-#define CMD_S_IPADDR 	"addr="
+#define CMD_S_IPADDR	"addr="
 #define CMD_S_PORT		"port="
 #define CMD_S_BYPASS		"bypass="
 
@@ -107,7 +107,7 @@ static ssize_t nfw_write(struct file *file,
 		const char *cmd_end;
 		uint32_t addr, mask = 0;
 
-		mask = in4_pton(cmd + sizeof(CMD_S_IPADDR), 
+		mask = in4_pton(cmd + sizeof(CMD_S_IPADDR),
 			count - (cmd - buf + sizeof(CMD_S_IPADDR)),
 			(uint8_t*)&addr, ' ', &cmd_end);
 		if(mask) {
@@ -149,9 +149,9 @@ static ssize_t nfw_write(struct file *file,
 	}
 
  __error_out:
- 	if(buf) {
- 		kfree(buf);
- 	}
+	if(buf) {
+		kfree(buf);
+	}
 	if (err < 0)
 		return err;
 	return count;
@@ -167,7 +167,7 @@ static ssize_t nfw_read(struct file *file, char __user *buffer,
 	}
 
 	size = snprintf(buffer, count, "addr=x.x.x.x/mask port=xx\n"
-		"\t%u.%u.%u.%u/%u.%u.%u.%u:%u, bypass: %u\n", 
+		"\t%u.%u.%u.%u/%u.%u.%u.%u:%u, bypass: %u\n",
 		NIPQUAD(GDBG.addr), NIPQUAD(GDBG.mask), ntohs(GDBG.port), GDBG.bypass);
 
 	*offset += size;
@@ -186,7 +186,7 @@ static const struct file_operations debug_ops = {
 int nfw_dbg_init(void)
 {
 	struct proc_dir_entry *dir, *file;
-	
+
 	memset(&GDBG, 0, sizeof(GDBG));
 	mutex_init(&GDBG.lock);
 	/* create proc dir */

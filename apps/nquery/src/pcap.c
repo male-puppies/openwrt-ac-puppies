@@ -84,9 +84,9 @@ int nt_nl_xmit(u_char *data, int dlen)
 	message.hdr.nlmsg_pid = getpid();
 
 	memcpy(NLMSG_DATA(&message), data, dlen);
-	ret = sendto(nl_sock, 
-		&message, 
-		message.hdr.nlmsg_len, 0, 
+	ret = sendto(nl_sock,
+		&message,
+		message.hdr.nlmsg_len, 0,
 		(struct sockaddr*)&kpeer, sizeof(kpeer));
 	if(!ret) {
 		nt_error("send error: %s\n", strerror(errno));
@@ -107,7 +107,7 @@ int pcap_init(void)
 	return 0;
 }
 
-static void pkt_hander(u_char *user, const struct pcap_pkthdr *pkthdr, 	const u_char *packet)
+static void pkt_hander(u_char *user, const struct pcap_pkthdr *pkthdr, const u_char *packet)
 {
 	const struct ethhdr* ether;
 	const struct iphdr* iph;
@@ -124,13 +124,13 @@ static void pkt_hander(u_char *user, const struct pcap_pkthdr *pkthdr, 	const u_
 
 	    // inet_ntop(AF_INET, &(iph->saddr), saddr, INET_ADDRSTRLEN);
 	    // inet_ntop(AF_INET, &(iph->daddr), daddr, INET
-	    
+
 	    data = (u_char*)iph;
 	    dlen = pkthdr->len - sizeof(struct ethhdr);
 
 		if(nt_nl_xmit(data, dlen)) {
 			nt_error("xmit to kernel failed.\n");
-	    	nt_dump(data, dlen, "dump: %d\n", dlen);
+			nt_dump(data, dlen, "dump: %d\n", dlen);
 		} else {
 			// usleep(500);
 		}

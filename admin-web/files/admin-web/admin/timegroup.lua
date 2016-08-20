@@ -12,7 +12,7 @@ local validate_get, validate_post = adminlib.validate_get, adminlib.validate_pos
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local v_tmgid       = gen_validate_num(0, TMGRP_MAX_ID)
-local v_tmgids      = gen_validate_str(1, 256)    
+local v_tmgids      = gen_validate_str(1, 256)
 local v_desc        = gen_validate_str(0, 256)
 local v_name        = gen_validate_str(1, 32)
 local v_days        =   gen_validate_str(1, 256)
@@ -20,7 +20,7 @@ local v_tmlist      =   gen_validate_str(1, 1024)
 
 local cmd_map = {}
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local function run(cmd) 	local _ = (cmd_map[cmd] or cmd_map.numb)(cmd) 	end
 function cmd_map.numb(cmd) 	reply_e("invalid cmd " .. cmd) 			end
@@ -37,13 +37,13 @@ local function validate_keys(s, m)
     if not s then
         return nil, "invalid data structure"
     end
-    for _, key in ipairs(m) do 
+    for _, key in ipairs(m) do
         if not s[key]  then
             return nil, string.format("miss key : %s ",  key)
         end
     end
 
-    return true 
+    return true
 end
 
 -- 判断days的数据合法性
@@ -61,7 +61,7 @@ local function validate_days(s)
         end
     end
 
-    return true 
+    return true
 end
 
 -- 时间段合法性的判断
@@ -86,7 +86,7 @@ local function validate_time(s)
         return nil, "invalid time value"
     end
 
-    return true 
+    return true
 end
 
 -- 判断tmlist的数据合法性
@@ -105,8 +105,8 @@ local function validate_tmlist(s)
             return nil, "error time"
         end
     end
-    
-    return true 
+
+    return true
 end
 
 
@@ -133,7 +133,7 @@ local function validate_std(days, tmlist)
         return nil , "error tmlist"
    end
 
-    return true 
+    return true
 end
 
 
@@ -145,7 +145,7 @@ function cmd_map.timegroup_add() --添加时间组
             tmlist = v_tmlist
     })
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
@@ -167,12 +167,12 @@ function cmd_map.timegroup_set() -- 设置时间组
         tmlist = v_tmlist
     })
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local tmgid = m.tmgid
-    if tmgid == TMGRP_MAX_ID then 
+    if tmgid == TMGRP_MAX_ID then
         return reply_e("cannot modify ALL")
     end
 
@@ -186,8 +186,8 @@ end
 
 function cmd_map.timegroup_get()
     local m, e = validate_get({page = 1, count = 1})
-    if not m then 
-        return reply_e(e) 
+    if not m then
+        return reply_e(e)
     end
 
     local tmgrp_fields = {tmgid = 1, tmgrpname = 1, tmgrpdesc = 1, days = 1, tmlist = 1}
@@ -202,18 +202,18 @@ end
 function cmd_map.timegroup_del()
     local m, e = validate_post({tmgids = v_tmgids})
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local ids = js.decode(m.tmgids)
-    if not ids then 
+    if not ids then
         return reply_e("invalid tmgids")
-    end 
+    end
 
-    for _, id in ipairs(ids) do 
+    for _, id in ipairs(ids) do
         local tid = tonumber(id)
-        if not (tid and tid >= 0 and tid < TMGRP_MAX_ID) then 
+        if not (tid and tid >= 0 and tid < TMGRP_MAX_ID) then
             return reply_e("invalid tmgids")
         end
     end

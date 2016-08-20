@@ -18,7 +18,7 @@
 					NIPQUAD((p)->iph->daddr), \
 			((p)->l4_proto == IPPROTO_TCP?ntohs((p)->tcp->dest):ntohs((p)->udp->dest)), \
 			((p)->l7_len)
-#else 
+#else
 		/* FIXME: xxx */
 		//FMT_PKT(p) (...)
 #endif
@@ -45,7 +45,7 @@ typedef struct {
 		const struct udphdr *udp;
 		const uint8_t *generic_l4_ptr;	/* is set only for non tcp-udp traffic */
     };
-    
+
 	/* upper proto */
 	uint8_t l4_proto;
 	uint8_t dir: 4; /* dir: C2S, S2C; */
@@ -59,7 +59,7 @@ typedef struct {
 
 #ifdef __KERNEL__
 	/* userspace this point to ntrack_priv, kernel -> skb->ntrack_priv */
-	void *priv; 
+	void *priv;
 #else
 	/* result of nproto parser */
 	unsigned char ntrack_priv[NTRACK_PKT_PRIV_SIZE];
@@ -68,7 +68,7 @@ typedef struct {
 
 
 typedef struct {
-	/* 
+	/*
 	** data union of this proto type,
 	** example: http, this is the results of line parser.
 				qq, this is the qq number & others.
@@ -126,9 +126,9 @@ static inline char *np_http_hdr(nt_packet_t* pkt, int em_hdr, int *len)
 	nt_pkt_nproto_t *np = nt_pkt_nproto(pkt);
 	nproto_http_t *http = &np->du.http;
 
-	/* do not fetch NP_HTTP_END use api, 
-	*	as l7 ptr & length is fixed 
-	*	by the http-base rule's callback. 
+	/* do not fetch NP_HTTP_END use api,
+	*	as l7 ptr & length is fixed
+	*	by the http-base rule's callback.
 	*/
 	if(em_hdr <= 0 || em_hdr >= NP_HTTP_MAX) {
 		return NULL;

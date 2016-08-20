@@ -10,7 +10,7 @@ end
 local cmd_map = {}
 
 -- curl 'http://127.0.0.1/admin/api/login/v01?username=wjrc&password=wjrc0409'
-if cmd == "login" then 
+if cmd == "login" then
 	return require("admin.login").run()
 end
 
@@ -20,9 +20,9 @@ end
 -- curl 'http://127.0.0.1/admin/api/zone_add/v01?token=1b2c3e72693b4cd49a17a9daa5e650b8' -d "zonename=z1&zonetype=3&zonedesc=hello, 'world'"
 if cmd:find("^zone_") then
 	return require("admin.zone").run(cmd)
-end 
+end
 
 if cmd:find("^iface_") then
 	return require("admin.iface").run(cmd)
-end 
+end
 

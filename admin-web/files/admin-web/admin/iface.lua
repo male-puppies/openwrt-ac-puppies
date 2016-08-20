@@ -11,12 +11,12 @@ local validate_get, validate_post = adminlib.validate_get, adminlib.validate_pos
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local validate_type = gen_validate_num(2, 3)
-local validate_zid = gen_validate_num(0, 255) 
+local validate_zid = gen_validate_num(0, 255)
 local validate_zids = gen_validate_str(2, 256)
 local validate_des = gen_validate_str(1, 32, true)
 local validate_name = gen_validate_str(1, 32, true)
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -26,7 +26,7 @@ function cmd_map.numb(cmd) 	reply_e("invalid cmd " .. cmd) 					end
 local function query_common(m, cmd)
 	m.cmd = cmd
 	local r, e = query_u(m)
-	if not r then 
+	if not r then
 		return reply_e(e)
 	end
 	ngx.say(r)
@@ -98,7 +98,7 @@ function cmd_map.iface_set()
 	local p = ngx.req.get_post_args()
 	local arg = p.arg
 	local cfg, e = network.validate(arg)
-	if not cfg then 
+	if not cfg then
 		return reply_e(e)
 	end
 	return query_common({cmd = "iface_set", network = cfg}, "iface_set")

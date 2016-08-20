@@ -9,7 +9,7 @@
 #define SHIFT_SZ   4096		// sizeof shift_min
 #define PAT_HASH_SZ 8192	// =(1<<13), must be a power of two
 
-struct pat_list 
+struct pat_list
 {
 	int index;
 	struct pat_list *next;
@@ -38,7 +38,7 @@ typedef struct WuManber
 
 	void (*cb)(unsigned int idx, unsigned long off, void *data);
 	void *cb_data;
-	char  *progname; 
+	char  *progname;
 } wu_manber_t;
 
 void wm_add_pats(struct WuManber *wm, int n_pat, unsigned char **pat_p, int nocase);

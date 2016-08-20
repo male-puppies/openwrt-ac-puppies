@@ -6,7 +6,7 @@ typedef struct {
 	/*table related*/
 	uint8_t rule_type, rule_sub_type;
 	union {
-		struct {	
+		struct {
 			uint16_t 	rule_id;
 			uint8_t 	src_zone, dst_zone;
 			uint64_t 	src_ipgrp_bits, dst_ipgrp_bits;
@@ -25,11 +25,11 @@ typedef struct {
 	unsigned long time_stamp;
 }nacs_msg_t;
 
-int do_ac_table_hk(	
+int do_ac_table_hk(
 	struct net_device *in,
 	struct net_device *out,
-	struct sk_buff *skb, 
-	flow_info_t *fi, 
+	struct sk_buff *skb,
+	flow_info_t *fi,
 	user_info_t *ui,
 	user_info_t *pi);
 

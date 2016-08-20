@@ -2,42 +2,42 @@ local js = require("cjson")
 
 local function decode(s)
 	return js.decode(s)
-end 
+end
 
 local function encode(t)
 	local s = js.encode(t)
 	return s:gsub("{}", "[]")
-end 
+end
 
 local function read(path, func)
 	func = func and func or io.open
 	local fp = func(path, "r")
-	if not fp then 
-		return 
-	end 
+	if not fp then
+		return
+	end
 	local s = fp:read("*a")
 	fp:close()
 	return s
 end
 
 local function parseRateDesc(rate)
-	local a, b, c = rate:match("^%s*(%d+)%s*([KM])%s*(bps)%s*$") 
-	if not a then 
+	local a, b, c = rate:match("^%s*(%d+)%s*([KM])%s*(bps)%s*$")
+	if not a then
 		a, b, c = rate:match("^%s*(%d+)%s*([KM])%s*(Bytes)%s*$")
-	end 
+	end
 
-	if not a then 
+	if not a then
 		return 0
-	end 
+	end
 
 	local num = tonumber(a)
 	local factor = b == "K" and 1000 or 1000 * 1000
-	local bps = c == "bps" and true or false 
+	local bps = c == "bps" and true or false
 	local maxRate = 2 * 1000 * 1000 * 1000
 	maxRate = bps and maxRate * 8 or maxRate
-	if num > maxRate/factor then 
+	if num > maxRate/factor then
 		return 0
-	end 
+	end
 	num = num * factor
 	num = bps and math.floor(num / 8) or num
 	return num
@@ -45,24 +45,24 @@ end
 
 local function tbqRateFromTCRate(rate)
 	local num = parseRateDesc(rate)
-	if not num then 
+	if not num then
 		return "0M"
-	end 
-	
-	if math.mod(num, 1000000000) == 0 then 
+	end
+
+	if math.mod(num, 1000000000) == 0 then
 		return string.format("%dG", math.floor(num / 1000000000))
-	end 
+	end
 
-	if math.mod(num, 1000000) == 0 then 
+	if math.mod(num, 1000000) == 0 then
 		return string.format("%dM", math.floor(num / 1000000))
-	end 
+	end
 
-	if math.mod(num, 1000) == 0 then 
+	if math.mod(num, 1000) == 0 then
 		return string.format("%dK", math.floor(num / 1000))
-	end 
+	end
 
 	return string.format("%d", num)
-end 
+end
 
 local function setTCRate(rule, sharedUpload, sharedDownload, perIpUpload, perIpDownload)
 	rule.UploadLimit.Shared = tbqRateFromTCRate(sharedUpload)
@@ -81,14 +81,14 @@ local function new_rule()
 		UploadLimit = {Shared = "", PerIp = ""},
 		DownloadLimit = {Shared = "", PerIp = ""},
 	}
-end 
+end
 
 local function toarr(map)
 	local arr = {}
-	for k in pairs(map) do 
+	for k in pairs(map) do
 		table.insert(arr, k)
-	end 
-	return arr 
+	end
+	return arr
 end
 
 local function get_iface()
@@ -96,25 +96,25 @@ local function get_iface()
 	s = s .. "\n"
 
 	local wan, lan, all = {}, {}, {}
-	for part in s:gmatch("(.-)\n") do 
+	for part in s:gmatch("(.-)\n") do
 		local ifname = part:match("dev%s+(.-)%s")
-		if ifname and not wan[ifname] then 
+		if ifname and not wan[ifname] then
 			all[ifname] = 1
 
 			local iswlan = part:find("^default")
-			if iswlan then 
+			if iswlan then
 				wan[ifname] = 1
 			end
 		end
 	end
 
-	for ifname in pairs(all) do 
-		if not wan[ifname] then 
+	for ifname in pairs(all) do
+		if not wan[ifname] then
 			lan[ifname] = 1
 		end
-	end 
+	end
 
-	return lan, wan 
+	return lan, wan
 end
 
 local function convert(s)
@@ -128,7 +128,7 @@ local function convert(s)
 	}
 	setTCRate(tbqcfg.Rules[1], tc.GlobalSharedUpload, tc.GlobalSharedDownload, tc.GlobalSharedUpload, tc.GlobalSharedDownload)
 
-	for _, rule in ipairs(tc.Rules) do 
+	for _, rule in ipairs(tc.Rules) do
 		if rule.Enabled then
 			local tbqrule = new_rule()
 			tbqrule.Name = string.format("UI-<%s>", rule.Name)
@@ -137,15 +137,15 @@ local function convert(s)
 			table.insert(tbqcfg.Rules, tbqrule)
 		end
 	end
-	
+
 	return encode(tbqcfg)
 end
 
 local function write(path, s)
 	local fp, err = io.open(path, "wb")
-	if not fp then 
+	if not fp then
 		return false, err
-	end 
+	end
 	fp:write(s)
 	fp:flush()
 	fp:close()

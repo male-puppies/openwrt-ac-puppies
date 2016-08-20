@@ -6,12 +6,12 @@ end
 
 ngx.req.read_body()
 local s = ngx.req.get_body_data()
-if not s then 
+if not s then
 	return ngx.exit(ngx.HTTP_BAD_REQUEST)
 end
 
 local rpc = js.decode(s)
-if not rpc then 
+if not rpc then
 	return ngx.exit(ngx.HTTP_BAD_REQUEST)
 end
 local k, p, bt = rpc.k, rpc.p, rpc.f
@@ -29,7 +29,7 @@ if not f then
 end
 ngx.ctx.arg = p
 local r, e = f()
-if not r then 
+if not r then
 	return reply({d = e, e = 1})
 end
 reply({d = r})

@@ -11,12 +11,12 @@ local validate_get, validate_post = authlib.validate_get, authlib.validate_post
 local gen_validate_num, gen_validate_str = authlib.gen_validate_num, authlib.gen_validate_str
 
 local validate_type = gen_validate_num(2, 3)
-local validate_zid = gen_validate_num(0, 255) 
+local validate_zid = gen_validate_num(0, 255)
 local validate_zids = gen_validate_str(2, 256)
 local validate_des = gen_validate_str(1, 32, true)
 local validate_name = gen_validate_str(1, 32, true)
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -26,7 +26,7 @@ function cmd_map.numb(cmd) 	reply_e("invalid cmd " .. cmd) 					end
 local function query_common(m, cmd)
 	m.cmd = cmd
 	local r, e = query_u(m)
-	if not r then 
+	if not r then
 		return reply_e(e)
 	end
 	ngx.say(r)
@@ -47,7 +47,7 @@ function cmd_map.iface_add()
 		name = validate_name,
 	})
 
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
 
@@ -62,7 +62,7 @@ function cmd_map.iface_set()
 		name = validate_name,
 	})
 
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
 
@@ -71,16 +71,16 @@ end
 
 function cmd_map.iface_del()
 	local m, e = validate_post({zids = validate_zids})
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
-	
+
 	local s, zids = m.zids .. ",", {}
-	for zid in s:gmatch("(%d-),") do 
+	for zid in s:gmatch("(%d-),") do
 		local v = validate_zid(tonumber(zid))
-		if not v then 
+		if not v then
 			return reply_e("invalid zids " .. m.zids)
-		end 
+		end
 		table.insert(zids, v)
 	end
 

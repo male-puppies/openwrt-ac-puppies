@@ -5,7 +5,7 @@ local ngxrpc = require("ngxrpc")
 
 local function main()
 	local code = [[
-		local mysql = require "common.mysql" 
+		local mysql = require "common.mysql"
 		local js = require "cjson.safe"
 		 local r, e = mysql.query(function(db)
 			-- ngx.log(ngx.ERR, "-----------", js.encode(ngx.ctx.arg))

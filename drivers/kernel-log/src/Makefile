@@ -3,6 +3,6 @@
 #
 
 obj-m += klog.o
-klog-y += klog_linux.o klog_ioctl.o 
+klog-y += klog_linux.o klog_ioctl.o
 
 #EXTRA_CFLAGS += -Werror

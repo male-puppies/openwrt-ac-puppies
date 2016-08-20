@@ -7,7 +7,7 @@ local reply_e, reply = adminlib.reply_e, adminlib.reply
 local function check()
 	local p = ngx.req.get_uri_args()
 	local username, password = p.username, p.password
-	if not (username and password and #username > 0 and #password > 0) then 
+	if not (username and password and #username > 0 and #password > 0) then
 		return nil, "invalid param"
 	end
 
@@ -16,22 +16,22 @@ end
 
 local function auth(p)
 	-- local sql = string.format("select count(*) as count, perm from csadmin where username='%s' and password='%s'", p.username, p.password)
-	
+
 	-- local r, e = mysql.query(function(db)
-	-- 	local rs, e = db:query(sql) 	
-	-- 	if not rs then 
-	-- 		return nil, e 
-	-- 	end 
+	-- 	local rs, e = db:query(sql)
+	-- 	if not rs then
+	-- 		return nil, e
+	-- 	end
 	-- 	return rs[1]
 	-- end)
 
-	-- if not r then 
+	-- if not r then
 	-- 	return nil, e
-	-- end 
+	-- end
 	local r = {username = p.username, count = 1, perm = js.encode({})}
-	if tonumber(r.count) == 0 then 
+	if tonumber(r.count) == 0 then
 		return nil, "invalid auth"
-	end 
+	end
 
 	r.username = p.username
 	return r
@@ -43,17 +43,17 @@ local cache_auth_code = [[
 
 	local r = pc("SELECT", 9)
 	if r.ok ~= "OK" then
-		return rp(1, "select fail") 
+		return rp(1, "select fail")
 	end
-	
+
 	local key = "admin_" .. m.token
 	r = pc("HMSET", key, "username", m.username, "perm", m.perm, "rtoken", m.rtoken)
-	if r.ok ~= "OK" then 
-		return rp(1, "HMSET fail") 
+	if r.ok ~= "OK" then
+		return rp(1, "HMSET fail")
 	end
 
 	r = pc("EXPIRE", key, m.timeout)
-	if r ~= 1 then 
+	if r ~= 1 then
 		return rp(1, "EXPIRE fail")
 	end
 
@@ -64,29 +64,29 @@ local function cache_auth(r)
 	local k1, k2 = math.random(1, 9999), math.random(1, 9999)
 	local key, refreshkey = string.format("%s-%04d", now, k1), string.format("%s-%04d", now, k2)
 	local token, refreshtoken = ngx.md5(key), ngx.md5(refreshkey)
-	
+
 	local args = {
 		username = r.username,
 		perm = r.perm,
-		token = token, 
+		token = token,
 		rtoken = refreshtoken,
 		timeout = 3600,
 	}
 
 	local s = js.encode(args)
 	local r, e = rds.query(function(db) return db:eval(cache_auth_code, 0, s) end)
-	if not r then 
+	if not r then
 		return reply_e(e)
-	end 
+	end
 
 	local m = js.decode(r)
 	if not (m and m.r and m.d) then
 		return reply_e("eval fail " .. r)
 	end
 
-	if m.r ~= 0 then 
+	if m.r ~= 0 then
 		return reply_e("cache fail")
-	end 
+	end
 
 	reply({token = token, refresh = refreshtoken})
 end
@@ -98,7 +98,7 @@ local function run()
 	end
 
 	local r, e = auth(p)
-	if not r then 
+	if not r then
 		return reply_e(e)
 	end
 

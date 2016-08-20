@@ -61,7 +61,7 @@ static void tbq_flow_track_init(struct tbq_flow_track *tf)
 	tf->rule_mask = 0;
 	memset(tf->weight, 0, sizeof(tf->weight));
 	tbq_flow_backlog_init(&tf->backlog[0], tf);
-	tbq_flow_backlog_init(&tf->backlog[1], tf);	
+	tbq_flow_backlog_init(&tf->backlog[1], tf);
 }
 
 static void tbq_flow_track_cleanup(struct tbq_flow_track *tf)
@@ -79,14 +79,14 @@ static void tbq_flow_track_cleanup(struct tbq_flow_track *tf)
 }
 
 static inline int match_iface(const char *name, struct tbq_iface *iface) {
-	int i = 0; 
-	
+	int i = 0;
+
 	BUG_ON(!name);
 	for (; i < iface->cur; i++) {
 		if (!strcmp(iface->ifname[i], name))
 			return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -110,24 +110,24 @@ static inline int tbq_get_packet_dir(
 		if (lan_out)
 			return 0; 	// LAN TO WAN
 		/*
-		lan_out = match_iface(out->name, &tbq.config.lan); // TODO 
+		lan_out = match_iface(out->name, &tbq.config.lan); // TODO
 		if (lan_out)
 			return -1;	// LAN TO LAN
 		printk("miss match %s -> %s\n", in->name, out->name);
 		*/
 		return -1;
 	}
-	
+
 	// WAN -> ?
 	lan_out = match_iface(out->name, &tbq.config.lan);
 	if (lan_out)
 		return 1; 	// WAN TO LAN
-	
+
 	/*
 	lan_in = match_iface(out->name, &tbq.config.wan);
 	if (lan_in)
 		return -1; 	// WAN TO WAN
-	
+
 	printk("miss match 2 %s -> %s\n", in->name, out->name);
 	*/
 	return -1;
@@ -531,7 +531,7 @@ void tbq_user_backlog_update(struct tbq_user *user, int32_t pkt_len, int weight)
 	}
 
 	user->tc.backlog.octets += pkt_len;
-	user->tc.backlog.weight += weight;	
+	user->tc.backlog.weight += weight;
 
 	if (user->tc.backlog.octets == 0) {
 		BUG_ON(user->tc.backlog.weight != 0);
@@ -576,7 +576,7 @@ struct tbq_user *tbq_packet_ctrl_consume(struct tbq_packet_ctrl *pc)
 		goto pending;
 
 	TBQ_RULE_MASK_FOR_EACH(i, rule_mask) {
-		struct tbq_user *user = &pc->user_sched->users[i]; 
+		struct tbq_user *user = &pc->user_sched->users[i];
 		tbq_user_consume(user, pc->pkt_len);
 	}
 
@@ -848,7 +848,7 @@ void tbq_flow_backlog_detach(struct tbq_flow_backlog *fb)
 		TBQ_INFO("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
 	}
 	//tbq_backlog_detach(&user->backlog);
-	tbq_backlog_detach(&fb->base);	
+	tbq_backlog_detach(&fb->base);
 }
 
 void tbq_flow_backlog_enqueue(
@@ -1009,7 +1009,7 @@ void tbq_flow_backlog_try_dequeue(
 	pkt = list_first_entry(&fb->packets, struct nf_queue_entry, list);
 	nos = &((struct nf_conn *)pkt->skb->nfct)->nos_track;
 	pc = tbq_packet_ctrl_get(pkt->skb);
-	pkt_dir = pc->bucket_sched - tbq.sched;	
+	pkt_dir = pc->bucket_sched - tbq.sched;
 
 	BUG_ON(fb != &nos->tbq.backlog[pkt_dir]);
 	BUG_ON(!list_empty(&fb->base.tc->list));
@@ -1276,7 +1276,7 @@ void tbq_on_user_free(struct nos_user_track *ut)
 }
 
 void tbq_on_flow_free(struct tbq_flow_track *tf)
-{	
+{
 	spin_lock_bh(&tbq.lock);
 	if (tf->list.next != NULL) {
 		tbq_flow_track_cleanup(tf);
@@ -1339,7 +1339,7 @@ static int __init nos_tbq_init(void)
 	}
 
 	nf_register_queue_handler(&tbq_nf_queue);
-	
+
 	ret = nf_register_hooks(tbq_nf_hook_ops, ARRAY_SIZE(tbq_nf_hook_ops));
 	if (ret != 0) {
 		TBQ_ERROR("nf_register_hook failed: %d\n", ret);

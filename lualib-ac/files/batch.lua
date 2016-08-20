@@ -15,7 +15,7 @@ function method:emit(p)
 		while self.count > 0 do
 			local tmp, count
 			while self.count > 0 do
-				tmp, self.cache, count, self.count = self.cache, {}, self.count, 0 
+				tmp, self.cache, count, self.count = self.cache, {}, self.count, 0
 				self.cb(count, tmp)
 			end
 		end

@@ -1,18 +1,18 @@
 package.path = "/usr/share/admin-web/?.lua;" .. package.path
-local adminlib = require("admin.adminlib") 
+local adminlib = require("admin.adminlib")
 
 local login_html = "/view/admin_login/login.html"
 local function redirect()
 	ngx.redirect(login_html)
 end
 
-local uri = ngx.var.uri  
+local uri = ngx.var.uri
 if uri:find("login.html$") then
 	return
 end
 
 local cookie = ngx.req.get_headers().cookie
-if not cookie then 
+if not cookie then
 	return redirect()
 end
 

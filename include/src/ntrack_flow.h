@@ -67,7 +67,7 @@ static inline void nt_flow_nproto_fin_set(flow_info_t *fi)
 	fi->hdr.flags |= FG_FLOW_NPROTO_FIN;
 }
 
-static inline int nt_flow_track(const flow_info_t *fi) 
+static inline int nt_flow_track(const flow_info_t *fi)
 {
 	return fi->hdr.flags & FG_FLOW_TRACE;
 }
@@ -155,7 +155,7 @@ static inline int nt_flow_accepted(flow_info_t *fi)
 /* ########################## */
 /* nproto identify in Flow node. */
 typedef struct {
-	/* 
+	/*
 	** PT_SOCK4, PT_SOCK5, PT_HTTP.
 	** PS_UNKNOWN, PS_PORT, PS_ADDR_PORT, PS_FINISH.
 	*/

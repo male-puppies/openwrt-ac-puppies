@@ -54,7 +54,7 @@
 ** Enables display of pattern group stats
 */
 //#define SHOW_STATS
-#define MWM_FEATURES "MWM:BC/BW-SHIFT + 2-BYTE-HASH"  
+#define MWM_FEATURES "MWM:BC/BW-SHIFT + 2-BYTE-HASH"
 
 #define HASH_CHAR 0
 #define SHIFT_CHAR 0
@@ -68,7 +68,7 @@
 #else
 #define HASH_WORD 1
 #define HASH_BYTES    2
-#define HASH_TYPE unsigned short 
+#define HASH_TYPE unsigned short
 #define HASH_EMPTY (0xffff)
 #define HASH_TABLE_SIZE (256 * 256)
 #endif
@@ -81,8 +81,8 @@
 #endif
 
 
-/* 
-** Causes mbmAddPattern to check for and not allow duplicate patterns. 
+/*
+** Causes mbmAddPattern to check for and not allow duplicate patterns.
 ** By default we allow multiple duplicate patterns, since the AND clause
 ** may case the whole signature to be different. We trigger each pattern
 ** to be processesed by default.
@@ -103,7 +103,7 @@ enum {
 /*
 *
 *  Boyer-Moore-Horsepool for small pattern groups
-*    
+*
 */
 typedef struct {
 	short  bcShift[256];
@@ -121,8 +121,8 @@ typedef struct __mwm_patt {
 	int    psOffset;  // pos where to start searching in data
 	int    psDepth;   // number of bytes after offset to search
 	void * ps_data;   //internal ID, used by the pattern matcher
-	
-	hbm_t     * psBmh;	
+
+	hbm_t     * psBmh;
 	struct __mwm_patt * next;
 } mwm_patt_t;
 
@@ -130,51 +130,51 @@ typedef struct __mwm_patt {
 ** Pattern GROUP Structure, this struct is is used publicly, but by reference only
 */
 typedef struct __mwm_st {
-  
+
   /* Bad Character Shift Table */
   HASH_TYPE msHash1[256];
   unsigned char msShift[256];
   unsigned msShiftLen;
-  
+
   /* search function */
-  int (*search)( struct __mwm_st * ps, 
-                 unsigned char * T, int n, 
+  int (*search)( struct __mwm_st * ps,
+                 unsigned char * T, int n,
                  void  * in, void *out ,
                  int(*match)( void *  par, void * in, void *out));
-  
+
   /* Array of Group Counts, # of patterns in each hash group */
   mwm_patt_t   *msPatArray;
   HASH_TYPE   *msNumArray;
-  
+
   /* Number of Patterns loaded */
   int     msNumPatterns;
 
   /* Wu-Manber Hash Tables */
   int   msNumHashEntries;
-  HASH_TYPE *msHash;           // 2+ character Pattern Big Hash Table  
-  
+  HASH_TYPE *msHash;           // 2+ character Pattern Big Hash Table
+
   /* Bad Word Shift Table */
-  unsigned char* msShift2; 
+  unsigned char* msShift2;
   int msLargeShifts;
-  
+
   /* Print Group Details */
   int msDetails;
-  
+
   /* Pattern Group Stats  */
   int   msSmallest;
   int   msLargest;
   int   msAvg;
   int   msTotal;
   int *msLengths;
-  
+
   int    msMethod;  /* MTH_BM, MTH_MWM */
-  
+
   mwm_patt_t * plist;
-  
+
 } mwm_t;
 
 /*
-return value 
+return value
 0: suc
 -1:error
 note:call exact once every driver
@@ -182,7 +182,7 @@ note:call exact once every driver
 int mwmSysInit(const char * szInstName);
 
 /*
-if  mwmSysInit suc, you must to call mwmSysClean exact once when you 
+if  mwmSysInit suc, you must to call mwmSysClean exact once when you
 unload your driver
 ret:
 0  suc
@@ -201,9 +201,9 @@ int mwmAddPatternUnique( mwm_t *pv, unsigned char * P, int len, int off, int dee
 int  mwmPrepPatterns  ( mwm_t *pv );
 
 int  mwmSearch( mwm_t *pv,
-			   unsigned char * T, int n, 
+			   unsigned char * T, int n,
 			   void *in, void *out,
-			   int ( *action )(void *par, void * in, void *out)); 
+			   int ( *action )(void *par, void * in, void *out));
 
 /* Not so useful, but not ready to be dumped  */
 int   mwmGetNumPatterns( void * pv );

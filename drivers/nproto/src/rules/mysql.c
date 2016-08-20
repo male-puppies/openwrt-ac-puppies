@@ -12,7 +12,7 @@
 
 /*
 vnc
-# Assumes single digit major and minor version numbers 
+# Assumes single digit major and minor version numbers
 # This message should be all alone in the first packet, so ^$ is appropriate
 ^rfb 00[1-9]\.00[0-9]\x0a$
 */

@@ -8,7 +8,7 @@
 #define NP_HOOK_MAX 8
 
 /*
-*  np_hook_t callback function, 
+*  np_hook_t callback function,
 	before proto change, be called by nproto.
 */
 typedef int (*np_hook_t)(flow_info_t *fi, uint32_t proto_crc);

@@ -152,7 +152,7 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
 
 	opts_parse(pcre->op_str, &pcre->opts);
 
-	pcre->re = pcre2_compile(pcre->pcre, PCRE2_ZERO_TERMINATED, 
+	pcre->re = pcre2_compile(pcre->pcre, PCRE2_ZERO_TERMINATED,
 		pcre->opts, &ec, &erroffset, NULL);
 	if (IS_ERR_OR_NULL(pcre->re))
 		goto err_code;
@@ -200,8 +200,8 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
 	free(pcre->pattern);
 
  err_pattern:
- 	np_debug("err pattern compile.\n");
- 	free(pcre);
+	np_debug("err pattern compile.\n");
+	free(pcre);
 	return NULL;
 }
 EXPORT_SYMBOL(pcre_create);
@@ -246,7 +246,7 @@ static int sysctl_pcre_jit(struct ctl_table *ctl, int write,
                   size_t *lenp, loff_t *ppos)
 {
     int ret = proc_dointvec(ctl, write, buffer, lenp, ppos);
-	
+
 	if (sysctl_jit_enable)
 		sysctl_jit_enable = true;
 

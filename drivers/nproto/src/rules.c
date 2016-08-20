@@ -13,7 +13,7 @@
 #include "pcre.h"
 #include "nproto_private.h"
 
-#define RULE_DBG_TRACE 
+#define RULE_DBG_TRACE
 
 int rule_trace_id = NP_INNER_RULE_HTTP_WEIBO;
 module_param(rule_trace_id, int, 0444);
@@ -167,7 +167,7 @@ static void rule_dump(np_rule_t *rule)
 {
 	int i;
 
-	np_print("rule[%s] Proto[%s] Service[%s]:\n", 
+	np_print("rule[%s] Proto[%s] Service[%s]:\n",
 		rule->name_rule, rule->name_app, rule->name_service);
 	np_print("\tID: [%d]\n", rule->ID);
 	for(i=0; i<MAX_REF_IDs; i++){
@@ -290,7 +290,7 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 			return set_add_rule_normal(set, rule);
 		}
 		for(i=0; i<ARRAY_SIZE(htp->htpm); i++) {
-			httpm_t *htpm = &htp->htpm[i]; 
+			httpm_t *htpm = &htp->htpm[i];
 			match_t *ctm = &htpm->match;
 			if(htpm->hdr == NP_HTTP_END) {
 				/* http only add content search to mwm. */
@@ -459,7 +459,7 @@ int nproto_rules_dump_name(char *out, int olen, char *buffer, int bufsz, int off
 
 	for (i = 0; i < RULES_ALL.count; ++i) {
 		np_rule_t *rule = RULES_ALL.array[i];
-		
+
 		len += snprintf(buffer, bufsz - len, "[%08u] %s\n", rule->crc, rule->name_rule);
 		if(len <= 0) {
 			/* overflow */
@@ -613,8 +613,8 @@ static int l4_match(np_rule_t *rule, nt_packet_t *npt)
 	if(l4->ports[0]) {
 		int i=0, m=0;
 		while(l4->ports[i]) {
-			if((sport == l4->ports[i]) || 
-				(dport == l4->ports[i])) 
+			if((sport == l4->ports[i]) ||
+				(dport == l4->ports[i]))
 			{
 				m = l4->ports[i]; break;
 			}
@@ -630,8 +630,8 @@ static int l4_match(np_rule_t *rule, nt_packet_t *npt)
 	if(l4->addrs[0]) {
 		int i=0, m = 0;
 		while(l4->addrs[i]) {
-			if((saddr == l4->addrs[i]) || 
-				(daddr == l4->addrs[i])) 
+			if((saddr == l4->addrs[i]) ||
+				(daddr == l4->addrs[i]))
 			{
 				m = l4->addrs[i]; break;
 			}
@@ -665,8 +665,8 @@ static int len_info_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 		case NP_LNM_RANGE:{
 			int i=0;
 			while(lnm->range[i][0] && lnm->range[i][1]) {
-				if(npt->l7_len >= lnm->range[i][0] && 
-					npt->l7_len <= lnm->range[i][1]) 
+				if(npt->l7_len >= lnm->range[i][0] &&
+					npt->l7_len <= lnm->range[i][1])
 				{
 					return NP_TRUE;
 				}
@@ -695,8 +695,8 @@ static int len_info_match(np_rule_t *rule, len_match_t *lnm, nt_packet_t *npt)
 				}break;
 				case 4: {
 					n = (*(uint32_t*)&npt->l7_ptr[lnm->offset]);
-					if((ntohl(n) + lnm->fixed == npt->l7_len) || 
-						(n + lnm->fixed == npt->l7_len)) 
+					if((ntohl(n) + lnm->fixed == npt->l7_len) ||
+						(n + lnm->fixed == npt->l7_len))
 					{
 						return NP_TRUE;
 					}
@@ -746,7 +746,7 @@ static uint8_t* ctm_do(np_rule_t *rule, match_t *ctm, uint8_t *data, int dlen)
 			}
 			if(memcmp(data + offset, ctm->patt, ctm->length) == 0) {
 				return data + offset;
-			} 
+			}
 			return NULL;
 		} break;
 		case MHTP_REGEXP: {
@@ -802,7 +802,7 @@ static int cont_match(np_rule_t *rule, content_match_t *cont, nt_packet_t *npt)
 	}
 
 	/* fixup wrapper proto. */
-	if(cont->wrap.type == MHTP_REGEXP || 
+	if(cont->wrap.type == MHTP_REGEXP ||
 		cont->wrap.type == MHTP_SEARCH) {
 		mc = ctm_do(rule, &cont->wrap, l7data, l7dlen);
 		if(!mc) {
@@ -933,12 +933,12 @@ static int http_match(np_rule_t *rule, nt_packet_t *npt)
 
 static int rule_matched_cb(void *np, void *prule)
 {
-	np_rule_t *rule = prule;	
+	np_rule_t *rule = prule;
 	RULE_DBG(rule, NULL, "rule: %s, matched.\n", rule->name_rule);
 	return NP_TRUE;
 }
 
-int rule_one_match(np_rule_t *rule, nt_packet_t *npt, 
+int rule_one_match(np_rule_t *rule, nt_packet_t *npt,
 	int(*matched_cb)(void *nt, void *rule))
 {
 	int n;
@@ -1090,9 +1090,9 @@ int nproto_rules_match(nt_packet_t *npt)
 		nproto_update_flow(npt->fi, mlast->ID);
 
 		/* DEBUG */
-		np_info(FMT_FLOW_STR"\n\t\t[%s] --- matched %s--- \n", 
+		np_info(FMT_FLOW_STR"\n\t\t[%s] --- matched %s--- \n",
 			FMT_FLOW(npt->fi),
-			mlast->name_rule, 
+			mlast->name_rule,
 			RULE_IS_FIN(mlast)?"fin":"mid");
 		/* END debug. */
 	}

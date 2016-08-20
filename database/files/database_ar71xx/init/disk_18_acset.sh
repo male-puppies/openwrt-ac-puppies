@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 . ./init_template_lib.sh
 tbname=acset
 keyname=setid
@@ -24,6 +24,5 @@ create_mysql_disk_table "create table $tbname(\
 		content		text		, \
 		action		char(8)		not null default '',\
 		enable		integer 		not null default 1 \
-	)"	
+	)"
 
-	

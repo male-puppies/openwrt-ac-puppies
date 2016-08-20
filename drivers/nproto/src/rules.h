@@ -75,38 +75,38 @@ typedef struct {
 
 typedef struct {
 	uint16_t spec_len; /* only match the len == spec_len. */
-	
-	/* 
+
+	/*
 	** takeoff the wrapper proto.
-	** 
-	** 0,0: match the +OFFSET, 
-	** n,m: search +/- n->m 
-	** 
-	** this find the realy proto payload, 
+	**
+	** 0,0: match the +OFFSET,
+	** n,m: search +/- n->m
+	**
+	** this find the realy proto payload,
 			such as http->hdr->body (http-proxy-...).
 	**
 	** ++++++offset[x]++***patt***+++++++++++
-	** search range: offset -> offset + deep 
+	** search range: offset -> offset + deep
 	*/
 	match_t wrap, match;
 } content_match_t;
 
 typedef struct {
 	/* C->S, S->C, any */
-	uint8_t dir; 
+	uint8_t dir;
 
 	/* length info */
 	len_match_t lnm;
 
-	/* content info */ 
+	/* content info */
 	/* or|and */
 	uint8_t ctm_num:6, ctm_relation:2;
 	content_match_t ctm[MAX_CT_MATCH_NUM];
 } l7_match_t;
 
 typedef struct {
-	/* 
-	* http hdr: 
+	/*
+	* http hdr:
 	*	CTX: 0;
 	*	HDR: URL, Context-type, Host, ... ;
 	*/
@@ -115,7 +115,7 @@ typedef struct {
 } httpm_t;
 
 typedef struct {
-	/* 
+	/*
 	* relation: OR/AND,
 	*/
 	uint8_t htp_relation:1;
@@ -123,7 +123,7 @@ typedef struct {
 } http_match_t;
 
 typedef struct nproto_rule np_rule_t;
-/* 
+/*
 ** rule set:
 ** 	UDP
 **	TCP ->
@@ -154,11 +154,11 @@ struct nproto_rule {
 	uint16_t ID;
 	/* this rule ref to other/base rules. */
 	uint16_t ID_REFs[MAX_REF_IDs];
-	/* 
+	/*
 	* rule_type:
 	* 		base: start match as unknown, or ref to someone.
 	*		ref-base: need be-refed first matched.
-	* 
+	*
 	* refs_type:
 	*		0: current-package/; 1: cross-package-in-session;
 	*		2: corss-session-in-users; 4: cross-session-in-peers;
@@ -242,8 +242,8 @@ enum __em_result_bool {
 	NP_TRUE,
 };
 
-/* 
-** register one rule to match system. 
+/*
+** register one rule to match system.
 */
 int np_rule_register(np_rule_t *rule);
 

@@ -11,7 +11,7 @@
 #include "../bmh.h"
 
 /*
-# NTP 
+# NTP
 ntp
 ^([\x13\x1b\x23\xd3\xdb\xe3]|[\x14\x1c$].......?.?.?.?.?.?.?.?.?[\xc6-\xff])
 */

@@ -12,7 +12,7 @@
 
 
 /*
-# Flash - Macromedia Flash.  
+# Flash - Macromedia Flash.
 
 # Macromedia spec:
 # http://download.macromedia.com/pub/flash/flash_file_format_specification.pdf
@@ -22,7 +22,7 @@
 
 flash
 # FWS = uncompressed, CWS = compressed, next byte is version number
-# FLV = video 
+# FLV = video
 [FC]WS[\x01-\x09]|FLV\x01\x05\x09
 */
 np_rule_t inner_http_flv = {
@@ -32,7 +32,7 @@ np_rule_t inner_http_flv = {
 
 	.ID = NP_INNER_RULE_HTTP_FLV,
 	.priority = NP_RULE_PRI_MAX,
-	
+
 	.rule_type = TP_RULE_FIN,
 	/* match the http current packet's & flow. */
 	.refs_type = NP_REF_PACKET | NP_REF_FLOW,

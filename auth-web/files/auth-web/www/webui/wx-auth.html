@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
 <title> </title>
 <style>
@@ -36,7 +36,7 @@ $(function() {
 	setTimeout(function() {
 		call_weixin();
 	}, 500);
-	
+
 	document.addEventListener('visibilitychange', putNoResponse, false);
 });
 
@@ -45,13 +45,13 @@ function getUrlSearch() {
 		href = "",
 		urlobj = getUrlObj(),
 		params = window.location.search;
-	
+
 	for (var k in urlobj) {
 		if (k == "g_redirect") {
 			g_redirect = urlobj[k];
 			continue;
 		}
-		
+
 		if (mark == 0) {
 			href += "?" + k + "=" + urlobj[k];
 		} else {
@@ -66,11 +66,11 @@ function getUrlObj() {
 	var arr,
 		obj = {},
 		url = window.location.search;
-		
+
 	if (url && url != "") {
 		url = url.substring(1);
 		arr = url.split("&");
-		
+
 		for (var i = 0; i < arr.length; i ++) {
 			obj[arr[i].split("=")[0]] = arr[i].split("=")[1];
 		}
@@ -82,15 +82,15 @@ function weixin_login_action(d) {
 	if (typeof d.status != "undefined") {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			info = d.data;
-			d = d.data; 
+			d = d.data;
 		} else {
 			console.log("error get wxlogin2info")
 		}
 	} else {
 		info = d;
 	}
-	
-	Wechat_GotoRedirect(d.AppID, d.Extend, d.TimeStamp, d.Sign, d.ShopID, d.AuthUrl, d.Mac, d.SSID, d.BSSID); 
+
+	Wechat_GotoRedirect(d.AppID, d.Extend, d.TimeStamp, d.Sign, d.ShopID, d.AuthUrl, d.Mac, d.SSID, d.BSSID);
 }
 
 function call_weixin() {
@@ -176,7 +176,7 @@ function macAutoAuth() {
 
 function putNoResponse(ev){
 	clearTimeout(noResponse);
-}	
+}
 
 function errorJump(result) {
 	var ua = navigator.userAgent;
@@ -191,7 +191,7 @@ function errorJump(result) {
 	falseJump = true;
 	//alert('该浏览器不支持自动跳转微信请手动打开微信\n如果已跳转请忽略此提示');
 }
- 
+
 function createIframe(){
 	var iframe = document.createElement("iframe");
 	iframe.style.cssText = "display:none;width:0px;height:0px;";
@@ -202,9 +202,9 @@ function createIframe(){
 //注册回调函数
 function jsonpCallback(result) {
 	if (result && result.success) {
-		console.log('WeChat will call up : ' + result.success + '  data:' + result.data);			    
-		var ua = navigator.userAgent;              
-		if (ua.indexOf("iPhone") != -1 || ua.indexOf("iPod") != -1 || ua.indexOf("iPad") != -1) {   //iPhone             
+		console.log('WeChat will call up : ' + result.success + '  data:' + result.data);
+		var ua = navigator.userAgent;
+		if (ua.indexOf("iPhone") != -1 || ua.indexOf("iPod") != -1 || ua.indexOf("iPad") != -1) {   //iPhone
 			document.location = result.data;
 		} else {
 			createIframe();
@@ -213,7 +213,7 @@ function jsonpCallback(result) {
 			noResponse = setTimeout(function(){
 				errorJump(result);
 			},3000);
-		}			    
+		}
 	} else if (result && !result.success) {
 		console.log(result.data);
 	}
@@ -221,26 +221,26 @@ function jsonpCallback(result) {
 
 function Wechat_GotoRedirect(appId, extend, timestamp, sign, shopId, authUrl, mac, ssid, bssid){
 	//将回调函数名称带到服务器端
-	var url = "https://wifi.weixin.qq.com/operator/callWechatBrowser.xhtml?appId=" + appId 
-						+ "&extend=" + extend 
-						+ "&timestamp=" + timestamp 
-						+ "&sign=" + sign;	
-	
+	var url = "https://wifi.weixin.qq.com/operator/callWechatBrowser.xhtml?appId=" + appId
+						+ "&extend=" + extend
+						+ "&timestamp=" + timestamp
+						+ "&sign=" + sign;
+
 	//如果sign后面的参数有值，则是新3.1发起的流程
 	if(authUrl && shopId){
-		url = "https://wifi.weixin.qq.com/operator/callWechat.xhtml?appId=" + appId 
-						+ "&extend=" + extend 
-						+ "&timestamp=" + timestamp 
+		url = "https://wifi.weixin.qq.com/operator/callWechat.xhtml?appId=" + appId
+						+ "&extend=" + extend
+						+ "&timestamp=" + timestamp
 						+ "&sign=" + sign
 						+ "&shopId=" + shopId
 						+ "&authUrl=" + encodeURIComponent(authUrl)
 						+ "&mac=" + mac
 						+ "&ssid=" + ssid
 						+ "&bssid=" + bssid;
-		
+
 	}
-	//通过dom操作创建script节点实现异步请求  
-	var script = document.createElement('script');  
+	//通过dom操作创建script节点实现异步请求
+	var script = document.createElement('script');
 	script.setAttribute('src', url);
 	document.getElementsByTagName('head')[0].appendChild(script);
 }
@@ -249,10 +249,10 @@ function Wechat_GotoRedirect(appId, extend, timestamp, sign, shopId, authUrl, ma
 
 <body>
 <div class="main">
-	<div class="i"> 
+	<div class="i">
 		<p>xxxxx</p>
 	</div>
-	
+
 	<div class="b">
 		<a class="btn"><span>正在打开...</span><b>2</b></a>
 		<p class="left tips">无法打开？试试手动打开</p>

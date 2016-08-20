@@ -15,7 +15,7 @@ local v_rulename 	= gen_validate_str(1,64)
 local v_ruletype	= gen_validate_str(1,16,true)
 local v_ruledesc 	= gen_validate_str(0,63)
 local v_srczids		= gen_validate_str(2,1024)
-local v_dstzids 	= gen_validate_str(2,1024) 
+local v_dstzids 	= gen_validate_str(2,1024)
 local v_protoids	= gen_validate_str(2,10240)
 local v_srcipgids	= gen_validate_str(2,1024)
 local v_dstipgids	= gen_validate_str(2,1024)
@@ -25,7 +25,7 @@ local v_ruleids		= gen_validate_str(2,256)
 local v_enable		= gen_validate_num(0,1)
 local v_priority	= gen_validate_num(0,9999)
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -75,46 +75,46 @@ end
 
 function cmd_map.acrule_get()
 	local m, e = validate_get({page = 1, count = 1})
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
 	local rules_map = {}
 	local cond = adminlib.search_cond(adminlib.search_opt(m, {order = acrule_fields, search = acrule_fields}))
 	local sql = string.format("select * from acrule %s %s %s", cond.like and string.format("and %s",cond.like) or "", "order by priority", cond.limit)
 	local rs, e = mysql_select(sql)
-	if not e then 
+	if not e then
 		for _, v_rs in ipairs(rs) do
 			local map = {}
-			for k, v_r in pairs(v_rs) do 
-				if k == "tmgrp_ids" then 
+			for k, v_r in pairs(v_rs) do
+				if k == "tmgrp_ids" then
 					local t_map = tmgrp_get(v_r)
-					if not t_map then 
+					if not t_map then
 						map[k] = {}
 					end
 					map[k] = t_map
 				end
-				if k == "src_ipgids" then 
+				if k == "src_ipgids" then
 					local si_map = ipgrp_get(v_r)
-					if not si_map then 
+					if not si_map then
 						map[k] = {}
 					end
 					map[k] = si_map
 				end
 				if k == "dest_ipgids" then
 					local di_map = ipgrp_get(v_r)
-					if not di_map then 
+					if not di_map then
 						map[k] = {}
 					end
 					map[k] = di_map
 				end
-				if k == "proto_ids" then 
+				if k == "proto_ids" then
 					local pi_map = proto_get(v_r)
-					if not pi_map then 
+					if not pi_map then
 						map[k] = {}
 					end
 					map[k] = pi_map
 				end
-				if k ~= "tmgrp_ids" and k ~= "src_ipgids" and k ~= "dest_ipgids" and k ~= "proto_ids" then				
+				if k ~= "tmgrp_ids" and k ~= "src_ipgids" and k ~= "dest_ipgids" and k ~= "proto_ids" then
 					map[k] = v_r
 				end
 			end
@@ -122,7 +122,7 @@ function cmd_map.acrule_get()
 		end
 	end
 	return rs and reply(rules_map) or reply_e(e)
-end 
+end
 
 local function validate_acrule(m)
 	local src_ipgids, dest_ipgids = m.src_ipgids, m.dest_ipgids
@@ -134,15 +134,15 @@ local function validate_acrule(m)
 	if not sipids then
 		return nil, "invalid src_ipgids"
 	end
-	for _, id in ipairs(sipids) do 
+	for _, id in ipairs(sipids) do
 		local sid = tonumber(id)
-		if not (sid and sid >= 0 and sid < 63) then 
+		if not (sid and sid >= 0 and sid < 63) then
 			return nil, "invalid src_ipgids"
 		end
 	end
 
 	local dipids = js.decode(dest_ipgids)
-	if not dipids then 
+	if not dipids then
 		return nil, "invalid dest_ipgids"
 	end
 	for _, id in ipairs(dipids) do
@@ -153,7 +153,7 @@ local function validate_acrule(m)
 	end
 
 	local tmids = js.decode(tmgrp_ids)
-	if not tmids then 
+	if not tmids then
 		return nil, "invalid timeids"
 	end
 	for _, id in ipairs(tmids) do
@@ -169,7 +169,7 @@ local function validate_acrule(m)
 	end
 
 	local  iactions= js.decode(actions)
-	if not iactions then 
+	if not iactions then
 		return nil, "invalid actions"
 	end
 	local flag = 0
@@ -177,14 +177,14 @@ local function validate_acrule(m)
 		if not (vi == "ACCEPT" or vi == "REJECT" or vi == "ADUIT") then
 			return nil, "invalid actions"
 		end
-		if (vi == "ACCEPT") then 
+		if (vi == "ACCEPT") then
 			flag = flag + 1
 		end
 		if (vi == "REJECT") then
 			flag = flag + 1
 		end
 	end
-	if flag == 2 then 
+	if flag == 2 then
 		return nil, "invalid actions"
 	end
 	return true
@@ -199,19 +199,19 @@ local function acrule_update_common(cmd, ext)
 		tmgrp_ids	= v_tmgrpids,
 		actions 	= v_actions,
 		enable 		= v_enable,
-		proto_ids 	= v_protoids,	
+		proto_ids 	= v_protoids,
 	}
 
 	for k, v in pairs(ext or {}) do
 		check_map[k] = v
 	end
 	local m, e = validate_post(check_map)
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
 
 	local r, e = validate_acrule(m)
-	if not r then 
+	if not r then
 		return reply_e(e)
 	end
 
@@ -223,22 +223,22 @@ function cmd_map.acrule_set()
 end
 
 function cmd_map.acrule_add()
-	return acrule_update_common("acrule_add")	
+	return acrule_update_common("acrule_add")
 end
 
 function cmd_map.acrule_del()
 	local m, e = validate_post({ruleids = v_ruleids})
 
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
 
 	local ids = js.decode(m.ruleids)
-	if not ids then 
+	if not ids then
 		return reply_e("invalid ruleids")
 	end
 
-	for _, id in ipairs(ids) do 
+	for _, id in ipairs(ids) do
 		local rid = tonumber(id)
 		if not (rid and rid >=0 and rid < 63) then
 			return reply_e("invalid ruleids")
@@ -251,12 +251,12 @@ end
 function cmd_map.acrule_adjust()
 	local m, e = validate_post({ruleids = v_ruleids})
 
-	if not m then 
+	if not m then
 		return reply_e(e)
 	end
 
 	local ids = js.decode(m.ruleids)
-	if not (ids and #ids == 2) then 
+	if not (ids and #ids == 2) then
 		return reply_e("invalid ruleids")
 	end
 
@@ -265,7 +265,7 @@ function cmd_map.acrule_adjust()
 		if not (rid and rid >= 0 and rid < 63) then
 			return reply_e("invalid ruleids")
 		end
-	end 
+	end
 
 	return query_common(m, "acrule_adjust")
 end

@@ -33,7 +33,7 @@ udp_map["acset_set"] = function(p, ip, port)
 		if not r then
 			return nil, e
 		end
-		
+
 		ud:save_log(sql, true)
 		return true
 	]]

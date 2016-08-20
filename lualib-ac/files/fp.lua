@@ -25,17 +25,17 @@ local function contains_any(t, other)
 		end
 	end
 
-	if c2 == 0 then 
-		for k in pairs(other) do 
-			if ma_tmp[k] then 
-				return true 
-			end 
-		end 
-		return false 
-	end 
-	
-	for _, k in ipairs(other) do 
-		if ma_tmp[k] then 
+	if c2 == 0 then
+		for k in pairs(other) do
+			if ma_tmp[k] then
+				return true
+			end
+		end
+		return false
+	end
+
+	for _, k in ipairs(other) do
+		if ma_tmp[k] then
 			return true
 		end
 	end
@@ -53,7 +53,7 @@ local function tomap(arr, k)
 		for _, v in ipairs(arr) do
 			m[v] = 1
 		end
-		return m 
+		return m
 	end
 
 	for _, v in ipairs(arr) do
@@ -128,9 +128,9 @@ local function count(t, expect)
 			cnt = cnt + 1
 		end
 		return cnt
-	end 
+	end
 
-	for _, v in pairs(t) do 
+	for _, v in pairs(t) do
 		if v == expect then
 			cnt = cnt + 1
 		end

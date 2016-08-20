@@ -1,7 +1,7 @@
 local ski = require("ski")
 local tcp = require("ski.tcp")
 local sandutil = require("sandutil")
-local rdsparser = require("rdsparser") 
+local rdsparser = require("rdsparser")
 
 local tomap, toarr, checkarr = sandutil.tomap, sandutil.toarr, sandutil.checkarr
 
@@ -48,24 +48,24 @@ end
 
 function method.publish(ins, topic, payload)
 	assert(ins and topic and payload)
-	if not ins:running() then 
-		return false 
+	if not ins:running() then
+		return false
 	end
 
 	local map = ins.pb_item
 	map.tp, map.pl = topic, payload
 
 	local ret, err = ins.client:write(rdsparser.encode(toarr(map)))
-	if not ret then 
+	if not ret then
 		close_client(ins, err)
 		return false
 	end
-	return true 
+	return true
 end
 
 function method.disconnect(ins)
-	if ins.state ~= st_run then 
-		return 
+	if ins.state ~= st_run then
+		return
 	end
 
 	ins.client:write(rdsparser.encode(toarr({id = "dc"})))
@@ -75,17 +75,17 @@ function method.disconnect(ins)
 	ins.on_disconnect(0, "close by user")
 end
 
-function method.connect(ins, host, port) 
+function method.connect(ins, host, port)
 	local cli, err = tcp.connect(host, port)
-	if not cli then 
+	if not cli then
 		return nil, err
-	end 
+	end
 
 	local m = ins.param
 	if not (m.clientid and #m.clientid > 0 and m.username and #m.username > 0 and m.password and #m.password > 0
-		and m.version and #m.version > 0 and m.keepalive and m.keepalive >= 5 and #m.topics > 0) then 
+		and m.version and #m.version > 0 and m.keepalive and m.keepalive >= 5 and #m.topics > 0) then
 		return nil, "invalid param"
-	end	
+	end
 
 	local _ = (m.will_topic or m.will_payload) and assert(#m.will_topic > 0 and #m.will_payload > 0)
 	local _ = (m.connect_topic or m.connect_payload) and assert(#m.connect_topic > 0 and #m.connect_payload > 0)
@@ -105,15 +105,15 @@ function method.connect(ins, host, port)
 	}
 
 	local ret, err = cli:write(rdsparser.encode(toarr(map)))
-	if err then 
+	if err then
 		cli:close()
 		ins.state = st_stop
-		return nil, err 
+		return nil, err
 	end
 
 	ins.client = cli
 	ins.state = st_run
-	return true 
+	return true
 end
 
 function method.set_callback(ins, name, cb)
@@ -130,34 +130,34 @@ local function timeout_ping(ins)
 			local now = ski.time()
 
 			-- timeout
-			if now - ins.active >= keepalive * 2.1 then 
-				return close_client(ins, "timeout")  
+			if now - ins.active >= keepalive * 2.1 then
+				return close_client(ins, "timeout")
 			end
 
-			if now - last >= keepalive then 
+			if now - last >= keepalive then
 				break
 			end
-			
-			ski.sleep(5) 
+
+			ski.sleep(5)
 		end
 
-		last = ski.time() 
+		last = ski.time()
 		if not ins:running() then
 			break
-		end 
+		end
 
 		-- send ping
 		local ret, err = ins.client:write(s)
 		if err then
-			return close_client(ins, err) 
-		end 
-	end 
+			return close_client(ins, err)
+		end
+	end
 end
 
 local cmd_map = {}
-function cmd_map.pb(ins, map) 
+function cmd_map.pb(ins, map)
 	ins.on_message(map.tp, map.pl)
-	return true 
+	return true
 end
 
 function cmd_map.ca(ins, map)
@@ -168,21 +168,21 @@ function cmd_map.ca(ins, map)
 	return true
 end
 
-function cmd_map.po(ins, map) 
+function cmd_map.po(ins, map)
 	return true
 end
 
 local function run_internal(ins)
 	local dispatch = function(map)
-		local id = map.id 
-		if not id then  
+		local id = map.id
+		if not id then
 			return true
 		end
 		local func = cmd_map[id]
-		if not func then  
-			return true 
+		if not func then
+			return true
 		end
-		
+
 		return func(ins, map)
 	end
 
@@ -192,22 +192,22 @@ local function run_internal(ins)
 		if data then
 			ins.active = ski.time() 			-- recv data, update active time
 			local r, e = decoder:decode(data)
-			if not r then 
+			if not r then
 				close_client(ins, r)
-				return 
+				return
 			end
 
 			for _, arr in ipairs(r) do
 				local r, e = dispatch(tomap(arr))
-				if not r then 
+				if not r then
 					close_client(ins, e)
-					return 
+					return
 				end
 			end
 		end
 
 		-- check recv error
-		if rerr and rerr ~= "timeout" then 
+		if rerr and rerr ~= "timeout" then
 			close_client(ins, rerr)
 			break
 		end
@@ -223,7 +223,7 @@ local function numb() end
 local function new(clientid)
 	assert(clientid)
 	local obj = {
-		-- param 
+		-- param
 		param = {
 			clientid = clientid,
 			username = "",
@@ -237,9 +237,9 @@ local function new(clientid)
 			will_payload = nil,
 		},
 
-		-- client conenction 
+		-- client conenction
 		client = nil,
-		
+
 		data = "",
 		state = st_new,
 		active = ski.time(),
@@ -254,7 +254,7 @@ local function new(clientid)
 	}
 
 	setmetatable(obj, mt)
-	return obj 
+	return obj
 end
 
 return {new = new}

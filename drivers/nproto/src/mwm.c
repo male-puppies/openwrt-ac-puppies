@@ -1,7 +1,7 @@
 #include "mwm.h"
 
 #define printf printk
-#define malloc(m) kmalloc (m, GFP_ATOMIC) 
+#define malloc(m) kmalloc (m, GFP_ATOMIC)
 
 #define MAX_PAT_LEN (32000)
 
@@ -14,7 +14,7 @@ static char mwmInstName[128];
 static struct kmem_cache * hmwm_cache=NULL;
 
 int mwmSysInit(const char * szInstName)
-{ 
+{
 	int len;
 
 	len = strlen( szInstName);
@@ -132,13 +132,13 @@ mwm_t * mwmNew()
 {
 	mwm_t * p = kmem_cache_alloc(hmwm_cache, GFP_ATOMIC);
 	if( !p )
-	{ 
+	{
 		np_error("kmem create failed!\n");
 		return 0;
 	}
 	memset(p,0,sizeof(mwm_t));
 
-	p->msSmallest = MAX_PAT_LEN; 
+	p->msSmallest = MAX_PAT_LEN;
 
 	return p;
 }
@@ -166,12 +166,12 @@ void mwmFree(mwm_t *pv )
 		}
 		else
 		{
-		 	vfree(p->msPatArray);
+			vfree(p->msPatArray);
 		}
 	}
-	if( p->msNumArray ) 
+	if( p->msNumArray )
 	{
-	
+
 		if ((sizeof(HASH_TYPE)* p->msNumPatterns) < KMALLOC_MAX_SIZE)
 		{
 			kfree(p->msNumArray);
@@ -181,7 +181,7 @@ void mwmFree(mwm_t *pv )
 			vfree(p->msNumArray);
 		}
 	}
-	if( p->msHash ) 
+	if( p->msHash )
 	{
 		vfree(p->msHash);
 	}
@@ -189,7 +189,7 @@ void mwmFree(mwm_t *pv )
 	{
 		vfree(p->msShift2 );
 	}
-	
+
 	if(p->msLengths) vfree(p->msLengths);
 
 	p->msPatArray = NULL;
@@ -207,7 +207,7 @@ void mwmFree(mwm_t *pv )
 		list =next;
 	}
 	p->plist = NULL;
-	kmem_cache_free(hmwm_cache, p); 
+	kmem_cache_free(hmwm_cache, p);
 
 	np_info("free rest finished.\n");
 }
@@ -237,7 +237,7 @@ int mwmAddPattern( mwm_t *pv, unsigned char *patt, int len, int offset, int deep
 		return -1;
 	}
 
-	p = (mwm_patt_t*)mwmPatsAlloc(len); 
+	p = (mwm_patt_t*)mwmPatsAlloc(len);
 	if(!p )
 	{
 		np_error("error alloc mem for pattern!\n");
@@ -245,13 +245,13 @@ int mwmAddPattern( mwm_t *pv, unsigned char *patt, int len, int offset, int deep
 	}
 
 	/* de-repeat's */
-	if(unique) 
+	if(unique)
 	{
 		for( plist=ps->plist; plist!=NULL; plist=plist->next )
 		{
 			if( plist->psLen == len )
 			{
-				if( memcmp(patt, plist->psPat, len) == 0 ) 
+				if( memcmp(patt, plist->psPat, len) == 0 )
 				{
 					// np_debug("unique but repeat: %s\n", patt);
 					mwmPatsFree(p);
@@ -279,9 +279,9 @@ int mwmAddPattern( mwm_t *pv, unsigned char *patt, int len, int offset, int deep
 
 	ps->msNumPatterns++;
 
-	if(p->psLen < (unsigned)ps->msSmallest) 
+	if(p->psLen < (unsigned)ps->msSmallest)
 		ps->msSmallest= p->psLen;
-	if(p->psLen > (unsigned)ps->msLargest ) 
+	if(p->psLen > (unsigned)ps->msLargest )
 		ps->msLargest = p->psLen;
 
 	ps->msTotal += p->psLen;
@@ -318,7 +318,7 @@ static void mwmAnalyzePattens( mwm_t * ps )
 
 	if( ps->msLengths )
 	{
-		memset( ps->msLengths, 0, sizeof(int) * (ps->msLargest+1) ); 
+		memset( ps->msLengths, 0, sizeof(int) * (ps->msLargest+1) );
 		for(i=0;i<ps->msNumPatterns;i++)
 		{
 			ps->msLengths[ ps->msPatArray[i].psLen ]++;
@@ -347,23 +347,23 @@ static void mwmPrepHashedPatternGroupsC(mwm_t * ps)
 
 	/*
 	** Mem has Allocated and here Init 1 byte pattern hash table (256)
-	** Init Hash table to default value 
+	** Init Hash table to default value
 	*/
 	for(i=0;i<(int)ps->msNumHashEntries;i++)
 	{
 		ps->msHash1[i] = HASH_EMPTY; /* 0xFF */
 	}
 
-	/* 
-	** Add the patterns to the hash table 
+	/*
+	** Add the patterns to the hash table
 	** msNumArray['x'] = count('x.*');
 	*/
 	for(i=0; i<ps->msNumPatterns; i++)
 	{
 		/* first char only. */
-		hindex = ps->msPatArray[i].psPat[0]; 
+		hindex = ps->msPatArray[i].psPat[0];
 		sindex = ps->msHash1[hindex] = i;
-		ningroup = 1; 
+		ningroup = 1;
 
 		/* sort-ed patts. */
 		while((++i < ps->msNumPatterns) && \
@@ -386,15 +386,15 @@ static void mwmPrepHashedPatternGroupsW(mwm_t * ps)
 
 	/*
 	** Mem has Allocated and here Init 2+ byte pattern hash table (256 * 256)
-	** Init Hash table to default value 
+	** Init Hash table to default value
 	*/
 	for(i=0;i<(int)ps->msNumHashEntries;i++)
 	{
 		ps->msHash[i] = HASH_EMPTY; /* 0xFFFF */
 	}
 
-	/* 
-	** Add the patterns to the hash table 
+	/*
+	** Add the patterns to the hash table
 	** msNumArray['a','b'] = count('ab.*');
 	*/
 	for(i=0;i<ps->msNumPatterns;i++)
@@ -426,13 +426,13 @@ static void mwmPrepBadCharTable(mwm_t * ps)
 	/* Determine largest and smallest pattern sizes */
 	for(i=0; i<ps->msNumPatterns; i++)
 	{
-		if( ps->msPatArray[i].psLen < small_value ) 
+		if( ps->msPatArray[i].psLen < small_value )
 			small_value = ps->msPatArray[i].psLen;
-		if( ps->msPatArray[i].psLen > large_value ) 
+		if( ps->msPatArray[i].psLen > large_value )
 			large_value = ps->msPatArray[i].psLen;
 	}
 
-	m = (unsigned short) small_value; 
+	m = (unsigned short) small_value;
 
 	if( m > 255 ) m = 255;
 
@@ -441,7 +441,7 @@ static void mwmPrepBadCharTable(mwm_t * ps)
 	/* Initialze the default shift table. Max shift of 256 characters */
 	for(i=0;i<256;i++)
 	{
-		ps->msShift[i] = m; 
+		ps->msShift[i] = m;
 	}
 
 	/* Multi-Pattern BAD CHARACTER SHIFT */
@@ -475,23 +475,23 @@ static void mwmPrepBadWordTable(mwm_t * ps)
 	/* Determine largest and smallest pattern sizes */
 	for(i=0; i<ps->msNumPatterns; i++)
 	{
-		if( ps->msPatArray[i].psLen < small_value ) 
+		if( ps->msPatArray[i].psLen < small_value )
 			small_value = ps->msPatArray[i].psLen;
-		if( ps->msPatArray[i].psLen > large_value ) 
+		if( ps->msPatArray[i].psLen > large_value )
 			large_value = ps->msPatArray[i].psLen;
 	}
 
 	m = (unsigned short) small_value; /* Maximum Boyer-Moore Shift */
 
 	/* Limit the maximum size of the smallest pattern to 255 bytes */
-	if( m > 255 ) m = 255; 
+	if( m > 255 ) m = 255;
 
 	ps->msShiftLen = m;
 
 	/* Initialze the default shift table. */
 	for(i=0; i<BW_SHIFT_TABLE_SIZE; i++)
 	{
-		ps->msShift2[i] = (unsigned)(m-1); 
+		ps->msShift2[i] = (unsigned)(m-1);
 	}
 
 	/* Multi-Pattern Bad Word Shift Table Values */
@@ -505,7 +505,7 @@ static void mwmPrepBadWordTable(mwm_t * ps)
 
 			cindex = (HASH16(&ps->msPatArray[i].psPat[k]));
 
-			if( shift < ps->msShift2[ cindex ] ) 
+			if( shift < ps->msShift2[ cindex ] )
 				ps->msShift2[ cindex ] = shift;
 		}
 	}
@@ -520,24 +520,24 @@ static void mwmPrepBadWordTable(mwm_t * ps)
 * with minimal differences at the end of the strings.
 *
 */
-static int mwmGroupMatch2( mwm_t * ps, 
+static int mwmGroupMatch2( mwm_t * ps,
 						  int index,
-						  unsigned char * Tx, 
-						  unsigned char * T, 
+						  unsigned char * Tx,
+						  unsigned char * T,
 						  int Tleft,
 						  void * in, void * out,
 						  int (*match)(void *,void* in, void * out) )
 {
 	int k, sp, ep, st, len, nfound=0;
-	mwm_patt_t * patrn; 
-	mwm_patt_t * patrnEnd; 
+	mwm_patt_t * patrn;
+	mwm_patt_t * patrnEnd;
 
 	/* Process the Hash Group Patterns against the current Text Suffix */
-	patrn = &ps->msPatArray[index]; 
+	patrn = &ps->msPatArray[index];
 	patrnEnd = patrn + ps->msNumArray[index];
 
 	/* Match Loop - Test each pattern in the group against the Text */
-	for( ;patrn < patrnEnd; patrn++ ) 
+	for( ;patrn < patrnEnd; patrn++ )
 	{
 		unsigned char *p, *q;
 
@@ -553,7 +553,7 @@ static int mwmGroupMatch2( mwm_t * ps,
 			continue;
 
 		/* Setup the reverse string compare */
-		k = patrn->psLen - HASH_BYTES - 1; 
+		k = patrn->psLen - HASH_BYTES - 1;
 		q = patrn->psPat + HASH_BYTES;
 		p = T + HASH_BYTES;
 
@@ -561,10 +561,10 @@ static int mwmGroupMatch2( mwm_t * ps,
 		while( k >=0 && (q[k] == p[k])) k--;
 
 		/* We have a content match - call the match routine for further processing */
-		if( k < 0 ) 
+		if( k < 0 )
 		{
 			int cbr = 0;
-			nfound++; 
+			nfound++;
 			if(!in) in = T;
 			if(!out) out = T + len;
 			//printf("mwm: matched %lx %lx, pat: %d '%s'\n", patrn, patrn->ps_data, patrn->psLen, patrn->psPat);
@@ -591,8 +591,8 @@ static int mwmGroupMatch2( mwm_t * ps,
 /*
 ** [CHAR] hash, [CHAR] shifts.
 */
-static int mwmSearchExCC( mwm_t *ps, 
-						 unsigned char * Tx, int n, 
+static int mwmSearchExCC( mwm_t *ps,
+						 unsigned char * Tx, int n,
 						 void *in, void *out,
 						 int(*match)( void * par, void *in, void *out ))
 {
@@ -615,7 +615,7 @@ static int mwmSearchExCC( mwm_t *ps,
 	for( T = Tx, B = Tx + ps->msShiftLen - 1; B < Tend; T++, B++, Tleft-- )
 	{
 		/* Multi-Pattern Bad Character Shift */
-		while( (tshift = pshift[*B]) > 0 ) 
+		while( (tshift = pshift[*B]) > 0 )
 		{
 			B += tshift; T += tshift; Tleft -= tshift;
 			if( B >= Tend ) return nfound;
@@ -628,11 +628,11 @@ static int mwmSearchExCC( mwm_t *ps,
 
 		/* Test for last char in Text, one byte pattern test was done above, were done. */
 		if( Tleft <= 1 )
-			return nfound; 
+			return nfound;
 
 		/* Test if the 1 char prefix of this suffix shows up in the hash table */
 		if( (index = phash[(*T)] ) == HASH_EMPTY)
-			continue; 
+			continue;
 
 		/* Match this group against the current suffix */
 		nfound = mwmGroupMatch2( ps, index, Tx, T, Tleft, in, out, match );
@@ -650,8 +650,8 @@ static int mwmSearchExCC( mwm_t *ps,
 /*
 ** [CHAR] hash, [SHORT] shifts.
 */
-static int mwmSearchExBC( mwm_t *ps, 
-						 unsigned char * Tx, int n, 
+static int mwmSearchExBC( mwm_t *ps,
+						 unsigned char * Tx, int n,
 						 void *in, void *out,
 						 int(*match)( void * par, void *in, void *out ))
 {
@@ -674,7 +674,7 @@ static int mwmSearchExBC( mwm_t *ps,
 	for( T = Tx, B = Tx + ps->msShiftLen - 1; B < Tend; T++, B++, Tleft-- )
 	{
 		/* Multi-Pattern Bad Character Shift */
-		while( (tshift = pshift[*B]) > 0 ) 
+		while( (tshift = pshift[*B]) > 0 )
 		{
 			B += tshift; T += tshift; Tleft -= tshift;
 			if( B >= Tend ) return nfound;
@@ -687,11 +687,11 @@ static int mwmSearchExBC( mwm_t *ps,
 
 		/* Test for last char in Text, one byte pattern test was done above, were done. */
 		if( Tleft == 1 )
-			return nfound; 
+			return nfound;
 
 		/* Test if the 2 char prefix of this suffix shows up in the hash table */
 		if( (index = phash[HASH16(T)]) == HASH_EMPTY)
-			continue; 
+			continue;
 
 		/* Match this group against the current suffix */
 		nfound = mwmGroupMatch2( ps, index,Tx, T, Tleft, in, out, match );
@@ -707,7 +707,7 @@ static int mwmSearchExBC( mwm_t *ps,
 /*
 ** [SHORT] hash, [SHORT] shifts.
 */
-static int mwmSearchExBW( mwm_t *ps, 
+static int mwmSearchExBW( mwm_t *ps,
 						 unsigned char * Tx, int n,
 						 void * in, void * out,
 						 int(*match)( void * par, void * in, void * out ))
@@ -731,17 +731,17 @@ static int mwmSearchExBW( mwm_t *ps,
 	{
 		/* Multi-Pattern Bad Word Shift */
 		tshift = pshift2[HASH16(B-1)];
-		while( tshift ) 
+		while( tshift )
 		{
 			B += tshift; T += tshift; Tleft -= tshift;
-			if( B >= Tend ) 
+			if( B >= Tend )
 				return nfound;
 			tshift = pshift2[HASH16(B-1)];
 		}
 
 		/* Test for last char in Text, we are done, one byte pattern test was done above. */
-		if( Tleft == 1 ) 
-			return nfound; 
+		if( Tleft == 1 )
+			return nfound;
 
 		/* Test if the 2 char prefix of this suffix shows up in the hash table */
 		if( (index = phash[HASH16(T)] ) == HASH_EMPTY ){
@@ -779,13 +779,13 @@ static inline unsigned char * bmhSearch(hbm_t * px, unsigned char * text, int n)
 	pat = px->P;
 	bcShift= px->bcShift;
 
-	t = text + m1; 
-	et = text + n; 
+	t = text + m1;
+	et = text + n;
 
 	/* Handle 1 Byte patterns - it's a faster loop */
 	if( !m1 )
 	{
-		for( ;t<et; t++ ) 
+		for( ;t<et; t++ )
 			if( *t == *pat ) return t;
 		return 0;
 	}
@@ -794,7 +794,7 @@ static inline unsigned char * bmhSearch(hbm_t * px, unsigned char * text, int n)
 	while( t < et )
 	{
 		/* Scan Loop - Bad Character Shift */
-		do 
+		do
 		{
 			t += bcShift[*t];
 			if( t >= et )return 0;
@@ -825,7 +825,7 @@ static inline unsigned char * bmhSearch(hbm_t * px, unsigned char * text, int n)
 NoMatch:
 
 		/* Shift by 1, this replaces the good suffix shift */
-		t++; 
+		t++;
 	}
 
 	return 0;
@@ -833,7 +833,7 @@ NoMatch:
 
 
 /*
-** Search a body of text or data for paterns 
+** Search a body of text or data for paterns
 */
 int mwmSearch(mwm_t *pv,
 			  unsigned char * T, int n,
@@ -847,7 +847,7 @@ int mwmSearch(mwm_t *pv,
 	if (ps->msNumPatterns<1)
 		return 0;//no found
 
-	/* Boyer-Moore */ 
+	/* Boyer-Moore */
 	if( ps->msMethod == MTH_BM )
 	{
 		unsigned char * Tx;
@@ -855,7 +855,7 @@ int mwmSearch(mwm_t *pv,
 		for( i=0; i<ps->msNumPatterns; i++ )
 		{
 			mwm_patt_t *patt = &ps->msPatArray[i];
-			Tx = bmhSearch( patt->psBmh, T, n ); 
+			Tx = bmhSearch( patt->psBmh, T, n );
 			if( Tx )
 			{
 				int s;
@@ -865,7 +865,7 @@ int mwmSearch(mwm_t *pv,
 				s = Tx - T;
 				if(!( s >= pats && s + plen < pate ))
 					continue;
-				
+
 				nfound++;
 				if(match((void *)patt->ps_data, in, out))
 					return nfound;
@@ -879,16 +879,16 @@ int mwmSearch(mwm_t *pv,
 }
 
 /*
-** bcompare:: 
+** bcompare::
 **
-** Perform a Binary comparsion of 2 byte sequences of possibly 
+** Perform a Binary comparsion of 2 byte sequences of possibly
 ** differing lengths.
 **
 ** returns -1 a < b
 ** +1 a > b
 ** 0 a = b
 */
-static int bcompare( unsigned char *a, int alen, unsigned char * b, int blen ) 
+static int bcompare( unsigned char *a, int alen, unsigned char * b, int blen )
 {
 	int stat;
 	if( alen == blen )
@@ -897,13 +897,13 @@ static int bcompare( unsigned char *a, int alen, unsigned char * b, int blen )
 	}
 	else if( alen < blen )
 	{
-		if( (stat=memcmp(a,b,alen)) != 0 ) 
+		if( (stat=memcmp(a,b,alen)) != 0 )
 			return stat;
 		return -1;
 	}
-	else 
+	else
 	{
-		if( (stat=memcmp(a,b,blen)) != 0 ) 
+		if( (stat=memcmp(a,b,blen)) != 0 )
 			return stat;
 		return +1;
 	}
@@ -917,7 +917,7 @@ static int sortcmp( const void * e1, const void * e2 )
 {
 	mwm_patt_t *r1= (mwm_patt_t*)e1;
 	mwm_patt_t *r2= (mwm_patt_t*)e2;
-	return bcompare( r1->psPat, r1->psLen, r2->psPat, r2->psLen ); 
+	return bcompare( r1->psPat, r1->psLen, r2->psPat, r2->psLen );
 }
 
 /*
@@ -937,8 +937,8 @@ int mwmPrepMem(void * pv)
 	{
 		ps->msPatArray = (mwm_patt_t*)vmalloc( sizeof(mwm_patt_t)*ps->msNumPatterns);
 	}
-	
-	if( !ps->msPatArray ) 
+
+	if( !ps->msPatArray )
 	{
 		np_error("kmalloc %d pattern nodes failed!\n", ps->msNumPatterns);
 		goto __err;
@@ -951,9 +951,9 @@ int mwmPrepMem(void * pv)
 	}
 	else
 	{
-		ps->msNumArray = (HASH_TYPE *)vmalloc(sizeof(HASH_TYPE)* ps->msNumPatterns);	
+		ps->msNumArray = (HASH_TYPE *)vmalloc(sizeof(HASH_TYPE)* ps->msNumPatterns);
 	}
-	if( !ps->msNumArray ) 
+	if( !ps->msNumArray )
 	{
 		np_error("vmalloc %d pattern nodes failed\n", ps->msNumPatterns);
 		goto __err;
@@ -967,15 +967,15 @@ int mwmPrepMem(void * pv)
 
 #if HASH_WORD
 		ps->msHash = (HASH_TYPE*)vmalloc( sizeof(HASH_TYPE) * ps->msNumHashEntries);
-		if( !ps->msHash ) 
+		if( !ps->msHash )
 		{
-			np_error("kmalloc for hash failed! may be not enough memory\n"); 
+			np_error("kmalloc for hash failed! may be not enough memory\n");
 			goto __err;
 		}
 		memset(ps->msHash, 0, sizeof(HASH_TYPE) * ps->msNumHashEntries );
 #endif
 
-		ps->msLengths = (int*)vmalloc( sizeof(int) * (ps->msLargest+1) ); 
+		ps->msLengths = (int*)vmalloc( sizeof(int) * (ps->msLargest+1) );
 		if(!ps->msLengths)
 		{
 			np_error("vmalloc for len-i %d info failed.\n", ps->msLargest);
@@ -989,11 +989,11 @@ int mwmPrepMem(void * pv)
 		{
 			np_error("kmalloc for Shift2 failed! may be not enough memory.\n");
 			goto __err;
-		} 
+		}
 		memset(ps->msShift2, 0, BW_SHIFT_TABLE_SIZE*sizeof(char));
 #endif
 
-	} 
+	}
 	return 0;
 
 __err:
@@ -1006,12 +1006,12 @@ __err:
 		}
 		else
 		{
-		 	vfree(ps->msPatArray);
+			vfree(ps->msPatArray);
 		}
 	}
-	if( ps->msNumArray ) 
+	if( ps->msNumArray )
 	{
-	
+
 		if ((sizeof(HASH_TYPE)* ps->msNumPatterns) < KMALLOC_MAX_SIZE)
 		{
 			kfree(ps->msNumArray);
@@ -1021,7 +1021,7 @@ __err:
 			vfree(ps->msNumArray);
 		}
 	}
-	if( ps->msHash ) 
+	if( ps->msHash )
 	{
 		vfree(ps->msHash);
 	}
@@ -1120,12 +1120,12 @@ int mwmPrepPatterns( mwm_t * pv )
 	if( ps->msMethod == MTH_MWM )
 	{
 		/* Sort the patterns */
-		qsort( ps->msPatArray, ps->msNumPatterns, sizeof(mwm_patt_t), sortcmp); 
+		qsort( ps->msPatArray, ps->msNumPatterns, sizeof(mwm_patt_t), sortcmp);
 
 		/* Build the Hash table, and pattern groups, per Wu & Manber */
 #if HASH_CHAR
 		mwmPrepHashedPatternGroupsC(ps);
-#else 
+#else
 		mwmPrepHashedPatternGroupsW(ps);
 #endif
 
@@ -1167,7 +1167,7 @@ __err:
 }
 
 /*
-** mwmGetNpatterns:: 
+** mwmGetNpatterns::
 */
 int mwmGetNumPatterns( void * pv )
 {
@@ -1193,7 +1193,7 @@ void mwmShowStats( void * pv )
 
 	for(i=0;i<ps->msLargest+1;i++)
 	{
-		if( ps->msLengths[i] ) 
+		if( ps->msLengths[i] )
 			printf("Len[%d] : %d patterns\n", i, ps->msLengths[i] );
 	}
 	printf("\n");
@@ -1210,7 +1210,7 @@ static void ShowBytes(unsigned n, unsigned char *p)
 		{
 			np_print("%c",p[i]);
 		}
-		else 
+		else
 			np_print("\\x%2.2X",p[i]);
 	}
 
@@ -1236,17 +1236,17 @@ void mwmGroupDetails(mwm_t *pv)
 		return;
 	}
 
-	np_print("*** MWM-Pattern-STURCT: %d ***\n", k++); 	
+	np_print("*** MWM-Pattern-STURCT: %d ***\n", k++);
 
 	subgroups=0;
 	for(i=0; i<HASH_TABLE_SIZE; i++)
 	{
-#if HASH_CHAR	
-		if((index = ps->msHash1[i]) == HASH_EMPTY) 
-			continue; 
+#if HASH_CHAR
+		if((index = ps->msHash1[i]) == HASH_EMPTY)
+			continue;
 #else
-		if((index = ps->msHash[i]) == HASH_EMPTY) 
-			continue; 	
+		if((index = ps->msHash[i]) == HASH_EMPTY)
+			continue;
 #endif
 
 		patrn = &ps->msPatArray[index]; /* 1st pattern of hash group is here */
@@ -1259,10 +1259,10 @@ void mwmGroupDetails(mwm_t *pv)
 
 		for( m=0; patrn < patrnEnd; m++, patrn++ ) /* Test all patterns in the group */
 		{
-			np_print("\tmwm: Pattern[%d]: <",m); 
+			np_print("\tmwm: Pattern[%d]: <",m);
 			ShowBytes(patrn->psLen,patrn->psPat);
 			np_print(">\n");
-		} 
+		}
 
 		if(m > gmax )
 			gmax = m;
@@ -1275,7 +1275,7 @@ void mwmGroupDetails(mwm_t *pv)
 	np_print(" Sub-Group Max Patterns: %d\n",gmax);
 	np_print(" Sub-Group Avg Patterns: %d\n",gavg);
 
-} 
+}
 
 /*
 **

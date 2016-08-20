@@ -1,15 +1,15 @@
 local mod, levels = "ng", {}
-local unpack = table.unpack and table.unpack or unpack 
+local unpack = table.unpack and table.unpack or unpack
 local host, sys_port, real_port = "127.0.0.1", 50001, 50000
 
-local function logfmt(level, fmt, ...) 
+local function logfmt(level, fmt, ...)
 	local info = debug.getinfo(3, "lS")
-	local src = info.short_src:match(".+/(.*.lua)$") or info.short_src 
+	local src = info.short_src:match(".+/(.*.lua)$") or info.short_src
 	local t = os.date("*t")
 	local vars = {...}
 	local s, func
 	func = function()
-		if info.currentline == 0 then 
+		if info.currentline == 0 then
 			s = string.format("%s %s %02d%02d-%02d:%02d:%02d %s " .. fmt, level, mod, t.month, t.day, t.hour, t.min, t.sec, src, unpack(vars))
 			return
 		end
@@ -23,7 +23,7 @@ end
 local function send_log(s, port)
 	local cli = ngx.socket.udp()
 	local r, e = cli:setpeername(host, port)
-	local _ = r and cli:send(s)	
+	local _ = r and cli:send(s)
 	cli:close()
 end
 
@@ -65,7 +65,7 @@ end
 
 local function setlevel(level)
 	levels = {}
-	for k in string.gmatch(level .. ",", "(.-),") do 
+	for k in string.gmatch(level .. ",", "(.-),") do
 		levels[k] = 1
 	end
 end
@@ -73,11 +73,11 @@ end
 return {
 	debug = debug,
 	info = info,
-	error = error, 
+	error = error,
 	real1 = real1,
 	real2 = real2,
 	real3 = real3,
 	real4 = real4,
-	setlevel = setlevel, 
+	setlevel = setlevel,
 }
 

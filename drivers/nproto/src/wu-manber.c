@@ -1,10 +1,10 @@
 /*
- * wumanber_impl.c -- an efficient WuManber implementation. 
+ * wumanber_impl.c -- an efficient WuManber implementation.
  *
  * Copyright (C) 2010, Juergen Weigert, Novell inc.
  * Distribute,modify under GPLv2 or GPLv3, or perl license.
  *
- * Loosly based on 
+ * Loosly based on
  * ftp://ftp.cs.arizona.edu/agrep/agrep-2.04.tar:mgrep.c
  * which is timestamped 1992-04-11
  *
@@ -95,7 +95,7 @@ void wm_init(struct WuManber *wm, char *name)
 }
 
 /*
- * pat_p[0]=NULL; pat_p[n_pat+1]=NULL recommended, 
+ * pat_p[0]=NULL; pat_p[n_pat+1]=NULL recommended,
  * pat_p[1]...pat_p[n_pat] are valid entries
  */
 void wm_add_pats(struct WuManber *wm, int n_pat, unsigned char **pat_p, int nocase)
@@ -109,65 +109,65 @@ void wm_add_pats(struct WuManber *wm, int n_pat, unsigned char **pat_p, int noca
 	wm->use_bs3  = 0;
 	wm->use_bs1 = 0;
 
-	for(i=0; i< N_SYMB; i++) 
+	for(i=0; i< N_SYMB; i++)
 		wm->tr[i] = i;
 
-	if(wm->nocase) 
+	if(wm->nocase)
 	{
 		for(i='A'; i<= 'Z'; i++) wm->tr[i] = i + 'a' - 'A';
 	}
 
-	for(i=0; i< N_SYMB; i++) 
+	for(i=0; i< N_SYMB; i++)
 		wm->tr1[i] = wm->tr[i] & Mask;
 
 	wm->pat_len = (unsigned int *)wm_malloc((n_pat + 2) * sizeof(unsigned int));
 
 	wm->p_size = 255;		// max that fits in shift_min[] entries.
-	for(i=1 ; i <= wm->n_pat; i++) 
+	for(i=1 ; i <= wm->n_pat; i++)
 	{
 		int l = strlen((char *)wm->patt[i]);
 
 		wm->pat_len[i] = l;
-		if (l!=0 && l < wm->p_size) 
+		if (l!=0 && l < wm->p_size)
 			wm->p_size = l;
 	}
 
-	if (wm->p_size == 0) 
+	if (wm->p_size == 0)
 	{
 		wm_print("%s: the pattern file is empty\n", wm->progname);
 		return;
 	}
 
-	if (n_pat > 100 && wm->p_size > 2) 
+	if (n_pat > 100 && wm->p_size > 2)
 		wm->use_bs3 = 1;
 
-	if (wm->p_size == 1) 
+	if (wm->p_size == 1)
 		wm->use_bs1 = 1;
 
-	for (i=0; i<SHIFT_SZ; i++) 
+	for (i=0; i<SHIFT_SZ; i++)
 		wm->shift_min[i] = wm->p_size - 2;
 
-	for (i=0; i<PAT_HASH_SZ; i++) 
+	for (i=0; i<PAT_HASH_SZ; i++)
 		wm->pat_hash[i] = 0;
 
-	for (i=1; i<= n_pat; i++) 
+	for (i=1; i<= n_pat; i++)
 		pat_prep(wm, i, wm->patt[i]);
 }
 
 
 #if 0
 void mgrep(struct WuManber *wm, int fd)
-{ 
+{
 #define MAXLINE 1024
-#define BLOCKSIZE  8192		
+#define BLOCKSIZE  8192
 	char r_newline = '\n';
-	unsigned char text[2*BLOCKSIZE+MAXLINE]; 
+	unsigned char text[2*BLOCKSIZE+MAXLINE];
 	int buf_end, num_read, start, end, residue = 0;
 
 	text[MAXLINE-1] = '\n';  /* initial case */
 	start = MAXLINE-1;
 
-	while( (num_read = read(fd, text+MAXLINE, BLOCKSIZE)) > 0) 
+	while( (num_read = read(fd, text+MAXLINE, BLOCKSIZE)) > 0)
 	{
 		buf_end = end = MAXLINE + num_read -1 ;
 		while(text[end]  != r_newline && end > MAXLINE) end--;
@@ -177,7 +177,7 @@ void mgrep(struct WuManber *wm, int fd)
 		else        wm_bs3(wm, text, start, end);
 		start = MAXLINE - residue;
 		if(start < 0) {
-			start = 1; 
+			start = 1;
 		}
 		strncpy((char *)text+start, (char *)text+end, residue);
 	} /* end of while(num_read = ... */
@@ -195,12 +195,12 @@ static void wm_bs3(struct WuManber *wm, unsigned char *text, int end)
 {
 	unsigned char *textstart = text;
 	unsigned char *textend = text + end;
-	unsigned char shift; 
+	unsigned char shift;
 
 	unsigned int hash, i, m1, j;
-	int Long = wm->use_bs3; 
+	int Long = wm->use_bs3;
 	int pat_index;
-	int m = wm->p_size; 
+	int m = wm->p_size;
 	int MATCHED = 0;
 	int ONE_MATCH_PER_LINE = wm->one_match_per_line;
 	int ONE_MATCH_PER_OFFSET = wm->one_match_per_offset;
@@ -212,24 +212,24 @@ static void wm_bs3(struct WuManber *wm, unsigned char *text, int end)
 
 	m1 = m - 1;
 	text = text + m1;
-	while (text <= textend) 
+	while (text <= textend)
 	{
 		hash=tr1[*text];
 		hash=(hash<<4)+(tr1[*(text-1)]);
-		if(Long) 
+		if(Long)
 			hash=(hash<<4)+(tr1[*(text-2)]);
 		shift = wm->shift_min[hash];
-		if(shift == 0) 
+		if(shift == 0)
 		{
 			// text points to the m'th char of a candidate pattern
 			hash=0;
-			for(i=0;i<=m1;i++)  
+			for(i=0;i<=m1;i++)
 			{
 				hash=(hash<<4)+(tr1[*(text-i)]);
 			}
 			hash=hash&(PAT_HASH_SZ-1);
 			p = wm->pat_hash[hash];
-			while(p != 0) 
+			while(p != 0)
 			{
 				int l;
 
@@ -237,11 +237,11 @@ static void wm_bs3(struct WuManber *wm, unsigned char *text, int end)
 				p = p->next;
 				qx = text-m1;
 
-				if (text > textend) 
+				if (text > textend)
 					return;
 
 				l = wm->pat_len[pat_index];
-				if (qx+l <= textend) 
+				if (qx+l <= textend)
 				{
 					j = 0;
 					// not checking tr[] when not needed also saves 10%
@@ -255,15 +255,15 @@ static void wm_bs3(struct WuManber *wm, unsigned char *text, int end)
 						wm->n_matches++;
 						MATCHED=1;
 
-						if (wm->cb) 
+						if (wm->cb)
 							wm->cb(pat_index, text-textstart-m1, wm->cb_data);
 
-						if (ONE_MATCH_PER_LINE) 
-							while (*text != '\n') 
+						if (ONE_MATCH_PER_LINE)
+							while (*text != '\n')
 								text++;
 					}
 				}
-				if (ONE_MATCH_PER_OFFSET && MATCHED) 
+				if (ONE_MATCH_PER_OFFSET && MATCHED)
 					break;
 			}
 			MATCHED = 0;
@@ -277,9 +277,9 @@ static void wm_bs1(struct WuManber *wm, unsigned char *text, int end)
 {
 	unsigned char *textend = text + end;
 	unsigned char *textstart = text;
-	int  j; 
+	int  j;
 	struct pat_list *p;
-	int pat_index; 
+	int pat_index;
 	int MATCHED=0;
 	int ONE_MATCH_PER_LINE = wm->one_match_per_line;
 	int ONE_MATCH_PER_OFFSET = wm->one_match_per_offset;
@@ -287,33 +287,33 @@ static void wm_bs1(struct WuManber *wm, unsigned char *text, int end)
 	unsigned char *qx;
 
 	text = text - 1;
-	while (++text <= textend) 
+	while (++text <= textend)
 	{
 		p = wm->pat_hash[*text];
-		while(p != 0) 
+		while(p != 0)
 		{
 			pat_index = p->index;
 			p = p->next;
 			qx = text;
 			j = 0;
 
-			while(tr[wm->patt[pat_index][j]] == tr[*(qx++)]) 
+			while(tr[wm->patt[pat_index][j]] == tr[*(qx++)])
 				j++;
 
-			if(wm->pat_len[pat_index] <= j) 
+			if(wm->pat_len[pat_index] <= j)
 			{
-				if(text >= textend) 
+				if(text >= textend)
 					return;
 
 				wm->n_matches++;
-				if (wm->cb) 
+				if (wm->cb)
 					wm->cb(pat_index, text-textstart, wm->cb_data);
 
-				if (ONE_MATCH_PER_LINE) 
-					while (*text != '\n') 
+				if (ONE_MATCH_PER_LINE)
+					while (*text != '\n')
 						text++;
 			}
-			if (ONE_MATCH_PER_OFFSET && MATCHED) 
+			if (ONE_MATCH_PER_OFFSET && MATCHED)
 				break;
 		}
 		MATCHED = 0;
@@ -326,18 +326,18 @@ static void pat_prep(struct WuManber *wm, int pat_index, unsigned char *Pattern)
 	struct pat_list  *pt, *qt;
 	unsigned hash, Mask=15;
 	m = wm->p_size;
-	for (i = m-1; i>=(1+wm->use_bs3); i--) 
+	for (i = m-1; i>=(1+wm->use_bs3); i--)
 	{
 		hash = (Pattern[i] & Mask);
 		hash = (hash << 4) + (Pattern[i-1]& Mask);
-		if(wm->use_bs3) 
+		if(wm->use_bs3)
 			hash = (hash << 4) + (Pattern[i-2] & Mask);
-		if(wm->shift_min[hash] >= m-1-i) 
+		if(wm->shift_min[hash] >= m-1-i)
 			wm->shift_min[hash] = m-1-i;
 	}
 	if(wm->use_bs1) Mask = 255;  /* 011111111 */
 	hash = 0;
-	for(i = m-1; i>=0; i--)  
+	for(i = m-1; i>=0; i--)
 	{
 		hash = (hash << 4) + (wm->tr[Pattern[i]]&Mask);
 	}
@@ -352,12 +352,12 @@ static void pat_prep(struct WuManber *wm, int pat_index, unsigned char *Pattern)
 unsigned int wm_search(struct WuManber *wm, unsigned char *text, int end)
 {
 	wm->n_matches = 0;
-	if (wm->use_bs1) 
+	if (wm->use_bs1)
 		wm_bs1(wm, text, end);
 	else
 		wm_bs3(wm, text, end);
 
-	// mgrep(wm, text, text_len); 
+	// mgrep(wm, text, text_len);
 	return wm->n_matches;
 }
 
@@ -387,7 +387,7 @@ load_file(char *filename, char *progname, int *lenp)
 
 	int length = 0;
 	int num_read;
-	while((num_read = read(fp, buf+length, 8192)) > 0) 
+	while((num_read = read(fp, buf+length, 8192)) > 0)
 	{
 		length = length + num_read;
 	}
@@ -410,9 +410,9 @@ load_pat_list(char *filename, char *progname, int *npat)
 	unsigned char **ppat = (unsigned char **)wm_malloc((n_pat + 2) * sizeof(char *));
 	int p = 0;
 	ppat[p++] = buf;
-	for (i = 0; i <= length; i++) 
+	for (i = 0; i <= length; i++)
 	{
-		if (buf[i] == '\n') 
+		if (buf[i] == '\n')
 		{
 			buf[i] = '\0';
 			ppat[p++] = buf+i+1;
@@ -420,12 +420,12 @@ load_pat_list(char *filename, char *progname, int *npat)
 	}
 	ppat[p] = NULL;
 
-	if (p>4*PAT_HASH_SZ) 
+	if (p>4*PAT_HASH_SZ)
 	{
-		wm_print("%s: suggested maximum number of patterns is %d, using %d\n", progname, 4*PAT_HASH_SZ, p); 
+		wm_print("%s: suggested maximum number of patterns is %d, using %d\n", progname, 4*PAT_HASH_SZ, p);
 	}
 
-	if (npat) *npat = n_pat; 
+	if (npat) *npat = n_pat;
 	return ppat;
 }
 

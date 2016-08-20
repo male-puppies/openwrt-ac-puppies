@@ -18,34 +18,34 @@ udp_map["timegroup_add"] = function(p, ip, port)
 		local ins = require("mgr").ins()
 		local js   = require("cjson.safe")
 		local conn, ud, p = ins.conn, ins.ud, arg
-		
+
 		-- check dup timegrpname
 		local sql = string.format("select * from timegroup")
 		local rs, e = conn:select(sql) 			assert(rs, e)
 
 		local ids, tmgrpname = {}, p.tmgrpname
-		for _, r in ipairs(rs) do 
+		for _, r in ipairs(rs) do
 			local id, name = r.tmgid, r.tmgrpname
 			table.insert(ids, id)
-			if name == tmgrpname then 
+			if name == tmgrpname then
 				return nil, "exists tmgrpname"
 			end
 		end
 
-		-- get next rid 
+		-- get next rid
 		local id, e = conn:next_id(ids, 256)
 		print(id, e)
-		if not id then 
+		if not id then
 			return nil, e
 		end
 
-		-- insert 
+		-- insert
 		p.tmgid = id
 		local sql = string.format("insert into timegroup %s values %s", conn:insert_format(p))
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
+		if not r then
+			return nil, e
+		end
 
 		ud:save_log(sql, true)
 		return true
@@ -68,9 +68,9 @@ udp_map["timegroup_del"] = function(p, ip, port)
 		local in_part = table.concat(tmgids, ",")
 		local sql = string.format("select tmgrp_ids from acrule")
 		local rs, e = conn:select(sql)
-		 if not rs then 
-		 	return nil, e
-		 end
+		if not rs then
+			return nil, e
+		end
 
 		 -- judge cited id 判断被引用的id号
 		local refer_tmgids = {}
@@ -91,8 +91,8 @@ udp_map["timegroup_del"] = function(p, ip, port)
 
 		local sql = string.format("delete from timegroup where tmgid in (%s)", in_part)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
+		if not r then
+			return nil, e
 		end
 
 		ud:save_log(sql, true)
@@ -116,30 +116,30 @@ udp_map["timegroup_set"] = function(p, ip, port)
 		local tmgid, tmgrpname, tmgrpdesc, days, tmlist = arg.tmgid, arg.tmgrpname, arg.tmgrpdesc, arg.days, arg.tmlist
 		local sql = string.format("select * from timegroup where tmgid=%s or tmgrpname='%s'", tmgid, conn:escape(tmgrpname))
 		local rs, e = conn:select(sql) 			assert(rs, e)
-		if not (#rs == 1 and rs[1].tmgid == tmgid) then 
+		if not (#rs == 1 and rs[1].tmgid == tmgid) then
 			return nil, "invalid tmgid or dup tmgrpname"
 		end
 
 		-- check config change
 		p.tmgid = nil
 		local change, r = false, rs[1]
-		for k, nv in pairs(p) do 
-			if r[k] ~= nv then 
+		for k, nv in pairs(p) do
+			if r[k] ~= nv then
 				change = true
-				break 
+				break
 			end
 		end
 
-		if not change then 
+		if not change then
 			return true
 		end
 
 		-- update
 		local sql = string.format("update timegroup set %s where tmgid=%s", conn:update_format(p), tmgid)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
+		if not r then
+			return nil, e
+		end
 
 		ud:save_log(sql, true)
 		return true

@@ -4,7 +4,7 @@ local mysql = require "resty.mysql"
 
 local function get(dbname)
 	local db, err = mysql:new()
-	if not db then 
+	if not db then
 		return nil, err
 	end
 
@@ -26,14 +26,14 @@ local function get(dbname)
 end
 
 local function reserve(db, res)
-	local _ = db:set_keepalive(10000, 100) or db:close() 
+	local _ = db:set_keepalive(10000, 100) or db:close()
 	return res
-end 
+end
 
 local function reserve_e(db, err)
-	local _ = db:set_keepalive(10000, 100) or db:close() 
+	local _ = db:set_keepalive(10000, 100) or db:close()
 	return nil, err
-end 
+end
 
 local function close(db, e)
 	db:close()
@@ -42,23 +42,23 @@ end
 
 local function transaction_aux(f, db)
 	local r, e = db:query("START TRANSACTION")
-	if not r then 
+	if not r then
 		return nil, e
 	end
 
 	local r, e = f(db)
 	if not r then
 		local r1, e1 = db:query("ROLLBACK")
-		if not r1 then 
+		if not r1 then
 			return nil, e1
-		end 
+		end
 		return nil, e
 	end
 
 	local r, e = db:query("COMMIT")
 	if not r then
 		local r1, e1 = db:query("ROLLBACK")
-		if not r1 then 
+		if not r1 then
 			return nil, e1
 		end
 		return nil, e
@@ -69,12 +69,12 @@ end
 
 local function transaction(f)
 	local db, e = get()
-	if not db then 
+	if not db then
 		return nil, e
 	end
 
 	local r, e = transaction_aux(f, db)
-	if not r then 
+	if not r then
 		close(db)
 		return nil, e
 	end
@@ -84,12 +84,12 @@ end
 
 local function query(f)
 	local db, e = get()
-	if not db then 
+	if not db then
 		return nil, e
 	end
 
 	local r, e = f(db)
-	if not r then 
+	if not r then
 		close(db)
 		return nil, e
 	end
@@ -101,7 +101,7 @@ return {
 	get = get,
 	close = close,
 	reserve = reserve,
-	reserve_e = reserve_e, 
+	reserve_e = reserve_e,
 
 	query = query,
 	transaction = transaction,

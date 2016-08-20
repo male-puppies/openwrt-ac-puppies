@@ -26,18 +26,18 @@ a:focus {
 	text-decoration: none;
 }
 
-.clearfix { 
-	*zoom: 1; 
-} 
-.clearfix:before, 
-.clearfix:after { 
-	display: table; 
-	line-height: 0; 
-	content: ""; 
+.clearfix {
+	*zoom: 1;
 }
-.clearfix:after { 
-	clear: both; 
-} 
+.clearfix:before,
+.clearfix:after {
+	display: table;
+	line-height: 0;
+	content: "";
+}
+.clearfix:after {
+	clear: both;
+}
 body {
     font-family: Microsoft YaHei,"微软雅黑",Helvitica,Verdana,Tohoma,Arial,san-serif;
     background-color: #ab9c8d;
@@ -324,7 +324,7 @@ ul,li {
 	-khtml-opacity: 0.3;
 	opacity: 0.3;
     display: none;
-    z-index: 1000;	
+    z-index: 1000;
 }
 .alertbox {
     position: fixed;

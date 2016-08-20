@@ -7,7 +7,7 @@ local cache = {}
 
 local function get(k)
 	return cache[k]
-end 
+end
 
 local function set(k, f)
 	cache[k] = f
@@ -15,13 +15,13 @@ end
 
 local mac_pattern = (function()
 	local arr = {}
-	for i = 1, 6 do table.insert(arr, "[0-9a-zA-z][0-9a-zA-z]") end 
+	for i = 1, 6 do table.insert(arr, "[0-9a-zA-z][0-9a-zA-z]") end
 	return string.format("^%s$", table.concat(arr, ":"))
 end)()
 
 local ip_pattern = (function()
 	local arr = {}
-	for i = 1, 4 do table.insert(arr, "[0-9][0-9]?[0-9]?") end 
+	for i = 1, 4 do table.insert(arr, "[0-9][0-9]?[0-9]?") end
 	return string.format("^%s$", table.concat(arr, "%."))
 end)()
 
@@ -36,10 +36,10 @@ local function reply(d)
 end
 
 local function merge(to, from)
-	for k, v in pairs(from) do 
-		to[k] = v 
-	end 
-	return to 
+	for k, v in pairs(from) do
+		to[k] = v
+	end
+	return to
 end
 
 local sqlite3_select_code = [[
@@ -53,12 +53,12 @@ end
 
 local function sqlite3_select(sql, timeout)
 	local r, e = sqlite3_select_common(sql, nil, timeout)
-	if not r then 
-		return nil, e 
-	end 
-	
-	local r, e = js.decode(r)   
-	if not r then 
+	if not r then
+		return nil, e
+	end
+
+	local r, e = js.decode(r)
+	if not r then
 		return nil, e
 	end
 
@@ -66,29 +66,29 @@ local function sqlite3_select(sql, timeout)
 		return r.d
 	end
 
-	if r.d ~= "miss" then 
-		return nil, r.d 
+	if r.d ~= "miss" then
+		return nil, r.d
 	end
 
 	local r, e = sqlite3_select_common(sql, sqlite3_select_code, timeout)
-	if not r then 
-		return nil, e 
-	end 
+	if not r then
+		return nil, e
+	end
 
 	local r, e = js.decode(r)
-	if not r then 
+	if not r then
 		return nil, e
 	end
 
 	if not r.e then
-		return r.d 
+		return r.d
 	end
 
 	return nil, r.d
 end
 
 return {
-	get = get, 
+	get = get,
 	set = set,
 	merge = merge,
 	reply = reply,

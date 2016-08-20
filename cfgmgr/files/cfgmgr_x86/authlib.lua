@@ -3,14 +3,14 @@ local log = require("log")
 local nos = require("luanos")
 local share = require("share")
 
-local map2arr, arr2map, limit = share.map2arr, share.arr2map, share.limit 
+local map2arr, arr2map, limit = share.map2arr, share.arr2map, share.limit
 local set_status, set_gid_ucrc = nos.user_set_status, nos.user_set_gid_ucrc
 local escape_map, escape_arr, empty = share.escape_map, share.escape_arr, share.empty
 
 local function find_missing(myconn, ukey_arr)
 	local ukey_map = arr2map(ukey_arr, "ukey")
 	local sql = string.format("select ukey from memo.online where ukey in (%s)", escape_map(ukey_map, "ukey"))
-	local rs, e = myconn:query(sql) 		assert(rs, e) 
+	local rs, e = myconn:query(sql) 		assert(rs, e)
 	local exists, miss, find = {}, {}
 	for _, r in ipairs(rs) do
 		local ukey = r.ukey
@@ -43,7 +43,7 @@ local function insert_online(myconn, ukey_map, authtype)
 
 	local sql = string.format([[insert into memo.online (ukey,type,username,ip,mac,rid,gid,login,active) values %s on duplicate key update type='%s']], table.concat(arr, ","), authtype)
 	r, e = myconn:query(sql) 	assert(r, e)
-end 
+end
 
 local function keepalive(myconn, exists)
 	local s = escape_map(exists, "ukey")
@@ -52,9 +52,9 @@ local function keepalive(myconn, exists)
 end
 
 return {
-	find_missing = find_missing, 
-	set_online = set_online, 
-	set_offline = set_offline, 
-	insert_online = insert_online, 
+	find_missing = find_missing,
+	set_online = set_online,
+	set_offline = set_offline,
+	insert_online = insert_online,
 	keepalive = keepalive,
 }

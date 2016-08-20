@@ -2,7 +2,7 @@ local cache = {}
 
 local function get(k)
 	return cache[k]
-end 
+end
 
 local function set(k, f)
 	cache[k] = f

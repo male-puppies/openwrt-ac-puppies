@@ -1,4 +1,4 @@
-local luv = require("luv") 
+local luv = require("luv")
 local ski = require("ski.core")
 
 local ski_cur_thread = ski.cur_thread
@@ -25,19 +25,19 @@ end
 
 local function loadavg()
 	return luv.loadavg()
-end 
+end
 
 local function exepath()
 	return luv.exepath()
-end 
+end
 
 local function cwd()
 	return luv.cwd()
-end 
+end
 
 local function chdir()
 	return luv.chdir()
-end 
+end
 
 local function getpid()
 	return luv.getpid()
@@ -48,22 +48,22 @@ local function spawn(path, ...)
 
 	local cur = ski_cur_thread()
 	local stdout = luv.new_pipe(false)
-	
+
 	local data, finish, handle, pid = "", false
 	handle, pid = luv.spawn(path, {args = args, stdio = {nil, stdout}}, function(code, sig)
 		assert(not finish)
 		finish = true, luv.close(stdout), luv.close(handle)
 		return cur:setdata({data, code}):wakeup()
 	end)
-	
+
 	if not handle then
 		finish = true, luv.close(stdout)
-		return nil, pid 
+		return nil, pid
 	end
 
 	local ret, err = luv.read_start(stdout, function(err, chunk)
 		assert(not finish)
-		if chunk then 
+		if chunk then
 			data = data .. chunk
 		end
 		local _ = err and io.strderr:write(err, "\n")
@@ -71,7 +71,7 @@ local function spawn(path, ...)
 
 	if not ret then
 		finish = true, luv.close(stdout), luv.close(handle)
-		return nil, err 
+		return nil, err
 	end
 
 	return cur:yield()

@@ -19,9 +19,9 @@ local function gen_dispatch_tcp(tcp_map)
 end
 
 local function gen_reply(udpsrv)
-	return function(ip, port, r, d) 
+	return function(ip, port, r, d)
 		udpsrv:send(ip, port, js.encode({status = r, data = d}))
-		return true 
+		return true
 	end
 end
 

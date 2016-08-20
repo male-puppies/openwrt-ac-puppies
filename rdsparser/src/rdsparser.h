@@ -18,8 +18,8 @@ typedef struct rdsst rdsst;
 char *rds_encode(rds_str *arr, int count, int *len);
 
 rdsst *rds_new();
-void rds_free(rdsst *rds); 
+void rds_free(rdsst *rds);
 int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *res);
 void rds_result_free(rds_result *res);
-int rds_empty(rdsst *rds); 
+int rds_empty(rdsst *rds);
 #endif

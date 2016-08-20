@@ -22,7 +22,7 @@ local v_action = gen_validate_str(1, 8, true)
 local v_content = gen_validate_str(1, 1024)
 local v_enable = gen_validate_num(0,1)
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -40,38 +40,38 @@ function cmd_map.acset_get()
 	local p = ngx.req.get_uri_args()
 	local token = p.token
 	local r, e = check_method_token("GET", token)
-	if not r then 
+	if not r then
 		return nil, e
 	end
 
-	local r, e = validate_token(token)			
+	local r, e = validate_token(token)
 	if not r then
 		return nil, e
 	end
 
 	local setclass, action = p.setclass, p.action
 	local sql = string.format("select * from acset where setclass = '%s' and action = '%s'", setclass, action)
-    	local r, e = mysql_select(sql)
-    	return r and reply(r) or reply_e(e)
+		local r, e = mysql_select(sql)
+		return r and reply(r) or reply_e(e)
 end
 
 -- ip地址的校验
 local range_patterns = {
     {
-        pattern = "^(.+)/(%d+)$", 
+        pattern = "^(.+)/(%d+)$",
         func = function(ip, mask)
             local bits = tonumber(mask)
             return bits and bits > 0 and bits < 32 and ip:find(ip_pattern)
         end
     },
     {
-        pattern = "^(.+)%-(.+)$", 
+        pattern = "^(.+)%-(.+)$",
         func = function(ip, ip2)
             return ip:find(ip_pattern) and ip2:find(ip_pattern)
         end
     },
-    {   
-        pattern = "^(.+)$", 
+    {
+        pattern = "^(.+)$",
         func = function(ip)
             return ip:find(ip_pattern)
         end
@@ -80,23 +80,23 @@ local range_patterns = {
 
 local function validate_ranges(s)
     local ranges = js.decode(s)
-    if not ranges then 
+    if not ranges then
         return nil, "invalid ranges"
     end
 
     for _, part in ipairs(ranges) do
-        for _, r in ipairs(range_patterns) do 
+        for _, r in ipairs(range_patterns) do
             local a, b = part:match(r.pattern)
             if a then
-                if not r.func(a, b) then 
+                if not r.func(a, b) then
                     return nil, "invalid ranges"
-                end 
-                break 
+                end
+                break
             end
         end
     end
 
-    return true 
+    return true
 end
 
 -- mac地址的校验

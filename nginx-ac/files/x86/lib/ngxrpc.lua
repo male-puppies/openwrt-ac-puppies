@@ -18,10 +18,10 @@ local function query_aux(host, port, key, code, arg)
 		if s then
 			data = data .. s
 			-- print(data)
-			if not state then 
+			if not state then
 				-- HTTP/1.1 200 OK
 				state = data:match("^HTTP/1.1 (%d+) ")
-				if state and state ~= "200" then 
+				if state and state ~= "200" then
 					return nil, state
 				end
 			end
@@ -30,20 +30,20 @@ local function query_aux(host, port, key, code, arg)
 			if not conent_length then
 				conent_length = tonumber(string.match(data, "Content%-Length: (%d+)\r\n"))
 			end
-		end 
+		end
 
 		if e then
 			cli:close()
-			break 
-		end 
+			break
+		end
 	end
 
-	if not (state and conent_length) then 
+	if not (state and conent_length) then
 		return nil, "invalid response"
 	end
 
 	local s, e = data:find("\r\n\r\n")
-	if #data - e ~= conent_length then 
+	if #data - e ~= conent_length then
 		return nil, "invalid Content-Length"
 	end
 	-- print(data)
@@ -54,12 +54,12 @@ local method = {}
 local mt = {__index = method}
 function method:query(key, code, arg)
 	local r, e = query_aux(self.host, self.port, key, nil, arg)
-	if not r then 
+	if not r then
 		return nil, e
 	end
 
 	local r, e = js.decode(r)
-	if not r then 
+	if not r then
 		return nil, e
 	end
 
@@ -67,22 +67,22 @@ function method:query(key, code, arg)
 		return r.d
 	end
 
-	if r.d ~= "miss" then 
-		return nil, r.d 
+	if r.d ~= "miss" then
+		return nil, r.d
 	end
 
 	local r, e = query_aux(self.host, self.port, key, code, arg)
 	if not r then
 		return nil, e
-	end 
+	end
 
 	local r, e = js.decode(r)
-	if not r then 
+	if not r then
 		return nil, e
 	end
 
 	if not r.e then
-		return r.d 
+		return r.d
 	end
 
 	return nil, r.d
