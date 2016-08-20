@@ -1,17 +1,21 @@
-local ski = require("ski")
-local log = require("log")
-local nos = require("luanos")
-local js = require("cjson.safe")
-local common = require("common")
+local fp 		= require("fp")
+local ski 		= require("ski")
+local log 		= require("log")
+local nos 		= require("luanos")
+local js 		= require("cjson.safe")
+local common 	= require("common")
+local cfg 		= require("cfg")
 
-local map2arr, arr2map, limit = common.map2arr, common.arr2map, common.limit 
-local set_status, set_gid_ucrc = nos.user_set_status, nos.user_set_gid_ucrc
+local map2arr, arr2map, limit 		= common.map2arr, common.arr2map, common.limit
+local set_status, set_gid_ucrc 		= nos.user_set_status, nos.user_set_gid_ucrc
 local escape_map, escape_arr, empty = common.escape_map, common.escape_arr, common.empty
+local set_module = cfg.set_module
+
 
 local function find_missing(simple, ukey_arr)
 	local ukey_map = arr2map(ukey_arr, "ukey")
 	local sql = string.format("select ukey from memo.online where ukey in (%s)", escape_map(ukey_map, "ukey"))
-	local rs, e = simple:mysql_select(sql) 		assert(rs, e) 
+	local rs, e = simple:mysql_select(sql) 		assert(rs, e)
 	local exists, miss, find = {}, {}
 	for _, r in ipairs(rs) do
 		local ukey = r.ukey
@@ -38,13 +42,21 @@ end
 local function insert_online(simple, ukey_map, authtype)
 	local arr, r, e = {}
 	local now = math.floor(ski.time())
+	print(js.encode(ukey_map))
 	for ukey, p in pairs(ukey_map) do
-		table.insert(arr, string.format("('%s','%s','%s','%s','%s',%s,%s,%s,%s)", p.ukey, authtype, p.username, p.ip, p.mac, p.rid, p.gid, now, now))
+		table.insert(arr, string.format("('%s','%s','%s','%s','%s','%s',%s,%s,%s,%s)", p.ukey, authtype, p.username, p.ip, p.mac, p.ext or '{}', p.rid, p.gid, now, now))
 	end
 
-	local sql = string.format([[insert or replace into memo.online (ukey,type,username,ip,mac,rid,gid,login,active) values %s]], table.concat(arr, ","))
-	local r, e = simple:mysql_execute(sql) 		assert(r, e)
-end 
+	local sql = string.format([[insert or replace into memo.online (ukey,type,username,ip,mac,ext,rid,gid,login,active) values %s]], table.concat(arr, ","))
+	print(sql)
+	local r, e = simple:mysql_execute(sql)
+	print(r, e)
+		assert(r, e)
+
+	fp.each(ukey_map, function(k)
+		set_module(k, "authtype")
+	end)
+end
 
 local function keepalive(simple, exists)
 	local s = escape_map(exists, "ukey")
@@ -71,18 +83,19 @@ local function gen_dispatch_tcp(tcp_map)
 end
 
 local function gen_reply(udpsrv)
-	return function(ip, port, r, d) 
+	return function(ip, port, r, d)
 		udpsrv:send(ip, port, js.encode({status = r, data = d}))
-		return true 
+		return true
 	end
 end
+
 return {
-	gen_reply = gen_reply,
-	keepalive = keepalive,
-	set_online = set_online, 
-	set_offline = set_offline, 
-	find_missing = find_missing, 
-	insert_online = insert_online,
-	gen_dispatch_udp = gen_dispatch_udp,
-	gen_dispatch_tcp = gen_dispatch_tcp,
+	gen_reply 			= gen_reply,
+	keepalive 			= keepalive,
+	set_online 			= set_online,
+	set_offline 		= set_offline,
+	find_missing 		= find_missing,
+	insert_online 		= insert_online,
+	gen_dispatch_udp 	= gen_dispatch_udp,
+	gen_dispatch_tcp 	= gen_dispatch_tcp,
 }

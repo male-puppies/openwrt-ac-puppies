@@ -1,15 +1,15 @@
-package.path = "/usr/share/auth-web/?.lua;" .. package.path 
-local js = require("cjson.safe")
-local log = require("common.log")
-local query = require("common.query")
-local authlib = require("auth.authlib")
+package.path = "/usr/share/auth-web/?.lua;" .. package.path
+local js 		= require("cjson.safe")
+local log 		= require("common.log")
+local query 	= require("common.query")
+local authlib 	= require("auth.authlib")
 
-local query_u = query.query_u
-local reply, reply_e = authlib.reply, authlib.reply_e
-local ip_pattern, mac_pattern = authlib.ip_pattern, authlib.mac_pattern
+local query_u 					= query.query_u
+local reply, reply_e 			= authlib.reply, authlib.reply_e
+local ip_pattern, mac_pattern 	= authlib.ip_pattern, authlib.mac_pattern
 
-local uri = ngx.var.uri
-local host, port = "127.0.0.1", 50002 	-- 进程 authd
+local uri 			= ngx.var.uri
+local host, port 	= "127.0.0.1", 50002 	-- 进程 authd
 
 -- 检查获取查询字符串中的必备参数
 local function check_common_query_vars()
@@ -22,7 +22,7 @@ local function check_common_query_vars()
 	end
 
 	mac = mac:gsub("%-", ":"):lower()
-	if not (ip:find(ip_pattern) and mac:find(mac_pattern) and uid >= 0 and magic >= 0 and rid >= 0) then 
+	if not (ip:find(ip_pattern) and mac:find(mac_pattern) and uid >= 0 and magic >= 0 and rid >= 0) then
 		return nil, "invalid param"
 	end
 
@@ -34,7 +34,7 @@ local function check_common_query_vars()
 	return {cmd = uri, magic = magic, uid = uid, ip = ip, mac = mac, rid = rid}
 end
 
-local function query_common(param) 
+local function query_common(param)
 	local r, e = query_u(host, port, param)
 	local _ = not r and reply_e(e) or ngx.say(r)
 end
@@ -42,7 +42,7 @@ end
 local function default_handler()
 	local r, e = check_common_query_vars()
 	local _ = not r and reply_e(e) or query_common(r)
-end 
+end
 
 local uri_map = {}
 uri_map["/authopt"] 	= default_handler
@@ -66,8 +66,62 @@ uri_map["/authopt"] = function()
 	return ngx.say("not implement")
 end
 
+uri_map["/wxlogin2info"] = function()
+	local r, e = check_common_query_vars()
+
+	ngx.req.read_body()
+	local p = ngx.req.get_post_args()
+	ngx.log(ngx.ERR, js.encode(p))
+	if not (p and p.now) then
+		return reply(1, "invalid param")
+	end
+	ngx.log(ngx.ERR, "----------------------")
+	r.now = p.now
+	return query_common(r)
+end
+
+
+local success_fields = {
+	tid 	= function(v) return #v == 54 and v or nil end,
+	sign 	= function(v) return #v == 32 and v or nil	end,
+	openId 	= function(v) return #v > 10 and v or nil end,
+	extend 	= function(v) return v:find("^.+,[%d]+$") and v or nil end,
+	timestamp = function(v)	return #v == 10 and tonumber(v) and v or nil end,
+}
+
+--[[
+微信认证成功后的回调函数
+@param : {
+	"sign":"016a4c3f2c06ecff12f482354b0e4e0e",
+	"extend":"754,1510,596",
+	"timestamp":"1471575829",
+	"tid":"01000763362be566fc128e8695eba22daa71402fdcf1f5b35763ff",
+	"openId":"oDN6gw-7L4k3sLCXGyKp5t09_tvg"
+}
+]]
 uri_map["/weixin2_login"] = function()
-	return ngx.say("not implement")
+	local p = ngx.req.get_uri_args()
+	if type(p) ~= "table" then
+		return ngx.exit(404)
+	end
+
+	local m = {}
+	for field, f in pairs(success_fields) do
+		local v = p[field]
+		if not v then ngx.log(ngx.ERR, "111")
+			return ngx.exit(404)
+		end
+
+		local v = f(v)
+		if not v then ngx.log(ngx.ERR, "111", field, v)
+			return ngx.exit(404)
+		end
+
+		m[field] = v
+	end
+
+	m.cmd = uri
+	return query_common(m)
 end
 
 uri_map["/PhoneNo"] = function()
@@ -76,19 +130,19 @@ end
 
 uri_map["/cloudlogin"] = function()
 	local r, e = check_common_query_vars()
-	if not r then 
+	if not r then
 		return reply_e(e)
-	end 
+	end
 
-	-- 获取并检查post参数username, password 
+	-- 获取并检查post参数username, password
 	ngx.req.read_body()
 	local p = ngx.req.get_post_args()
-	if not p then 
+	if not p then
 		return reply(1, "invalid param")
 	end
 
 	local username, password = p.username, p.password
-	if not (username and password and #username > 0 and #password > 0) then 
+	if not (username and password and #username > 0 and #password > 0) then
 		return reply(1, "invalid param")
 	end
 
@@ -98,9 +152,9 @@ uri_map["/cloudlogin"] = function()
 end
 
 local f = uri_map[uri]
-if f then 
+if f then
 	return f()
-end 
+end
 
 ngx.exit(404)
 
