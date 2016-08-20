@@ -21,7 +21,6 @@ local modules = {
 	acrule		=	require("acrule"),
 	timegroup 	= 	require("timegroup"),
 	acset 		= 	require("acset"),
-	wlanssid 	= 	require("wlanssid"),
 }
 
 local encode, decode = js.encode, js.decode
