@@ -18,9 +18,8 @@ local ipset_map = {
 	["MacWhiteList"] = {set_key = "MacWhiteListSetName", set_type = "hash:mac"},
 	["IpWhiteList"] = {set_key = "IpWhiteListSetName", set_type = "hash:ip"} ,
 	["MacBlackList"] = {set_key = "MacBlackListSetName", set_type = "hash:mac"},
-	["IpBlackList"] = {set_key = "IpBlackListSetName", set_type = "hash:mac"},
+	["IpBlackList"] = {set_key = "IpBlackListSetName", set_type = "hash:ip"},
 }
-
 
 --[[
 Both rules and sets support disable and enable option.
@@ -140,8 +139,6 @@ local function array2set(array)
 	return new_set
 end
 
-
-
 --[[
 compare rule one by one
 --]]
@@ -238,15 +235,17 @@ local function reference_ipset(type_key, config, ref)
 	end
 	ref_map[type_key] = item_map
 
-	local ref_cmd = string.format("ruletalbe -s '%s'", js.encode(ref_map))
-	print("reference：", ref_cmd)
+	local ref_cmd = string.format("ruletable -s '%s'", js.encode(ref_map)) assert(ref_cmd)
+	--print(ref and "reference：" or "dereference: ", ref_cmd)
+	os.execute(ref_cmd)
 	return true
 end
 
 local function destroy_ipset(config)
 	for _, info in ipairs(config) do
-		local destroy_cmd = string.format("ipset destroy '%s'", info.ipset_name)
-		print("destroy:", destroy_cmd)
+		local destroy_cmd = string.format("ipset destroy '%s'", info.ipset_name) assert(destroy_cmd)
+		--print("destroy:", destroy_cmd)
+		os.execute(destroy_cmd)
 	end
 	return true
 end
@@ -254,23 +253,23 @@ end
 
 local function create_ipset(config)
 	for _, info in ipairs(config) do 
-		local create_cmd = string.format("ipset create '%s' '%s'", info.ipset_name, info.ipset_type)
-		print("create:", create_cmd)
+		local create_cmd = string.format("ipset create '%s' '%s'", info.ipset_name, info.ipset_type) assert(create_cmd)
+		--print("create:", create_cmd)
+		os.execute(create_cmd)
 	end
 	return true
 end
 
 local function update_ipset(config)
-	print("ipset:----",js.encode(config))
 	for _, info in ipairs(config) do
 		for _, item in ipairs(info.ipset_list) do
-			local add_cmd = string.format("ipset add '%s' '%s'", info.ipset_name, item)
-			print("add:", add_cmd)
+			local add_cmd = string.format("ipset add '%s' '%s'", info.ipset_name, item) assert(add_cmd)
+			--print("add:", add_cmd)
+			os.execute(add_cmd)
 		end
 	end
 	return true
 end
-
 
 --[[
 commit config to kernel
@@ -295,9 +294,9 @@ commit_config["Rule"] = function(cate_arr, new_config)
 		local rule_key = item.cate.."Rule"
 		print("\n---!!!!------rule_cnt:", #(new_config[item.cate]))
 		cate_config[rule_key] = new_config[item.cate]
-		local cmd_str = string.format("ruletalbe -s '%s'", js.encode(cate_config)) assert(cmd_str)
+		local cmd_str = string.format("ruletable -s '%s'", js.encode(cate_config)) assert(cmd_str)
 		print("\n\n",cmd_str)
-		--os.execute(cmd_str)
+		os.execute(cmd_str)
 	end
 
 	return true
@@ -312,7 +311,7 @@ commit_config["Set"] = function(cate_arr, new_config)
 	local _ = assert(cate_arr), assert(new_config)
 	local cate_config, ret, err = {}
 
-	print("\n\ncommit_config[set] cate_arr:",js.encode(cate_arr))
+	--print("\n\ncommit_config[set] cate_arr:",js.encode(cate_arr))
 	if #cate_arr == 0 then
 		return true
 	end
@@ -336,8 +335,8 @@ commit_config["Set"] = function(cate_arr, new_config)
 		--print("commit_item:", js.encode(commit_item))
 		table.insert(cate_config[item.cate], commit_item)
 	end
-	print("\n\ncommit_config[set] cate_config:",js.encode(cate_config))
-	--dereference in kernel,destroy ipset, create ipset, reference in kernel, update ipset
+	--print("\n\ncommit_config[set] cate_config:",js.encode(cate_config))
+	--dereference allset in kernel,destroy ipset, create ipset, update ipset, reference allset in kernel
 	for cate, config in pairs(cate_config) do
 		local cate_key = cate.."Set"
 		ret, err = reference_ipset(cate_key, config, false)
@@ -355,12 +354,12 @@ commit_config["Set"] = function(cate_arr, new_config)
 			return nil, err
 		end
 
-		ret, err = reference_ipset(cate_key, config, true)
+		ret, err = update_ipset(config)
 		if not ret then
 			return nil, err
 		end
 
-		ret, err = update_ipset(config)
+		ret, err = reference_ipset(cate_key, config, true)
 		if not ret then
 			return nil, err
 		end
@@ -368,7 +367,6 @@ commit_config["Set"] = function(cate_arr, new_config)
 
 	return true
 end
-
 
 --[[
 compare config:
@@ -574,7 +572,6 @@ translate_config["Set"] = function(raw_set_config)
 	return set_config
 end
 
-
 local fetch_raw_config = {}
 --fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
@@ -624,7 +621,6 @@ fetch_raw_config["Rule"] = function()
 				end
 				table.insert(tmgrps, {days = days, tmlist = tmlist})
 			end
-			--print("----sql:", sql, "data:", js.encode(detail_arr))
 
 			if tmgrps and #tmgrps > 0 then
 				--notice: translate ids to detail info
@@ -694,15 +690,13 @@ local function load_config()
 		local tmp_config, err = func()
 		if not tmp_config then
 			log.error("fetch config(type=%s) failed for %s", config_type, err)
-			print("load_config err:", err)
 			return false
 		end
 		raw_config[config_type] = tmp_config
 	end
 
 	all_raw_ac_config = raw_config
-	print("-----------load_config:", js.encode(all_raw_ac_config))
-	log.info("load config sucess")
+	--print("load config sucess")
 	return true
 end
 
@@ -741,19 +735,16 @@ local function check_config_update()
 			log.error("compare config(type=%s) failed for %s", config_type, err)
 			return false
 		end
-		--print("\n\n\n----compare res----:", js.encode(res))
 		local _ = #res == 0 and print("nothing changed, no need to reset for ",config_type)
 
 		if #res > 0 then
+			log.debug("compare res:%s", js.encode(res))
 			res, err = commit_func(res, new_ac_config[config_type])
 			if not res then
 				log.error("commit config(type=%s) failed for %s", config_type, err)
-				--print("commit config error: ", config_type, " ", err)
 				return false
 			end
-			--print("----commit_func res----:", js.encode(res))
-			-- print("\n\n\n--1--cur_ac_config:", config_type, js.encode(cur_ac_config[config_type]))
-			-- print("\n\n\n--1--new_ac_config:", config_type, js.encode(new_ac_config[config_type]))
+			log.debug("commit acconfig success")
 			--notice:update config after commit success
 			cur_ac_config[config_type] = new_ac_config[config_type]
 		end
