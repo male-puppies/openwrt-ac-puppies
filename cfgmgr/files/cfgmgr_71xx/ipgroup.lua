@@ -107,10 +107,10 @@ udp_map["ipgroup_del"] = function(p, ip, port)
 		local conn, ud = ins.conn, ins.ud
 		local ipgids = js.decode(arg.ipgids)
 
-		-- TODO check more related tables
 		local in_part = table.concat(ipgids, ",")
-		local sql = string.format("select sum(count) as count from (select 1,count(*) as count from authrule where ipgid in (%s) union select 2,count(*) as count from authrule where ipgid in (%s)) t;", in_part, in_part)
 
+		-- TODO check authrule tables
+		local sql = string.format("select sum(count) as count from (select 1,count(*) as count from authrule where ipgid in (%s) union select 2,count(*) as count from authrule where ipgid in (%s)) t;", in_part, in_part)
 		local rs, e = conn:select(sql)
 		if not rs then 
 			return nil, e
@@ -119,6 +119,31 @@ udp_map["ipgroup_del"] = function(p, ip, port)
 		local count = tonumber(rs[1].count)
 		if count ~= 0 then 
 			return nil, "referenced"
+		end
+
+		-- TODO check acrule tables
+		local ipgid_map = {"src_ipgids", "dest_ipgids"}
+		for _, v in ipairs(ipgid_map) do
+			local sql = string.format("select %s from acrule", v)
+			local rs, e = conn:select(sql)
+			if not rs then
+				return nil, e
+			end
+
+			-- judge cited id
+			local refer_ipgids = {}
+			for _, ipgrp in ipairs(rs) do
+				local detail = js.decode(ipgrp[v]) 	assert(detail)
+				for _, ipgrpid in ipairs(detail) do
+					refer_ipgids[ipgrpid] = true
+				end
+			end
+			local _ = #refer_ipgids > 0 and  table.sort(refer_ipgids)
+			for _, ipgrpid in ipairs(ipgids) do
+				if refer_ipgids[ipgrpid] then
+					return nil, "referenced"
+				end
+			end
 		end
 
 		local sql = string.format("delete from ipgroup where ipgid in (%s)", in_part)
