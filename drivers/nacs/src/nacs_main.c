@@ -39,10 +39,11 @@ failed:
 
 static void __exit nacs_fini(void)
 {
+	NACS_INFO("nacs_fini...\n");
 	nacs_ipc_fini();
 	nacs_table_fini();
 	klog_fini(nacs_klog_fd);
-	NACS_INFO("nacs_fini successs\n");
+
 }
 
 module_init(nacs_init);

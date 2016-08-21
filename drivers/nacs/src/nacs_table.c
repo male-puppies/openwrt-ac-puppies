@@ -502,9 +502,22 @@ static struct ac_set_info *alloc_ac_set_info(unsigned int size)
 
 static void free_ac_set_info(struct ac_set_info *info)
 {
-	if (info) {
-		kvfree(info);
+	int i = 0, entry_offset = 0;
+	void *entry_base = NULL;
+	struct ac_hybrid_entry *entry = NULL;
+	if (info == NULL) {
+		return;
 	}
+	entry_base = info->entries;
+	entry_offset = AC_ALIGN(sizeof(struct ac_hybrid_entry));
+	for (i = 0; i < info->number; ++i) {
+		entry = (struct ac_hybrid_entry*)(entry_base + i * entry_offset);
+		if (entry->ipset_id != IPSET_INVALID_ID) {
+			NACS_INFO("put ipset index:%u\n", entry->ipset_id);
+			ip_set_put_byindex(&init_net, entry->ipset_id);
+		}
+	}
+	kvfree(info);
 }
 
 
@@ -566,19 +579,7 @@ static int  __do_replace_set(struct ac_table *table, struct ac_set_info *new_inf
 	write_unlock_bh(&table->lock);
 	atomic_inc(&table->magic);
 	if (old_info) {
-		int i = 0, entry_offset = 0;
-		void *entry_base = NULL;
-		struct ac_hybrid_entry *entry = NULL;
-
-		entry_base = old_info->entries;
-		entry_offset = AC_ALIGN(sizeof(struct ac_hybrid_entry));
-		for (i = 0; i < old_info->number; ++i) {
-			entry = (struct ac_hybrid_entry*)(entry_base + i * entry_offset);
-			if (entry->ipset_id != IPSET_INVALID_ID) {
-				ip_set_put_byindex(&init_net, entry->ipset_id);
-			}
-		}
-		kvfree(old_info);
+		free_ac_set_info(old_info);
 	}
 	display_ac_set_kernel(table->priv_sets[new_info->category]);
 	return 0;
@@ -858,7 +859,6 @@ static int ac_zone_check(
 	int number, 
 	flow_id_t zone_id) 
 {
-
 	int i = 0, matched = 0;
 
 	for (i = 0; i < number; ++i) {
@@ -1357,6 +1357,7 @@ fail:
 static void table_fini(void)
 {
 	int i = 0;
+	write_lock_bh(&nac_table.lock);
 	for (i = 0; i < RULE_TYPE_MAX; ++i) {
 		if (nac_table.priv_tables[i]) {
 			kvfree(nac_table.priv_tables[i]);
@@ -1364,10 +1365,11 @@ static void table_fini(void)
 		}
 
 		if (nac_table.priv_sets[i]) {
-			kvfree(nac_table.priv_sets[i]);
+			free_ac_set_info(nac_table.priv_sets[i]);
 			nac_table.priv_sets[i] = NULL;
 		}
 	}
+	write_unlock_bh(&nac_table.lock);
 }
 
 
