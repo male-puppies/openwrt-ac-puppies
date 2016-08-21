@@ -230,13 +230,14 @@ end
 ]]
 local function reference_ipset(type_key, config, ref)
 	local ref_map, item_map = {}, {}
-	for _, info in ipairs(config) do
-		item_map[info.ipset_key] = ref and info.ipset_name or ""
+	for set_name, info in pairs(config) do
+		local ipset_key = ipset_map[info.map_key].set_key
+		item_map[ipset_key] = ref and set_name or ""
 	end
 	ref_map[type_key] = item_map
 
 	local ref_cmd = string.format("ruletable -s '%s'", js.encode(ref_map)) assert(ref_cmd)
-	--print(ref and "reference：" or "dereference: ", ref_cmd)
+	log.debug("%s ipset:%s", ref and "reference" or "dereference", ref_cmd)
 	os.execute(ref_cmd)
 	return true
 end
@@ -244,7 +245,7 @@ end
 local function destroy_ipset(config)
 	for _, info in ipairs(config) do
 		local destroy_cmd = string.format("ipset destroy '%s'", info.ipset_name) assert(destroy_cmd)
-		--print("destroy:", destroy_cmd)
+		log.debug("destroy:%s", destroy_cmd)
 		os.execute(destroy_cmd)
 	end
 	return true
@@ -254,7 +255,7 @@ end
 local function create_ipset(config)
 	for _, info in ipairs(config) do 
 		local create_cmd = string.format("ipset create '%s' '%s'", info.ipset_name, info.ipset_type) assert(create_cmd)
-		--print("create:", create_cmd)
+		log.debug("create:%s", create_cmd)
 		os.execute(create_cmd)
 	end
 	return true
@@ -264,7 +265,6 @@ local function update_ipset(config)
 	for _, info in ipairs(config) do
 		for _, item in ipairs(info.ipset_list) do
 			local add_cmd = string.format("ipset add '%s' '%s'", info.ipset_name, item) assert(add_cmd)
-			--print("add:", add_cmd)
 			os.execute(add_cmd)
 		end
 	end
@@ -292,13 +292,11 @@ commit_config["Rule"] = function(cate_arr, new_config)
 	for _, item in ipairs(cate_arr) do
 		local cate_config = {}
 		local rule_key = item.cate.."Rule"
-		print("\n---!!!!------rule_cnt:", #(new_config[item.cate]))
 		cate_config[rule_key] = new_config[item.cate]
 		local cmd_str = string.format("ruletable -s '%s'", js.encode(cate_config)) assert(cmd_str)
-		print("\n\n",cmd_str)
+		log.debug("commit:rules(%d) %s",#(new_config[item.cate]), cmd_str)
 		os.execute(cmd_str)
 	end
-
 	return true
 end
 
@@ -311,7 +309,6 @@ commit_config["Set"] = function(cate_arr, new_config)
 	local _ = assert(cate_arr), assert(new_config)
 	local cate_config, ret, err = {}
 
-	--print("\n\ncommit_config[set] cate_arr:",js.encode(cate_arr))
 	if #cate_arr == 0 then
 		return true
 	end
@@ -320,7 +317,6 @@ commit_config["Set"] = function(cate_arr, new_config)
 		if not cate_config[item.cate] then
 			cate_config[item.cate] = {}
 		end
-		
 		--["setname"]={["map_key"] = xxx, ["set_list"] = xx}
 		local set_item = new_config[item.cate][item.sub_cate]	assert(set_item)
 		local ipset_key = ipset_map[set_item.map_key].set_key   assert(ipset_key)
@@ -332,14 +328,13 @@ commit_config["Set"] = function(cate_arr, new_config)
 				["ipset_type"] = ipset_type, 
 				["ipset_list"] = set_item.set_list 
 			}
-		--print("commit_item:", js.encode(commit_item))
 		table.insert(cate_config[item.cate], commit_item)
 	end
-	--print("\n\ncommit_config[set] cate_config:",js.encode(cate_config))
+	log.debug("commit:set %s", js.encode(cate_config))
 	--dereference allset in kernel,destroy ipset, create ipset, update ipset, reference allset in kernel
 	for cate, config in pairs(cate_config) do
 		local cate_key = cate.."Set"
-		ret, err = reference_ipset(cate_key, config, false)
+		ret, err = reference_ipset(cate_key, new_config[cate], false)
 		if not ret then
 			return nil, err
 		end
@@ -359,7 +354,7 @@ commit_config["Set"] = function(cate_arr, new_config)
 			return nil, err
 		end
 
-		ret, err = reference_ipset(cate_key, config, true)
+		ret, err = reference_ipset(cate_key, new_config[cate], true)
 		if not ret then
 			return nil, err
 		end
@@ -378,18 +373,14 @@ local compare_config = {}
 compare_config["Rule"] = function(old, new)
 	assert(new)
 	local cmp_res, ret, err = {}, true
-
 	--old is nil when process lanuched, need to update rule to kernel
 	if old == nil then
-		print("compare_config[rule]:old is nil")
 		for _, cate in ipairs(ConfigCate) do
 			table.insert(cmp_res, {["cate"] = cate})
 		end
 		return cmp_res
 	end
 
-	-- print("\n\n\nold:", js.encode(old))
-	-- print("\n\n\nnew:", js.encode(new))
 	for _, cate in ipairs(ConfigCate) do
 		if old[cate] == nil or new[cate] == nil then
 			err = string.format("old[%s] is %s, new[%s] is %s", 
@@ -397,7 +388,6 @@ compare_config["Rule"] = function(old, new)
 								new[cate] and "not nil" or "nil")
 			return nil, err
 		end
-
 		--maybe a error occured
 		ret, err = ac_rule_cmp(old[cate], new[cate])
 		if not ret and err then
@@ -426,7 +416,6 @@ compare_config["Set"] = function(old, new)
 	local cmp_res, ret, err = {}, true
 	--old is nil when process lanuched, need to update rule to kernel
 	if old == nil then
-		print("old is nil")
 		for _, cate in ipairs(ConfigCate) do
 			for name, info in pairs(new[cate]) do
 				table.insert(cmp_res, {["cate"] = cate, ["sub_cate"] = name})
@@ -435,8 +424,6 @@ compare_config["Set"] = function(old, new)
 		return cmp_res
 	end
 
-	-- print("\n\n\ncompare_config[set] old:", js.encode(old))
-	-- print("\n\n\ncompare_config[set] new:", js.encode(new))
 	for _, cate in ipairs(ConfigCate) do
 		local new_cate_config, old_cate_config = new[cate], old[cate]
 		for name, info in pairs(new_cate_config) do
@@ -469,7 +456,6 @@ local translate_config = {}
 translate_config["Rule"] = function(raw_rule_config)
 	local generate_rule = function(rule_config, cur_tm)
 		local rule_arr = {}
-		--print("----before translate rule:", js.encode(rule_config))
 		for _, item in ipairs(rule_config) do 
 			if tm_contained(item["TmGrp"], cur_tm) then
 				local rule_item = {}
@@ -482,11 +468,8 @@ translate_config["Rule"] = function(raw_rule_config)
 				rule_item["Actions"] = js.decode(item["actions"]) 			assert(rule_item["Actions"])
 				local _ = #rule_item["ProtoIds"] > 0 and table.sort(rule_item["ProtoIds"])
 				table.insert(rule_arr, rule_item)
-			else
-				print("----time diff:", js.encode(item["TmGrp"]), os.date("%Y%h%m %H%M%s",cur_tm))
 			end
 		end
-		--print("----after translate rule:", js.encode(rule_arr))
 		return rule_arr
 	end
 
@@ -562,13 +545,12 @@ translate_config["Set"] = function(raw_set_config)
 		if raw_set_config[cate] and #raw_set_config[cate] > 0 then
 			tmp_config, err = generate_set(raw_set_config[cate])
 			if not tmp_config then
-				print("translate_config[set] error:", err)
+				log.error("translate_config[set] error:%s", err)
 				return nil, err
 			end
 		end
 		set_config[cate] = tmp_config
 	end
-	--print("translate_config[set]:",js.encode(set_config))
 	return set_config
 end
 
@@ -609,7 +591,6 @@ fetch_raw_config["Rule"] = function()
 			--notice, it's an error, but not a fatal one
 			if #detail_arr ~= #tmgrpids then
 				log.error("tmgrp number:expected %d ~= real %d", #tmgrpids, #detail_arr)
-				print(string.format("tmgrp number:expected %d ~= real %d", #tmgrpids, #detail_arr))
 			end
 
 			for _, detail in ipairs(detail_arr) do
@@ -629,8 +610,6 @@ fetch_raw_config["Rule"] = function()
 				table.insert(rule_arr, rule)
 			end
 		end
-		---print("-----tmp_arr:",js.encode(tmp_arr))
-		-- print("-----rule_arr:",js.encode(rule_arr))
 		return rule_arr
 	end
 
@@ -696,7 +675,6 @@ local function load_config()
 	end
 
 	all_raw_ac_config = raw_config
-	--print("load config sucess")
 	return true
 end
 
