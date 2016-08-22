@@ -51,7 +51,7 @@ end
 
 ---------------------------------------------- kv ---------------------------------------------
 local kv_cache
-local fields = {"offline_time", "redirect_ip"}
+local fields = {"auth_offline_time", "auth_redirect_ip"}
 
 local function check_kv()
 	if kv_cache then
@@ -69,12 +69,12 @@ local function kv_get_common(field)
 	return kv_cache[field]
 end
 
-local function offline_time()
-	return tonumber(kv_get_common("offline_time"))
+local function auth_offline_time()
+	return tonumber(kv_get_common("auth_offline_time"))
 end
 
-local function redirect_ip()
-	return kv_get_common("redirect_ip")
+local function auth_redirect_ip()
+	return kv_get_common("auth_redirect_ip")
 end
 
 function clear_map.kv(action)
@@ -113,8 +113,8 @@ return {
 	set_module 		= set_module,
 	get_module 		= get_module,
 
-	offline_time 		= offline_time,
-	redirect_ip 		= redirect_ip,
+	auth_offline_time 		= auth_offline_time,
+	auth_redirect_ip 		= auth_redirect_ip,
 
 	authrule 		= authrule,
 }

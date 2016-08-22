@@ -48,22 +48,22 @@ function cmd_map.kv_get()
 end
 
 local kvmap = {
-	offline_time = gen_validate_num(1, 86400),
-	now_flow_timeout = gen_validate_num(1, 86400),
+	auth_offline_time = gen_validate_num(1, 86400),
+	auth_no_flow_timeout = gen_validate_num(1, 86400),
 }
 
-function kvmap.redirect_ip(ip)
+function kvmap.auth_redirect_ip(ip)
 	if ip:find(ip_pattern) then
 		return ip
 	end
 
-	return nil, "invalid redirect_ip"
+	return nil, "invalid auth_redirect_ip"
 end
 
-function kvmap.bypass_dst(s)
+function kvmap.auth_bypass_dst(s)
 	local m = js.decode(s)
 	if not m then
-		return nil, "invalid bypass_dst"
+		return nil, "invalid auth_bypass_dst"
 	end
 	return s
 end

@@ -183,7 +183,7 @@ end
 -- 定时下线
 function loop_timeout_check()
 	local set_offline = authlib.set_offline
-	local set_module, offline_time = cache.set_module, cache.offline_time
+	local set_module, auth_offline_time = cache.set_module, cache.auth_offline_time
 
 	local offline = function(rs)
 		-- 从内核下线
@@ -204,7 +204,7 @@ function loop_timeout_check()
 
 	while true do
 		ski.sleep(5)
-		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='web' and active-login>%s;", offline_time())
+		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='web' and active-login>%s;", auth_offline_time())
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 		local _ = #rs > 0 and offline(rs)
 	end

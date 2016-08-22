@@ -35,9 +35,9 @@ cmd_map.kv = {
 		end
 
 		local new_map = {
-			{k = "offline_time", v = "1800"},
-			{k = "redirect_ip", v = "1.0.0.8"},
-			{k = "no_flow_timeout", v = "1800"},
+			{k = "auth_offline_time", v = "1800"},
+			{k = "auth_redirect_ip", v = "1.0.0.8"},
+			{k = "auth_no_flow_timeout", v = "1800"},
 		}
 
 		local miss, find = {}, false

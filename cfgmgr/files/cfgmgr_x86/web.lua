@@ -145,7 +145,7 @@ end
 
 function loop_timeout_check()
 	local get_offline_time = function()
-		local rs, e = myconn:query("select v from disk.kv where k='offline_time'") 	assert(rs, e)
+		local rs, e = myconn:query("select v from disk.kv where k='auth_offline_time'") 	assert(rs, e)
 		if #rs == 0 then 
 			return 1801
 		end 

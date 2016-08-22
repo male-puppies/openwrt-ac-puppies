@@ -49,8 +49,8 @@ if cmd:find("^authrule_") then
 	return require("admin.authrule").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/kv_get?token=77d0aeb8ae53926a363f1eb6973bb7ca&keys=%5B%22offline_time%22,%22bypass_dst%22%5D'
--- curl 'http://127.0.0.1/v1/admin/api/kv_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'offline_time=1900&redirect_ip=1.1.1.1&bypass_dst=[1]'
+-- curl 'http://127.0.0.1/v1/admin/api/kv_get?token=77d0aeb8ae53926a363f1eb6973bb7ca&keys=%5B%22auth_offline_time%22,%22auth_bypass_dst%22%5D'
+-- curl 'http://127.0.0.1/v1/admin/api/kv_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'auth_offline_time=1900&auth_redirect_ip=1.1.1.1&auth_bypass_dst=[1]'
 if cmd:find("^kv_") then
 	return require("admin.kv").run(cmd)
 end

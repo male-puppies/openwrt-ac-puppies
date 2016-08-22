@@ -152,7 +152,7 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 	end
 
 	local n = js.decode(authrule.wechat) 					assert(n)
-	local redirect_url = string.format("http://%s/weixin2_login", cache.redirect_ip())
+	local redirect_url = string.format("http://%s/weixin2_login", cache.auth_redirect_ip())
 	local appid, timestamp, shop_id, authurl, ssid, bssid, secretkey = n.appid, p.now, n.shop_id, redirect_url, n.ssid, "", n.secretkey
 	local arr = {appid, extend, timestamp, shop_id, authurl, mac, ssid, bssid, secretkey}
 	local sign = md5.sumhexa(table.concat(arr))
@@ -318,7 +318,7 @@ end
 -- 定时下线
 function loop_timeout_check()
 	local set_offline = lib.set_offline
-		local set_module, offline_time = cache.set_module, cache.offline_time
+		local set_module, auth_offline_time = cache.set_module, cache.auth_offline_time
 
 	local offline = function(rs)
 		-- 从内核下线
@@ -339,7 +339,7 @@ function loop_timeout_check()
 
 	while true do
 		ski.sleep(5) -- TODO 60
-		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='wechat' and active-login>%s;", offline_time())
+		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='wechat' and active-login>%s;", auth_offline_time())
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 		local _ = #rs > 0 and offline(rs)
 	end
