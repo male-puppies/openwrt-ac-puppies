@@ -35,13 +35,6 @@ struct dpi_flow {
 	__u64 src_ipgrp_bits, dst_ipgrp_bits;
 };
 
-enum ac_rule_sub_type {
-	RULE_SUB_TYPE_SET = 0,
-	RULE_SUB_TYPE_RULE = 1,
-	/*new type add here*/
-	RULE_SUB_TYPE_MAX
-};
-
 
 static inline int ip_set_test_src_ip(const struct net_device *in, const struct net_device *out, struct sk_buff *skb, ip_set_id_t id)
 {

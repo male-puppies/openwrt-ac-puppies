@@ -5,7 +5,11 @@
 
 #include <net/ip.h>
 #include <net/netfilter/nf_conntrack.h>
-#include <ntrack_nacs.h>
+#include <ntrack_packet.h>
+extern int do_ac_table_hk(
+	struct net_device *in, struct net_device *out, struct sk_buff *skb,
+	flow_info_t *fi, user_info_t *ui, user_info_t *pi);
+extern int do_ac_table_cb(nt_packet_t *pkt, __u32 proto_new);
 
 #include "nfw_private.h"
 

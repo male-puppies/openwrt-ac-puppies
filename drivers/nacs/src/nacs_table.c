@@ -21,6 +21,7 @@
 #include <ntrack_flow.h>
 #include <ntrack_packet.h>
 #include <rule_table.h>
+#include <ntrack_log.h>
 #include "nacs_table.h"
 #include "nacs_debug.h"
 #include "nacs_comm.h"
@@ -887,7 +888,7 @@ static int ac_ipgrp_check(
 
 	for (i = 0; i < number; ++i) {
 		/*notice: ipgrp[i] maybe greater than 63, we should take care*/ 
-		if ((ipgrp[i] < IPGRP_BITS_SIZE) && (ipgrp_bits & (1 << ipgrp[i]))) {
+		if ((ipgrp[i] < IPGRP_BITS_SIZE) && (ipgrp_bits & (1ULL << ipgrp[i]))) {
 			NACS_DEBUG("ipgrp[%d] = %d, ipgrp_bits=0x%llx matched\n", i, ipgrp[i], ipgrp_bits);
 			matched = 1;
 			break;
@@ -1115,6 +1116,7 @@ fill_flow:
 	result->src_port = req->fi->tuple.port_src;
 	result->dst_port = req->fi->tuple.port_dst;
 	result->proto = req->fi->tuple.proto;
+	memcpy(result->macaddr, req->ui->hdr.macaddr, ETHER_ADDR_LEN);
 
 out:
 	read_unlock_bh(&table->lock);
@@ -1209,15 +1211,16 @@ static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 				break;
 		}
 	}
-	NAC_PRINT_DEBUG("src(%u:%d), dst_ip(%u:%d)\n", 
-				result->src_ip, result->src_port,
-				result->dst_ip, result->dst_port);
+	NAC_PRINT_DEBUG(FMT_MAC_STR, FMT_MAC(result->macaddr));
+	NAC_PRINT_DEBUG("src(%u.%u.%u.%u:%d), dst_ip(%u.%u.%u.%u:%d)\n",
+				NIPQUAD(result->src_ip), ntohs(result->src_port),
+				NIPQUAD(result->dst_ip), ntohs(result->dst_port));
 	NAC_PRINT_DEBUG("Actions:%u\n", result->actions);
 	NACS_DEBUG("----------process check result end--------\n");
 
 	nt_msghdr_init(&hdr, en_MSG_NACS, sizeof(nacs_msg_t));
 	if (nt_msg_enqueue(&hdr, result, 0)) {
-		NACS_ERROR("skb cap failed.\n");
+		NACS_ERROR("nacs enqueue failed.\n");
 	}
 	return 0;
 }

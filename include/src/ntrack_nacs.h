@@ -1,7 +1,17 @@
 #ifndef _NTRACK_NACS_H
 #define _NTRACK_NACS_H
-#include <ntrack_flow.h>
-#include <ntrack_packet.h>
+#ifndef __KERNEL__
+#include <stdint.h>
+#endif
+
+#define ETHER_ADDR_LEN 6
+enum ac_rule_sub_type {
+	RULE_SUB_TYPE_SET = 0,
+	RULE_SUB_TYPE_RULE = 1,
+	/*new type add here*/
+	RULE_SUB_TYPE_MAX
+};
+
 typedef struct {
 	/*table related*/
 	uint8_t rule_type, rule_sub_type;
@@ -17,6 +27,7 @@ typedef struct {
 			uint8_t set_type;
 		}set;
 	}u;
+	uint8_t macaddr[6];
 	/*flow related*/
 	uint32_t 	src_ip, dst_ip;
 	uint16_t	src_port, dst_port;
@@ -24,15 +35,5 @@ typedef struct {
 	uint8_t 	actions;	/*accept, reject, audit*/
 	unsigned long time_stamp;
 }nacs_msg_t;
-
-int do_ac_table_hk(
-	struct net_device *in,
-	struct net_device *out,
-	struct sk_buff *skb,
-	flow_info_t *fi,
-	user_info_t *ui,
-	user_info_t *pi);
-
-int do_ac_table_cb(nt_packet_t *pkt, __u32 proto_new);
 
 #endif
