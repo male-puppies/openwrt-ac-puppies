@@ -16,6 +16,7 @@ local escape_map, escape_arr = common.escape_map, common.escape_arr
 local set_online = authlib.set_online
 local insert_online = authlib.insert_online
 local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
+local limit, reduce, tomap, each, empty = fp.limit, fp.reduce, fp.tomap, fp.each, fp.empty
 
 local udp_map = {}
 local simple, udpsrv, mqtt, reply
@@ -75,15 +76,15 @@ end
 function on_login(count, arr)
 	local f = function(start, step)
 		-- 查询已经存在的用户
-		local users = fp.limit(arr, start, step)
-		local narr = fp.reduce(users, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.username)) end, {})
+		local users = limit(arr, start, step)
+		local narr = reduce(users, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.username)) end, {})
 		local sql = string.format("select * from user where username in (%s)",  table.concat(narr, ","))
 
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
-		local user_map = fp.tomap(rs, "username")
+		local user_map = tomap(rs, "username")
 
 		-- 排除并回复不存在的用户
-		local exists = fp.reduce(users, function(t, r)
+		local exists = reduce(users, function(t, r)
 			local username = r.username
 			if not user_map[username] then
 				reply(r.u_ip, r.u_port, 1, "invalid user")
@@ -94,7 +95,7 @@ function on_login(count, arr)
 		end, {})
 
 		-- format ukey
-		local narr = fp.reduce(exists, function(t, r)
+		local narr = reduce(exists, function(t, r)
 			local ukey = string.format("%s_%s", r.uid, r.magic)
 			r.ukey = ukey
 			return rawset(t, #t + 1, string.format("'%s'", ukey))
@@ -105,8 +106,8 @@ function on_login(count, arr)
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 
 		-- 过滤在线用户
-		local online = fp.tomap(rs, "ukey")
-		local offline = fp.reduce(exists, function(t, info)
+		local online = tomap(rs, "ukey")
+		local offline = reduce(exists, function(t, info)
 			local u_ip, u_port, ukey = info.u_ip, info.u_port, info.ukey
 
 			-- 排除并回复已经在线的用户
@@ -126,11 +127,11 @@ function on_login(count, arr)
 		end, {})
 
 		-- 插入表online
-		fp.each(offline, function(_, r)
+		each(offline, function(_, r)
 			set_online(r.uid, r.magic, r.gid, r.username)
 			reply(r.u_ip, r.u_port, 0, "ok")
 		end)
-		local _ = fp.empty(offline) or insert_online(simple, offline, "web")
+		local _ = empty(offline) or insert_online(simple, offline, "web")
 	end
 
 	local step = 100
@@ -172,7 +173,7 @@ end
 function on_keepalive(count, arr)
 	local step = 100
 	for i = 1, count, step do
-		local narr = fp.reduce(fp.limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local narr = reduce(limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
 
 		log.real1("%s", sql)
@@ -187,19 +188,19 @@ function loop_timeout_check()
 
 	local offline = function(rs)
 		-- 从内核下线
-		fp.each(rs, function(_, r)
+		each(rs, function(_, r)
 			local uid, magic = r.ukey:match("(%d+)_(%d+)")
 			set_offline(tonumber(uid), tonumber(magic))
 			log.real1("set_offline %s", js.encode(r))
 		end)
 
 		-- 从memo.online删除
-		local narr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local narr = reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
 		local r, e = simple:mysql_execute(sql) 	assert(r, e)
 
 		-- 删除缓存
-		fp.each(rs, function(_, r) set_module(r.ukey, nil) end)
+		each(rs, function(_, r) set_module(r.ukey, nil) end)
 	end
 
 	while true do

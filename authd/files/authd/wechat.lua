@@ -23,6 +23,7 @@ local wechat_timeout, on_wechat_timeout
 local login_trigger, on_login
 local keepalive_trigger, on_keepalive
 local loop_timeout_check
+local reduce, tomap, each, empty = fp.reduce, fp.tomap, fp.each, fp.empty
 
 local function init(u, p)
 	udpsrv, mqtt 	= u, p
@@ -221,7 +222,7 @@ end
 
 -- 如果有新用户，插入表user
 local function insert_new(arr)
-	local narr = fp.reduce(arr, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.username)) end, {})
+	local narr = reduce(arr, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.username)) end, {})
 	local in_part = table.concat(narr, ",")
 
 	-- 查找表user中存在的用户
@@ -229,8 +230,8 @@ local function insert_new(arr)
 	local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 
 	-- 找出不存在的用户
-	local exists = fp.tomap(rs, "username")
-	local miss = fp.reduce(arr, function(t, r)
+	local exists = tomap(rs, "username")
+	local miss = reduce(arr, function(t, r)
 		local username = r.username
 		return exists[username] and t or rawset(t, #t + 1, username)
 	end, {})
@@ -240,8 +241,8 @@ local function insert_new(arr)
 	end
 
 	-- 插入新用户
-	local tmap, now = fp.tomap(arr, "username"), os.date("%Y-%m-%d %H:%M:%S")
-	local parts = fp.reduce(miss, function(t, username)
+	local tmap, now = tomap(arr, "username"), os.date("%Y-%m-%d %H:%M:%S")
+	local parts = reduce(miss, function(t, username)
 		return rawset(t, #t + 1, string.format("('%s','1234','%s','%s')", username, now, tmap[username].gid))
 	end, {})
 
@@ -255,7 +256,7 @@ end
 -- 登陆处理
 function on_login(count, arr)
 	-- 先上线
-	fp.each(arr, function(_, r)
+	each(arr, function(_, r)
 		r.ukey = string.format("%s_%s", r.uid, r.magic)
 		set_online(r.uid, r.magic, r.gid, r.username)
 	end)
@@ -267,12 +268,12 @@ function on_login(count, arr)
 	end
 
 	-- 检查离线用户
-	local narr = fp.reduce(arr, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+	local narr = reduce(arr, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 	local sql = string.format("select ukey from memo.online where ukey in (%s)", table.concat(narr, ","))
 	local rs, e = simple:mysql_select(sql) 		assert(rs, e)
 
-	local rs_map = fp.tomap(rs, "username")
-	local new_users = fp.reduce(arr, function(t, r)
+	local rs_map = tomap(rs, "username")
+	local new_users = reduce(arr, function(t, r)
 		local username = r.username
 		if rs_map[username] then
 			return t
@@ -283,7 +284,7 @@ function on_login(count, arr)
 	end, {})
 
 	-- 插入离线用户到online
-	local _ = fp.empty(new_users) or insert_online(simple, new_users, "wechat")
+	local _ = empty(new_users) or insert_online(simple, new_users, "wechat")
 end
 
 --[[
@@ -307,7 +308,7 @@ end
 function on_keepalive(count, arr)
 	local step = 100 			-- 可能有很多，分批更新
 	for i = 1, #arr, step do
-		local narr = fp.reduce(fp.limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local narr = reduce(limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
 
 		log.real1("%s", sql)
@@ -322,19 +323,19 @@ function loop_timeout_check()
 
 	local offline = function(rs)
 		-- 从内核下线
-		fp.each(rs, function(_, r)
+		each(rs, function(_, r)
 			local uid, magic = r.ukey:match("(%d+)_(%d+)")
 			set_offline(tonumber(uid), tonumber(magic))
 			log.real1("set_offline %s", js.encode(r))
 		end)
 
 		-- 从memo.online删除
-		local narr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local narr = reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
 		local r, e = simple:mysql_execute(sql) 	assert(r, e)
 
 		-- 删除缓存
-		fp.each(rs, function(_, r) set_module(r.ukey, nil) end)
+		each(rs, function(_, r) set_module(r.ukey, nil) end)
 	end
 
 	while true do

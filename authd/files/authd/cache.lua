@@ -7,6 +7,7 @@ local simplesql = require("simplesql")
 
 local rid_map = {}
 local simple, udpsrv, mqtt
+local reduce, tomap = fp.reduce, fp.tomap
 
 -------------------------------------------- common ------------------------------------------------
 local clear_map = {}
@@ -31,7 +32,7 @@ local function check_module()
 	end
 
 	local rs, e = simple:mysql_select("select ukey,type from memo.online") 	assert(rs, e)
-	online_cache = fp.reduce(rs, function(t, r) return rawset(t, r.ukey, r.type) end, {})
+	online_cache = reduce(rs, function(t, r) return rawset(t, r.ukey, r.type) end, {})
 	print("init mod",  js.encode(online_cache))
 end
 
@@ -58,10 +59,10 @@ local function check_kv()
 		return
 	end
 
-	local narr = fp.reduce(fields, function(t, v) return rawset(t, #t + 1, string.format("'%s'", v)) end, {})
+	local narr = reduce(fields, function(t, v) return rawset(t, #t + 1, string.format("'%s'", v)) end, {})
 	local sql = string.format("select k,v from kv where k in (%s)", table.concat(narr, ","))
 	local rs, e = simple:mysql_select(sql)		assert(rs, e)
-	kv_cache = fp.reduce(rs, function(t, r) return rawset(t, r.k, r.v) end, {})
+	kv_cache = reduce(rs, function(t, r) return rawset(t, r.k, r.v) end, {})
 end
 
 local function kv_get_common(field)
@@ -96,7 +97,7 @@ local function check_authrule()
 	end
 
 	local rs, e = simple:mysql_select("select * from authrule")		assert(rs, e)
-	authrule_cache = fp.tomap(rs, "rid")
+	authrule_cache = tomap(rs, "rid")
 end
 
 local function authrule(rid)
