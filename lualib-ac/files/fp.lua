@@ -226,6 +226,27 @@ local function same(t1, t2)
 	return same_aux(t1, t2) and same_aux(t2, t1)
 end
 
+local function slice(arr, start, fin)
+	local narr = {}
+	for i = start, fin do
+		local a = arr[i]
+		if not a then
+			return narr
+		end
+		table.insert(narr, a)
+	end
+
+	return narr
+end
+
+local function limit(arr, start, count)
+	local fin = start + count
+	if fin > #arr then
+		fin = #arr
+	end
+	return slice(arr, start, fin)
+end
+
 return {
 	map 			= map,
 	filter 			= filter,
@@ -244,6 +265,9 @@ return {
 	same 			= same,
 	contains 		= contains,
 	contains_any 	= contains_any,
+
+	slice 			= slice,
+	limit 			= limit,
 }
 
 

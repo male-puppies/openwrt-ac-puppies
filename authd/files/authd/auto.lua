@@ -1,15 +1,15 @@
+local fp 		= require("fp")
 local ski 		= require("ski")
 local log 		= require("log")
 local cache		= require("cache")
-local batch 		= require("batch")
-local common 		= require("common")
+local batch		= require("batch")
+local common	= require("common")
 local js 		= require("cjson.safe")
-local rpccli 		= require("rpccli")
-local authlib 		= require("authlib")
-local simplesql 	= require("simplesql")
+local rpccli	= require("rpccli")
+local authlib	= require("authlib")
+local simplesql	= require("simplesql")
 
-local map2arr, arr2map, limit, empty = common.map2arr, common.arr2map, common.limit, common.empty
-local find_missing, set_online = authlib.find_missing, authlib.set_online
+local set_online = authlib.set_online
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
 
 local udp_map = {}
@@ -23,30 +23,40 @@ local function init(u, p)
 	keepalive_trigger = batch.new(on_keepalive_batch)
 end
 
+-- {"cmd":"auto_keepalive","uid":70,"rid":1,"ukey":"70_142","mac":"28:a0:2b:65:4d:62","magic":142,"ip":"172.16.24.186"}
 udp_map["auto_keepalive"] = function(p)
 	keepalive_trigger:emit(p)
 end
 
 -- 批量更新自动认证的状态。
 function on_keepalive_batch(count, arr)
-	local ukey_arr = map2arr(arr2map(arr, "ukey"))
-
 	local step = 100 	-- 每次最多更新100个
-	for i = 1, #ukey_arr, step do
-		local exists, miss = find_missing(simple, limit(ukey_arr, i, step))
+	for i = 1, #arr, step do
+		local alive = fp.limit(arr, i, step)
 
-		-- 更新已在线用户状态
-		local _ = empty(exists) or keepalive(simple, exists)
+		-- 查询在线用户
+		local narr = fp.reduce(alive, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local sql = string.format("select ukey from memo.online where ukey in (%s)", table.concat(narr, ","))
+		local rs, e = simple:mysql_select(sql) 		assert(rs, e)
 
-		-- 更新新上线用户状态
-		if not empty(miss) then
-			for _, r in pairs(miss) do
+		local online = fp.tomap(rs, "ukey")
+		local offline = fp.reduce(alive, function(t, r) return online[r.ukey] and t or rawset(t, r.ukey, r) end, {})
+
+		-- 更新已经在线的用户的active
+		if #rs > 0 then
+			local narr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+			local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
+			local r, e = simple:mysql_execute(sql) 	assert(r, e)
+		end
+
+		-- 插入新上线用户
+		if not fp.empty(offline) then
+			fp.each(offline, function(ukey, r)
+				r.gid = 0
 				r.username = r.mac
-				r.gid = 1 --TODO select gid
-				local _ = gid and set_online(r.uid, r.magic, r.gid, r.username)
-			end
-
-			insert_online(simple, miss, "auto")
+				set_online(r.uid, r.magic, r.gid, r.username)
+			end)
+			insert_online(simple, offline, "auto")
 		end
 	end
 end

@@ -4,16 +4,16 @@ local log 		= require("log")
 local nos 		= require("luanos")
 local js 		= require("cjson.safe")
 local lib 		= require("authlib")
-local batch 		= require("batch")
+local batch		= require("batch")
 local md5 		= require("md5")
-local rpccli 		= require("rpccli")
-local simplesql 	= require("simplesql")
-local authlib 		= require("authlib")
+local rpccli	= require("rpccli")
+local simplesql	= require("simplesql")
+local authlib	= require("authlib")
 local cache		= require("cache")
 
 local sumhexa = md5.sumhexa
-local set_status, set_online  = nos.user_set_status, authlib.set_online
-local keepalive, insert_online = authlib.keepalive, authlib.insert_online
+local set_status, set_online	= nos.user_set_status, authlib.set_online
+local keepalive, insert_online	= authlib.keepalive, authlib.insert_online
 local set_module = cache.set_module
 
 local udp_map = {}
@@ -99,7 +99,6 @@ function on_wechat_timeout(count, arr)
 	end
 end
 
-
 --[[
 接受前端发来的请求，并临时放通数据
 @param p  : 前端数据，{"mac":"00:24:54:45:4e:3a","uid":519,"rid":1,"cmd":"/bypass_host","magic":115498,"ip":"172.16.125.26"}
@@ -132,7 +131,6 @@ end
 "secretkey":"eaee288fe2a5924c8012f0522a4ea524"
 ]]
 
-
 --[[
 接受前端发来的请求，返回微信登陆需要的信息
 @param p  : 前端数据，{"cmd":"/wxlogin2info","uid":5241,"now":"1471490987172","rid":1,"mac":"28:a0:2b:65:4d:62","magic":125186,"ip":"172.16.24.186"}
@@ -144,7 +142,6 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 	local sec, mac = math.floor(ski.time()), p.mac
 	local extend = table.concat({mac, sec}, ",")
 
-	-- TODO
 	-- local n = {appid = "wx3ae592d54767e201", shop_id = 4248433, ssid = "WX_WIFI", secretkey = "eaee288fe2a5924c8012f0522a4ea524"}
 	local rid = p.rid
 	local authrule = cache.authrule(rid)
@@ -204,7 +201,7 @@ end
 ]]
 udp_map["/weixin2_login"] = function(p, ip, port)
 	local extend = p.extend
-	local r = wechat_wait_map[extend]
+	local r = wechat_wait_map[extend] 	-- 由"/wxlogin2info"填充
 	if not r then
 		return reply(ip, port, 1, "wechat login timeout")
 	end
@@ -271,7 +268,7 @@ function on_login(count, arr)
 
 	-- 检查离线用户
 	local narr = fp.reduce(arr, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
-	local sql = string.format("select * from memo.online where ukey in (%s)", table.concat(narr, ","))
+	local sql = string.format("select ukey from memo.online where ukey in (%s)", table.concat(narr, ","))
 	local rs, e = simple:mysql_select(sql) 		assert(rs, e)
 
 	local rs_map = fp.tomap(rs, "username")
@@ -321,6 +318,7 @@ end
 -- 定时下线
 function loop_timeout_check()
 	local set_offline = lib.set_offline
+		local set_module, offline_time = cache.set_module, cache.offline_time
 
 	local offline = function(rs)
 		-- 从内核下线
@@ -339,7 +337,6 @@ function loop_timeout_check()
 		fp.each(rs, function(_, r) set_module(r.ukey, nil) end)
 	end
 
-	local offline_time = cache.offline_time
 	while true do
 		ski.sleep(5) -- TODO 60
 		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='wechat' and active-login>%s;", offline_time())

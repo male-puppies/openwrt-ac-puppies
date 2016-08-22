@@ -1,25 +1,26 @@
+local fp 		= require("fp")
 local ski 		= require("ski")
 local log 		= require("log")
-local cache	 	= require("cache")
+local cache		= require("cache")
 local nos 		= require("luanos")
-local batch 		= require("batch")
-local common 		= require("common")
-local js 	 	= require("cjson.safe")
-local rpccli 		= require("rpccli")
-local authlib 		= require("authlib")
-local simplesql 	= require("simplesql")
+local batch		= require("batch")
+local common	= require("common")
+local js 		= require("cjson.safe")
+local rpccli	= require("rpccli")
+local authlib	= require("authlib")
+local simplesql = require("simplesql")
+local cache		= require("cache")
 
-local map2arr, arr2map, limit, empty = common.map2arr, common.arr2map, common.limit, common.empty
 local escape_map, escape_arr = common.escape_map, common.escape_arr
 
-local find_missing, set_online, set_offline = authlib.find_missing, authlib.set_online, authlib.set_offline
-local keepalive, insert_online = authlib.keepalive, authlib.insert_online
+local set_online = authlib.set_online
+local insert_online = authlib.insert_online
 local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
 
 local udp_map = {}
 local simple, udpsrv, mqtt, reply
-local login_trigger, on_login_batch
-local keepalive_trigger, on_keepalive_batch
+local login_trigger, on_login
+local keepalive_trigger, on_keepalive
 local loop_timeout_check
 
 local function init(u, p)
@@ -27,11 +28,10 @@ local function init(u, p)
 
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	simple 	= simplesql.new(dbrpc)
-
 	reply 	= authlib.gen_reply(udpsrv)
 
-	login_trigger 		= batch.new(on_login_batch)
-	keepalive_trigger 	= batch.new(on_keepalive_batch)
+	login_trigger 		= batch.new(on_login)
+	keepalive_trigger 	= batch.new(on_keepalive)
 
 	ski.go(loop_timeout_check)
 end
@@ -72,52 +72,83 @@ local function check_user(r, p)
 end
 
 -- 批量web认证
-function on_login_batch(count, arr)
-	-- TODO
-	-- fp.each(arr, function(_, r) set_online(r.uid, r.magic, r.gid, r.username) end)
+function on_login(count, arr)
+	local f = function(start, step)
+		-- 查询已经存在的用户
+		local users = fp.limit(arr, start, step)
+		local narr = fp.reduce(users, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.username)) end, {})
+		local sql = string.format("select * from user where username in (%s)",  table.concat(narr, ","))
 
-	local usermap = arr2map(arr, "username")
-	local sql = string.format("select a.*,b.login from user a left outer join memo.online b using(username) where a.username in (%s)", escape_map(arr, "username"))
-	local rs, e = simple:mysql_select(sql) 	assert(rs, e)
-	for _, r in ipairs(rs) do
-		local username, p = r.username
-		if r.login then
-			p, usermap[username] = usermap[username], nil
-			reply(p.u_ip, p.u_port, 0, "already online")
-			set_online(p.uid, p.magic, r.gid, username)
-		end
+		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
+		local user_map = fp.tomap(rs, "username")
+
+		-- 排除并回复不存在的用户
+		local exists = fp.reduce(users, function(t, r)
+			local username = r.username
+			if not user_map[username] then
+				reply(r.u_ip, r.u_port, 1, "invalid user")
+				return t
+			end
+
+			return rawset(t, #t + 1, r)
+		end, {})
+
+		-- format ukey
+		local narr = fp.reduce(exists, function(t, r)
+			local ukey = string.format("%s_%s", r.uid, r.magic)
+			r.ukey = ukey
+			return rawset(t, #t + 1, string.format("'%s'", ukey))
+		end, {})
+
+		-- 查询在线用户
+		local sql = string.format("select ukey from memo.online where ukey in (%s)",  table.concat(narr, ","))
+		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
+
+		-- 过滤在线用户
+		local online = fp.tomap(rs, "ukey")
+		local offline = fp.reduce(exists, function(t, info)
+			local u_ip, u_port, ukey = info.u_ip, info.u_port, info.ukey
+
+			-- 排除并回复已经在线的用户
+			if online[ukey] then
+				reply(u_ip, u_port, 0, "already online")
+				return t
+			end
+
+			-- 检查用户属性
+			local r, e = check_user(user_map[info.username], info)
+			if not r then
+				reply(u_ip, u_port, 1, e)
+				return t
+			end
+
+			return rawset(t, ukey, info)
+		end, {})
+
+		-- 插入表online
+		fp.each(offline, function(_, r)
+			set_online(r.uid, r.magic, r.gid, r.username)
+			reply(r.u_ip, r.u_port, 0, "ok")
+		end)
+		local _ = fp.empty(offline) or insert_online(simple, offline, "web")
 	end
 
-	local online, rsmap = {}, arr2map(rs, "username")
-	for username, p in pairs(usermap) do
-		local rp = rsmap[username]
-		local r, e = check_user(rp, p)
-		if not r then
-			reply(p.u_ip, p.u_port, 1, e)
-		else
-			set_online(p.uid, p.magic, rsmap[username].gid, username)
-			local _ = table.insert(online, username), reply(p.u_ip, p.u_port, 0, "web login success")
-		end
+	local step = 100
+	for i = 1, count, step do
+		f(i, step)
 	end
-
-	if #online == 0 then
-		return
-	end
-
-	local tmap, p = {}
-	for _, username in ipairs(online) do
-		p = usermap[username]
-		p.ukey = string.format("%d_%d", p.uid, p.magic)
-		tmap[username] = p
-	end
-
-	insert_online(simple, tmap, "web")
 end
 
+--[[
+登陆验证
+@param p  : {"username":"aaa","uid":70,"password":"aaa","cmd":"/cloudlogin","rid":0,"mac":"28:a0:2b:65:4d:62","magic":142,"ip":"172.16.24.186"}
+@param uip, uport : nginx发送udp包的ip和端口
+@return : 成功或失败的消息
+]]
 udp_map["/cloudlogin"] = function(p, uip, uport)
 	local magic, uid, ip, mac, username, password, rid = p.magic, p.uid, p.ip, p.mac, p.username, p.password, p.rid
 
-	local krid = get_rule_id(uid, magic) 		assert(krid)
+	local krid = get_rule_id(uid, magic)
 	local kip, kmac = get_ip_mac(uid, magic)
 
 	local gid = 0 	-- TODO select gid
@@ -137,39 +168,43 @@ udp_map["web_keepalive"] = function(p)
 	keepalive_trigger:emit(p)
 end
 
-function on_keepalive_batch(count, arr)
-	local ukey_arr = map2arr(arr2map(arr, "ukey"))
+-- 批量更新active
+function on_keepalive(count, arr)
 	local step = 100
-	for i = 1, #ukey_arr, step do
-		local exists, miss = find_missing(simple, limit(ukey_arr, i, step))
-		local _ = empty(exists) or keepalive(simple, exists)
-		local _ = empty(miss) or log.error("logical error %s", js.encode(miss))
+	for i = 1, count, step do
+		local narr = fp.reduce(fp.limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
+
+		log.real1("%s", sql)
+		local r, e = simple:mysql_execute(sql) 	assert(r, e)
 	end
 end
 
+-- 定时下线
 function loop_timeout_check()
-	local get_offline_time = function()
-		local rs, e = simple:mysql_select("select v from kv where k='offline_time'") 	assert(rs, e)
-		if #rs == 0 then
-			return 1801
-		end
-		return tonumber(rs[1].v) or 1801
-	end
+	local set_offline = authlib.set_offline
+	local set_module, offline_time = cache.set_module, cache.offline_time
 
 	local offline = function(rs)
-		for _, r in pairs(rs) do
+		-- 从内核下线
+		fp.each(rs, function(_, r)
 			local uid, magic = r.ukey:match("(%d+)_(%d+)")
 			set_offline(tonumber(uid), tonumber(magic))
-			print("set_offline", js.encode(r))
-		end
-		local sql = string.format("delete from memo.online where ukey in (%s)", escape_map(rs, "ukey"))
+			log.real1("set_offline %s", js.encode(r))
+		end)
+
+		-- 从memo.online删除
+		local narr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
 		local r, e = simple:mysql_execute(sql) 	assert(r, e)
+
+		-- 删除缓存
+		fp.each(rs, function(_, r) set_module(r.ukey, nil) end)
 	end
 
 	while true do
-		ski.sleep(60)
-		local timeout = get_offline_time()
-		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='web' and active-login>%s;", timeout)
+		ski.sleep(5)
+		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='web' and active-login>%s;", offline_time())
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 		local _ = #rs > 0 and offline(rs)
 	end

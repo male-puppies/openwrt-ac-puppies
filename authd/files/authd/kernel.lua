@@ -7,7 +7,7 @@ local authlib = require("authlib")
 
 local get_ip_mac, get_status, get_rule_id = nos.user_get_ip_mac, nos.user_get_status, nos.user_get_rule_id
 local set_status = nos.user_set_status
-local get_module = cache.get_module
+local get_module, set_module = cache.get_module, cache.set_module
 
 local dispatch_keepalive = function() end
 
@@ -29,21 +29,32 @@ ntrackd发送来的内核上报道心跳
 ]]
 udp_map["keepalive"] = function(p)
 	local uid, magic = p.uid, p.magic
-	local ukey = string.format("%s_%s", uid, magic)
-
-	local mod = get_module(ukey)
-	if not mod then
-		-- TODO offline 先放到cache，一定次数后，还找不到就下线
-		-- set_status(uid, magic, 0)
-		-- log.error("miss ukey %s. force offline", ukey)
-		return
-	end
 
 	-- 查询参数rid，ip，mac
 	local rid = get_rule_id(uid, magic)
 	local ip, mac = get_ip_mac(uid, magic)
 	if not (rid and ip) then
+		log.error("invalid uid/magic")
 		return
+	end
+
+	local ukey = string.format("%s_%s", uid, magic)
+
+	local mod = get_module(ukey)
+	if not mod then
+		local authrule = cache.authrule(rid)
+		if not authrule then
+			log.error("miss authrule and mod for %s %s", rid, ukey)
+			return
+		end
+
+		if authrule.authtype ~= "auto" then
+			return
+		end
+
+		mod = "auto"
+		set_module(ukey, mod)
+		-- TODO offline 先放到cache，一定次数后，还找不到就下线
 	end
 
 	p.ip, p.mac, p.rid, p.cmd, p.ukey = ip, mac, rid, mod .. "_keepalive", ukey
