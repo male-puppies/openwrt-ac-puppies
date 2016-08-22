@@ -1,13 +1,13 @@
-local ski 	= require("ski")
-local log 	= require("log")
-local cfg 	= require("cfg")
-local nos 	= require("luanos")
-local batch = require("batch")
-local common 	= require("common")
+local ski 		= require("ski")
+local log 		= require("log")
+local cache	 	= require("cache")
+local nos 		= require("luanos")
+local batch 		= require("batch")
+local common 		= require("common")
 local js 	 	= require("cjson.safe")
-local rpccli 	= require("rpccli")
-local authlib 	= require("authlib")
-local simplesql = require("simplesql")
+local rpccli 		= require("rpccli")
+local authlib 		= require("authlib")
+local simplesql 	= require("simplesql")
 
 local map2arr, arr2map, limit, empty = common.map2arr, common.arr2map, common.limit, common.empty
 local escape_map, escape_arr = common.escape_map, common.escape_arr

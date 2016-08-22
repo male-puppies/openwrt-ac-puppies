@@ -3,13 +3,12 @@ local ski 		= require("ski")
 local log 		= require("log")
 local nos 		= require("luanos")
 local js 		= require("cjson.safe")
-local common 	= require("common")
-local cfg 		= require("cfg")
+local common 		= require("common")
+local cache 		= require("cache")
 
 local map2arr, arr2map, limit 		= common.map2arr, common.arr2map, common.limit
 local set_status, set_gid_ucrc 		= nos.user_set_status, nos.user_set_gid_ucrc
 local escape_map, escape_arr, empty = common.escape_map, common.escape_arr, common.empty
-local set_module = cfg.set_module
 
 
 local function find_missing(simple, ukey_arr)
@@ -39,23 +38,21 @@ local function set_offline(uid, magic)
 	set_status(uid, magic, 0)
 end
 
-local function insert_online(simple, ukey_map, authtype)
-	local arr, r, e = {}
+local set_module = cache.set_module
+local function insert_online(simple, user_map, authtype)
 	local now = math.floor(ski.time())
-	print(js.encode(ukey_map))
-	for ukey, p in pairs(ukey_map) do
-		table.insert(arr, string.format("('%s','%s','%s','%s','%s','%s',%s,%s,%s,%s)", p.ukey, authtype, p.username, p.ip, p.mac, p.ext or '{}', p.rid, p.gid, now, now))
-	end
+
+	local arr = fp.reduce2(user_map, function(t, ukey, p)
+		local s = string.format("('%s','%s','%s','%s','%s','%s',%s,%s,%s,%s)", p.ukey, authtype, p.username, p.ip, p.mac, p.ext or '{}', p.rid, p.gid, now, now)
+		return rawset(t, #t + 1, s)
+	end, {})
 
 	local sql = string.format([[insert or replace into memo.online (ukey,type,username,ip,mac,ext,rid,gid,login,active) values %s]], table.concat(arr, ","))
-	print(sql)
-	local r, e = simple:mysql_execute(sql)
-	print(r, e)
-		assert(r, e)
 
-	fp.each(ukey_map, function(k)
-		set_module(k, "authtype")
-	end)
+	log.real1("%s", sql)
+	local r, e = simple:mysql_execute(sql) 	assert(r, e)
+
+	fp.each(user_map, function(_, r) set_module(r.ukey, authtype) end)
 end
 
 local function keepalive(simple, exists)

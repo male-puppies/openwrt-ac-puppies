@@ -1,12 +1,12 @@
 local ski 		= require("ski")
 local log 		= require("log")
-local cfg 		= require("cfg")
-local batch 	= require("batch")
-local common 	= require("common")
+local cache		= require("cache")
+local batch 		= require("batch")
+local common 		= require("common")
 local js 		= require("cjson.safe")
-local rpccli 	= require("rpccli")
-local authlib 	= require("authlib")
-local simplesql = require("simplesql")
+local rpccli 		= require("rpccli")
+local authlib 		= require("authlib")
+local simplesql 	= require("simplesql")
 
 local map2arr, arr2map, limit, empty = common.map2arr, common.arr2map, common.limit, common.empty
 local find_missing, set_online = authlib.find_missing, authlib.set_online

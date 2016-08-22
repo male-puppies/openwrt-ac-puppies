@@ -9,12 +9,12 @@ local md5 		= require("md5")
 local rpccli 		= require("rpccli")
 local simplesql 	= require("simplesql")
 local authlib 		= require("authlib")
-local cfg 		= require("cfg")
+local cache		= require("cache")
 
 local sumhexa = md5.sumhexa
-local set_status, set_online = nos.user_set_status, authlib.set_online
+local set_status, set_online  = nos.user_set_status, authlib.set_online
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
-local set_module = cfg.set_module
+local set_module = cache.set_module
 
 local udp_map = {}
 local udpsrv, mqtt, simple, reply
@@ -22,6 +22,7 @@ local bypass_timeout, on_bypass_timeout
 local wechat_timeout, on_wechat_timeout
 local login_trigger, on_login
 local keepalive_trigger, on_keepalive
+local loop_timeout_check
 
 local function init(u, p)
 	udpsrv, mqtt 	= u, p
@@ -32,6 +33,8 @@ local function init(u, p)
 	wechat_timeout 	= batch.new(on_wechat_timeout)
 	login_trigger 	= batch.new(on_login)
 	keepalive_trigger = batch.new(on_keepalive)
+
+	ski.go(loop_timeout_check)
 end
 
 --[[
@@ -239,6 +242,7 @@ local function insert_new(arr)
 	return r
 end
 
+-- 登陆处理
 function on_login(count, arr)
 	-- 先上线
 	fp.each(arr, function(_, r)
@@ -291,11 +295,42 @@ end
 
 -- 更新active
 function on_keepalive(count, arr)
-	local step = 100
+	local step = 100 			-- 可能有很多，分批更新
 	for i = 1, #arr, step do
 		local narr = fp.reduce(fp.limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
+
+		log.real1("%s", sql)
 		local r, e = simple:mysql_execute(sql) 	assert(r, e)
+	end
+end
+
+function loop_timeout_check()
+	local set_offline = lib.set_offline
+
+	local offline = function(rs)
+		-- 从内核下线
+		fp.each(rs, function(_, r)
+			local uid, magic = r.ukey:match("(%d+)_(%d+)")
+			set_offline(tonumber(uid), tonumber(magic))
+			log.real1("set_offline %s", js.encode(r))
+		end)
+
+		-- 从memo.online删除
+		local narr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
+		local r, e = simple:mysql_execute(sql) 	assert(r, e)
+
+		-- 删除缓存
+		fp.each(rs, function(_, r) set_module(r.ukey, nil) end)
+	end
+
+	local offline_time = cache.offline_time
+	while true do
+		ski.sleep(5) -- TODO 60
+		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='wechat' and active-login>%s;", offline_time())
+		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
+		local _ = #rs > 0 and offline(rs)
 	end
 end
 

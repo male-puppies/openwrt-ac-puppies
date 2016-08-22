@@ -1,14 +1,13 @@
-local ski = require("ski")
-local log = require("log")
-local cfg = require("cfg")
-local nos = require("luanos")
-local js = require("cjson.safe")
+local ski 	= require("ski")
+local log 	= require("log")
+local cache 	= require("cache")
+local nos 	= require("luanos")
+local js 	= require("cjson.safe")
 local authlib = require("authlib")
 
-local get_authtype = cfg.get_authtype
 local get_ip_mac, get_status, get_rule_id = nos.user_get_ip_mac, nos.user_get_status, nos.user_get_rule_id
 local set_status = nos.user_set_status
-local get_module = cfg.get_module
+local get_module = cache.get_module
 
 local dispatch_keepalive = function() end
 

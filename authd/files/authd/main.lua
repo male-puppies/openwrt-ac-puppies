@@ -1,9 +1,9 @@
-local ski = require("ski")
-local lfs = require("lfs")
-local log = require("log")
-local cfg = require("cfg")
-local udp = require("ski.udp")
-local js  = require("cjson.safe")
+local ski 	= require("ski")
+local lfs 	= require("lfs")
+local log 	= require("log")
+local cache 	= require("cache")
+local udp 	= require("ski.udp")
+local js  	= require("cjson.safe")
 local kernel = require("kernel")
 local common = require("common")
 local sandcproxy = require("sandcproxy")
@@ -124,7 +124,7 @@ local function start_udp_server()
 		while true do
 			r, ip, port = udpsrv:recv()
 			if r then
-				print(r)
+				print("main", r)
 				m = decode(r)
 				if m and m.cmd then
 					r, e = udp_chan:write({m, ip, port}) 	assert(r, e)
@@ -161,7 +161,7 @@ local function main()
 	for _, mod in pairs(modules) do
 		mod.init(udpsrv, mqtt)
 	end
-	cfg.init(udpsrv, mqtt)
+	cache.init(udpsrv, mqtt)
 
 	-- kernel模块回调函数
 	kernel.set_kernel_cb(on_kernel_msg)
