@@ -51,7 +51,7 @@ end
 
 ---------------------------------------------- kv ---------------------------------------------
 local kv_cache
-local fields = {"offline_time"}
+local fields = {"offline_time", "redirect_ip"}
 
 local function check_kv()
 	if kv_cache then
@@ -64,15 +64,47 @@ local function check_kv()
 	kv_cache = fp.reduce(rs, function(t, r) return rawset(t, r.k, r.v) end, {})
 end
 
-local function offline_time()
+local function kv_get_common(field)
 	check_kv()
-	return tonumber(kv_cache.offline_time)
+	return kv_cache[field]
+end
+
+local function offline_time()
+	return tonumber(kv_get_common("offline_time"))
+end
+
+local function redirect_ip()
+	return kv_get_common("redirect_ip")
 end
 
 function clear_map.kv(action)
 	kv_cache = nil
 	log.debug("clear kv_cache %s", js.encode(action))
 end
+
+---------------------------------------------- authrule ---------------------------------------------
+local authrule_cache
+
+function clear_map.authrule(action)
+	authrule_cache = nil
+	log.debug("clear authrule_cache %s", js.encode(action))
+end
+
+local function check_authrule()
+	if authrule_cache then
+		return
+	end
+
+	local rs, e = simple:mysql_select("select * from authrule")		assert(rs, e)
+	authrule_cache = fp.tomap(rs, "rid")
+end
+
+local function authrule(rid)
+	check_authrule()
+	return authrule_cache[rid]
+end
+
+------------------------------------------------ end ---------------------------------------------------
 
 return {
 	init 			= init,
@@ -81,5 +113,8 @@ return {
 	set_module 		= set_module,
 	get_module 		= get_module,
 
-	offline_time 	= offline_time,
+	offline_time 		= offline_time,
+	redirect_ip 		= redirect_ip,
+
+	authrule 		= authrule,
 }

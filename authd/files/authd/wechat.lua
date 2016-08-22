@@ -26,9 +26,13 @@ local loop_timeout_check
 
 local function init(u, p)
 	udpsrv, mqtt 	= u, p
+
+	reply 			= lib.gen_reply(udpsrv)
+
 	local dbrpc 	= rpccli.new(mqtt, "a/local/database_srv")
 	simple 			= simplesql.new(dbrpc)
-	reply 			= lib.gen_reply(udpsrv)
+
+	-- 批处理
 	bypass_timeout 	= batch.new(on_bypass_timeout)
 	wechat_timeout 	= batch.new(on_wechat_timeout)
 	login_trigger 	= batch.new(on_login)
@@ -141,10 +145,19 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 	local extend = table.concat({mac, sec}, ",")
 
 	-- TODO
-	local n = {appid = "wx3ae592d54767e201", shop_id = 4248433, ssid = "WX_WIFI", sk = "eaee288fe2a5924c8012f0522a4ea524"}
-	local redirect_url = "http://1.0.0.8/weixin2_login"
-	local appid, timestamp, shop_id, authurl, ssid, bssid, sk = n.appid, p.now, n.shop_id, redirect_url, n.ssid, "", n.sk
-	local arr = {appid, extend, timestamp, shop_id, authurl, mac, ssid, bssid, sk}
+	-- local n = {appid = "wx3ae592d54767e201", shop_id = 4248433, ssid = "WX_WIFI", secretkey = "eaee288fe2a5924c8012f0522a4ea524"}
+	local rid = p.rid
+	local authrule = cache.authrule(rid)
+
+	if not authrule then
+		log.real1("miss authrule for %s", rid)
+		return
+	end
+
+	local n = js.decode(authrule.wechat) 					assert(n)
+	local redirect_url = string.format("http://%s/weixin2_login", cache.redirect_ip())
+	local appid, timestamp, shop_id, authurl, ssid, bssid, secretkey = n.appid, p.now, n.shop_id, redirect_url, n.ssid, "", n.secretkey
+	local arr = {appid, extend, timestamp, shop_id, authurl, mac, ssid, bssid, secretkey}
 	local sign = md5.sumhexa(table.concat(arr))
 	local r = {
 		AppID 		= appid,
@@ -164,7 +177,7 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 		ip 			= p.ip,
 		mac 		= mac,
 		username 	= nil,
-		rid 		= p.rid,
+		rid 		= rid,
 		gid 		= 0,
 		type 		= "wechat",
 		ssid 		= ssid,
@@ -305,6 +318,7 @@ function on_keepalive(count, arr)
 	end
 end
 
+-- 定时下线
 function loop_timeout_check()
 	local set_offline = lib.set_offline
 

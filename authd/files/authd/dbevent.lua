@@ -11,8 +11,21 @@ local function init(u, p)
 	mqtt, udpsrv = p, u
 end
 
+--[[
+{
+    "cmd": "dbsync",
+    "data": {
+        "authrule": {
+            "set":{"add":{...},"set":{...}}
+        },
+        "kv": {
+            "all": 1
+        }
+    }
+}
+]]
 tcp_map["dbsync"] = function(p)
-	fp.each(p, cache.clear)
+	fp.each(p.data, cache.clear)
 end
 
 return {init = init, dispatch_tcp = authlib.gen_dispatch_udp(tcp_map)}
