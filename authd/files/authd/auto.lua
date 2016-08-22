@@ -11,6 +11,7 @@ local simplesql	= require("simplesql")
 
 local set_online = authlib.set_online
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
+local limit, reduce, each, empty = fp.limit, fp.reduce, fp.each, fp.empty
 
 local udp_map = {}
 local simple, udpsrv, mqtt
@@ -32,26 +33,26 @@ end
 function on_keepalive_batch(count, arr)
 	local step = 100 	-- 每次最多更新100个
 	for i = 1, #arr, step do
-		local alive = fp.limit(arr, i, step)
+		local alive = limit(arr, i, step)
 
 		-- 查询在线用户
-		local narr = fp.reduce(alive, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+		local narr = reduce(alive, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("select ukey from memo.online where ukey in (%s)", table.concat(narr, ","))
 		local rs, e = simple:mysql_select(sql) 		assert(rs, e)
 
-		local online = fp.tomap(rs, "ukey")
-		local offline = fp.reduce(alive, function(t, r) return online[r.ukey] and t or rawset(t, r.ukey, r) end, {})
+		local online = tomap(rs, "ukey")
+		local offline = reduce(alive, function(t, r) return online[r.ukey] and t or rawset(t, r.ukey, r) end, {})
 
 		-- 更新已经在线的用户的active
 		if #rs > 0 then
-			local narr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
+			local narr = reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 			local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
 			local r, e = simple:mysql_execute(sql) 	assert(r, e)
 		end
 
 		-- 插入新上线用户
-		if not fp.empty(offline) then
-			fp.each(offline, function(ukey, r)
+		if not empty(offline) then
+			each(offline, function(ukey, r)
 				r.gid = 0
 				r.username = r.mac
 				set_online(r.uid, r.magic, r.gid, r.username)
