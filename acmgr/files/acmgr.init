@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=95
+STOP=10
+BIN=/usr/sbin/acmgr
+
+USE_PROCD=1
+
+start_service() {
+	procd_open_instance
+	procd_set_param command $BIN start
+	procd_set_param respawn
+	procd_close_instance
+}
+
+stop_service() {
+	ps | grep -E "acmgr/main.lua" | grep -v grep  | awk '{print $1}' | xargs kill
+}
