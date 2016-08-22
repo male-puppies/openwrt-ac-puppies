@@ -1,4 +1,4 @@
-src = main.c nt_unotify.c
+src = main.c nt_unotify.c auth_notify.c ac_notify.c
 
 all:ntrackd
 

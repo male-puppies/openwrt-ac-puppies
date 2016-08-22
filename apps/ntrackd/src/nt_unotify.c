@@ -20,7 +20,10 @@
 #include <ntrack_log.h>
 #include <ntrack_msg.h>
 #include <ntrack_auth.h>
+#include <ntrack_nacs.h>
 
+extern char *trans_aclog(nacs_msg_t *msg, int *len);
+extern char *trans_authmsg(ntrack_t *ntrack, auth_msg_t *auth, int *len);
 static int sk_fd = -1;
 int nt_unotify_init(void)
 {
@@ -47,15 +50,15 @@ void nt_unotify_cleanup(void)
 	}
 }
 
-int nt_unotify(void *buff, int len)
+int do_nt_unotify(void *buff, int len, int port)
 {
 	struct msghdr message;
 	struct iovec io;
-	struct sockaddr_in addr_authd;
+	struct sockaddr_in addr;
 
-	addr_authd.sin_family = AF_INET;
-	addr_authd.sin_port = htons(50002);
-	inet_pton(AF_INET, "127.0.0.1", &addr_authd.sin_addr);
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 
 	io.iov_base = buff;
 	io.iov_len = len;
@@ -63,8 +66,8 @@ int nt_unotify(void *buff, int len)
 	memset(&message, 0, sizeof(message));
 	message.msg_iov = &io;
 	message.msg_iovlen = 1;
-	message.msg_name = &addr_authd;
-	message.msg_namelen = sizeof(addr_authd);
+	message.msg_name = &addr;
+	message.msg_namelen = sizeof(addr);
 
 	size_t size = sendmsg(sk_fd, &message, 0);
 	if (size <= 0 ) {
@@ -72,6 +75,40 @@ int nt_unotify(void *buff, int len)
 		return errno;
 	}
 	nt_debug("%d bytes xmit.\n", size);
-
 	return 0;
+}
+
+int nt_unotify(void *buff, int len)
+{
+	return do_nt_unotify(buff, len, 50002);
+}
+
+
+int nt_unotify_auth(auth_msg_t *auth, ntrack_t *ntrack)
+{
+	int len = 0, ret = -1;
+	char *buf = trans_authmsg(ntrack, auth, &len);
+	if (buf) {
+		ret = do_nt_unotify(buf, len, 50002);
+		if (ret != 0) {
+			nt_error("nt_unotify auth failed: %s\n", strerror(errno));
+		}
+		free(buf);
+	}
+	return ret;
+}
+
+
+int nt_unotify_ac(nacs_msg_t *msg)
+{
+	int len = 0, ret = -1;
+	char *buf = trans_aclog(msg, &len);
+	if (buf) {
+		ret = do_nt_unotify(buf, len, 60000);
+		if (ret != 0) {
+			nt_error("nt_unotify ac failed: %s\n", strerror(errno));
+		}
+		free(buf);
+	}
+	return ret;
 }

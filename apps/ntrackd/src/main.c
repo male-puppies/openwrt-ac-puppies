@@ -28,8 +28,8 @@
 
 /* kernel user node message delivery to authd. */
 extern int nt_unotify_init(void);
-extern int nt_unotify(void *buff, int len);
-
+extern int nt_unotify_ac(nacs_msg_t *msg);
+extern int nt_unotify_auth(auth_msg_t *auth, ntrack_t *ntrack);
 static ntrack_t ntrack;
 
 static int fn_message_disp(void *p)
@@ -48,7 +48,7 @@ static int fn_message_disp(void *p)
 		}
 	}
 #endif
-
+	int ret = -1;
 	nt_msghdr_t *hdr = p;
 	switch(hdr->type) {
 		case en_MSG_PCAP:
@@ -57,29 +57,15 @@ static int fn_message_disp(void *p)
 		break;
 		case en_MSG_AUTH:
 		{
-			user_info_t *ui;
 			auth_msg_t *auth = nt_msg_data(hdr);
-			char buf[128];
-			int n;
-			n = sprintf(buf, "{\"cmd\":\"keepalive\",\"magic\":%u,\"uid\":%u}", auth->magic, auth->id);
-			
-			nt_debug("message uid: %u, magic: %u\n", auth->id, auth->magic);
-			ui = nt_get_user_by_id(&ntrack, auth->id, auth->magic);
-			if(ui) {
-				dump_user(ui);
-				if (nt_unotify(buf, n) != 0) {
-					nt_error("nt_unotify failed: %s\n", strerror(errno));
-				}
-			} else {
-				nt_error("[%u:%u]->not found userinfo.\n", auth->id, auth->magic);
-			}
+			ret = nt_unotify_auth(auth, &ntrack);
 		}
 		break;
 
 		case en_MSG_NACS:
 			{
 				nacs_msg_t *nacs = nt_msg_data(hdr);
-				/*todo transmit to other process*/
+				ret = nt_unotify_ac(nacs);
 			}
 			break;
 
@@ -89,7 +75,7 @@ static int fn_message_disp(void *p)
 		}
 		break;
 	}
-	return 0;
+	return ret;
 }
 
 typedef struct {

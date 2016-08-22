@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +pps_comm +libpps
+  DEPENDS:= +pps_comm +libpps +libcjson
 endef
 
 define Package/$(PKG_NAME)
@@ -43,7 +43,7 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-TARGET_LDFLAGS += -lpps -lpthread
+TARGET_LDFLAGS += -lpps -lpthread -lcjson
 TARGET_CFLAGS += -pthread
 
 MAKE_FLAGS += \
