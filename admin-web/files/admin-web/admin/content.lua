@@ -92,4 +92,8 @@ if cmd:find("^wlan_") then
 	return require("admin.wlanssid").run(cmd)
 end
 
-
+-- curl 'http://127.0.0.1/v1/admin/api/mwan_get?token=77d0aeb8ae53926a363f1eb6973bb7ca'
+-- curl 'http://127.0.0.1/v1/admin/api/mwan_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'arg=json_string'
+if cmd:find("^mwan_") then
+	return require("admin.mwan").run(cmd)
+end

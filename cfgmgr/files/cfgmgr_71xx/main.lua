@@ -21,6 +21,7 @@ local modules = {
 	acrule		=	require("acrule"),
 	timegroup 	= 	require("timegroup"),
 	acset 		= 	require("acset"),
+	mwan		=	require("mwan"),
 }
 
 local encode, decode = js.encode, js.decode
