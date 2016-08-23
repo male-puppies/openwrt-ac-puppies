@@ -68,7 +68,7 @@ end
 -- 定时/超时下线
 function loop_timeout_check()
 	while true do
-		ski.sleep(5)
+		ski.sleep(cache.timeout_check_intervel())
 		authlib.timeout_offline(simple, "auto")
 	end
 end

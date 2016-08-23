@@ -5,8 +5,8 @@ local nos 		= require("luanos")
 local js 		= require("cjson.safe")
 local cache		= require("cache")
 
+local each, reduce2, reduce = fp.each, fp.reduce2, fp.reduce
 local set_status, set_gid_ucrc = nos.user_set_status, nos.user_set_gid_ucrc
-local each, reduce2 = fp.each, fp.reduce2
 
 local function gen_dispatch_udp(udp_map)
 	return function(cmd, ip, port)
@@ -57,6 +57,7 @@ local function insert_online(simple, user_map, authtype)
 	each(user_map, function(_, r) set_module(r.ukey, authtype) end)
 end
 
+-- 定时下线和无流量下线
 local function timeout_offline(simple, mod)
 	local active_timeout = 600
 	local now = math.floor(ski.time())
@@ -72,7 +73,7 @@ local function timeout_offline(simple, mod)
 	-- 从内核下线
 	each(rs, function(_, r)
 		local uid, magic = r.ukey:match("(%d+)_(%d+)")
-		authlib.set_offline(tonumber(uid), tonumber(magic))
+		set_offline(tonumber(uid), tonumber(magic))
 		log.real1("set_offline %s", js.encode(r))
 	end)
 

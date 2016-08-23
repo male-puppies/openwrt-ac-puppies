@@ -85,12 +85,13 @@ function on_login(count, arr)
 
 		-- 排除并回复不存在的用户
 		local exists = reduce(users, function(t, r)
-			local username = r.username
-			if not user_map[username] then
+			local user = user_map[r.username]
+			if not user then
 				reply(r.u_ip, r.u_port, 1, "invalid user")
 				return t
 			end
 
+			r.gid = user.gid
 			return rawset(t, #t + 1, r)
 		end, {})
 
@@ -152,7 +153,7 @@ udp_map["/cloudlogin"] = function(p, uip, uport)
 	local krid = get_rule_id(uid, magic)
 	local kip, kmac = get_ip_mac(uid, magic)
 
-	local gid = 0 	-- TODO select gid
+	local gid = -1 	-- 占位
 	if not (krid and kip and gid and ip == kip and mac == kmac and krid == rid) then
 		return reply(uip, uport, 1, "invalid query")
 	end
@@ -184,7 +185,7 @@ end
 -- 定时/超时下线
 function loop_timeout_check()
 	while true do
-		ski.sleep(5)
+		ski.sleep(cache.timeout_check_intervel())
 		authlib.timeout_offline(simple, "web")
 	end
 end

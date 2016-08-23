@@ -37,7 +37,6 @@ local function check_module()
 end
 
 local function set_module(ukey, mod)
-	print(ukey, mod)
 	check_module()
 	if not online_cache[ukey] then
 		online_cache[ukey] = mod
@@ -52,7 +51,7 @@ end
 
 ---------------------------------------------- kv ---------------------------------------------
 local kv_cache
-local fields = {"auth_offline_time", "auth_redirect_ip"}
+local fields = {"auth_offline_time", "auth_redirect_ip", "auth_no_flow_timeout"}
 
 local function check_kv()
 	if kv_cache then
@@ -76,6 +75,10 @@ end
 
 local function auth_redirect_ip()
 	return kv_get_common("auth_redirect_ip")
+end
+
+local function auth_no_flow_timeout()
+	return kv_get_common("auth_no_flow_timeout")
 end
 
 function clear_map.kv(action)
@@ -106,7 +109,10 @@ local function authrule(rid)
 end
 
 ------------------------------------------------ end ---------------------------------------------------
-
+local function timeout_check_intervel()
+	return 10 -- TODO
+end
+------------------------------------------------ other ---------------------------------------------------
 return {
 	init 			= init,
 	clear 			= clear,
@@ -114,8 +120,11 @@ return {
 	set_module 		= set_module,
 	get_module 		= get_module,
 
+	authrule 		= authrule,
+
 	auth_offline_time 		= auth_offline_time,
 	auth_redirect_ip 		= auth_redirect_ip,
+	auth_no_flow_timeout 	= auth_no_flow_timeout,
 
-	authrule 		= authrule,
+	timeout_check_intervel 	= timeout_check_intervel,
 }

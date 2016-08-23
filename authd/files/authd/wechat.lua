@@ -176,7 +176,7 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 		mac 		= mac,
 		username 	= nil,
 		rid 		= rid,
-		gid 		= 0,
+		gid 		= 63, 	-- default组
 		type 		= "wechat",
 		ssid 		= ssid,
 	}
@@ -312,7 +312,7 @@ end
 -- 定时/超时下线
 function loop_timeout_check()
 	while true do
-		ski.sleep(5)
+		ski.sleep(cache.timeout_check_intervel())
 		authlib.timeout_offline(simple, "wechat")
 	end
 end
