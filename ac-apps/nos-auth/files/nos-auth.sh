@@ -41,6 +41,11 @@ if test -n "$bypass_dst_ip" || test -n "$bypass_http_host"; then
 			echo ipset=/$host/auth_global_bypass_dst_ip >>$dh_conf
 		done
 		/etc/init.d/dnsmasq restart
+		(
+		 for host in $bypass_http_host; do
+			nslookup $host >/dev/null 2>&1
+		 done
+		) &
 	}
 	echo auth_global_bypass_dst_ip=auth_global_bypass_dst_ip >/dev/nos_auth_ctl
 fi
