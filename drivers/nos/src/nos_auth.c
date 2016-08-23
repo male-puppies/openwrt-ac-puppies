@@ -133,6 +133,19 @@ static inline int nos_auth_delete(const struct auth_rule_t *auth)
 	return -ENOENT;
 }
 
+unsigned int nos_auth_match_bypass_dst(const struct net_device *in,
+		const struct net_device *out,
+		struct sk_buff *skb)
+{
+	if (auth_conf.bypass_dst_list_set) {
+		if (ip_set_test_dst_ip(in, out, skb, auth_conf.bypass_dst_list_id) > 0) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 unsigned int nos_auth_hook(const struct net_device *in,
 		const struct net_device *out,
 		struct sk_buff *skb,
@@ -185,6 +198,12 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		unsigned char *data;
 		struct tcphdr *tcph;
 		struct iphdr *iph = ip_hdr(skb);
+
+		if (nos_auth_match_bypass_dst(in, out, skb) > 0) {
+			set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
+			return NF_ACCEPT;
+		}
+
 		if (iph->protocol == IPPROTO_UDP) {
 			//FIXME
 			struct udphdr *udph = (struct udphdr *)((void *)iph + iph->ihl*4);
