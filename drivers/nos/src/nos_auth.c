@@ -173,7 +173,11 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		ui->hdr.rule_magic = g_auth_conf_magic;
 	}
 
-	if (ui->hdr.status == AUTH_NONE) {
+	if (ui->hdr.type == AUTH_TYPE_AUTO && ui->hdr.status != AUTH_OK) {
+		ui->hdr.status = AUTH_OK;
+	}
+
+	if (ui->hdr.type == AUTH_TYPE_WEB && ui->hdr.status == AUTH_NONE) {
 		//need web auth
 		int data_len;
 		unsigned char *data;
@@ -208,7 +212,9 @@ unsigned int nos_auth_hook(const struct net_device *in,
 			nos_auth_convert_tcprst(skb);
 			return NF_ACCEPT;
 		}
-	} else if (ui->hdr.status == AUTH_OK) {
+	}
+
+	if (ui->hdr.status == AUTH_OK) {
 		if (time_after(jiffies, ui->hdr.time_stamp + 30 * HZ)) {
 			nt_msghdr_t hdr;
 			auth_msg_t auth;
