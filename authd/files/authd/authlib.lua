@@ -61,7 +61,7 @@ local function timeout_offline(simple, mod)
 	local active_timeout = 600
 	local now = math.floor(ski.time())
 
-	-- Ñ¡ÔñÊôÓÚÄ£¿émod£¬activeÌ«¾ÃÃ»ÓÐ¸üÐÂ¡¢¶¨Ê±ÏÂÏßµÄÓÃ»§
+	-- é€‰æ‹©å±žäºŽæ¨¡å—modï¼Œactiveå¤ªä¹…æ²¡æœ‰æ›´æ–°ã€å®šæ—¶ä¸‹çº¿çš„ç”¨æˆ·
 	local sql = string.format("select ukey,username from memo.online where type='%s' and (active-login>%s or %s-active>%s);",
 		mod, cache.auth_offline_time(), now, active_timeout)
 	local rs, e = simple:mysql_select(sql) 	assert(rs, e)
@@ -69,19 +69,19 @@ local function timeout_offline(simple, mod)
 		return
 	end
 
-	-- ´ÓÄÚºËÏÂÏß
+	-- ä»Žå†…æ ¸ä¸‹çº¿
 	each(rs, function(_, r)
 		local uid, magic = r.ukey:match("(%d+)_(%d+)")
 		authlib.set_offline(tonumber(uid), tonumber(magic))
 		log.real1("set_offline %s", js.encode(r))
 	end)
 
-	-- ´Ómemo.onlineÉ¾³ý
+	-- ä»Žmemo.onlineåˆ é™¤
 	local narr = reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 	local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
 	local r, e = simple:mysql_execute(sql) 	assert(r, e)
 
-	-- É¾³ý»º´æ
+	-- åˆ é™¤ç¼“å­˜
 	each(rs, function(_, r) set_module(r.ukey, nil) end)
 end
 
