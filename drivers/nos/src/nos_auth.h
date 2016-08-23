@@ -32,6 +32,8 @@ struct auth_rule_t {
 
 struct auth_conf {
 	unsigned int num;
+	unsigned int bypass_dst_list_id;
+	struct ip_set *bypass_dst_list_set;
 #define MAX_AUTH 16
 	struct auth_rule_t auth[MAX_AUTH];
 };

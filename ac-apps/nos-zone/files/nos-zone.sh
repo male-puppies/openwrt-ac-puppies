@@ -1,6 +1,7 @@
 #!/bin/sh
 
 [ x$1 = xstop ] && {
+	echo clean >/dev/nos_zone_ctl
 	exit 0
 }
 

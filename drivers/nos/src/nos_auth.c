@@ -63,6 +63,8 @@ static inline void nos_auth_cleanup(void)
 	int i;
 	nos_hook_disable = 1;
 	synchronize_rcu();
+	if (auth_conf.bypass_dst_list_set)
+		ip_set_put_byindex(&init_net, auth_conf.bypass_dst_list_id);
 	for (i = 0; i < auth_conf.num; i++)
 	{
 		if (auth_conf.auth[i].ip_white_list_set)
@@ -418,6 +420,7 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 				"# Info:\n"
 				"#    redirect_ip=%pI4\n"
 				"#    no_flow_timeout=%u\n"
+				"#    auth_global_bypass_dst_ip=%s\n"
 				"#    g_auth_conf_magic=%u\n"
 				"#\n"
 				"# Reload cmd:\n"
@@ -426,6 +429,7 @@ static void *nos_auth_start(struct seq_file *m, loff_t *pos)
 				"\n",
 				&redirect_ip,
 				nos_auth_no_flow_timeout,
+				auth_conf.bypass_dst_list_set ? ip_set_name_byindex(&init_net, auth_conf.bypass_dst_list_id) :"",
 				g_auth_conf_magic);
 		nos_auth_ctl_buffer[n] = 0;
 		return nos_auth_ctl_buffer;
@@ -646,6 +650,29 @@ static ssize_t nos_auth_write(struct file *file, const char __user *buf, size_t 
 	} else if (strncmp(data, "update magic", 12) == 0) {
 		g_auth_conf_magic++;
 		goto done;
+	} else if (strncmp(data, "auth_global_bypass_dst_ip=", 26) == 0) {
+		char buf[256];
+		buf[0] = 0;
+		n = sscanf(data, "auth_global_bypass_dst_ip=%s\n", buf);
+		if (n == 1 && buf[0] != 0) {
+			ip_set_id_t id;
+			struct ip_set *set;
+			id = ip_set_get_byname(&init_net, buf, &set);
+			if (id != IPSET_INVALID_ID) {
+				nos_hook_disable = 1;
+				synchronize_rcu();
+				if (auth_conf.bypass_dst_list_set) {
+					ip_set_put_byindex(&init_net, auth_conf.bypass_dst_list_id);
+				}
+				auth_conf.bypass_dst_list_id = id;
+				auth_conf.bypass_dst_list_set = set;
+				nos_hook_disable = 0;
+				goto done;
+			} else {
+				err = -EINVAL;
+			}
+			nt_error("set auth_global_bypass_dst_ip failed ret=%d\n", err);
+		}
 	}
 
 	nt_error("ignoring line[%s]\n", data);

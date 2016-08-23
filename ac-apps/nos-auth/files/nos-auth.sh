@@ -1,6 +1,7 @@
 #!/bin/sh
 
 [ x$1 = xstop ] && {
+	echo clean >/dev/nos_auth_ctl
 	exit 0
 }
 
@@ -9,10 +10,12 @@
 	exit 0
 }
 
-no_flow_timeout="`uci get nos-auth.@defaults[0].no_flow_timeout`"
+no_flow_timeout="`uci get nos-auth.@defaults[0].no_flow_timeout 2>/dev/null`"
 test -n "$no_flow_timeout" || no_flow_timeout=3600
-redirect_ip="`uci get nos-auth.@defaults[0].redirect_ip`"
+redirect_ip="`uci get nos-auth.@defaults[0].redirect_ip 2>/dev/null`"
 test -n "$redirect_ip" || redirect_ip="1.0.0.8"
+bypass_http_host="`uci get nos-auth.@defaults[0].bypass_http_host 2>/dev/null`"
+bypass_dst_ip="`uci get nos-auth.@defaults[0].bypass_dst_ip 2>/dev/null`"
 
 echo clean >/dev/nos_auth_ctl
 for i in `seq 0 255`; do
@@ -21,7 +24,26 @@ for i in `seq 0 255`; do
 done
 
 ipset destroy auth_global_bypass_dst_ip >/dev/null 2>&1
-ipset create auth_global_bypass_dst_ip hash:ip
+if test -n "$bypass_dst_ip" || test -n "$bypass_http_host"; then
+	ipset create auth_global_bypass_dst_ip hash:ip
+
+	test -n "$bypass_dst_ip" && {
+		for ip in $bypass_dst_ip; do
+			ipset add auth_global_bypass_dst_ip $ip
+		done
+	}
+
+	test -n "$bypass_http_host" && {
+		dh_conf="/tmp/dnsmasq.d/auth_global_bypass_host.conf"
+		mkdir -p /tmp/dnsmasq.d
+		echo -n >$dh_conf
+		for host in $bypass_http_host; do
+			echo ipset=/$host/auth_global_bypass_dst_ip >>$dh_conf
+		done
+		/etc/init.d/dnsmasq restart
+	}
+	echo auth_global_bypass_dst_ip=auth_global_bypass_dst_ip >/dev/nos_auth_ctl
+fi
 
 ifconfig br-lo >/dev/null 2>&1 || brctl addbr br-lo
 ip addr flush dev br-lo
@@ -32,7 +54,7 @@ echo redirect_ip=$redirect_ip >/dev/nos_auth_ctl
 
 for i in `seq 0 255`; do
 	[ x"`uci get nos-auth.@rule[$i] 2>/dev/null`" = xrule ] >/dev/null 2>&1 || break
-	disabled="`uci get nos-auth.@rule[$i].disabled`"
+	disabled="`uci get nos-auth.@rule[$i].disabled 2>/dev/null`"
 	[ x$disabled = x1 ] && {
 		echo "info: rule [$i] disabled"
 		continue
@@ -51,7 +73,7 @@ for i in `seq 0 255`; do
 
 	case $type in
 		"web")
-			bypass_src_ip="`uci get nos-auth.@rule[$i].bypass_src_ip`"
+			bypass_src_ip="`uci get nos-auth.@rule[$i].bypass_src_ip 2>/dev/null`"
 			test -n "$bypass_src_ip" && ipset create auth_bypass_src_ip$id hash:net && {
 				for net in $bypass_src_ip; do
 					ipset add auth_bypass_src_ip$id $net
@@ -59,7 +81,7 @@ for i in `seq 0 255`; do
 				cmd="$cmd,ipwhite=auth_bypass_src_ip$id"
 			}
 
-			bypass_src_mac="`uci get nos-auth.@rule[$i].bypass_src_mac`"
+			bypass_src_mac="`uci get nos-auth.@rule[$i].bypass_src_mac 2>/dev/null`"
 			test -n "$bypass_src_mac" && ipset create auth_bypass_src_mac$id hash:mac && {
 				for mac in $bypass_src_mac; do
 					ipset add auth_bypass_src_mac$id $mac
