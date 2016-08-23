@@ -48,8 +48,8 @@ function cmd_map.kv_get()
 end
 
 local kvmap = {
-	auth_offline_time = gen_validate_num(1, 86400),
-	auth_no_flow_timeout = gen_validate_num(1, 86400),
+	auth_offline_time = gen_validate_num(1, 8640000),
+	auth_no_flow_timeout = gen_validate_num(1, 8640000),
 }
 
 function kvmap.auth_redirect_ip(ip)

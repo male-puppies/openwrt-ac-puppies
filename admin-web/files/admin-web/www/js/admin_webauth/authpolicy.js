@@ -115,15 +115,15 @@ function createInitModal() {
 }
 
 function initData2() {
-	var args = '["auth_offline_time","auth_redirect_ip","auth_bypass_dst"]';
+	var args = '["auth_no_flow_timeout","auth_redirect_ip","auth_bypass_dst"]';
 	var obj = {keys: encodeURI(args)};
 	cgicall.get("kv_get", obj, function(d) {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			var data = d.data;
 			data.auth_bypass_dst = data.auth_bypass_dst.length == 0 ? "" : data.auth_bypass_dst.join("\n");
 
-			var time = data.auth_offline_time && data.auth_offline_time != "" ? parseInt(data.auth_offline_time) : 3600;
-			data.auth_offline_time = parseInt(time / 60);
+			var time = data.auth_no_flow_timeout && data.auth_no_flow_timeout != "" ? parseInt(data.auth_no_flow_timeout) : 3600;
+			data.auth_no_flow_timeout = parseInt(time / 60);
 
 			jsonTraversal(d.data, jsTravSet);
 		}
@@ -331,7 +331,7 @@ function OnSubmit() {
 	if (!verification(".g-config")) return;
 
 	var obj = {
-			auth_offline_time: "",
+			auth_no_flow_timeout: "",
 			auth_redirect_ip: "",
 			auth_bypass_dst: ""
 		},
@@ -347,7 +347,7 @@ function OnSubmit() {
 		}
 	}
 	data.auth_bypass_dst = sarr;
-	data.auth_offline_time = parseInt(data.auth_offline_time) * 60;
+	data.auth_no_flow_timeout = parseInt(data.auth_no_flow_timeout) * 60;
 	cgicall.post("kv_set", data, function(d) {
 		cgicallBack(d, function() {
 			initData2();
