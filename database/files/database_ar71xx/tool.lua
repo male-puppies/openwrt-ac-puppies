@@ -11,8 +11,8 @@ local function start_sand_server()
 	end
 	local args = {
 		log = 1,
-		unique = unique, 
-		clitopic = {unique}, 
+		unique = unique,
+		clitopic = {unique},
 		on_message = numb,
 		on_disconnect = numb,
 		srvtopic = {unique .. "_srv"},
@@ -30,10 +30,10 @@ local cmd_map = {}
 function cmd_map.r(sql)
 	assert(sql)
 	local r = rpc():select2(sql)
-	for i, v in ipairs(r) do print(i, js.encode(v)) end 
+	for i, v in ipairs(r) do print(i, js.encode(v)) end
 end
 
-function cmd_map.w(sql) 
+function cmd_map.w(sql)
 	assert(sql, "sql")
 	rpc():execute2(sql)
 end
@@ -41,14 +41,12 @@ end
 function cmd_map.backup()
 	local code = [[
 		local ins = require("mgr").ins()
-		return ins.conn:protect(function()
-			ins.ud:backup()
-			return true
-		end)
+		ins.ud:backup()
+		return true
 	]]
 	local _, dbrpc = rpc()
-	local r, e = dbrpc:fetch("backup_db", code)
-	if e then io.stderr:write("error ", e, "\n") os.exit(-1) end 
+	local r, e = dbrpc:once(code)
+	if e then io.stderr:write("error ", e, "\n") os.exit(-1) end
 	print(r)
 end
 
