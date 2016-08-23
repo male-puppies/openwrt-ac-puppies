@@ -11,17 +11,21 @@ local simplesql	= require("simplesql")
 
 local set_online = authlib.set_online
 local keepalive, insert_online = authlib.keepalive, authlib.insert_online
-local limit, reduce, each, empty = fp.limit, fp.reduce, fp.each, fp.empty
+local limit, reduce, each, empty, tomap = fp.limit, fp.reduce, fp.each, fp.empty, fp.tomap
 
 local udp_map = {}
 local simple, udpsrv, mqtt
 local keepalive_trigger, on_keepalive_batch
+local loop_timeout_check
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
+
 	local dbrpc  = rpccli.new(mqtt, "a/local/database_srv")
 	simple = simplesql.new(dbrpc)
 	keepalive_trigger = batch.new(on_keepalive_batch)
+
+	ski.go(loop_timeout_check)
 end
 
 -- {"cmd":"auto_keepalive","uid":70,"rid":1,"ukey":"70_142","mac":"28:a0:2b:65:4d:62","magic":142,"ip":"172.16.24.186"}
@@ -55,10 +59,17 @@ function on_keepalive_batch(count, arr)
 			each(offline, function(ukey, r)
 				r.gid = 0
 				r.username = r.mac
-				set_online(r.uid, r.magic, r.gid, r.username)
 			end)
 			insert_online(simple, offline, "auto")
 		end
+	end
+end
+
+-- 定时/超时下线
+function loop_timeout_check()
+	while true do
+		ski.sleep(5)
+		authlib.timeout_offline(simple, "auto")
 	end
 end
 

@@ -181,33 +181,11 @@ function on_keepalive(count, arr)
 	end
 end
 
--- 定时下线
+-- 定时/超时下线
 function loop_timeout_check()
-	local set_offline = authlib.set_offline
-	local set_module, auth_offline_time = cache.set_module, cache.auth_offline_time
-
-	local offline = function(rs)
-		-- 从内核下线
-		each(rs, function(_, r)
-			local uid, magic = r.ukey:match("(%d+)_(%d+)")
-			set_offline(tonumber(uid), tonumber(magic))
-			log.real1("set_offline %s", js.encode(r))
-		end)
-
-		-- 从memo.online删除
-		local narr = reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
-		local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
-		local r, e = simple:mysql_execute(sql) 	assert(r, e)
-
-		-- 删除缓存
-		each(rs, function(_, r) set_module(r.ukey, nil) end)
-	end
-
 	while true do
 		ski.sleep(5)
-		local sql = string.format("select ukey,username,(active-login) as diff from memo.online where type='web' and active-login>%s;", auth_offline_time())
-		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
-		local _ = #rs > 0 and offline(rs)
+		authlib.timeout_offline(simple, "web")
 	end
 end
 
