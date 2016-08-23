@@ -26,8 +26,9 @@ udp_map["kv_set"] = function(p, ip, port)
 		local rs, e = conn:select(sql) 	assert(rs, e)
 		local tmap = fp.reduce2(rs, function(t, _, r) return rawset(t, r.k, tostring(r.v)) end, {})
 
-		-- 对比提交的数据是否有变化
-		if fp.same(p, tmap) then
+		-- 查找修改的字段
+		local diff = fp.reduce2(p, function(t, k, v) return tmap[k] == v and t or rawset(t, k, v) end, {})
+		if fp.empty(diff) then
 			return true
 		end
 
@@ -50,8 +51,8 @@ udp_map["kv_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	-- local r, e = dbrpc:fetch("cfgmgr_ipgroup_set", code, p)
-	local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:fetch("cfgmgr_ipgroup_set", code, p)
+	-- local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
