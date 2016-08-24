@@ -15,25 +15,25 @@ if cmd == "login" then
 	return require("admin.login").run()
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/iface_get?token=77d0aeb8ae53926a363f1eb6973bb7ca'
--- curl 'http://127.0.0.1/v1/admin/api/iface_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'arg=json_string'
+-- curl 'http://127.0.0.1/v1/admin/api/iface_get?token=c0d459db25347facb2be82d34391fa57'
+-- curl 'http://127.0.0.1/v1/admin/api/iface_set?token=c0d459db25347facb2be82d34391fa57' -d 'arg=json_string'
 if cmd:find("^iface_") then
 	return require("admin.iface").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/ipgroup_del?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'ipgids=[0,1,2,3]'
--- curl 'http://127.0.0.1/v1/admin/api/ipgroup_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'ipgid=1&ipgrpname=xxx&ipgrpdesc=yyy&ranges=["0.0.0.7/16"]'
--- curl 'http://127.0.0.1/v1/admin/api/ipgroup_add?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'ipgid=63&ipgrpname=xxx2&ipgrpdesc=yyy&ranges=["0.0.0.7-0.0.0.999"]'
--- curl 'http://127.0.0.1/v1/admin/api/ipgroup_get?token=77d0aeb8ae53926a363f1eb6973bb7ca&page=1&count=10&order=ipgrpname&desc=1&search=ipgrpname&like=ALL'
+-- curl 'http://127.0.0.1/v1/admin/api/ipgroup_del?token=c0d459db25347facb2be82d34391fa57' -d 'ipgids=[0,1,2,3]'
+-- curl 'http://127.0.0.1/v1/admin/api/ipgroup_set?token=c0d459db25347facb2be82d34391fa57' -d 'ipgid=1&ipgrpname=xxx&ipgrpdesc=yyy&ranges=["0.0.0.7/16"]'
+-- curl 'http://127.0.0.1/v1/admin/api/ipgroup_add?token=c0d459db25347facb2be82d34391fa57' -d 'ipgid=63&ipgrpname=xxx2&ipgrpdesc=yyy&ranges=["0.0.0.7-0.0.0.999"]'
+-- curl 'http://127.0.0.1/v1/admin/api/ipgroup_get?token=c0d459db25347facb2be82d34391fa57&page=1&count=10&order=ipgrpname&desc=1&search=ipgrpname&like=ALL'
 if cmd:find("^ipgroup_") then
 	return require("admin.ipgroup").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/acrule_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'ruleid=10&priority=4&rulename=rulename&ruledesc=ruledesc&src_ipgids=[1,2,3]&dest_ipgids=[2,6]&proto_ids=[3,4]&tmgrp_ids=[1]&actions=["ACCEPT"]&enable=1'
--- curl 'http://127.0.0.1/v1/admin/api/acrule_get?token=77d0aeb8ae53926a363f1eb6973bb7ca&page=1&count=10'
--- curl 'http://127.0.0.1/v1/admin/api/acrule_del?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'ruleids=[9,10]'
--- curl 'http://127.0.0.1/v1/admin/api/acrule_add?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'rulename=uuuu&ruledesc=ruledesc&src_ipgids=[1,4]&dest_ipgids=[4]&proto_ids=[3,4]&tmgrp_ids=[1]&actions=["ACCEPT","ADUIT"]&enable=1'
--- curl 'http://127.0.0.1/v1/admin/api/acrule_adjust?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'ruleids=[1,2]'
+-- curl 'http://127.0.0.1/v1/admin/api/acrule_set?token=c0d459db25347facb2be82d34391fa57' -d 'ruleid=10&priority=4&rulename=rulename&ruledesc=ruledesc&src_ipgids=[1,2,3]&dest_ipgids=[2,6]&proto_ids=[3,4]&tmgrp_ids=[1]&actions=["ACCEPT"]&enable=1'
+-- curl 'http://127.0.0.1/v1/admin/api/acrule_get?token=c0d459db25347facb2be82d34391fa57&page=1&count=10'
+-- curl 'http://127.0.0.1/v1/admin/api/acrule_del?token=c0d459db25347facb2be82d34391fa57' -d 'ruleids=[9,10]'
+-- curl 'http://127.0.0.1/v1/admin/api/acrule_add?token=c0d459db25347facb2be82d34391fa57' -d 'rulename=uuuu&ruledesc=ruledesc&src_ipgids=[1,4]&dest_ipgids=[4]&proto_ids=[3,4]&tmgrp_ids=[1]&actions=["ACCEPT","ADUIT"]&enable=1'
+-- curl 'http://127.0.0.1/v1/admin/api/acrule_adjust?token=c0d459db25347facb2be82d34391fa57' -d 'ruleids=[1,2]'
 if cmd:find("^acrule_") then
         return require("admin.acrule").run(cmd)
 end
@@ -49,8 +49,8 @@ if cmd:find("^authrule_") then
 	return require("admin.authrule").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/kv_get?token=77d0aeb8ae53926a363f1eb6973bb7ca&keys=%5B%22auth_offline_time%22,%22auth_bypass_dst%22%5D'
--- curl 'http://127.0.0.1/v1/admin/api/kv_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'auth_offline_time=1900&auth_redirect_ip=1.1.1.1&auth_bypass_dst=[1]'
+-- curl 'http://127.0.0.1/v1/admin/api/kv_get?token=c0d459db25347facb2be82d34391fa57&keys=%5B%22auth_offline_time%22,%22auth_bypass_dst%22%5D'
+-- curl 'http://127.0.0.1/v1/admin/api/kv_set?token=c0d459db25347facb2be82d34391fa57' -d 'auth_offline_time=1900&auth_redirect_ip=1.1.1.1&auth_bypass_dst=[1]'
 if cmd:find("^kv_") then
 	return require("admin.kv").run(cmd)
 end
@@ -92,8 +92,26 @@ if cmd:find("^wlan_") then
 	return require("admin.wlanssid").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/mwan_get?token=77d0aeb8ae53926a363f1eb6973bb7ca'
--- curl 'http://127.0.0.1/v1/admin/api/mwan_set?token=77d0aeb8ae53926a363f1eb6973bb7ca' -d 'arg=json_string'
+-- curl 'http://127.0.0.1/v1/admin/api/mwan_get?token=c0d459db25347facb2be82d34391fa57'
+-- curl 'http://127.0.0.1/v1/admin/api/mwan_set?token=c0d459db25347facb2be82d34391fa57' -d 'arg=json_string'
 if cmd:find("^mwan_") then
 	return require("admin.mwan").run(cmd)
+end
+
+
+-- curl 'http://127.0.0.1/v1/admin/api/acgroup_del?token=c0d459db25347facb2be82d34391fa57' -d 'gids=[0,1,2,3]'
+-- curl 'http://127.0.0.1/v1/admin/api/acgroup_set?token=c0d459db25347facb2be82d34391fa57' -d 'gid=63&groupname=xxx&groupdesc=yyy&pid=-1'
+-- curl 'http://127.0.0.1/v1/admin/api/acgroup_add?token=c0d459db25347facb2be82d34391fa57' -d 'groupname=xxx&groupdesc=yyy&pid=-1'
+-- curl 'http://127.0.0.1/v1/admin/api/acgroup_get?token=c0d459db25347facb2be82d34391fa57&page=1&count=10&order=gid&desc=1&search=groupname&like=default'
+if cmd:find("^acgroup_") then
+	return require("admin.acgroup").run(cmd)
+end
+
+
+-- curl 'http://127.0.0.1/v1/admin/api/user_del?token=c0d459db25347facb2be82d34391fa57' -d 'uids=[0,1,2,3]'
+-- curl 'http://127.0.0.1/v1/admin/api/user_set?token=c0d459db25347facb2be82d34391fa57' -d 'username=a22&password=aaa&enable=1&userdesc=desc&gid=63&bindip=1.3.6.9&bindmac=&expire=2016-09-01 00:01:02&register=2016-09-01 00:01:00&uid=0'
+-- curl 'http://127.0.0.1/v1/admin/api/user_add?token=c0d459db25347facb2be82d34391fa57' -d 'username=a2&password=aaa&enable=1&userdesc=desc&gid=63&bindip=1.3.6.9&bindmac=&expire=2016-09-01 00:01:02'
+-- curl 'http://127.0.0.1/v1/admin/api/user_get?token=c0d459db25347facb2be82d34391fa57&page=1&count=10&order=uid&desc=1&search=username&like=aaa'
+if cmd:find("^user_") then
+	return require("admin.user").run(cmd)
 end
