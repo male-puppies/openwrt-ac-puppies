@@ -30,21 +30,25 @@ function countryToSetChannel(country, channel, radio) {
 				switch (channel)
 				{
 					case '20':
-						chanar = ['auto','149','153','157','161','165'];
+						chanar = ['auto','36','40','44','48','52','56','60','64','149','153','157','161','165'];
 						return chanar;
 						break;
 					case 'auto':
-						chanar = ['auto','149','153','157','161'];
+						chanar = ['auto','36','40','44','48','52','56','60','64','149','153','157','161'];
 						return chanar;
 						break;
 					case '40+':
-						chanar = ['149','157'];
+						chanar = ['36','44','52','60','149','157'];
 						return chanar;
 						break;
 					case '40-':
-						chanar = ['153','161'];
+						chanar = ['40','48','56','64','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -86,6 +90,10 @@ function countryToSetChannel(country, channel, radio) {
 						break;
 					case '40-':
 						chanar = ['40','48','56','64','104','112','120','128','136','153','161'];
+						return chanar;
+						break;
+					case '80':
+						chanar = ['36','149'];
 						return chanar;
 						break;
 				}
@@ -130,7 +138,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','104','112','120','128','136'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -173,7 +185,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','104','112','120','128','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -216,7 +232,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -259,7 +279,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -302,7 +326,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','104','112','120','128','136','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -345,7 +373,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','104','112','120','128','136','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -411,7 +443,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','104','112','120','128','136'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -454,7 +490,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['40','48','56','64','153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['36','149'];
+						return chanar;
+						break;
 				}
 			}
 			break;
@@ -497,7 +537,11 @@ function countryToSetChannel(country, channel, radio) {
 					case '40-':
 						chanar = ['153','161'];
 						return chanar;
-						break;	
+						break;
+					case '80':
+						chanar = ['149'];
+						return chanar;
+						break;
 				}
 			}
 			break;

@@ -73,7 +73,7 @@ function createDt() {
 				"width": 60,
 				"orderable": false,
 				"searchable": false,
-				"defaultContent": '<input type="checkbox" value="1 0" />',
+				"defaultContent": '<input type="checkbox" value="1 0" />'
 			}
 		],
 		"rowCallback": function(nTd, sData, oData, iRow, iCol) {

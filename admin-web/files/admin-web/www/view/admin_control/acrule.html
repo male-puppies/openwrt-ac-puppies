@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>应用控制</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="../../css/bootstrap-datetimepicker.min.css" />
+<link rel="stylesheet" href="../../css/manage.css" />
+<style>
+#proto_edit ul {
+	list-style-type: none;
+	padding-left: 20px;
+	font-size: 14px;
+	margin: 0;
+}
+#proto_edit .right ul {
+	font-size: 15px;
+	line-height: 24px;
+	padding: 0;
+	cursor: pointer;
+}
+#proto_edit .right ul li {
+	padding: 0 10px;
+	overflow: hidden;
+}
+#proto_edit .right ul li.active {
+	background-color: #1c70ac;
+	color: #fff;
+}
+#proto_edit .icon-angle-right,
+#proto_edit .icon-angle-down,
+#proto_edit .icon-angle-none {
+	color: #1c70ac;
+	display: inline-block;
+	width: 12px;
+	position: relative;
+	top: -1px;
+	cursor: pointer;
+}
+#proto_edit .icon-folder-close,
+#proto_edit .icon-folder-open,
+#proto_edit .icon-file-alt {
+	color: #1c70ac;
+	display: inline-block;
+	width: 18px;
+	cursor: pointer;
+}
+#proto_edit .icon-file-alt {
+	position: relative;
+	left: 1px;
+}
+#proto_edit .modal-body {
+	padding: 30px;
+	height: 400px;
+}
+#proto_edit .modal-body .row {
+	height: 100%;
+}
+#proto_edit .left,
+#proto_edit .right {
+	float: left;
+	width: 50%;
+	height: 100%;
+	margin-left: -70px;
+}
+#proto_edit .mid {
+	float: left;
+	width: 140px;
+}
+#proto_edit .mid .inner {
+	margin-left: 20px;
+	position: relative;
+	z-index: 99999;
+}
+#proto_edit .mid .inner input {
+	margin-top: 50px;
+}
+#proto_edit .right .inner,
+#proto_edit .left .inner {
+	height: 100%;
+	margin-left: 70px;
+	border: 1px solid #ccc;
+	overflow-y: scroll;
+}
+#proto_edit .left .inner span {
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+	cursor: pointer;
+}
+#proto_edit .left .inner span.active {
+	background-color: #1c70ac;
+	color: #fff;
+}
+.has-error input {
+    border-color: #a94442;
+}
+</style>
+<script src="../../js/lib/jquery-1.11.3.min.js"></script>
+<script src="../../js/lib/bootstrap-datetimepicker.min.js"></script>
+<script src="../../js/lib/bootstrap-datetimepicker.zh-CN.js"></script>
+<script src="../../js/lib/jquery.cookie.js"></script>
+<script src="../../js/lib/json2.js"></script>
+<script src="../../js/lib/bootstrap.min.js"></script>
+<script src="../../js/lib/jquery.dataTables.min.js"></script>
+<script src="../../js/common/common.js"></script>
+<script src="../../js/common/jquery.ext.verify.js"></script>
+<script src="../../js/admin_control/acrule.js"></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/common/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix">
+			<table id="table_acrule" class="table table-striped table-hover table-bordered" cellspacing="0" width="100%">
+				<thead>
+					<tr>
+						<th>序号</th>
+						<th>名称</th>
+						<th>描述</th>
+						<th>协议</th>
+						<th>动作</th>
+						<th>时间组</th>
+						<th>源IP组</th>
+						<th>目的IP组</th>
+						<th>调整优先级</th>
+						<th>状态</th>
+						<th>操作</th>
+						<th data-toggle="tooltip" data-container="body" data-trigger="hover" title="仅勾选当前页"><input type="checkbox" class="checkall" value="1 0" /></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td colspan="12"></td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="btn-group">
+				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+				<a class="btn btn-default delete" value=""><i class="icon-trash"></i>删除</a>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+
+<div id="modal_edit" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">应用控制</h4>
+			</div>
+			<div class="modal-body">
+				<form action="" class="form-horizontal">
+					<fieldset id="">
+						<legend>基本配置</legend>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="enable">启用</label>
+							<div class="col-xs-5">
+								<div class="checkbox">
+									<label><input type="checkbox" id="enable" value="1 0" /></label>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="rulename" class="col-xs-4 control-label">名称</label>
+							<div class="col-xs-5">
+								<input type="text" id="rulename" value="" class="form-control" verify="name" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="ruledesc" class="col-xs-4 control-label">描述</label>
+							<div class="col-xs-5">
+								<input type="text" id="ruledesc" value="" class="form-control" verify="desc" />
+							</div>
+							<div class="col-xs-3 tip-icons">
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="输入字符串长度小于32个字符，不超过十个中文。"><i class="icon-question-sign"></i></span>
+							</div>
+						</div>
+						<div class="form-group clearfix v-proto">
+							<label class="col-xs-4 control-label" for="proto_ids">协议</label>
+							<div class="col-xs-5">
+								<input type="button" class="btn btn-default open-proto" style="width:100%" value="点击更改协议" verify="acrule_proto" />
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="actions">动作</label>
+							<div class="col-xs-5">
+								<select id="actions" class="form-control">
+									<option value="ACCEPT">允许</option>
+									<option value="REJECT">阻断</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="tmgrp_ids">时间组</label>
+							<div class="col-xs-5">
+								<select id="tmgrp_ids" class="form-control">
+									<option value="255">ALL</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="src_ipgids">源IP组</label>
+							<div class="col-xs-5">
+								<select id="src_ipgids" class="form-control">
+									<option value="63">ALL</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group clearfix">
+							<label class="col-xs-4 control-label" for="dest_ipgids">目的IP组</label>
+							<div class="col-xs-5">
+								<select id="dest_ipgids" class="form-control">
+									<option value="63">ALL</option>
+								</select>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<div class="pull-right">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" class="btn btn-primary" onclick="DoSave()">保存</button>
+				</div>
+				<div class="tip"></div>
+			</div>
+		</div>
+		<!-- /.modal-content -->
+	</div>
+	<!-- /.modal-dialog -->
+</div>
+
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div id="proto_edit" class="modal">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title">协议</h4>
+			</div>
+			<div class="modal-body">
+				<div class="row">
+					<div class="left">
+						<div class="inner"></div>
+					</div>
+					<div class="mid">
+						<div class="inner">
+							<input type="button" class="btn btn-zx add-proto" value="添加协议 >>" />
+							<input type="button" class="btn btn-danger del-proto" value="删除协议 <<" />
+						</div>
+					</div>
+					<div class="right">
+						<div class="inner">
+							<ul id="proto_sel"></ul>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-zx" onclick="OnCloseProto()">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

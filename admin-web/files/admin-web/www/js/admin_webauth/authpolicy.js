@@ -32,6 +32,16 @@ function createDtAuth() {
 			{
 				"data": "rulename"
 			},
+			{
+				"data": "ruledesc",
+				"render": function (d, t, f) {
+					if (d.length == 0) {
+						return "--";
+					} else {
+						return d;
+					}
+				}
+			},
             {
 				"data": "ipgrpname",
 			  	"render": function (d, t, f) {
@@ -59,7 +69,7 @@ function createDtAuth() {
             {
 				"data": "rid",
 				"render": function(d, t, f) {
-					return '<div class="btn-group btn-group-xs"><a class="btn btn-success mark1" onclick="rowMove(\'up\', \'' + d + '\')"><i class="icon-chevron-up"></i></a><a class="btn btn-success mark2" onclick="rowMove(\'down\', \'' + d + '\')"><i class="icon-chevron-down"></i></a></div>'; 
+					return '<div class="btn-group btn-group-xs"><a class="btn btn-success mark1" onclick="rowMove(\'up\', \'' + d + '\')"><i class="icon-chevron-up"></i></a><a class="btn btn-success mark2" onclick="rowMove(\'down\', \'' + d + '\')"><i class="icon-chevron-down"></i></a></div>';
 				}
 			},
 			{
@@ -70,7 +80,7 @@ function createDtAuth() {
 					} else {
 						return '<a class="btn btn-success btn-xs" onclick="set_enable(this)" data-toggle="tooltip" data-container="body" title="点击禁用"><i class="icon-ok"></i> 已启用 </a>';
 					}
-				}	
+				}
 			},
 			{
 				"data": "rid",
@@ -100,10 +110,10 @@ function createDtAuth() {
 				$(firstRow).find(".btn-group .mark1").addClass("disabled");
 				$(pre_lastRow).find(".btn-group .mark2").addClass("disabled");
 			}
-			
+
 			$("body > div.tooltip").remove();
 			$('[data-toggle="tooltip"]').tooltip();
-		}   
+		}
 	});
 }
 
@@ -115,15 +125,15 @@ function createInitModal() {
 }
 
 function initData2() {
-	var args = '["auth_no_flow_timeout","auth_redirect_ip","auth_bypass_dst"]';
+	var args = '["offline_time","redirect_ip","bypass_dst"]';
 	var obj = {keys: encodeURI(args)};
 	cgicall.get("kv_get", obj, function(d) {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			var data = d.data;
-			data.auth_bypass_dst = data.auth_bypass_dst.length == 0 ? "" : data.auth_bypass_dst.join("\n");
+			data.bypass_dst = data.bypass_dst.length == 0 ? "" : data.bypass_dst.join("\n");
 
-			var time = data.auth_no_flow_timeout && data.auth_no_flow_timeout != "" ? parseInt(data.auth_no_flow_timeout) : 3600;
-			data.auth_no_flow_timeout = parseInt(time / 60);
+			var time = data.offline_time && data.offline_time != "" ? parseInt(data.offline_time) : 3600;
+			data.offline_time = parseInt(time / 60);
 
 			jsonTraversal(d.data, jsTravSet);
 		}
@@ -149,7 +159,7 @@ function getIpgroup(func) {
 function edit(that) {
 	modify_flag = "mod";
 	$('#rulename').prop("disabled", true);
-	
+
 	getIpgroup(function(d) {
 		if (d.status == 0) {
 			var str = "",
@@ -160,9 +170,7 @@ function edit(that) {
 			for (var i = 0, ien = data.length; i < ien; i++) {
 				str += "<option value='" + data[i]["ipgid"] + "'>" + data[i]["ipgrpname"] + "</option>";
 			}
-			console.log(str)
 			$("#ipgid").html(str);
-			
 			jsonTraversal(obj, jsTravSet);
 			OnIscloud();
 
@@ -181,7 +189,7 @@ function set_enable(that) {
 	} else {
 		obj.enable = "1"
 	}
-	
+
 	cgicall.post("authrule_set", obj, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("修改失败！" + (d.data ? d.data : ""));
@@ -217,7 +225,7 @@ function DoSave() {
 		}
 	}
 	if (!verification("#modal_edit")) return;
-	
+
 	var data = jsonTraversal(obj, jsTravGet);
 	data.white_mac = data.white_mac.length == 0 ? [] : data.white_mac.split("\n");
 	data.white_ip = data.white_ip.length == 0 ? [] : data.white_ip.split("\n");
@@ -232,6 +240,7 @@ function DoSave() {
 	} else {
 		data.zid = $("#zid").val();
 		data.rid = $("#rid").val();
+		data.priority = $("#priority").val();
 		cgicall.post("authrule_set", data, function(d) {
 			cgicallBack(d, initData, function() {
 				createModalTips("修改失败！" + (d.data ? d.data : ""));
@@ -306,12 +315,12 @@ function OnAddAuth() {
 	$("#rulename").prop("disabled", false);
 	$("#enable").prop("checked", true);
 	$("#authtype").prop("checked", true);
-	
+
 	getIpgroup(function(d) {
 		if (d.status == 0) {
 			var str = "",
 				data = d.data;
-				
+
 			$('#rulename, #ruledesc').val("");
 
 			for (var i = 0, ien = data.length; i < ien; i++) {
@@ -331,12 +340,12 @@ function OnSubmit() {
 	if (!verification(".g-config")) return;
 
 	var obj = {
-			auth_no_flow_timeout: "",
-			auth_redirect_ip: "",
-			auth_bypass_dst: ""
+			offline_time: "",
+			redirect_ip: "",
+			bypass_dst: ""
 		},
 		data = jsonTraversal(obj, jsTravGet),
-		arr = data.auth_bypass_dst.split("\n"),
+		arr = data.bypass_dst.split("\n"),
 		sarr = [];
 
 	for (var i = 0; i < arr.length; i++) {
@@ -346,8 +355,8 @@ function OnSubmit() {
 			sarr.push(s);
 		}
 	}
-	data.auth_bypass_dst = sarr;
-	data.auth_no_flow_timeout = parseInt(data.auth_no_flow_timeout) * 60;
+	data.bypass_dst = sarr;
+	data.offline_time = parseInt(data.offline_time) * 60;
 	cgicall.post("kv_set", data, function(d) {
 		cgicallBack(d, function() {
 			initData2();
@@ -378,7 +387,7 @@ function OnChecked() {
 	}
 	var wechat = $("#modules__wechat").is(":checked");
 	var sms = $("#modules__sms").is(":checked");
-	
+
 	if (!wechat && !sms) {
 		$(".tab-content input").prop("disabled", true);
 		$(".auth-modules").slideUp(300);
@@ -396,7 +405,7 @@ function OnChecked() {
 		doshow("tabs_wechat", true);
 		$(".auth-modules").slideDown(300);
 	}
-	
+
 	function doshow(node, f) {
 		if (f) {
 			$("." + node).hide().removeClass("active");

@@ -337,6 +337,7 @@ function OnAddTmlist(s, e) {
 				)
 			);
 
+	if ($(".form-group.tmlist").length > 7) return;
 	$(".modal-body fieldset").append(node);
 	initTimepicker(node);
 	verifyEventsInit(node);

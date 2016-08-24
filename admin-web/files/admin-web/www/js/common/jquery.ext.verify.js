@@ -20,7 +20,7 @@
 			method: function(val) {
 				if (val == "") return true;
 				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-				
+
 				var arr = val.split('\n');
 				for (var k = 0; k < arr.length; k++) {
 					if (!reg.test(arr[k])) {
@@ -39,7 +39,7 @@
 				}
 				var m = [],
 					mn = val.split(".");
-				
+
 				if (val == "0.0.0.0" || val == "255.255.255.255"){
 					return true;
 				}
@@ -50,10 +50,10 @@
 				} else {
 					return false;
 				}
-			
+
 				var v = (m[0]<<24)|(m[1]<<16)|(m[2]<<8)|(m[3]);
-			
-				var f = 0;	  
+
+				var f = 0;
 				for (k = 0; k < 32; k++) {
 					if ((v >> k) & 1) {
 						f = 1;
@@ -61,17 +61,17 @@
 						return false ;
 					}
 				}
-				if (f == 0) { 
+				if (f == 0) {
 					return false;
 				}
-			
+
 				for(i = 0; i < 4; i++) {
 					var t = /^\d{1,}$/;
 					if(!t.test(mn[i])) {
 						return false;
-					}	
+					}
 				}
-				
+
 				return true ;
 			},
 			message: "非法掩码格式。"
@@ -84,7 +84,7 @@
 				}
 				var m = [],
 					mn = val.split(".");
-				
+
 				if (val == "0.0.0.0" || val == "128.0.0.0" || val == "192.0.0.0" || val == "224.0.0.0" || val == "240.0.0.0" || val == "248.0.0.0" || val == "252.0.0.0" || val == "254.0.0.0") {
 					return false;
 				}
@@ -98,10 +98,10 @@
 				} else {
 					return false;
 				}
-			
+
 				var v = (m[0]<<24)|(m[1]<<16)|(m[2]<<8)|(m[3]);
-			
-				var f = 0;	  
+
+				var f = 0;
 				for (k = 0; k < 32; k++) {
 					if ((v >> k) & 1) {
 						f = 1;
@@ -109,17 +109,17 @@
 						return false ;
 					}
 				}
-				if (f == 0) { 
+				if (f == 0) {
 					return false;
 				}
-			
+
 				for(i = 0; i < 4; i++) {
 					var t = /^\d{1,}$/;
 					if(!t.test(mn[i])) {
 						return false;
-					}	
+					}
 				}
-				
+
 				return true ;
 			},
 			message: "非法掩码格式。"
@@ -134,7 +134,7 @@
 					if (!(ip_reg.test(arr[k]) || ips_reg.test(arr[k]))) {
 						return false;
 					}
-					
+
 					if (ips_reg.test(arr[k])) {
 						var ips = arr[k].split('-');
 						var arr1 = ips[0].split('.');
@@ -150,7 +150,7 @@
 				}
 				return true;
 			},
-			message: "非法IP格式。"	
+			message: "非法IP格式。"
 		},
 		"ipss":{
 			method: function(val) {
@@ -159,7 +159,7 @@
 				if (!ips_reg.test(val)) {
 					return false;
 				}
-				
+
 				if (ips_reg.test(val)) {
 					var ips = val.split('-');
 					var arr1 = ips[0].split('.');
@@ -174,7 +174,7 @@
 				}
 				return true;
 			},
-			message: "非法IP范围。"	
+			message: "非法IP范围。"
 		},
 		"mac": {
 			method: function(val) {
@@ -223,7 +223,7 @@
 		"dns": {
 			method: function(val) {
 				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-				
+
 				var arr = val.split(',');
 				for (var k = 0; k < arr.length; k++) {
 					if (!reg.test(arr[k])) {
@@ -251,8 +251,8 @@
 					var ip1 = ipToInt(ipstr1);
 					return (ip & mask) == (ip1 & mask);
 				}
-				
-				function compareIP(start, end) {  
+
+				function compareIP(start, end) {
 					var temp1 = start.split(".");
 					var temp2 = end.split(".");
 					console.log(temp1)
@@ -262,18 +262,18 @@
 						var num2 = parseInt(temp2[i]);
 						if (num1 > num2) {
 							return false;
-						} else if (num1 < num2) {  
+						} else if (num1 < num2) {
 							return true;
 						}
 					}
 					return false;
-				}  
+				}
 
 				if (!reg.test(val)) {
 					this.message = "非法IP格式。";
 					return false;
 				}
-				
+
 				if (!checkIpMask(ipstr, maskstr, val)) {
 					this.message = "非法IP地址。根据IP地址和子网掩码，该IP溢出DHCP分配范围。";
 					return false;
@@ -286,7 +286,7 @@
 						return false;
 					}
 				}
-				
+
 				return true;
 			},
 			message: "非法IP格式。"
@@ -351,7 +351,7 @@
 					return false;
 				}
 			},
-			message:"非法格式。只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"				
+			message:"非法格式。只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"
 		},
 		"ssid_name": {
 			method: function(val) {
@@ -374,7 +374,7 @@
 					return false;
 				}
 			},
-			message:"非法格式。只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"				
+			message:"非法格式。只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"
 		},
 		"pwd": {
 			method: function(val) {
@@ -404,7 +404,7 @@
 					return false;
 				}
 			},
-			message: "非法格式。不能为空，输入字符串长度小于32个字符，不超过十个中文。"				
+			message: "非法格式。不能为空，输入字符串长度小于32个字符，不超过十个中文。"
 		},
 		"desc": {
 			method: function(val){
@@ -427,7 +427,7 @@
 					return false;
 				}
 			},
-			message: "非法格式。输入字符串长度小于32个字符，不超过十个中文。"				
+			message: "非法格式。输入字符串长度小于32个字符，不超过十个中文。"
 		},
 		"wpassword": {
 			method: function(val) {
@@ -439,7 +439,7 @@
 		"upload": {
 			method: function() {
 				if (!(typeof arguments[0] != "undefined" && arguments[0] != "")) return false;
-				
+
 				var arr = arguments[0].split(".");
 				if (arr.length < 2) return false;
 				var str = arr[arr.length - 1];
@@ -449,7 +449,7 @@
 						mark = true;
 					}
 				}
-				
+
 				if (mark == true) {
 					return true;
 				} else {
@@ -484,7 +484,17 @@
 				if ($(node).closest("div").find("label.active").length == 0) {
 					return false;
 				}
-				
+
+				return true;
+			},
+			message: "至少选择一个。"
+		},
+		"acrule_proto": {
+			method: function() {
+				if ($("#proto_sel li").length == 0) {
+					return false;
+				}
+
 				return true;
 			},
 			message: "至少选择一个。"
@@ -510,6 +520,56 @@
 			return null;
 		}
 		return verify.split(' ');
+	}
+
+	function rmModaltip(el) {
+		var hid = "";
+		$("body > .modal").each(function(index, element) {
+			if ($(element).is(":visible")) {
+				hid = $(element).attr("id");
+				return false;
+			}
+		});
+
+		if (hid != "") {
+			var that = $("#" + hid + " .modal-footer .tip");
+			if (that.length > 0) {
+				var tip = el.closest(".form-group").find("label.control-label").html();
+				var tip2 = that.html();
+				if (tip2.indexOf(tip) > 0) {
+					that.html("");
+				}
+			}
+		}
+	}
+
+	var verifyModalTip = function(h, t) {
+		var tips;
+		if (typeof h == "undefined") return false;
+		if (typeof t != "undefined") {
+			tips = h + " " + t;
+		} else {
+			tips = h;
+		}
+
+		var hmark = true;
+		var hid = "";
+		$("body > .modal").each(function(index, element) {
+			if ($(element).is(":visible")) {
+				hmark = false;
+				hid = $(element).attr("id");
+				return false;
+			}
+		});
+
+		if (hmark && $("body > .modal-backdrop").length == 0 && Object.prototype.toString.call(createModalTips) === "[object Function]") {
+			createModalTips(tips);
+		} else if (typeof hid != "undefined" && hid != "" && $("#" + hid + " .modal-footer .tip").length > 0) {
+			$("#" + hid + " .modal-footer .tip").html("<span title='" + tips + "'><i class='icon-remove-sign'></i> " + tips + "</span>");
+		} else {
+			alert(tips);
+		}
+		return false;
 	}
 
 	var verification = function(doc) {
@@ -549,45 +609,16 @@
 					return false;
 				} else {
 					$(this).closest(".form-group").removeClass('has-error');
+					rmModaltip($(this));
 				}
 			}
 		});
 
 		return res;
 	}
-	
-	var verifyModalTip = function(h, t) {
-		var tips;
-		if (typeof h == "undefined") return false;
-		if (typeof t != "undefined") {
-			tips = h + " " + t;
-		} else {
-			tips = h;
-		}
-		
-		var hmark = true;
-		var hid = "";
-		$("body > .modal").each(function(index, element) {
-			if ($(element).is(":visible")) {
-				hmark = false;
-				hid = $(element).attr("id");
-				return false;
-			}
-		});
-
-		if (hmark && $("body > .modal-backdrop").length == 0 && Object.prototype.toString.call(createModalTips) === "[object Function]") {
-			createModalTips(tips);
-		} else if (typeof hid != "undefined" && hid != "" && $("#" + hid + " .modal-footer .tip").length > 0) {
-			$("#" + hid + " .modal-footer .tip").html("<span title='" + tips + "'><i class='icon-remove-sign'></i> " + tips + "</span>");
-		} else {
-			alert(tips);
-		}
-		return false;
-	}
 
 	var verifyEventsInit = function(doc) {
 		var res = true;
-		var hid = "";
 		if (!doc) doc = "body";
 
 		$("input[type='radio'], input[type='checkbox'], select", doc).on("change", function() {
@@ -596,7 +627,6 @@
 				$(that).closest("form").find("input, textarea").each(function(index, element) {
 					if ($(element).is(":disabled") && $(element).closest(".form-group").length > 0 && $(element).closest(".form-group").hasClass("has-error")) {
 						$(element).closest(".form-group").removeClass("has-error");
-						getHid();
 						rmModaltip($(element));
 					}
 				});
@@ -628,34 +658,11 @@
 						$(that).closest(".form-group").addClass('has-error');
 					} else {
 						$(that).closest(".form-group").removeClass('has-error');
-						getHid();
 						rmModaltip($(that));
 					}
 				});
 			}
 		});
-		
-		function getHid() {
-			$("body > .modal").each(function(index, element) {
-				if ($(element).is(":visible")) {
-					hid = $(element).attr("id");
-					return false;
-				}
-			});
-		}
-
-		function rmModaltip(el) {
-			if (hid != "") {
-				var that = $("#" + hid + " .modal-footer .tip");
-				if (that.length > 0) {
-					var tip = el.closest(".form-group").find("label.control-label").html();
-					var tip2 = that.html();
-					if (tip2.indexOf(tip) > 0) {
-						that.html("");
-					}
-				}
-			}
-		}
 	}
 
 	root.verification = verification;			//直接显示调用

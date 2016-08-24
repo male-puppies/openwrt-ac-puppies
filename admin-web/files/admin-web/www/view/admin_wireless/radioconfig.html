@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="content-type" content="text/html;charset=utf-8">
+<!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
+<title>radio配置</title>
+<link rel="stylesheet" href="../../css/bootstrap.min.css" />
+<link rel="stylesheet" href="../../css/font-awesome.min.css">
+<!--[if IE 7]><link rel="stylesheet" href="../../css/font-awesome-ie7.min.css"><![endif]-->
+<link rel="stylesheet" href="../../css/jquery.dataTables.min.css" />
+<link rel="stylesheet" href="../../css/manage.css" />
+<style type="text/css">
+.nav.nav-tabs {
+	margin-bottom: 25px;
+}
+</style>
+<script src="../../js/lib/jquery-1.11.3.min.js"></script>
+<script src="../../js/lib/jquery.cookie.js"></script>
+<script src="../../js/lib/json2.js"></script>
+<script src="../../js/lib/bootstrap.min.js"></script>
+<script src="../../js/lib/jquery.dataTables.min.js"></script>
+<script src="../../js/common/jquery.ext.verify.js"></script>
+<script src="../../js/common/common.js"></script>
+<script src="../../js/common/countryChannel.js"></script>
+<script src="../../js/admin_wireless/radioconfig.js" ></script>
+</head>
+<body>
+<!-- header -->
+<div id="header_ajax"></div>
+<script src="../../js/common/header.ajax.js"></script>
+
+<!-- main Start -->
+<div id="main" class="main">
+	<div class="container-fluid">
+		<div class="main-wrapper clearfix">
+			<form class="form-horizontal">
+					<!-- Nav tabs -->
+					<ul class="nav nav-tabs">
+						<li class="active">
+							<a href="#tabs_APConf_a" data-toggle="tab">2G配置</a>
+						</li>
+						<li>
+							<a href="#tabs_APConf_b" data-toggle="tab">5G配置</a>
+						</li>
+						<li>
+							<a href="#tabs_APConf_c" data-toggle="tab">无线优化</a>
+						</li>
+					</ul>
+					<div class="tab-content">
+						<div class="tab-pane active" id="tabs_APConf_a">
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-md-2 col-sm-3 col-xs-4 control-label" for="radio_2g__proto">无线协议</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_2g__proto" class="form-control">
+											<option value="b">b</option>
+											<option value="g">g</option>
+											<option value="n">n</option>
+											<option value="bg">bg</option>
+											<option selected="selected" value="bgn">bgn</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_2g__bandwidth">信道带宽</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_2g__bandwidth" class="form-control">
+											<option selected="selected" value="auto">auto</option>
+											<option value="20">20</option>
+											<option value="40+">40+</option>
+											<option value="40-">40-</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_2g__chanid">工作信道</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_2g__chanid" class="form-control">
+											<option value="auto">auto</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_2g__power">功率</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_2g__power" class="form-control">
+											<option value="3">3</option>
+											<option value="4">4</option>
+											<option value="5">5</option>
+											<option value="6">6</option>
+											<option value="7">7</option>
+											<option value="8">8</option>
+											<option value="9">9</option>
+											<option value="10">10</option>
+											<option value="11">11</option>
+											<option value="12">12</option>
+											<option value="13">13</option>
+											<option value="14">14</option>
+											<option value="15">15</option>
+											<option value="16">16</option>
+											<option value="17">17</option>
+											<option value="18">18</option>
+											<option value="19">19</option>
+											<option value="20">20</option>
+											<option value="21">21</option>
+											<option value="22">22</option>
+											<option selected="selected" value="23">23(default)</option>
+											<option value="24">24</option>
+											<option value="25">25</option>
+											<option value="26">26</option>
+											<option value="auto">auto</option>
+										</select>
+									</div>
+									<div class="col-xs-3 tip-icons">
+										<span class="units">dBm</span>
+									</div>
+								</div>
+								<div class="main-bottom">
+									<button type="button" class="btn btn-zx btn-modal submit2g">保存</button>
+								</div>
+						</div>
+						<div class="tab-pane" id="tabs_APConf_b">
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_5g__proto">无线协议</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_5g__proto" class="form-control">
+											<option value="a">a</option>
+											<option value="n">n</option>
+											<option selected="selected" value="an">an</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_5g__bandwidth">信道带宽</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_5g__bandwidth" class="form-control">
+											<option selected="selected" value="auto">auto</option>
+											<option value="20">20</option>
+											<option value="40+">40+</option>
+											<option value="40-">40-</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_5g__channel_id">工作信道</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_5g__chanid" class="form-control">
+											<option value="auto">auto</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="radio_5g__power">功率</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="radio_5g__power" class="form-control">
+											<option value="3">3</option>
+											<option value="4">4</option>
+											<option value="5">5</option>
+											<option value="6">6</option>
+											<option value="7">7</option>
+											<option value="8">8</option>
+											<option value="9">9</option>
+											<option value="10">10</option>
+											<option value="11">11</option>
+											<option value="12">12</option>
+											<option value="13">13</option>
+											<option value="14">14</option>
+											<option value="15">15</option>
+											<option value="16">16</option>
+											<option value="17">17</option>
+											<option value="18">18</option>
+											<option value="19">19</option>
+											<option value="20">20</option>
+											<option value="21">21</option>
+											<option value="22">22</option>
+											<option selected="selected" value="23">23(default)</option>
+											<option value="24">24</option>
+											<option value="25">25</option>
+											<option value="26">26</option>
+											<option value="auto">auto</option>
+										</select>
+									</div>
+									<div class="col-xs-3 tip-icons">
+										<span class="units">dBm</span>
+									</div>
+								</div>
+								<div class="main-bottom">
+									<button type="button" class="btn btn-zx btn-modal submit5g">保存</button>
+								</div>
+						</div>
+						<div class="tab-pane" id="tabs_APConf_c">
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="opt__inspeed">广播提速</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="opt__inspeed" class="form-control">
+											<option value="0" selected>自动提速</option>
+											<option value="2">2 Mbps</option>
+											<option value="5.5">5.5 Mbps</option>
+											<option value="11">11 Mbps</option>
+											<option value="18">18 Mbps</option>
+											<option value="36">36 Mbps</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="opt__rate">终端速率限制</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<select id="opt__rate" class="form-control">
+											<option value="0">关闭</option>
+											<option value="2" selected>1 Mbps</option>
+											<option value="4">2 Mbps</option>
+											<option value="11">5.5 Mbps</option>
+										</select>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="opt__mult">启用多播优化</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<div class="checkbox">
+											<label><input type="checkbox" id="opt__mult" value="1 0" /></label>
+										</div>
+									</div>
+								</div>
+								<div class="form-group clearfix">
+									<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="opt__enable">启用用户间平均分配带宽</label>
+									<div class="col-md-3 col-sm-4 col-xs-5">
+										<div class="checkbox">
+											<label><input type="checkbox" id="opt__enable" value="1 0" /></label>
+										</div>
+									</div>
+								</div>
+								<div class="main-bottom">
+									<button type="button" class="btn btn-zx btn-modal submitopt">保存</button>
+								</div>
+						</div>
+					</div>
+				</form>
+		</div>
+	</div>
+</div>
+<!-- main End -->
+<!-- modal Start -->
+<!-- 提示 -->
+<div id="modal_tips" class="modal fade" tabindex=-1>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+				<h4 class="modal-title">提示</h4>
+			</div>
+			<div class="modal-body">
+				<div class="modal-p">
+					<span></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-zx btn-modal">确定</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- modal End -->
+</body>
+</html>

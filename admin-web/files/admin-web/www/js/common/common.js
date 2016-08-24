@@ -1,56 +1,55 @@
 (function(root, undefined) {
 	var cgicall = (function() {
 		var version = "/v1/admin/api/",
-			token = $.cookie("token") ? "?token=" + $.cookie("token") : "?",
-			callfn = function(d, x, s) {},
-			callback = function(d, x, s) {
-				d = initBackDatas(d);
-				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
-					window.location.href = "/view/admin_login/login.html";
-				}
-				callfn(d, x, s);
-			};
-		
+			token = $.cookie("token") ? "?token=" + $.cookie("token") : "?";
+
 		function get() {
 			var obj,
 				url,
 				objstr = "",
-				argc = arguments.length;
+				argc = arguments.length,
+				callfn = function(d, x, s) {};
 
-			callfn = function(d, x, s) {};
 			if (typeof(arguments[argc - 1]) === "function") {
 				argc = argc - 1;
 				callfn = arguments[argc];
 			}
-			
+
 			if (argc == 2 && Object.prototype.toString.call(arguments[1]) === '[object Object]') {
 				for (var k in arguments[1]) {
 					objstr += "&" + k + "=" + arguments[1][k];
 				}
 			}
-			
+
 			url = version + arguments[0] + token + "&_=" + new Date().getTime() + objstr;
 
-			$.get(url, callback, "json");
+			$.get(url, function(d, x, s) {
+				d = initBackDatas(d);
+				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
+					window.location.href = "/view/admin_login/login.html";
+				}
+				callfn(d, x, s);
+			}, "json");
 		}
-		
+
 		function post() {
 			var obj,
 				url,
-				argc = arguments.length;
+				argc = arguments.length,
+				callfn = function(d, x, s) {};
 
-			callfn = function(d, x, s) {};
+
 			if (typeof(arguments[argc - 1]) === "function") {
 				argc = argc - 1;
 				callfn = arguments[argc];
 			}
-			
+
 			if (argc == 2 && typeof arguments[1] == "object") {
 				obj = arguments[1]
 			} else {
 				obj = {}
 			}
-			
+
 			var sobj = {};
 			for (var k in obj) {
 				if (typeof obj[k] === "object") {
@@ -61,16 +60,22 @@
 			}
 
 			url = version + arguments[0] + token;
-			
-			$.post(url, sobj, callback, "json");
+
+			$.post(url, sobj, function(d, x, s) {
+				d = initBackDatas(d);
+				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
+					window.location.href = "/view/admin_login/login.html";
+				}
+				callfn(d, x, s);
+			}, "json");
 		}
-		
+
 		return {
 			"get": get,
 			"post": post
 		}
 	}());
-	
+
 	function cgiDtUrl(str, obj) {
 		var version = "/v1/admin/api/",
 			token = $.cookie("token") ? "&token=" + $.cookie("token") : "";
@@ -78,7 +83,7 @@
 		var url = version + (str || "") + "?_=" + new Date().getTime() + token;
 		return addUrlParam(url, obj);
 	}
-	
+
 	function cgicallBack(d, success, fail) {
 		var editModal,
 			modal_true = false,
@@ -112,7 +117,7 @@
 			}
 		}
 	}
-	
+
 	function initBackDatas(obj) {
 		var sobj = {};
 		if (Object.prototype.toString.call(obj) === '[object Object]') {
@@ -151,7 +156,7 @@
 		}
 		return sobj;
 	}
-	
+
 	function jsonTraversal(obj, func) {
 		var oset = ObjClone(obj);
 		for (var k in oset) {
@@ -164,7 +169,7 @@
 		}
 		return oset;
 	}
-	
+
 	//遍历所有节点
 	function recurseTravSubNode(o, parent, func) {
 		var oset = ObjClone(o);
@@ -189,12 +194,12 @@
 	function jsTravSet(fp, v) {
 		var doc = getControlByIdMisc(fp),
 			type = doc.attr('type');
-		
+
 		switch (type) {
 			case "checkbox":
 				var arr = doc.val().split(" ");
 				var str = v.toString();
-				
+
 				if (str == arr[0]) {
 					doc.prop("checked", true);
 				} else {
@@ -230,7 +235,7 @@
 			case 'checkbox':
 				var arr = doc.val().split(" ");
 				var str = v.toString();
-				
+
 
 				if (arr.length == 1) {
 					if (arr[0] == "1") {
@@ -241,7 +246,7 @@
 						console.log(fp + 'checkbox value fail');
 					}
 				}
-				
+
 				if (typeof v == "boolean") {
 					arr[0] = true;
 					arr[1] = false;
@@ -289,7 +294,7 @@
 		};
 		return res;
 	}
-	
+
 	function ObjCountLength(o) {
 		var t = typeof o;
 		if (t == 'string') {
@@ -303,7 +308,7 @@
 		}
 		return false;
 	}
-	
+
 	function ObjClone(obj) {
 		var o;
 		if (typeof obj == "object") {
@@ -327,7 +332,7 @@
 		}
 		return o;
 	}
-	
+
 	function dtObjToArray(o) {
 		var arr = [],
 			obj = ObjClone(o);
@@ -347,7 +352,7 @@
 		}
 		return arr;
     }
-	
+
 	function dtReloadData(table, bool, func) {
 		var callback = null;
 		if (typeof func == "function") {
@@ -355,13 +360,13 @@
 		}
 		table.api().ajax.reload(callback, bool);	//false 保存分页
     }
-	
+
 	function dtRrawData(table, data) {
 		table.api().clear();
 		if (ObjCountLength(data) == 0) return;
 		table.api().rows.add(dtObjToArray(data)).draw();
 	}
-	
+
 	function dtHideColumn(table, hd) {
 		table.api().columns().visible(true);
 		for (var i = 0; i < hd.length; i++) {
@@ -371,7 +376,7 @@
 			column.visible(false);
 		}
 	}
-	
+
 	function dtGetSelected(table) {
 		var arr = [];
 		var drows = table.api().rows(".row_selected").data();
@@ -401,7 +406,7 @@
             });
         }
     }
-	
+
 	function dtDataCallback(d) {
 		var data = initBackDatas(d);
 		if (data.status == 0) {
@@ -411,7 +416,7 @@
 		}
 		return [];
 	}
-	
+
     function dtBindRowSelectEvents(row) {
 		var that = $(row);
 		that.find('td input[type="checkbox"]').off('click', function() {
@@ -421,7 +426,7 @@
 			row_select_event(that)
 		});
     }
-	
+
 	function row_select_event(that) {
 		if (that.find('td input[type="checkbox"]').is(":checked")) {
 			that.addClass("row_selected");
@@ -429,18 +434,18 @@
 			that.removeClass("row_selected");
 		}
     }
-	
+
 	function createModalTips(tip, e) {
 		$("#modal_tips .modal-p span").html(tip);
 		$("#modal_tips .modal-footer .btn-modal").remove();
-		
+
 		if (typeof(e) != "undefined") {
 			var input = '<input type="button" class="btn btn-zx btn-modal" onclick="' + e + '()" value="确定" />';
 			$("#modal_tips .modal-footer").append(input);
 		}
 		$("#modal_tips").modal("show");
 	}
-	
+
 	function addUrlParam(src, obj) {
 		if (Object.prototype.toString.call(obj) === '[object Object]') {
 			var str = "";
@@ -453,22 +458,22 @@
 				src += "?" + str.substring(1);
 			}
 		}
-		
+
 		return src;
 	}
-	
+
 	function setUrlParam(src, key, val) {
 		var reg = eval('/(' + key + '=)([^&]*)/gi');
 		var nUrl = src.replace(reg, key + '=' + val);
 		return nUrl;
 	}
-	
+
 	function getUrlParam(src, val) {
 		var reg = new RegExp("(^|\\?|&)" + val + "=([^&#]*)(\\s|&|$|#)", "i");
-		if (reg.test(src)) return unescape(RegExp.$2); 
+		if (reg.test(src)) return unescape(RegExp.$2);
 		return "";
 	}
-	
+
 	/* cgi */
 	root.cgicall				= cgicall;					//cgi
 	root.cgiDtUrl				= cgiDtUrl;					//datatable的ajax的URL
@@ -477,7 +482,7 @@
 	root.jsonTraversal			= jsonTraversal;			//取值赋值入口
 	root.jsTravGet				= jsTravGet;				//取值
 	root.jsTravSet				= jsTravSet;				//赋值
-	
+
 	/* object */
 	root.ObjCountLength			= ObjCountLength;			//对象长度
 	root.ObjClone				= ObjClone;					//对象克隆
@@ -485,7 +490,7 @@
 	root.addUrlParam			= addUrlParam;				//URL添加参数
 	root.setUrlParam			= setUrlParam;				//URL设置参数
 	root.getUrlParam			= getUrlParam;				//URL获取参数
-	
+
 	/* datatable */
 	root.dtObjToArray			= dtObjToArray;				//对象强制转数组 去适应datatable
 	root.dtReloadData			= dtReloadData;				//刷新datatable
@@ -505,7 +510,7 @@ $(function() {
 	.on("mouseleave", "tbody tr", function() {
 		$(this).removeClass("highlight");
 	});
-	
+
 	$("body > .modal").on("hidden.bs.modal", function() {
 		$(".has-error", this).removeClass("has-error");
 		$(".modal-footer .tip", this).html("");
