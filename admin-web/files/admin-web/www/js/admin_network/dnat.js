@@ -106,10 +106,10 @@ function createDtFirewall() {
 			{
 				"data": "fwid",
 				"render": function(d, t, f) {
-					return '<div class="btn-group btn-group-xs"><a class="btn btn-success mark1" onclick="rowMove(\'up\', \'' + d + '\')"><i class="icon-chevron-up"></i></a><a class="btn btn-success mark2" onclick="rowMove(\'down\', \'' + d + '\')"><i class="icon-chevron-down"></i></a></div>'; 
+					return '<div class="btn-group btn-group-xs"><a class="btn btn-success mark1" onclick="rowMove(\'up\', \'' + d + '\')"><i class="icon-chevron-up"></i></a><a class="btn btn-success mark2" onclick="rowMove(\'down\', \'' + d + '\')"><i class="icon-chevron-down"></i></a></div>';
 				}
 			},
-			{ 
+			{
 				"data": "enable",
 				"render": function(d, t, f){
 					if (d == 0) {
@@ -147,10 +147,10 @@ function createDtFirewall() {
 				$(firstRow).find(".btn-group .mark1").addClass("disabled");
 				$(pre_lastRow).find(".btn-group .mark2").addClass("disabled");
 			}
-			
+
 			$("body > div.tooltip").remove();
 			$('[data-toggle="tooltip"]').tooltip();
-		} 
+		}
 	});
 }
 
@@ -161,7 +161,7 @@ function createInitModal() {
 	});
 }
 
-function DoSave() {	
+function DoSave() {
 	if (!verification(".form-horizontal")) return;
 
 	var obj = jsonTraversal(g_getvalue, jsTravGet);
@@ -251,7 +251,7 @@ function set_enable(that) {
 	} else {
 		obj.enable = "1"
 	}
-	
+
 	cgicall.post("dnat_set", obj, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("修改失败！" + (d.data ? d.data : ""));
