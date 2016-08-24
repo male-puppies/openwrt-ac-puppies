@@ -2,7 +2,7 @@
 . ./init_template_lib.sh
 tbname=online
 
-drop_mysql_memo_table $tbname	
+# drop_mysql_memo_table $tbname	
 create_mysql_memo_table "create table $tbname ( \
 		ukey	 	char(36)		primary key not null default '', \
 		type 		char(8) 		not null default '', \

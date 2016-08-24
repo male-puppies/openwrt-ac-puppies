@@ -79,8 +79,6 @@ udp_map["/bypass_host"] = function(p, ip, port)
 		return reply(ip, port, 1, e)
 	end
 
-	log.real1("bypass %s %s %s", uid, magic, mac)
-
 	cache.bypass(mac, {ski.time() + 15, uid, magic, mac})
 
 	reply(ip, port, 0, "ok")

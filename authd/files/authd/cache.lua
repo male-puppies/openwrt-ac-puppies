@@ -159,12 +159,12 @@ end
 local function bypass(mac, p)
 	bypass_wait_map[mac] = 1
 	bypass_timeout:emit({ski.time() + 15, p.uid, p.magic, p.mac})
+	log.real1("bypass %s", js.encode(p))
 end
 
 local function bypass_cancel(mac)
 	bypass_wait_map[mac] = nil
 end
-
 
 ------------------------------------------------ end ---------------------------------------------------
 return {

@@ -34,6 +34,7 @@ local function gen_reply(udpsrv)
 end
 
 local function set_online(uid, magic, gid, username)
+	log.real1("set online %s_%s %s %s", uid, magic, gid, username)
 	local _ = set_status(uid, magic, 1), set_gid_ucrc(uid, magic, gid, 1)
 end
 
