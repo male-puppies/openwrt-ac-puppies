@@ -4,7 +4,6 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
@@ -29,7 +28,7 @@ define Package/$(PKG_NAME)
 endef
 
 define Package/$(PKG_NAME)/description
-  transform config stored in database and act
+  audit control manager
 endef
 
 define Package/$(PKG_NAME)/conffiles
@@ -39,12 +38,12 @@ define Package/$(PKG_NAME)/postinst
 endef
 
 define Package/$(PKG_NAME)/install
-  $(INSTALL_DIR) $(1)/etc/init.d
-  $(INSTALL_BIN) ./files/acmgr.init $(1)/etc/init.d/acmgr
-  $(INSTALL_DIR) $(1)/usr/share/
-  cp -r files/acmgr $(1)/usr/share/
-  $(INSTALL_DIR) $(1)/usr/sbin
-  $(INSTALL_BIN) ./files/acmgr.sh $(1)/usr/sbin/acmgr
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/acmgr.init $(1)/etc/init.d/acmgr
+	$(INSTALL_DIR) $(1)/usr/share/
+	cp -r files/acmgr $(1)/usr/share/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/acmgr.sh $(1)/usr/sbin/acmgr
 endef
 
 define Build/Configure
