@@ -10,6 +10,7 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		password char(64) 	not null default '', \
 		userdesc char(64) 	not null default '', \
 		enable	 integer 	not null default 1, \
+		multi	 integer	not null default 0, \
 		bindip	 char(24) 	not null default '', \
 		bindmac	 char(24) 	not null default '', \
 		expire 	 datetime	not null default '1970-01-01 00:00:00', \
@@ -26,6 +27,7 @@ create_mysql_disk_table "create table $tbname ( \
 		password char(64) 	not null default '', \
 		userdesc char(64) 	not null default '', \
 		enable	 integer 	not null default 1, \
+		multi	 integer	not null default 0, \
 		bindip	 char(24) 	not null default '', \
 		bindmac	 char(24) 	not null default '', \
 		expire 	 datetime	not null default '1970-01-01 00:00:00', \

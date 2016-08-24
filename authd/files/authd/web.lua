@@ -16,7 +16,7 @@ local escape_map, escape_arr = common.escape_map, common.escape_arr
 local set_online = authlib.set_online
 local insert_online = authlib.insert_online
 local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
-local limit, reduce, tomap, each, empty = fp.limit, fp.reduce, fp.tomap, fp.each, fp.empty
+local limit, reduce, tomap, each, empty, reduce2 = fp.limit, fp.reduce, fp.tomap, fp.each, fp.empty, fp.reduce2
 
 local udp_map = {}
 local simple, udpsrv, mqtt, reply
@@ -41,7 +41,7 @@ end
 local numb_expire = {["0000-00-00 00:00:00"] = 1, ["1970-01-01 00:00:00"] = 1}
 
 -- 检查web用户认证是否通过
-local function check_user(r, p)
+local function check_user(r, p, isonline)
 	if not r then
 		return nil, "no such user"
 	end
@@ -69,7 +69,11 @@ local function check_user(r, p)
 		return nil, "expire"
 	end
 
-	return true
+	if r.multi == 1 then
+		return true
+	end
+
+	return not isonline
 end
 
 -- 批量web认证
@@ -96,18 +100,23 @@ function on_login(count, arr)
 		end, {})
 
 		-- format ukey
-		local narr = reduce(exists, function(t, r)
+		local narr, name_map = {}, {}
+		each(exists, function(_, r)
 			local ukey = string.format("%s_%s", r.uid, r.magic)
 			r.ukey = ukey
-			return rawset(t, #t + 1, string.format("'%s'", ukey))
-		end, {})
+			table.insert(narr, string.format("'%s'", ukey))
+			name_map[r.username] = 1
+		end)
+		
+		local name_arr = reduce2(name_map, function(t, username) return rawset(t, #t + 1, string.format("'%s'", username)) end, {})
 
 		-- 查询在线用户
-		local sql = string.format("select ukey from memo.online where ukey in (%s)",  table.concat(narr, ","))
+		local sql = string.format("select ukey,username from memo.online where ukey in (%s) or username in (%s)",
+			table.concat(narr, ","), table.concat(name_arr, ","))
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 
 		-- 过滤在线用户
-		local online = tomap(rs, "ukey")
+		local online, online_names = tomap(rs, "ukey"), tomap(rs, "username")
 		local offline = reduce(exists, function(t, info)
 			local u_ip, u_port, ukey = info.u_ip, info.u_port, info.ukey
 
@@ -118,7 +127,8 @@ function on_login(count, arr)
 			end
 
 			-- 检查用户属性
-			local r, e = check_user(user_map[info.username], info)
+			local username = info.username
+			local r, e = check_user(user_map[username], info, online_names[username])
 			if not r then
 				reply(u_ip, u_port, 1, e)
 				return t

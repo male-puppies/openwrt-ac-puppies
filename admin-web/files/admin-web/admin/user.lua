@@ -15,6 +15,7 @@ local v_username	= gen_validate_str(1, 64, true)
 local v_password	= gen_validate_str(1, 64, true)
 local v_userdesc 	= gen_validate_str(1, 64)
 local v_enable 		= gen_validate_num(0, 1)
+local v_multi 		= gen_validate_num(0, 1)
 local v_expire 		= gen_validate_str(0, 19)
 local v_register	= gen_validate_str(0, 19)
 local v_gid 		= gen_validate_num(0, 63)
@@ -62,6 +63,7 @@ function cmd_map.user_set()
 		bindip 		= v_bindip,
 		uid 		= v_uid,
 		register 	= v_register,
+		multi 		= v_multi,
 	})
 
 	if not m then
@@ -99,6 +101,7 @@ function cmd_map.user_add()
 		gid 		= v_gid,
 		bindmac 	= v_bindmac,
 		bindip 		= v_bindip,
+		multi 		= v_multi,
 	})
 
 	if not m then
