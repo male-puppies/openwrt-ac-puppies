@@ -47,6 +47,7 @@ define Package/$(PKG_NAME)/install
 	cp -r files/lib/* $(1)/usr/lib/lua/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/logserver.sh $(1)/usr/sbin/logserver
+	$(INSTALL_BIN) ./files/rlog $(1)/usr/sbin/rlog
 endef
 
 define Build/Configure

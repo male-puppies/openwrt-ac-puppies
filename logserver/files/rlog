@@ -1,0 +1,33 @@
+#!/bin/sh 
+
+do_start() {
+	case $1 in 
+		"server")
+			cd /usr/share/logserver/ && lua main.lua -d &;;
+		"nginx")
+			curl 'http://127.0.0.1/log?level=$2' ;;
+		*)
+			echo "$2" > /tmp/debug_$1;;
+	esac
+}
+
+do_stop() {
+	case $1 in 
+		"server")
+			ps | grep 'lua main.lua -d' | grep -v grep | awk '{print $1}' | xargs kill -9 ;;
+		"nginx")
+			curl 'http://127.0.0.1/log?level=' ;;	
+		*)
+			echo "" > /tmp/debug_$1;;
+	esac
+}
+
+case $1 in 
+	"start")
+		do_start $2 $3;;
+	"stop")
+		do_stop $2 $3;;
+	*)
+		echo "error";
+esac
+
