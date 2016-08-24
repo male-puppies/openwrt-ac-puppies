@@ -52,11 +52,12 @@ udp_map["aclog_add"] = function(p, ip, port)
 	end
 
 	local aclog = {
-		user	= {ip = p.user.ip, mac = p.user.mac},
-		rule 	= rulename,
-		proto 	= protoname,
-		tm		= p.time_stamp,
-		ext		= {flow = {}}
+		user		= {ip = p.user.ip, mac = p.user.mac},
+		rulename	= rulename,
+		proto		= protoname,
+		tm			= p.time_stamp,
+		actions		= p.actions,
+		ext			= {flow = p.flow}
 	}
 
 	if p.ruletype == "CONTROL" then
