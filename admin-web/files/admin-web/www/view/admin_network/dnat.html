@@ -1,10 +1,10 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
 <title>端口映射</title>
 <link rel="stylesheet" href="../../css/bootstrap.min.css" />
@@ -30,7 +30,7 @@
 <div id="main" class="main">
 	<div class="container-fluid">
 		<div class="main-wrapper clearfix">
-			<table id="table_firewall" class="table table-striped table-bordered" cellspacing="0" width="100%">
+			<table id="table_dnat" class="table table-striped table-bordered" cellspacing="0" width="100%">
 				<thead>
 					<tr>
 						<th>序号</th>
@@ -109,40 +109,42 @@
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="src_zid">源区域</label>
+							<label class="col-xs-4 control-label" for="from_szid">源区域</label>
 							<div class="col-xs-5">
-								<select id="src_zid" class="form-control">
-									<option value="0">WAN</option>
+								<select id="from_szid" class="form-control">
+									<option value="1">WAN</option>
+									<option value="0">LAN</option>
 								</select>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="dest_port">外部端口</label>
+							<label class="col-xs-4 control-label" for="from_dport">外部端口</label>
 							<div class="col-xs-5">
-								<input type="text" id="dest_port" class="form-control" verify="num 1 65535" />
+								<input type="text" id="from_dport" class="form-control" verify="num 1 65535" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~65535。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="target_zid">目标区域</label>
+							<label class="col-xs-4 control-label" for="to_dzid">目标区域</label>
 							<div class="col-xs-5">
-								<select id="target_zid" class="form-control">
+								<select id="to_dzid" class="form-control">
 									<option value="0">LAN</option>
+									<option value="1">WAN</option>
 								</select>
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="target_ip">内部IP地址</label>
+							<label class="col-xs-4 control-label" for="to_dip">内部IP地址</label>
 							<div class="col-xs-5">
-								<input type="text" id="target_ip" class="form-control" verify="ip" />
+								<input type="text" id="to_dip" class="form-control" verify="ip" />
 							</div>
 						</div>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="target_port">内部端口</label>
+							<label class="col-xs-4 control-label" for="to_dport">内部端口</label>
 							<div class="col-xs-5">
-								<input type="text" id="target_port" class="form-control" verify="num 1 65535" />
+								<input type="text" id="to_dport" class="form-control" verify="num 1 65535" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~65535。"><i class="icon-question-sign"></i></span>

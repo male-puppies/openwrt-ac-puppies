@@ -6,11 +6,11 @@ var oTabFirewall,
 		"fwdesc": "",
 		"enable": "",
 		"proto": "tcp udp",
-		"src_zid": "0",
-		"dest_port": "",
-		"target_zid": "0",
-		"target_ip": "",
-		"target_port": ""
+		"from_szid": "1",
+		"from_dport": "",
+		"to_dzid": "0",
+		"to_dip": "",
+		"to_dport": ""
 	};
 
 $(function() {
@@ -25,12 +25,12 @@ function createDtFirewall() {
 		"page": 1,
 		"count": 10000
 	}
-	return $("#table_firewall").dataTable({
+	return $("#table_dnat").dataTable({
 		"pagingType": "full_numbers",
 		"ordering": false,
 		"language": {"url": "../../js/lib/dataTables.chinese.json"},
 		"ajax": {
-			"url": cgiDtUrl("firewall_get", cgiobj),
+			"url": cgiDtUrl("dnat_get", cgiobj),
 			"type": "GET",
 			"dataSrc": dtDataCallback
 		},
@@ -74,7 +74,7 @@ function createDtFirewall() {
 				}
 			},
 			{
-				"data": "dest_port",
+				"data": "from_dport",
 				"render": function(d, t, f) {
 					if (typeof d == "undefined" || d == "") {
 						return "--";
@@ -84,7 +84,7 @@ function createDtFirewall() {
 				}
 			},
 			{
-				"data": "target_ip",
+				"data": "to_dip",
 				"render": function(d, t, f) {
 					if (typeof d == "undefined" || d == "") {
 						return "--";
@@ -94,7 +94,7 @@ function createDtFirewall() {
 				}
 			},
 			{
-				"data": "target_port",
+				"data": "to_dport",
 				"render": function(d, t, f) {
 					if (typeof d == "undefined" || d == "") {
 						return "--";
@@ -166,14 +166,14 @@ function DoSave() {
 
 	var obj = jsonTraversal(g_getvalue, jsTravGet);
 	if (modify_flag == "add") {
-		cgicall.post("firewall_add", obj, function(d) {
+		cgicall.post("dnat_add", obj, function(d) {
 			cgicallBack(d, initData, function() {
 				createModalTips("添加失败！" + (d.data ? d.data : ""));
 			});
 		});
 	} else {
 		obj.fwid = nodeEdit[0].fwid;
-		cgicall.post("firewall_set", obj, function(d) {
+		cgicall.post("dnat_set", obj, function(d) {
 			cgicallBack(d, initData, function() {
 				createModalTips("修改失败！" + (d.data ? d.data : ""));
 			});
@@ -211,7 +211,7 @@ function rowMove(set, id) {
 		sarr = [id, id2];
 	}
 
-	cgicall.post("firewall_adjust", {fwids: sarr}, function(d) {
+	cgicall.post("dnat_adjust", {fwids: sarr}, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("移动失败！" + (d.data ? d.data : ""));
 		});
@@ -224,7 +224,7 @@ function DoDelete() {
 		idarr.push(nodeEdit[i].fwid);
 	}
 
-	cgicall.post("firewall_del", {"fwids": idarr}, function(d) {
+	cgicall.post("dnat_del", {"fwids": idarr}, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("删除失败！" + (d.data ? d.data : ""));
 		});
@@ -252,7 +252,7 @@ function set_enable(that) {
 		obj.enable = "1"
 	}
 	
-	cgicall.post("firewall_set", obj, function(d) {
+	cgicall.post("dnat_set", obj, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("修改失败！" + (d.data ? d.data : ""));
 		});
@@ -283,7 +283,7 @@ function OnDelete(that) {
 }
 
 function OnSelectAll() {
-	dtSelectAll(this, $("#table_firewall"));
+	dtSelectAll(this, $("#table_dnat"));
 }
 
 function getSelected(that) {

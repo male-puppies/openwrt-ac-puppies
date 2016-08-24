@@ -56,12 +56,12 @@ if cmd:find("^kv_") then
 end
 
 
--- curl 'http://127.0.0.1/v1/admin/api/firewall_del?token=9903f8226c387824266f87aba80116f3' -d 'fwids=[1]'
--- curl 'http://127.0.0.1/v1/admin/api/firewall_set?token=9903f8226c387824266f87aba80116f3' -d 'fwid=1&fwname=gsl&fwdesc=123456&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22'
--- curl 'http://127.0.0.1/v1/admin/api/firewall_add?token=9903f8226c387824266f87aba80116f3' -d 'fwname=test3&fwdesc=desc of firewall&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22'
--- curl 'http://127.0.0.1/v1/admin/api/firewall_get?token=9903f8226c387824266f87aba80116f3&page=1&count=10'
--- curl 'http://127.0.0.1/v1/admin/api/firewall_adjust?token=9903f8226c387824266f87aba80116f3' -d 'fwids=[0,1]'
-if cmd:find("^firewall_") then
+-- curl 'http://127.0.0.1/v1/admin/api/dnat_del?token=9903f8226c387824266f87aba80116f3' -d 'fwids=[1]'
+-- curl 'http://127.0.0.1/v1/admin/api/dnat_set?token=9903f8226c387824266f87aba80116f3' -d 'fwid=1&fwname=gsl&fwdesc=123456&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22'
+-- curl 'http://127.0.0.1/v1/admin/api/dnat_add?token=9903f8226c387824266f87aba80116f3' -d 'fwname=test3&fwdesc=desc of dnat&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22'
+-- curl 'http://127.0.0.1/v1/admin/api/dnat_get?token=9903f8226c387824266f87aba80116f3&page=1&count=10'
+-- curl 'http://127.0.0.1/v1/admin/api/dnat_adjust?token=9903f8226c387824266f87aba80116f3' -d 'fwids=[0,1]'
+if cmd:find("^dnat_") then
 	return require("admin.firewall").run(cmd)
 end
 

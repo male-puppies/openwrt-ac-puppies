@@ -6,175 +6,154 @@ local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
 local ip_pattern = adminlib.ip_pattern
 local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
+local validate_post_get_all = adminlib.validate_post_get_all
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
-local v_fwid 			= gen_validate_num(0, 63)
-local v_fwname    		= gen_validate_str(1, 32, true)
-local v_fwdesc    		= gen_validate_str(0, 32)
-local v_enable 			= gen_validate_num(0, 1)
-local v_priority		= gen_validate_num(0, 99999)
-local v_proto    		= gen_validate_str(0, 8)
-local v_src_zid			= gen_validate_num(0, 255)
---local v_src_ip   		= gen_validate_str(0, 24)
---local v_src_port		= gen_validate_num(1, 65535)
---local v_dest_ip 	  	= gen_validate_str(0, 24)
-local v_dest_port		= gen_validate_num(1, 65535)
-local v_target_zid		= gen_validate_num(0, 255)
-local v_target_ip   	= gen_validate_str(0, 24)
-local v_target_port		= gen_validate_num(1, 65535)
-local v_fwids           = gen_validate_str(2, 256)
+local v_fwid = gen_validate_num(0, 63)
+local v_fwname = gen_validate_str(1, 32, true)
+local v_fwdesc = gen_validate_str(0, 32)
+local v_enable = gen_validate_num(0, 1)
+local v_priority = gen_validate_num(0, 99999)
+local v_type = gen_validate_str(0, 8)
+local v_action = gen_validate_str(0, 8)
+local v_proto = gen_validate_str(0, 8)
+local v_zid = gen_validate_num(0, 255)
+local v_port = gen_validate_num(0, 65535)
+local v_ip = gen_validate_str(0, 24)
+local v_fwids = gen_validate_str(2, 256)
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
--- 到函数表中执行函数
--- @cmd : 命令的字符串
--- @return ：返回给前台的结果
 local function run(cmd) 	local _ = (cmd_map[cmd] or cmd_map.numb)(cmd) 	end
 function cmd_map.numb(cmd) 	reply_e("invalid cmd " .. cmd) 	                end
 
-    local function query_common(m, cmd)
-    	m.cmd = cmd
-        local r, e = query_u(m)
-        return (not r) and reply_e(e) or ngx.say(r)
-    end
-
--- 检测传入数据是否合法
--- @m : 带有前台传入参数的表
--- @return ：nil和错误信息或者true
-local function validate_firewall(m)
-    local target_ip = m.target_ip
-        if not target_ip:find(ip_pattern) then 
-            return nil, "invalid target_ip"
-        end
-
---[[
-    这个版本不显示的字段
-    local src_ip = m.src_ip
-        if not target_ip:find(ip_pattern) then 
-            return nil, "invalid src_ip"
-        end
-    local dest_ip = m.dest_ip
-        if not target_ip:find(ip_pattern) then 
-            return nil, "invalid dest_ip"
-        end
-]]
-
-    return true
+local function query_common(m, cmd)
+	m.cmd = cmd
+	local r, e = query_u(m)
+	return (not r) and reply_e(e) or ngx.say(r)
 end
 
--- 获取端口映射信息
--- @return ：返回给前台的结果
+local function validate_dnat(m)
+	local to_dip = m.to_dip
+	if not to_dip:find(ip_pattern) then
+		return nil, "invalid Internal IP address(to_dip)"
+	end
+	return true
+end
+
 local valid_fields = {fwid = 1, fwname = 1, priority = 1}
-function cmd_map.firewall_get()
-    local m, e = validate_get({page = 1, count = 1})
-    if not m then 
-        return reply_e(e) 
-    end
-	
-    local cond = adminlib.search_cond(adminlib.search_opt(m, {order = valid_fields, search = valid_fields}))
-    local sql = string.format("select * from firewall %s %s %s", cond.like and string.format("and %s", cond.like) or "", "order by priority", cond.limit)
+function cmd_map.dnat_get()
+	local m, e = validate_get({page = 1, count = 1})
+	if not m then
+		return reply_e(e)
+	end
+
+	local cond = adminlib.search_cond(adminlib.search_opt(m, {order = valid_fields, search = valid_fields}))
+	local sql = string.format("select * from firewall where firewall.type='redirect' and firewall.action='DNAT' %s %s %s", cond.like and string.format("and %s", cond.like) or "", "order by priority", cond.limit)
 	local rs, e = mysql_select(sql)
-    return rs and reply(rs) or reply_e(e)
+	return rs and reply(rs) or reply_e(e)
 end
 
--- 返回服务器执行命令的结果
--- @cmd : 命令的字符串
--- @ext : 不同功能需要的字段
--- @return ：返回给前台的结果
-local function firewall_update_common(cmd, ext)
-	local check_map = 
-	{
-        fwname          = v_fwname,   
-        fwdesc          = v_fwdesc,
-        enable          = v_enable,
-        proto           = v_proto,
-        src_zid         = v_src_zid,
-        --src_ip          = v_src_ip,
-        --src_port        = v_src_port,
-        --dest_ip         = v_dest_ip,
-        dest_port       = v_dest_port,
-        target_zid      = v_target_zid,
-        target_ip       = v_target_ip,
-        target_port     = v_target_port,
-    }
+local function dnat_update_common(cmd, ext)
+	local check_map = {
+		fwname			=	v_fwname,
+		fwdesc			=	v_fwdesc,
+		enable			=	v_enable,
+		proto           =	v_proto,
+		--type			=	v_type,
+		--action			=	v_action,
+		from_szid		=	v_zid,
+		--from_dzid		=	v_zid,
+		--from_sip		=	v_ip,
+		--from_sport		=	v_port,
+		--from_dip		=	v_ip,
+		from_dport		=	v_port,
+		to_dzid			=	v_zid,
+		--to_sip			=	v_ip,
+		--to_sport		=	v_port,
+		to_dip			=	v_ip,
+		to_dport		=	v_port,
+	}
 
-    for k, v in pairs(ext or {}) do 
-        check_map[k] = v 
-    end 
+	for k, v in pairs(ext or {}) do
+		check_map[k] = v
+	end
 
-  	local m, e = validate_post(check_map)
-    if not m then 
-        return reply_e(e)
-    end
+	local m, e = validate_post_get_all(check_map)
+	if not m then
+		return reply_e(e)
+	end
+	local p = e
 
-    local r, e = validate_firewall(m)
-    if not r then 
-        return reply_e(e)
-    end
+	local r, e = validate_dnat(m)
+	if not r then
+		return reply_e(e)
+	end
 
-    return query_common(m, cmd)
+	m.type = "redirect"
+	m.action = "DNAT"
+	m.from_dzid = 0
+	m.from_sip = p.from_sip and v_ip(p.from_sip) or ""
+	m.from_sport = p.from_sport and v_port(p.from_sport) or 0
+	m.from_dip = p.from_dip and v_ip(p.from_dip) or ""
+	m.to_sip = ""
+	m.to_sport = 0
+
+	return query_common(m, cmd)
 end
 
--- 设置端口映射
--- @return ：返回给前台的结果
-function cmd_map.firewall_set()
-	return firewall_update_common("firewall_set", {fwid = v_fwid})
+function cmd_map.dnat_set()
+	return dnat_update_common("firewall_set", {fwid = v_fwid})
 end
 
--- 增加端口映射
--- @return ：函数值
-function cmd_map.firewall_add()
-    return firewall_update_common("firewall_add")
+function cmd_map.dnat_add()
+	return dnat_update_common("firewall_add")
 end
 
--- 删除端口映射
--- @return ：返回给前台的结果
-function cmd_map.firewall_del()
-    local m, e = validate_post({fwids = v_fwids})
+function cmd_map.dnat_del()
+	local m, e = validate_post({fwids = v_fwids})
 
-    if not m then 
-        return reply_e(e)
-    end
+	if not m then
+		return reply_e(e)
+	end
 
-    local ids = js.decode(m.fwids)
-    if not (ids and type(ids) == "table")  then 
-        return reply_e("invalid fwids")
-    end 
+	local ids = js.decode(m.fwids)
+	if not (ids and type(ids) == "table")  then
+		return reply_e("invalid fwids")
+	end
 
-    for _, id in ipairs(ids) do 
-        local tid = tonumber(id)
-        if not (tid and tid >= 0 and tid < 64) then 
-            return reply_e("invalid fwids")
-        end
-    end
+	for _, id in ipairs(ids) do
+		local tid = tonumber(id)
+		if not (tid and tid >= 0 and tid < 64) then
+			return reply_e("invalid fwids")
+		end
+	end
 
-    return query_common(m, "firewall_del")
+	return query_common(m, "firewall_del")
 end
 
--- 调整端口映射优先级
--- @return ：返回给前台的结果
-function cmd_map.firewall_adjust()
-    local m, e = validate_post({fwids = v_fwids})
+function cmd_map.dnat_adjust()
+	local m, e = validate_post({fwids = v_fwids})
 
-    if not m then 
-        return reply_e(e)
-    end
+	if not m then
+		return reply_e(e)
+	end
 
-    local ids = js.decode(m.fwids)
-    if not (ids and #ids == 2) then 
-        return reply_e("invalid fwids")
-    end 
+	local ids = js.decode(m.fwids)
+	if not (ids and #ids == 2) then
+		return reply_e("invalid fwids")
+	end
 
-    for _, id in ipairs(ids) do 
-        local tid = tonumber(id)
-        if not (tid and tid >= 0 and tid < 64) then 
-            return reply_e("invalid fwids")
-        end
-    end
+	for _, id in ipairs(ids) do
+		local tid = tonumber(id)
+		if not (tid and tid >= 0 and tid < 64) then
+			return reply_e("invalid fwids")
+		end
+	end
 
-    return query_common(m, "firewall_adjust")
+	return query_common(m, "firewall_adjust")
 end
 
 return {run = run}
