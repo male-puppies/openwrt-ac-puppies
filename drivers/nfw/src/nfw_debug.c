@@ -88,7 +88,7 @@ static ssize_t nfw_write(struct file *file,
 	int err = 0;
 
 	if(count > PROC_DBG_BUFF_SIZE) {
-		fw_error("io buffer overflow: %d->%d\n", PROC_DBG_BUFF_SIZE, count);
+		fw_error("io buffer overflow: %d->%d\n", PROC_DBG_BUFF_SIZE, (int)count);
 		return -EIO;
 	}
 
