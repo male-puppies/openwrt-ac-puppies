@@ -1,6 +1,7 @@
 local fp 	= require("fp")
 local ski 	= require("ski")
 local log 	= require("log")
+local batch	= require("batch")
 local js 	= require("cjson.safe")
 local rpccli 	= require("rpccli")
 local simplesql = require("simplesql")
@@ -8,6 +9,7 @@ local simplesql = require("simplesql")
 local rid_map = {}
 local simple, udpsrv, mqtt
 local reduce, tomap = fp.reduce, fp.tomap
+local bypass_timeout, on_bypass_timeout
 
 -------------------------------------------- common ------------------------------------------------
 local clear_map = {}
@@ -15,6 +17,8 @@ local function init(u, p)
 	udpsrv, mqtt = u, p
 	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	simple = simplesql.new(dbrpc)
+
+	bypass_timeout 	= batch.new(on_bypass_timeout)
 end
 
 local function clear(tbname, action)
@@ -38,7 +42,10 @@ end
 
 local function set_module(ukey, mod)
 	check_module()
-	if not online_cache[ukey] then
+
+	if not mod then
+		online_cache[ukey] = nil
+	elseif not online_cache[ukey] then
 		online_cache[ukey] = mod
 	end
 	print("set_module", js.encode(online_cache))
@@ -108,11 +115,58 @@ local function authrule(rid)
 	return authrule_cache[rid]
 end
 
------------------------------------------------- end ---------------------------------------------------
+------------------------------------------------ other ---------------------------------------------------
 local function timeout_check_intervel()
 	return 10 -- TODO
 end
------------------------------------------------- other ---------------------------------------------------
+
+------------------------------------------------ bypass ---------------------------------------------------
+
+
+--[[
+临时放通：
+/bypass_host：收到临时放通请求，存放到bypass_wait_map，以终端mac作为key。
+/weixin2_login：认证成功，会从extend中提取mac，并把bypass_wait_map[mac]删除
+认证失败时，并且临时放通时间超时后，会在on_bypass_timeout把bypass_wait_map[mac]删除，并且把对应的终端下线
+]]
+local bypass_wait_map = {}
+function on_bypass_timeout(count, arr)
+	local idx = 1
+	local f = function()
+		local r, now = arr[idx], ski.time()
+		if r[1] >= now then
+			return ski.sleep(1)
+		end
+
+		idx = idx + 1
+
+		local uid, magic, mac = r[2], r[3], r[4]
+		if not bypass_wait_map[mac] then
+			return
+		end
+
+		bypass_wait_map[mac] = nil
+
+		log.real1("bypass timeout %s %s %s", uid, magic, mac)
+
+		local r, e = set_status(uid, magic, 0)
+		local _ = r or log.error("set_status fail %s", e)
+	end
+
+	while idx <= #arr do f() end
+end
+
+local function bypass(mac, p)
+	bypass_wait_map[mac] = 1
+	bypass_timeout:emit({ski.time() + 15, p.uid, p.magic, p.mac})
+end
+
+local function bypass_cancel(mac)
+	bypass_wait_map[mac] = nil
+end
+
+
+------------------------------------------------ end ---------------------------------------------------
 return {
 	init 			= init,
 	clear 			= clear,
@@ -121,6 +175,9 @@ return {
 	get_module 		= get_module,
 
 	authrule 		= authrule,
+
+	bypass 			= bypass,
+	bypass_cancel 	= bypass_cancel,
 
 	auth_offline_time 		= auth_offline_time,
 	auth_redirect_ip 		= auth_redirect_ip,

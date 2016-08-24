@@ -18,12 +18,11 @@ local set_module = cache.set_module
 
 local udp_map = {}
 local udpsrv, mqtt, simple, reply
-local bypass_timeout, on_bypass_timeout
 local wechat_timeout, on_wechat_timeout
 local login_trigger, on_login
 local keepalive_trigger, on_keepalive
 local loop_timeout_check
-local reduce, tomap, each, empty = fp.reduce, fp.tomap, fp.each, fp.empty
+local reduce, tomap, each, empty, limit = fp.reduce, fp.tomap, fp.each, fp.empty, fp.limit
 
 local function init(u, p)
 	udpsrv, mqtt 	= u, p
@@ -34,45 +33,11 @@ local function init(u, p)
 	simple 			= simplesql.new(dbrpc)
 
 	-- 批处理
-	bypass_timeout 	= batch.new(on_bypass_timeout)
 	wechat_timeout 	= batch.new(on_wechat_timeout)
 	login_trigger 	= batch.new(on_login)
 	keepalive_trigger = batch.new(on_keepalive)
 
 	ski.go(loop_timeout_check)
-end
-
---[[
-临时放通：
-/bypass_host：收到临时放通请求，存放到bypass_wait_map，以终端mac作为key。
-/weixin2_login：认证成功，会从extend中提取mac，并把bypass_wait_map[mac]删除
-认证失败时，并且临时放通时间超时后，会在on_bypass_timeout把bypass_wait_map[mac]删除，并且把对应的终端下线
-]]
-local bypass_wait_map = {}
-function on_bypass_timeout(count, arr)
-	local idx = 1
-	local f = function()
-		local r, now = arr[idx], ski.time()
-		if r[1] >= now then
-			return ski.sleep(1)
-		end
-
-		idx = idx + 1
-
-		local uid, magic, mac = r[2], r[3], r[4]
-		if not bypass_wait_map[mac] then
-			return
-		end
-
-		bypass_wait_map[mac] = nil
-
-		log.real1("bypass timeout %s %s %s", uid, magic, mac)
-
-		local r, e = set_status(uid, magic, 0)
-		local _ = r or log.error("set_status fail %s", e)
-	end
-
-	while idx <= #arr do f() end
 end
 
 --[[
@@ -116,8 +81,7 @@ udp_map["/bypass_host"] = function(p, ip, port)
 
 	log.real1("bypass %s %s %s", uid, magic, mac)
 
-	bypass_wait_map[mac] = 1
-	bypass_timeout:emit({ski.time() + 15, uid, magic, mac})
+	cache.bypass(mac, {ski.time() + 15, uid, magic, mac})
 
 	reply(ip, port, 0, "ok")
 end
@@ -212,7 +176,8 @@ udp_map["/weixin2_login"] = function(p, ip, port)
 		return reply(ip, port, 1, "invalid extend")
 	end
 
-	wechat_wait_map[extend], bypass_wait_map[mac] = nil
+	wechat_wait_map[extend] = nil
+	cache.bypass_cancel(mac)
 
 	r.username = p.openId
 	login_trigger:emit(r)

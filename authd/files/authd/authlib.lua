@@ -43,7 +43,10 @@ end
 
 local set_module = cache.set_module
 local function insert_online(simple, user_map, authtype)
-	each(user_map, function(_, r) set_online(r.uid, r.magic, r.gid, r.username) end)
+	each(user_map, function(_, r)
+		cache.bypass_cancel(r.mac)
+		set_online(r.uid, r.magic, r.gid, r.username)
+	end)
 
 	local now = math.floor(ski.time())
 	local arr = reduce2(user_map, function(t, ukey, p)
