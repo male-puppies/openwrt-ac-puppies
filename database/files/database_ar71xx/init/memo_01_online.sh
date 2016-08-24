@@ -3,7 +3,7 @@
 tbname=online
 
 # drop_mysql_memo_table $tbname	
-create_mysql_memo_table "create table $tbname ( \
+create_mysql_memo_table "create table if not exists $tbname ( \
 		ukey	 	char(36)		primary key not null default '', \
 		type 		char(8) 		not null default '', \
 		username 	char(40) 		not null default '', \

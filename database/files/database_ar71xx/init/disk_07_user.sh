@@ -5,7 +5,7 @@ keyname=uid
 
 #drop_sqlite3_disk_table $tbname
 create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname ( \
-		$keyname integer 	primary key autoincrement, \
+		$keyname integer 	primary key, \
 		username char(64) 	not null unique default '', \
 		password char(64) 	not null default '', \
 		userdesc char(64) 	not null default '', \
