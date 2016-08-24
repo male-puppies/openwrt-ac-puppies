@@ -98,7 +98,6 @@ if cmd:find("^mwan_") then
 	return require("admin.mwan").run(cmd)
 end
 
-
 -- curl 'http://127.0.0.1/v1/admin/api/acgroup_del?token=c0d459db25347facb2be82d34391fa57' -d 'gids=[0,1,2,3]'
 -- curl 'http://127.0.0.1/v1/admin/api/acgroup_set?token=c0d459db25347facb2be82d34391fa57' -d 'gid=63&groupname=xxx&groupdesc=yyy&pid=-1'
 -- curl 'http://127.0.0.1/v1/admin/api/acgroup_add?token=c0d459db25347facb2be82d34391fa57' -d 'groupname=xxx&groupdesc=yyy&pid=-1'
@@ -107,11 +106,15 @@ if cmd:find("^acgroup_") then
 	return require("admin.acgroup").run(cmd)
 end
 
-
 -- curl 'http://127.0.0.1/v1/admin/api/user_del?token=c0d459db25347facb2be82d34391fa57' -d 'uids=[0,1,2,3]'
 -- curl 'http://127.0.0.1/v1/admin/api/user_set?token=c0d459db25347facb2be82d34391fa57' -d 'username=a22&password=aaa&enable=1&userdesc=desc&gid=63&bindip=1.3.6.9&bindmac=&expire=2016-09-01 00:01:02&register=2016-09-01 00:01:00&uid=0'
 -- curl 'http://127.0.0.1/v1/admin/api/user_add?token=c0d459db25347facb2be82d34391fa57' -d 'username=a2&password=aaa&enable=1&userdesc=desc&gid=63&bindip=1.3.6.9&bindmac=&expire=2016-09-01 00:01:02'
 -- curl 'http://127.0.0.1/v1/admin/api/user_get?token=c0d459db25347facb2be82d34391fa57&page=1&count=10&order=uid&desc=1&search=username&like=aaa'
 if cmd:find("^user_") then
 	return require("admin.user").run(cmd)
+end
+
+-- curl 'http://127.0.0.1/v1/admin/api/ctrllog_get?token=06fd330c6165c9e893103aa7a7a269fd&page=1&count=10'\
+if cmd:find("^ctrllog_") then
+	return require("admin.ctrllog").run(cmd)
 end

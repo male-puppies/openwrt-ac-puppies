@@ -1,16 +1,21 @@
+--[[
+	author:tgb
+	date:2016-08-25 1.0 add basic code
+]]
 local ski = require("ski")
 local lfs = require("lfs")
 local log = require("log")
 local js = require("cjson.safe")
 local udp 	= require("ski.udp")
 local common = require("common")
+local sandcproxy = require("sandcproxy")
 
 local udpsrv, mqtt
 local read = common.read
 local udp_chan
 local encode, decode = js.encode, js.decode
 local modules = {
-	control = 	require("control"),
+	aclog = 	require("aclog"),
 }
 
 -- 循环处理udp命令
@@ -70,10 +75,37 @@ local function start_udp_server()
 end
 
 
+local function start_sand_server()
+	local pld, cmd, map, r, e
+	local unique = "a/local/acmgr"
+
+	local on_message = function(topic, payload)
+		map = decode(payload)
+		if not (map and map.pld) then
+			return
+		end
+		pld = map.pld
+		cmd = pld.cmd
+		r, e = tcp_chan:write(map) 				assert(r, e)
+	end
+
+	local args = {
+		log = log,
+		unique = unique,
+		clitopic = {unique, "a/ac/database_sync"},
+		srvtopic = {unique .. "_srv"},
+		on_message = on_message,
+		on_disconnect = function(st, err) log.fatal("disconnect %s %s", st, err) end,
+	}
+
+	return sandcproxy.run_new(args)
+end
+
+
 local function main()
 	log.setmodule("acmgr")
 	udp_chan = ski.new_chan(100)
-	udpsrv, mqtt = start_udp_server() --start_sand_server()
+	udpsrv, mqtt = start_udp_server(), start_sand_server()
 
 	for _, mod in pairs(modules) do
 		mod.init(udpsrv, mqtt)

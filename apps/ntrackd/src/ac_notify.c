@@ -45,7 +45,7 @@ char *trans_aclog(nacs_msg_t *msg, int *len)
 		goto failed;
 	}
 
-	cJSON_AddStringToObject(root, "cmd", "aclog");
+	cJSON_AddStringToObject(root, "cmd", "aclog_add");
 	cJSON_AddStringToObject(root, "ruletype", 
 				msg->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT");
 	cJSON_AddStringToObject(root, "subtype", 
