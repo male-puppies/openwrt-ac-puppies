@@ -12,7 +12,7 @@ local sandcproxy = require("sandcproxy")
 
 local udpsrv, mqtt
 local read = common.read
-local udp_chan
+local tcp_chan, udp_chan
 local encode, decode = js.encode, js.decode
 local modules = {
 	aclog = 	require("aclog"),
@@ -104,7 +104,7 @@ end
 
 local function main()
 	log.setmodule("acmgr")
-	udp_chan = ski.new_chan(100)
+	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
 	udpsrv, mqtt = start_udp_server(), start_sand_server()
 
 	for _, mod in pairs(modules) do
