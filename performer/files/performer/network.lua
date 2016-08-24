@@ -272,11 +272,11 @@ local function network_reload()
 
 		cmd = table.concat(arr[name], "\n")
 		new_md5 = md5.sumhexa(cmd)
-		old_md5 = common.read(string.format("uci get %s.@version[0].md5 | head -c32", name), io.popen)
+		old_md5 = common.read(string.format("uci get %s.@version[0].network_md5 | head -c32", name), io.popen)
 		--print(new_md5, old_md5)
 		if new_md5 ~= old_md5 then
 			table.insert(arr[name], string.format("uci get %s.@version[0] || uci add %s version", name, name))
-			table.insert(arr[name], string.format("uci set %s.@version[0].md5='%s'", name, new_md5))
+			table.insert(arr[name], string.format("uci set %s.@version[0].network_md5='%s'", name, new_md5))
 			for _, line in ipairs(arr_cmd[name]) do
 				table.insert(arr[name], line)
 			end
