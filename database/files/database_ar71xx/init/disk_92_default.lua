@@ -178,9 +178,9 @@ cmd_map.zone = {
 		end
 
 		local arr = {
-			{zid = 0, 	zonename = "LAN", zonedesc = "LAN", zonetype = 3},
-			{zid = 1, 	zonename = "WAN", zonedesc = "WAN", zonetype = 3},
-			{zid = 255, zonename = "ALL", zonedesc = "ALL", zonetype = 3},
+			{zid = 0, 	zonename = "lan", zonedesc = "lan", zonetype = 3},
+			{zid = 1, 	zonename = "wan", zonedesc = "wan", zonetype = 3},
+			{zid = 255, zonename = "all", zonedesc = "all", zonetype = 3},
 		}
 
 		local narr = {}
