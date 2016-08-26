@@ -108,7 +108,6 @@ function createDt() {
 				"orderable": false,
 				"searchable": false,
 				"render": function(d, t, f) {
-					console.log(d)
 					if (d == 255) {
 						return '<input type="checkbox" value="1 0" disabled />';
 					} else {

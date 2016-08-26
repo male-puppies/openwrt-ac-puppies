@@ -205,6 +205,23 @@
 			},
 			message: "非法MAC格式。"
 		},
+		"macipsp": {
+			method: function(val) {
+				var regmac = /^([0-9a-fA-F]{2}(:)){5}[0-9a-fA-F]{2}$/;
+				var regip = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+				if (val == "") return true;
+				var data = val.split("\n");
+				for (var i = 0, ien = data.length; i < ien; i++) {
+					var v = data[i];
+					if (!regmac.test(v) && !regip.test(v)) {
+						return false;
+					}
+				}
+				return true;
+			},
+			message: "非法MAC/IP格式。"
+		},
 		"white_macs": {
 			method: function(val) {
 				if (val == "") return true;

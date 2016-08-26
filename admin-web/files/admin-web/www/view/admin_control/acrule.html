@@ -123,6 +123,47 @@
 <div id="main" class="main">
 	<div class="container-fluid">
 		<div class="main-wrapper clearfix">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> 控制列表</span>
+			</div>
+			<form class="form-horizontal">
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="bypass">免控制MAC/IP列表</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<div class="input-group">
+							<span class="input-group-addon">
+								<input type="checkbox" id="bypass__enable" class="c-enable" value="1 0" checked />
+							</span>
+							<textarea class="form-control empty" id="bypass" verify="macipsp"></textarea>
+						</div>
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入MAC或者IP，每行一个，不允许多余空格和回车，例如：&#10;11:22:33:44:55:66&#10;　192.168.1.1。"><i class="icon-question-sign"></i></span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="check">禁止上网MAC/IP列表</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<div class="input-group">
+							<span class="input-group-addon">
+								<input type="checkbox" id="check__enable" class="c-enable" value="1 0" checked />
+							</span>
+							<textarea class="form-control empty" id="check" verify="macipsp"></textarea>
+						</div>
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入MAC或者IP，每行一个，不允许多余空格和回车，例如：&#10;11:22:33:44:55:66&#10;　192.168.1.1。"><i class="icon-question-sign"></i></span>
+					</div>
+				</div>
+			</form>
+			<div class="main-bottom">
+				<div class="btn-group">
+					<a class="btn btn-zx submit"><i class="icon-save"></i>保存</a>
+				</div>
+			</div>
+		</div>
+
+		<div class="main-wrapper clearfix">
 			<table id="table_acrule" class="table table-striped table-hover table-bordered" cellspacing="0" width="100%">
 				<thead>
 					<tr>

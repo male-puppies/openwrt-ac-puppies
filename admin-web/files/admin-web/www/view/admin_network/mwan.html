@@ -15,11 +15,6 @@
 .label-wan {
 	margin-left: 20px;
 }
-.wan1,
-.wan2,
-.wan3 {
-	display: none;
-}
 </style>
 <script src="../../js/lib/jquery-1.11.3.min.js"></script>
 <script src="../../js/lib/jquery.cookie.js"></script>
@@ -39,64 +34,39 @@
 	<div class="container-fluid">
 		<div class="main-wrapper clearfix">
 			<div class="main-top">
-				<span class="title"><i class="icon-align-justify"></i> WAN口带宽</span>
+				<span class="title"><i class="icon-align-justify"></i> 启用</span>
 			</div>
 			<form class="form-horizontal">
-				<div class="form-group clearfix wan0">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="lan0__ipaddr">启用WAN0</label>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="disabled">启用多WAN负载</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<div class="input-group">
+							<div class="checkbox">
+								<label><input type="checkbox" id="disabled" value="1 0" /></label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</form>
+		</div>
+
+		<div class="main-wrapper clearfix">
+			<div class="main-top">
+				<span class="title"><i class="icon-align-justify"></i> WAN口带宽</span>
+			</div>
+			<form class="form-horizontal ifaces">
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label">启用WAN0</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
 						<div class="input-group">
 							<span class="input-group-addon">
-								<input type="checkbox" class="enable" value="1 0" checked />
+								<input type="checkbox" id="wan0_check" class="enable" value="1 0" checked />
 							</span>
 							<input type="text" id="wan0" class="form-control" verify="num 1 1000" />
 						</div>
 					</div>
 					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
-						<span class="units">Mbps</span>
-						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1000。请填写网络带宽。"><i class="icon-question-sign"></i></span>
-					</div>
-				</div>
-				<div class="form-group clearfix wan1">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="lan0__netmask">启用WAN1</label>
-					<div class="col-md-3 col-sm-4 col-xs-5">
-						<div class="input-group">
-							<span class="input-group-addon">
-								<input type="checkbox" class="enable" value="1 0" checked />
-							</span>
-							<input type="text" id="wan1" class="form-control" verify="num 1 1000" />
-						</div>
-					</div>
-					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
-						<span class="units">Mbps</span>
-					</div>
-				</div>
-				<div class="form-group clearfix wan2">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="lan0__netmask">启用WAN2</label>
-					<div class="col-md-3 col-sm-4 col-xs-5">
-						<div class="input-group">
-							<span class="input-group-addon">
-								<input type="checkbox" class="enable" value="1 0" checked />
-							</span>
-							<input type="text" id="wan2" class="form-control" verify="num 1 1000" />
-						</div>
-					</div>
-					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
-						<span class="units">Mbps</span>
-					</div>
-				</div>
-				<div class="form-group clearfix wan3">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="lan0__netmask">启用WAN3</label>
-					<div class="col-md-3 col-sm-4 col-xs-5">
-						<div class="input-group">
-							<span class="input-group-addon">
-								<input type="checkbox" class="enable" value="1 0" checked />
-							</span>
-							<input type="text" id="wan3" class="form-control" verify="num 1 1000" />
-						</div>
-					</div>
-					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
-						<span class="units">Mbps</span>
+						<span class="units">Mbps</span><span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1000。请填写网络带宽。"><i class="icon-question-sign"></i></span>
 					</div>
 				</div>
 			</form>
@@ -111,25 +81,23 @@
 					<label class="col-md-2 col-sm-3 col-xs-4 control-label">策略配置</label>
 					<div class="col-md-10 col-sm-9 col-xs-8">
 						<div class="radio">
-							<label><input type="radio" name="rule" checked="checked" value="average" />平均分配</label>
+							<label><input type="radio" name="policy" checked="checked" value="balanced" />平均分配</label>
 						</div>
 						<div class="radio" style="padding-top:18px;">
-							<label><input type="radio" name="rule" value="backup" />线路备份</label>
+							<label><input type="radio" name="policy" value="backup" />线路备份</label>
 						</div>
 						<div class="radio onradio">
 							<div class="radio" style="padding-left:20px;">
 								<span>　主线路</span>
-								<label class="label-wan wan0"><input type="radio" name="wan0" value="1" disabled checked />WAN0</label>
-								<label class="label-wan wan1"><input type="radio" name="wan1" value="1" disabled />WAN1</label>
-								<label class="label-wan wan2"><input type="radio" name="wan2" value="1" disabled />WAN2</label>
-								<label class="label-wan wan3"><input type="radio" name="wan3" value="1" disabled />WAN3</label>
+								<span class="mline">
+									<label class="label-wan wan0"><input type="radio" name="wan0" value="1" disabled checked />WAN0</label>
+								</span>
 							</div>
 							<div class="radio" style="padding-left:20px;">
 								<span>备份线路</span>
-								<label class="label-wan wan0"><input type="radio" name="wan0" value="2" disabled />WAN0</label>
-								<label class="label-wan wan1"><input type="radio" name="wan1" value="2" disabled checked />WAN1</label>
-								<label class="label-wan wan2"><input type="radio" name="wan2" value="2" disabled checked />WAN2</label>
-								<label class="label-wan wan3"><input type="radio" name="wan3" value="2" disabled checked />WAN3</label>
+								<span class="bline">
+									<label class="label-wan wan0"><input type="radio" name="wan0" value="2" disabled />WAN0</label>
+								</span>
 							</div>
 						</div>
 					</div>

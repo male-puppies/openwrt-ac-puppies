@@ -11,6 +11,7 @@ $(function() {
 	verifyEventsInit();
 	initEvents();
 	initData2();
+	initData3();
 });
 
 function createDt() {
@@ -189,6 +190,37 @@ function initData2() {
 	}, function(d) {
 		if (d.status == 0) {
 			g_ipgroup = dtObjToArray(d.data);
+		}
+	});
+}
+
+function initData3() {
+	cgicall.get("acset_get", function(d) {
+		if (d.status == 0) {
+			var bypass = d.data.bypass;
+			var check = d.data.check;
+
+			if (bypass.enable == 1) {
+				$("#bypass__enable").prop("checked", true);
+				$("#bypass").prop("disabled", false);
+			} else {
+				$("#bypass__enable").prop("checked", false);
+				$("#bypass").prop("disabled", true);
+			}
+
+			if (check.enable == 1) {
+				$("#check__enable").prop("checked", true);
+				$("#check").prop("disabled", false);
+			} else {
+				$("#check__enable").prop("checked", false);
+				$("#check").prop("disabled", true);
+			}
+
+			var bypass_str = dtObjToArray(bypass.mac).join("\n") != "" ? dtObjToArray(bypass.mac).join("\n") + "\n" : "" + dtObjToArray(bypass.ip).join("\n");
+			$("#bypass").val(bypass_str);
+
+			var check_str = dtObjToArray(check.mac).join("\n") != "" ? dtObjToArray(check.mac).join("\n") + "\n" : "" + dtObjToArray(check.ip).join("\n");
+			$("#check").val(check_str);
 		}
 	});
 }
@@ -382,7 +414,7 @@ function set_enable(that) {
 }
 
 function DoSave() {
-	if(!verification()) return;
+	if(!verification("#modal_edit")) return;
 
 	var acrule = {
 		enable: 1,
@@ -478,6 +510,8 @@ function DoDelete(){
 }
 
 function initEvents() {
+	$(".submit").on("click", OnSubmit);
+	$(".c-enable").on("click", OnEnable);
 	$(".add").on("click", OnAdd);
 	$('.delete').on('click', function() {OnDelete()});
 	$(".open-proto").on("click", OnOpenProto);
@@ -487,6 +521,56 @@ function initEvents() {
 	$("#proto_edit").on("click", ".right li", OnEditProto);
 	$(".checkall").on("click", OnSelectAll);
 	$('[data-toggle="tooltip"]').tooltip();
+}
+
+function OnSubmit() {
+	if(!verification("#main")) return;
+
+	var obj = {
+			bypass: {
+				enable: $("#bypass__enable").is(":checked") ? 1 : 0,
+				mac: [],
+				ip: []
+			},
+			check: {
+				enable: $("#check__enable").is(":checked") ? 1 : 0,
+				mac: [],
+				ip: []
+			}
+		},
+		bypass = $("#bypass").val().split("\n"),
+		check = $("#check").val().split("\n");
+
+	regmacip(obj.bypass, bypass);
+	regmacip(obj.check, check);
+
+	cgicall.post("acset_set", obj, function(d) {
+		cgicallBack(d, initData, function() {
+			createModalTips("保存失败！" + (d.data ? d.data : ""));
+		});
+	});
+
+	function regmacip(obj, arr) {
+		var regmac = /^([0-9a-fA-F]{2}(:)){5}[0-9a-fA-F]{2}$/,
+			regip = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+
+		for (var i = 0, ien = arr.length; i < ien; i++) {
+			var val = arr[i];
+			if (regmac.test(val)) {
+				obj.mac.push(val);
+			} else if (regip.test(val)) {
+				obj.ip.push(val);
+			}
+		}
+	}
+}
+
+function OnEnable() {
+	if ($(this).is(":checked")) {
+		$(this).closest("div").find("textarea").prop("disabled", false);
+	} else {
+		$(this).closest("div").find("textarea").prop("disabled", true);
+	}
 }
 
 function OnAdd() {

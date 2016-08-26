@@ -41,9 +41,7 @@ function initData() {
 }
 
 function initEvents() {
-	$('.submit2g').on('click', saveSubmit2g);
-	$('.submit5g').on('click', saveSubmit5g);
-	$('.submitopt').on('click', saveSubmitOpt);
+	$('.submit').on('click', saveSubmit);
 	$('#radio_2g__proto').on('change', function() {
 		var op = $(this).find('option:selected').val();
 		channel_2gSet(op);
@@ -166,19 +164,6 @@ function country_5gSet(obj) {
 	$("#radio_5g__chanid").html(str_5g);
 }
 
-function saveSubmit2g() {
-	var obj = jsonTraversal(radio_cfg, jsTravGet);
-	console.log(obj.radio_2g);
-	cgicall.post('radio_2g_set', obj.radio_2g, function(d) {
-		if(d.status == 0) {
-			createModalTips('保存成功！');
-			initData();
-		} else {
-			createModalTips('保存失败！');
-		}
-	});
-}
-
 function setCountryChannel(obj) {
 	channel_2gSet(obj); //2g 信道带宽option设置
 	channel_5gSet(obj);
@@ -186,21 +171,9 @@ function setCountryChannel(obj) {
 	country_5gSet(obj);
 }
 
-function saveSubmit5g() {
+function saveSubmit() {
 	var obj = jsonTraversal(radio_cfg, jsTravGet);
-	cgicall.post('radio_5g_set', obj.radio_5g, function(d) {
-		if(d.status == 0) {
-			createModalTips('保存成功！');
-			initData();
-		} else {
-			createModalTips('保存失败！');
-		}
-	});
-}
-
-function saveSubmitOpt() {
-	var obj = jsonTraversal(radio_cfg, jsTravGet);
-	cgicall.post('radio_opt_set', obj.opt, function(d) {
+	cgicall.post('radio_set', obj, function(d) {
 		if(d.status == 0) {
 			createModalTips('保存成功！');
 			initData();
