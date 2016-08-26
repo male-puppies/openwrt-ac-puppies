@@ -1,3 +1,5 @@
+-- author: yjs
+
 local ski 	= require("ski")
 local lfs 	= require("lfs")
 local log 	= require("log")
@@ -22,6 +24,7 @@ dispatch_udp:	处理从nginx、ntrackd等进程发来的udp命令
 dispatch_tcp:	处理从data等进程发来的udp命令
 ]]
 local modules = {
+	act 	= 	require("act"),
 	web 	= 	require("web"),
 	sms 	= 	require("sms"),
 	auto 	= 	require("auto"),

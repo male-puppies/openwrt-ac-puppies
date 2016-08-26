@@ -1,3 +1,5 @@
+-- author: yjs
+
 local js = require("cjson.safe")
 local rds = require("common.rds")
 local share = require("common.share")
