@@ -27,11 +27,11 @@ local function find_missing(myconn, ukey_arr)
 end
 
 local function set_online(uid, magic, gid, username)
-	local _ = set_status(uid, magic, 1), set_gid_ucrc(uid, magic, gid, 1)
+	local _ = nos.user_set_online(uid, magic), set_gid_ucrc(uid, magic, gid, 1)
 end
 
 local function set_offline(uid, magic)
-	set_status(uid, magic, 3)
+	nos.user_set_offline(uid, magic)
 end
 
 local function insert_online(myconn, ukey_map, authtype)

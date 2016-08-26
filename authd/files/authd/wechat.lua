@@ -75,9 +75,9 @@ end
 ]]
 udp_map["/bypass_host"] = function(p, ip, port)
 	local uid, magic, mac = p.uid, p.magic, p.mac
-	local r, e = set_status(uid, magic, 2)
+	local r, e = nos.user_set_bypass(uid, magic)
 	if not r then
-		log.error("set_status fail %s", e)
+		log.error("set_bypass fail %s", e)
 		return reply(ip, port, 1, e)
 	end
 

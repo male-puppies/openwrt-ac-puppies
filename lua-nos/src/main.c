@@ -26,12 +26,12 @@
 #include <ntrack_auth.h>
 
 #include "lua.h"
-#include "lauxlib.h" 
+#include "lauxlib.h"
 #include "dump.c"
 
-#if LUA_VERSION_NUM < 502 
+#if LUA_VERSION_NUM < 502
 # define luaL_newlib(L,l) (lua_newtable(L), luaL_register(L,NULL,l))
-#endif 
+#endif
 
 #if LUA_VERSION_NUM > 501
 #define lua_strlen lua_rawlen
@@ -52,7 +52,7 @@ static inline void check_uid_magic(lua_State *L, uint32_t *uid, uint32_t *magic)
 
 static inline int get_user(lua_State *L, user_info_t **ui) {
 	uint32_t uid, magic;
-	
+
 	check_uid_magic(L, &uid, &magic);
 	*ui = nt_get_user_by_id(&ntrack, uid, magic);
 	if(!(*ui)) {
@@ -62,7 +62,7 @@ static inline int get_user(lua_State *L, user_info_t **ui) {
 		lua_pushstring(L, buff);
 		return 2;
 	}
-	
+
 	return 0;
 }
 
@@ -71,7 +71,7 @@ static int user_get_rule_id(lua_State *L) {
 	int r = get_user(L, &ui);
 	if (r)
 		return r;
-		
+
 	lua_pushinteger(L, ui->hdr.rule_id);
 	return 1;
 }
@@ -79,9 +79,9 @@ static int user_get_rule_id(lua_State *L) {
 static int user_get_status(lua_State *L) {
 	user_info_t *ui;
 	int r = get_user(L, &ui);
-	if (r) 
+	if (r)
 		return r;
-		
+
 	lua_pushinteger(L, ui->hdr.status);
 	return 1;
 }
@@ -89,10 +89,43 @@ static int user_get_status(lua_State *L) {
 static int user_set_status(lua_State *L) {
 	user_info_t *ui;
 	int r = get_user(L, &ui);
-	if (r) 
+	if (r)
 		return r;
-	
+
 	ui->hdr.status = luaL_checkint(L, 3);
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+static int user_set_online(lua_State *L) {
+	user_info_t *ui;
+	int r = get_user(L, &ui);
+	if (r)
+		return r;
+
+	ui->hdr.status = AUTH_OK;
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+static int user_set_offline(lua_State *L) {
+	user_info_t *ui;
+	int r = get_user(L, &ui);
+	if (r)
+		return r;
+
+	ui->hdr.status = AUTH_REQ;
+	lua_pushboolean(L, 1);
+	return 1;
+}
+
+static int user_set_bypass(lua_State *L) {
+	user_info_t *ui;
+	int r = get_user(L, &ui);
+	if (r)
+		return r;
+
+	ui->hdr.status = AUTH_BYPASS;
 	lua_pushboolean(L, 1);
 	return 1;
 }
@@ -102,14 +135,14 @@ static int user_set_gid_ucrc(lua_State *L) {
 	int r = get_user(L, &ui);
 	if (r)
 		return r;
-	
+
 	uint32_t gid, ucrc;
 	gid = luaL_checkint(L, 3);
 	ucrc = luaL_checkint(L, 4);
-	
+
 	ui->hdr.u_grp_id = gid;
 	ui->hdr.u_usr_crc = ucrc;
-	
+
 	lua_pushboolean(L, 1);
 	return 1;
 }
@@ -117,11 +150,11 @@ static int user_set_gid_ucrc(lua_State *L) {
 static int user_get_ip_mac(lua_State *L) {
 	user_info_t *ui;
 	int r = get_user(L, &ui);
-	if (r) 
+	if (r)
 		return r;
-	
+
 	char buff[32] = {0};
-	snprintf(buff, sizeof(buff), "%u.%u.%u.%u", NIPQUAD(ui->ip)); 
+	snprintf(buff, sizeof(buff), "%u.%u.%u.%u", NIPQUAD(ui->ip));
 	lua_pushstring(L, buff);
 	snprintf(buff, sizeof(buff), "%02x:%02x:%02x:%02x:%02x:%02x", FMT_MAC(ui->hdr.macaddr));
 	lua_pushstring(L, buff);
@@ -132,13 +165,16 @@ static luaL_Reg reg[] = {
 	{ "user_get_rule_id", 		user_get_rule_id },
 	{ "user_get_status", 		user_get_status },
 	{ "user_set_status", 		user_set_status },
+	{ "user_set_online", 		user_set_online },
+	{ "user_set_offline", 		user_set_offline },
+	{ "user_set_bypass", 		user_set_bypass },
 	{ "user_set_gid_ucrc", 		user_set_gid_ucrc },
 	{ "user_get_ip_mac", 		user_get_ip_mac },
 	{ NULL, NULL }
 };
 
 LUALIB_API int luaopen_luanos(lua_State *L) {
-	int r = nt_base_init(&ntrack);	
+	int r = nt_base_init(&ntrack);
 	if (r) {
 		fprintf(stderr, "%s %d luaopen_luanos fail\n", __FILE__, __LINE__);
 		exit(1);

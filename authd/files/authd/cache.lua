@@ -151,8 +151,8 @@ function on_bypass_timeout(count, arr)
 
 		log.real1("bypass timeout %s %s %s", uid, magic, mac)
 
-		local r, e = set_status(uid, magic, 3)
-		local _ = r or log.error("set_status fail %s", e)
+		local r, e = nos.user_set_offline(uid, magic)
+		local _ = r or log.error("set_offline fail %s", e)
 	end
 
 	while idx <= #arr do f() end
