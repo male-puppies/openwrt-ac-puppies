@@ -112,7 +112,7 @@ if cmd:find("^user_") then
 	return require("admin.user").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/online_del?token=30810b31d61557198a749ebf5923f582' -d 'uids=[0,1,2,3]'
+-- curl 'http://127.0.0.1/v1/admin/api/online_del?token=30810b31d61557198a749ebf5923f582' -d 'ukeys=["1234_5678"]'
 -- curl 'http://127.0.0.1/v1/admin/api/online_get?token=30810b31d61557198a749ebf5923f582&page=1&count=10&order=uid&desc=1&search=username&like=aaa'
 if cmd:find("^online_") then
 	return require("admin.online").run(cmd)
