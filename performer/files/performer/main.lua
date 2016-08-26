@@ -16,7 +16,7 @@ local modules = {
 	dbevent = 	require("dbevent"),
 	acconfig = 	require("acconfig"),
 	authrule = 	require("authrule"),
-	authrule = 	require("firewall"),
+	firewall = 	require("firewall"),
 }
 
 local encode, decode = js.encode, js.decode
