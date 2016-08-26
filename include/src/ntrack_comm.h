@@ -56,7 +56,6 @@ static inline flow_info_t * nt_get_flow_by_id(ntrack_t *nt, uint32_t id, uint32_
 	nt_assert(id >= 0 && id < nt->fi_count);
 	/* check magic */
 	if (fi->magic != magic) {
-		nt_warn("fid: %u, magic inv: %u-%u\n", id, magic, fi->magic);
 		return NULL;
 	}
 	return fi;
@@ -69,7 +68,6 @@ static inline user_info_t * nt_get_user_by_id(ntrack_t *nt, uint32_t id, uint32_
 	nt_assert(id >= 0 && id < nt->ui_count);
 	/* check magic */
 	if (ui->magic != magic) {
-		nt_warn("uid: %u, magic inv: %u-%u\n", id, magic, ui->magic);
 		return NULL;
 	}
 	return ui;

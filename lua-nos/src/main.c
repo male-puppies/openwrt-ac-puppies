@@ -78,21 +78,25 @@ static int user_get_rule_id(lua_State *L) {
 
 static int user_get_status(lua_State *L) {
 	user_info_t *ui;
+	unsigned int status;
 	int r = get_user(L, &ui);
 	if (r)
 		return r;
 
-	lua_pushinteger(L, ui->hdr.status);
+	status = nt_auth_get_status(ui);
+	lua_pushinteger(L, status);
 	return 1;
 }
 
 static int user_set_status(lua_State *L) {
 	user_info_t *ui;
+	unsigned int status;
 	int r = get_user(L, &ui);
 	if (r)
 		return r;
 
-	ui->hdr.status = luaL_checkint(L, 3);
+	status = luaL_checkint(L, 3);
+	nt_auth_set_status(ui, status);
 	lua_pushboolean(L, 1);
 	return 1;
 }
@@ -103,7 +107,7 @@ static int user_set_online(lua_State *L) {
 	if (r)
 		return r;
 
-	ui->hdr.status = AUTH_OK;
+	nt_auth_set_status(ui, AUTH_OK);
 	lua_pushboolean(L, 1);
 	return 1;
 }
@@ -114,7 +118,7 @@ static int user_set_offline(lua_State *L) {
 	if (r)
 		return r;
 
-	ui->hdr.status = AUTH_REQ;
+	nt_auth_set_status(ui, AUTH_REQ);
 	lua_pushboolean(L, 1);
 	return 1;
 }
@@ -125,7 +129,7 @@ static int user_set_bypass(lua_State *L) {
 	if (r)
 		return r;
 
-	ui->hdr.status = AUTH_BYPASS;
+	nt_auth_set_status(ui, AUTH_BYPASS);
 	lua_pushboolean(L, 1);
 	return 1;
 }

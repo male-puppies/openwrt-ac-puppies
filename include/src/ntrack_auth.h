@@ -33,7 +33,7 @@ typedef struct {
 	void *p;
 } nt_authd_t;
 
-static inline uint32_t nt_auth_status(user_info_t *ui)
+static inline uint32_t nt_auth_get_status(user_info_t *ui)
 {
 	return ui->hdr.status;
 }
