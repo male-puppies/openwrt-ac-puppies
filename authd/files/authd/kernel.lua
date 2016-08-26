@@ -34,7 +34,7 @@ local function incr_miss(ukey, p)
 	if r then
 		if r.count >= 5 then
 			log.info("force offline %s %s", ukey, js.encode(p))
-			return nos.user_set_status(p.uid, p.magic, 0)
+			return nos.user_set_status(p.uid, p.magic, 3)
 		end
 
 		r.count, r.active = r.count + 1, ski.time()

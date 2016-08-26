@@ -151,7 +151,7 @@ function on_bypass_timeout(count, arr)
 
 		log.real1("bypass timeout %s %s %s", uid, magic, mac)
 
-		local r, e = set_status(uid, magic, 0)
+		local r, e = set_status(uid, magic, 3)
 		local _ = r or log.error("set_status fail %s", e)
 	end
 

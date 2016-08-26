@@ -17,8 +17,9 @@
 #define USR_TS_KEEP_ALIVE HZ * 30
 typedef enum {
 	AUTH_NONE = 0,
-	AUTH_OK,
-	AUTH_BYPASS,
+	AUTH_OK = 1,
+	AUTH_BYPASS = 2,
+	AUTH_REQ = 3,
 } auth_status_t;
 
 /* authd user keepalive message */

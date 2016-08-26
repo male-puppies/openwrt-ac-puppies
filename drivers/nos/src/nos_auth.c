@@ -152,9 +152,10 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		struct nf_conn *ct,
 		struct nos_user_info *ui)
 {
-	if (ui->hdr.rule_magic != g_auth_conf_magic) {
+	if (ui->hdr.rule_magic != g_auth_conf_magic || ui->hdr.status == AUTH_NONE) {
 		int i;
 		struct ethhdr *eth;
+		ui->hdr.rule_magic = g_auth_conf_magic;
 		ui->hdr.type = AUTH_TYPE_UNKNOWN;
 		ui->hdr.status = AUTH_BYPASS;
 		ui->hdr.rule_id = INVALID_AUTH_RULE_ID;
@@ -162,12 +163,13 @@ unsigned int nos_auth_hook(const struct net_device *in,
 			if ( ui->hdr.zone_id == auth_conf.auth[i].src_zone_id &&
 					(ui->hdr.ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
 				ui->hdr.rule_id = (uint8_t)auth_conf.auth[i].id;
+
 				if (auth_conf.auth[i].auth_type == AUTH_TYPE_AUTO) {
 					ui->hdr.type = AUTH_TYPE_AUTO;
 					ui->hdr.status = AUTH_OK;
 				} else {
 					ui->hdr.type = AUTH_TYPE_WEB;
-					ui->hdr.status = AUTH_NONE;
+					ui->hdr.status = AUTH_REQ;
 					if (auth_conf.auth[i].ip_white_list_set &&
 							ip_set_test_src_ip(in, out, skb, auth_conf.auth[i].ip_white_list_id) > 0) {
 							ui->hdr.status = AUTH_BYPASS;
@@ -183,59 +185,57 @@ unsigned int nos_auth_hook(const struct net_device *in,
 				nos_user_info_hold(ui);
 				eth = eth_hdr(skb);
 				memcpy(ui->hdr.macaddr, eth->h_source, ETH_ALEN);
+				break;
 			}
 		}
-		ui->hdr.rule_magic = g_auth_conf_magic;
 	}
 
-	if (ui->hdr.type == AUTH_TYPE_AUTO && ui->hdr.status != AUTH_OK) {
-		ui->hdr.status = AUTH_OK;
-	}
+	if (ui->hdr.status == AUTH_REQ) {
+		if (ui->hdr.type == AUTH_TYPE_WEB) {
+			//need web auth
+			int data_len;
+			unsigned char *data;
+			struct tcphdr *tcph;
+			struct iphdr *iph = ip_hdr(skb);
 
-	if (ui->hdr.type == AUTH_TYPE_WEB && ui->hdr.status == AUTH_NONE) {
-		//need web auth
-		int data_len;
-		unsigned char *data;
-		struct tcphdr *tcph;
-		struct iphdr *iph = ip_hdr(skb);
-
-		if (nos_auth_match_bypass_dst(in, out, skb) > 0) {
-			set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
-			return NF_ACCEPT;
-		}
-
-		if (iph->protocol == IPPROTO_UDP) {
-			//FIXME
-			struct udphdr *udph = (struct udphdr *)((void *)iph + iph->ihl*4);
-			if (udph->dest == __constant_htons(53) ||
-					udph->dest == __constant_htons(67)) {
+			if (nos_auth_match_bypass_dst(in, out, skb) > 0) {
 				set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
 				return NF_ACCEPT;
 			}
-		}
-		if (iph->protocol != IPPROTO_TCP) {
-			set_bit(IPS_NOS_DROP_BIT, &ct->status);
-			return NF_DROP;
-		}
-		//FIXME skb_make_writable
-		tcph = (struct tcphdr *)((void *)iph + iph->ihl * 4);
-		data = skb->data + (iph->ihl << 2) + (tcph->doff << 2);
-		data_len = ntohs(iph->tot_len) - ((iph->ihl << 2) + (tcph->doff << 2));
-		if ((data_len > 4 && strncasecmp(data, "GET ", 4) == 0) ||
-				(data_len > 5 && strncasecmp(data, "POST ", 5) == 0)) {
-			nos_auth_http_302(in, skb, ui);
-			set_bit(IPS_NOS_DROP_BIT, &ct->status);
-			return NF_DROP;
-		} else if (data_len > 0) {
-			set_bit(IPS_NOS_DROP_BIT, &ct->status);
-			return NF_DROP;
-		} else if (tcph->ack && !tcph->syn) {
-			nos_auth_convert_tcprst(skb);
-			return NF_ACCEPT;
-		}
-	}
 
-	if (ui->hdr.status == AUTH_OK) {
+			if (iph->protocol == IPPROTO_UDP) {
+				//FIXME
+				struct udphdr *udph = (struct udphdr *)((void *)iph + iph->ihl*4);
+				if (udph->dest == __constant_htons(53) ||
+						udph->dest == __constant_htons(67)) {
+					set_bit(IPS_NOS_BYPASS_BIT, &ct->status);
+					return NF_ACCEPT;
+				}
+			}
+			if (iph->protocol != IPPROTO_TCP) {
+				set_bit(IPS_NOS_DROP_BIT, &ct->status);
+				return NF_DROP;
+			}
+			//FIXME skb_make_writable
+			tcph = (struct tcphdr *)((void *)iph + iph->ihl * 4);
+			data = skb->data + (iph->ihl << 2) + (tcph->doff << 2);
+			data_len = ntohs(iph->tot_len) - ((iph->ihl << 2) + (tcph->doff << 2));
+			if ((data_len > 4 && strncasecmp(data, "GET ", 4) == 0) ||
+					(data_len > 5 && strncasecmp(data, "POST ", 5) == 0)) {
+				nos_auth_http_302(in, skb, ui);
+				set_bit(IPS_NOS_DROP_BIT, &ct->status);
+				return NF_DROP;
+			} else if (data_len > 0) {
+				set_bit(IPS_NOS_DROP_BIT, &ct->status);
+				return NF_DROP;
+			} else if (tcph->ack && !tcph->syn) {
+				nos_auth_convert_tcprst(skb);
+				return NF_ACCEPT;
+			}
+		} else if (ui->hdr.type == AUTH_TYPE_AUTO) {
+			ui->hdr.status = AUTH_OK;
+		}
+	} else if (ui->hdr.status == AUTH_OK) {
 		if (time_after(jiffies, ui->hdr.time_stamp + 30 * HZ)) {
 			nt_msghdr_t hdr;
 			auth_msg_t auth;
@@ -249,7 +249,9 @@ unsigned int nos_auth_hook(const struct net_device *in,
 				nt_debug("skb cap failed.\n");
 			}
 		}
-	}
+	} /* else if (ui->hdr.status == AUTH_BYPASS) {
+		return NF_ACCEPT;
+	} */
 
 	return NF_ACCEPT;
 }

@@ -75,7 +75,7 @@ end
 ]]
 udp_map["/bypass_host"] = function(p, ip, port)
 	local uid, magic, mac = p.uid, p.magic, p.mac
-	local r, e = set_status(uid, magic, 1)
+	local r, e = set_status(uid, magic, 2)
 	if not r then
 		log.error("set_status fail %s", e)
 		return reply(ip, port, 1, e)

@@ -31,7 +31,7 @@ local function set_online(uid, magic, gid, username)
 end
 
 local function set_offline(uid, magic)
-	set_status(uid, magic, 0)
+	set_status(uid, magic, 3)
 end
 
 local function insert_online(myconn, ukey_map, authtype)
