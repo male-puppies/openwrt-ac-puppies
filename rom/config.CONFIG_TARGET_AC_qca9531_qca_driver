@@ -5609,14 +5609,13 @@ CONFIG_PACKAGE_kmod-tbq=y
 # CONFIG_PACKAGE_kmod-igb-netmap is not set
 # CONFIG_PACKAGE_kmod-netmap is not set
 # CONFIG_PACKAGE_kmod-r8169-netmap is not set
-CONFIG_PACKAGE_ac-basic=y
 CONFIG_PACKAGE_acmgr=y
 CONFIG_PACKAGE_admin-web=y
 CONFIG_PACKAGE_auth-web=y
 CONFIG_PACKAGE_authd=y
 CONFIG_PACKAGE_cfgmgr=y
 CONFIG_PACKAGE_database=y
-CONFIG_PACKAGE_ipcalc=y
+# CONFIG_PACKAGE_ipcalc is not set
 CONFIG_PACKAGE_libcjson=y
 CONFIG_PACKAGE_libpps=y
 CONFIG_PACKAGE_logserver=y

@@ -19,7 +19,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +kmod-nos
+  DEPENDS:= +kmod-tbq
 endef
 
 define Package/$(PKG_NAME)
