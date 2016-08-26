@@ -163,8 +163,15 @@ function OnSubmit() {
 	obj.ifaces = ifaces;
 	obj.main_iface = main_iface;
 
-	cgicall.post("mwan_set", obj, function(d) {
-		cgicallBack(d, initData, function() {
+	var sobj = {
+		"arg": JSON.stringify(obj)
+	}
+
+	cgicall.post("mwan_set", sobj, function(d) {
+		cgicallBack(d, function() {
+			createModalTips("保存成功！");
+			initData();
+		}, function() {
 			createModalTips("保存失败！" + (d.data ? d.data : ""));
 		});
 	});
