@@ -205,9 +205,13 @@ int np_hook_unregister(np_hook_t fn)
 EXPORT_SYMBOL(np_hook_register);
 EXPORT_SYMBOL(np_hook_unregister);
 
-void nproto_update_flow(flow_info_t *fi, uint16_t proto_new)
+void nproto_update(nt_packet_t *pkt, np_rule_t *rule)
 {
 	int i;
+	flow_info_t *fi = pkt->fi;
+	uint16_t proto_new = rule->ID;
+
+	NP_ASSERT(fi != NULL);
 
 	if(fi->hdr.proto != proto_new) {
 		for (i = 0; i < NP_HOOK_MAX; ++i) {
@@ -215,7 +219,7 @@ void nproto_update_flow(flow_info_t *fi, uint16_t proto_new)
 			if(!fn) {
 				break;
 			}
-			fn(fi, proto_new);
+			fn(pkt, rule->crc);
 		}
 	} else {
 		np_warn(FMT_FLOW_STR"-NOT changed proto: %d\n", FMT_FLOW(fi), proto_new);

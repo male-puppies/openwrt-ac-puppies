@@ -9,7 +9,9 @@
 extern int do_ac_table_hk(
 	struct net_device *in, struct net_device *out, struct sk_buff *skb,
 	flow_info_t *fi, user_info_t *ui, user_info_t *pi);
-extern int do_ac_table_cb(nt_packet_t *pkt, __u32 proto_new);
+extern int do_ac_table_cb(
+	struct net_device *in, struct net_device *out, struct sk_buff *skb,
+	flow_info_t *fi, user_info_t *ui, user_info_t *pi, uint32_t proto_new);
 
 #include "nfw_private.h"
 
@@ -102,11 +104,12 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	}
 };
 
-static int fw_nproto_callback(flow_info_t *fi, uint32_t proto_crc)
+static int fw_nproto_callback(nt_packet_t *pkt, uint32_t proto_crc)
 {
 	/*TODO: check the config rule's, markup fi->flags.*/
-	if(/*do_ac_table_cb(nt_packet_t, proto_new)*/0) {
-		nt_flow_drop_set(fi, FG_FLOW_DROP_L7_FW);
+	if(do_ac_table_cb(pkt->in, pkt->out, pkt->skb,
+						pkt->fi, pkt->ui, pkt->pi, proto_crc)) {
+		nt_flow_drop_set(pkt->fi, FG_FLOW_DROP_L7_FW);
 	}
 	return 0;
 }

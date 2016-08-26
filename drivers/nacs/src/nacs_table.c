@@ -1291,22 +1291,24 @@ int do_ac_table_hk(
 EXPORT_SYMBOL(do_ac_table_hk);
 
 
-int do_ac_table_cb(nt_packet_t *pkt, __u32 proto_new)
+int do_ac_table_cb(
+	struct net_device *in,
+	struct net_device *out,
+	struct sk_buff *skb,
+	flow_info_t *fi,
+	user_info_t *ui,
+	user_info_t *pi,
+	__u32 proto_new)
 {
-	struct net_device *in = NULL, *out = NULL;
-	struct sk_buff *skb = NULL;
-	flow_info_t *fi = NULL; 
-	user_info_t *ui = NULL, *pi = NULL;
 	__u32 proto_old = 0, magic = 0;
 	nt_flow_nacs_t *flow_nacs = NULL;
 
-	BUG_ON(!pkt);
-	in = pkt->in;	BUG_ON(!in);
-	out = pkt->out;	BUG_ON(!out);
-	skb = pkt->skb; BUG_ON(!skb);
-	fi = pkt->fi;	BUG_ON(!fi);
-	ui = pkt->ui;	BUG_ON(!ui);
-	pi = pkt->pi;	BUG_ON(!pi);
+	BUG_ON(!in);
+	BUG_ON(!out);
+	BUG_ON(!skb);
+	BUG_ON(!fi);
+	BUG_ON(!ui);
+	BUG_ON(!pi);
 
 	proto_old = fi->hdr.proto; BUG_ON(proto_old == proto_new);
 	/*when proto change, we will clear check flags and do table*/
