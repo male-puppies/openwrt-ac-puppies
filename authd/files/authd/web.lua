@@ -1,3 +1,5 @@
+-- author: yjs
+
 local fp 		= require("fp")
 local ski 		= require("ski")
 local log 		= require("log")

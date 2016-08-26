@@ -1,3 +1,5 @@
+-- author: yjs
+
 package.path = "/usr/share/admin-web/?.lua;" .. package.path
 local adminlib = require("admin.adminlib")
 

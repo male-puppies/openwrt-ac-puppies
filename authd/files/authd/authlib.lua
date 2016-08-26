@@ -1,3 +1,5 @@
+-- author: yjs
+
 local fp 		= require("fp")
 local ski 		= require("ski")
 local log 		= require("log")
@@ -61,6 +63,21 @@ local function insert_online(simple, user_map, authtype)
 	each(user_map, function(_, r) set_module(r.ukey, authtype) end)
 end
 
+local function offline_ukeys(simple, ukeys)
+	-- 从memo.online删除
+	local narr = reduce(ukeys, function(t, ukey) return rawset(t, #t + 1, string.format("'%s'", ukey)) end, {})
+	local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
+	local r, e = simple:mysql_execute(sql) 	assert(r, e)
+
+	-- 从内核下线, 删除缓存
+	each(ukeys, function(_, ukey)
+		local uid, magic = ukey:match("(%d+)_(%d+)")
+
+		local _ = set_offline(tonumber(uid), tonumber(magic)), set_module(ukey, nil)
+		log.real1("set_offline %s", ukey)
+	end)
+end
+
 -- 定时下线和无流量下线
 local function timeout_offline(simple, mod)
 	local active_timeout = 600
@@ -74,26 +91,14 @@ local function timeout_offline(simple, mod)
 		return
 	end
 
-	-- 从内核下线
-	each(rs, function(_, r)
-		local uid, magic = r.ukey:match("(%d+)_(%d+)")
-		set_offline(tonumber(uid), tonumber(magic))
-		log.real1("set_offline %s", js.encode(r))
-	end)
-
-	-- 从memo.online删除
-	local narr = reduce(rs, function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
-	local sql = string.format("delete from memo.online where ukey in (%s)", table.concat(narr, ","))
-	local r, e = simple:mysql_execute(sql) 	assert(r, e)
-
-	-- 删除缓存
-	each(rs, function(_, r) set_module(r.ukey, nil) end)
+	offline_ukeys(simple, reduce(rs, function(t, r) return rawset(t, #t + 1,  t.ukey) end, {}))
 end
 
 return {
 	gen_reply 			= gen_reply,
 	set_online 			= set_online,
 	set_offline 		= set_offline,
+	offline_ukeys 		= offline_ukeys,
 	insert_online 		= insert_online,
 	timeout_offline 	= timeout_offline,
 	gen_dispatch_udp 	= gen_dispatch_udp,
