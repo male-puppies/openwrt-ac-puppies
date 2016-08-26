@@ -49,15 +49,15 @@
 			</div>
 			<form class="form-horizontal g-config">
 				<div class="form-group clearfix">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="redirect_ip">重定向IP</label>
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="auth_redirect_ip">重定向IP</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
-						<input type="text" id="redirect_ip" class="form-control" verify="ip" />
+						<input type="text" id="auth_redirect_ip" class="form-control" verify="ip" />
 					</div>
 				</div>
 				<div class="form-group clearfix">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="offline_time">无流量超时下线</label>
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="auth_no_flow_timeout">无流量超时下线</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
-						<input type="text" id="offline_time" class="form-control" verify="num 1 1440" />
+						<input type="text" id="auth_no_flow_timeout" class="form-control" verify="num 1 1440" />
 					</div>
 					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
 						<span class="units">分钟</span>
@@ -65,9 +65,9 @@
 					</div>
 				</div>
 				<div class="form-group clearfix">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="bypass_dst">放通网站列表</label>
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="auth_bypass_dst">放通网站列表</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
-						<textarea class="form-control" id="bypass_dst"></textarea>
+						<textarea class="form-control" id="auth_bypass_dst"></textarea>
 					</div>
 					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
 						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入放通的网站列表，一行一个，如：www.qq.com&#10;www.baidu.com。"><i class="icon-question-sign"></i></span>
