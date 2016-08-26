@@ -29,7 +29,7 @@ udp_map["mwan_get"] = function(p, ip, port)
 		disabled = mwan_m.disabled or 1,
 		ifaces = {},
 		policy = mwan_m.policy or "balanced",
-		main_iface = mwan_m.main_iface or "",
+		main_iface = mwan_m.main_iface or {},
 	}
 
 	for iface, _ in pairs(network_m.network) do
