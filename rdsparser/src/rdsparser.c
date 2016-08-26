@@ -26,7 +26,7 @@ enum {
 };
 
 #define DEFAULT_BUFF_SIZE	(32 * 1024)
-#define EXPECT_BUFF_SIZE	(256 * 1024)
+#define EXPECT_BUFF_SIZE	(128 * 1024)
 
 typedef struct rdsst {
 	char *buff;
@@ -52,10 +52,10 @@ char *rds_encode(rds_str *arr, int count, int *len) {
 	char *buff;
 	int i, pos, ret, total;
 
-	total = count * 10 + (count * 2 + 1) * 2; /* ²ÎÊı¸öÊıºÍÃ¿¶Î³¤¶È×î³¤Îª10Î»Êı×Ö£»\r\n³¤¶ÈÎª2£¬Ã¿¸ö¶ÎÓĞ2¸ö£¬²ÎÊı¸öÊı´øÒ»¸ö\r\n */
+	total = count * 10 + (count * 2 + 1) * 2; /* å‚æ•°ä¸ªæ•°å’Œæ¯æ®µé•¿åº¦æœ€é•¿ä¸º10ä½æ•°å­—ï¼›\r\né•¿åº¦ä¸º2ï¼Œæ¯ä¸ªæ®µæœ‰2ä¸ªï¼Œå‚æ•°ä¸ªæ•°å¸¦ä¸€ä¸ª\r\n */
 
 	for (i = 0; i < count; i++) {
-		total += arr[i].len;	assert(arr[i].p && arr[i].len > 0 && arr[i].len <= 256 * 1024 * 1024);
+		total += arr[i].len;	assert(arr[i].p && arr[i].len > 0 && arr[i].len <= 128 * 1024);
 	}
 
 	pos = 0;
@@ -102,21 +102,27 @@ static int adjust_size(int size) {
 	BUG_ON(1);
 }
 
-static void rds_cache(rdsst *rds, const char *buff, size_t bufsize) {
+static int rds_cache(rdsst *rds, const char *buff, size_t bufsize) {
 	if (!rds->buff) {
 		rds->maxsize = DEFAULT_BUFF_SIZE;
 		rds->buff = (char *)mnew(rds->maxsize);
 	}
 
 	if (rds->cursize + (int)bufsize > rds->maxsize) {
-		int nsize = rds->cursize + bufsize;					BUG_ON(nsize > 10 * 1024*1024);
+		int nsize = rds->cursize + bufsize;
 		rds->maxsize = adjust_size(nsize);
-		rds->buff = (char *)realloc(rds->buff, nsize);		BUG_ON(!(rds->buff));
+		if (rds->maxsize > 512*1024) {
+			fprintf(stderr, "%s %d cache size too large %d\n", __FILE__, __LINE__, rds->maxsize);
+			return -1;
+		}
+
+		rds->buff = (char *)realloc(rds->buff, rds->maxsize);		BUG_ON(!(rds->buff));
 		printf("%s %d realloc buffer %d\n", __FILE__, __LINE__, rds->maxsize);
 	}
 
 	memcpy(rds->buff + rds->cursize, buff, bufsize);
 	rds->cursize += bufsize;
+	return 0;
 }
 
 static void shrink_buff(rdsst *rds) {
@@ -227,7 +233,9 @@ int rds_decode(rdsst *rds, const char *buff, int bufsize, rds_result *out) {
 	BUG_ON(rds->state == RDS_ERR);
 
 	if (buff && bufsize > 0) {
-		rds_cache(rds, buff, bufsize);	BUG_ON(!bufsize);
+		int ret = rds_cache(rds, buff, bufsize);
+		if (ret)
+			return -1;
 	}
 
 	if (!rds->cursize) {
