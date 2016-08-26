@@ -159,6 +159,8 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		ui->hdr.type = AUTH_TYPE_UNKNOWN;
 		ui->hdr.status = AUTH_BYPASS;
 		ui->hdr.rule_id = INVALID_AUTH_RULE_ID;
+		eth = eth_hdr(skb);
+		memcpy(ui->hdr.macaddr, eth->h_source, ETH_ALEN);
 		for (i = 0; i < auth_conf.num; i++) {
 			if ( ui->hdr.zone_id == auth_conf.auth[i].src_zone_id &&
 					(ui->hdr.ipgrp_bits & (1 << auth_conf.auth[i].src_ipgrp_id)) ) {
@@ -183,8 +185,6 @@ unsigned int nos_auth_hook(const struct net_device *in,
 						auth_conf.auth[i].id, auth_conf.auth[i].src_zone_id, auth_conf.auth[i].src_ipgrp_id);
 
 				nos_user_info_hold(ui);
-				eth = eth_hdr(skb);
-				memcpy(ui->hdr.macaddr, eth->h_source, ETH_ALEN);
 				break;
 			}
 		}
