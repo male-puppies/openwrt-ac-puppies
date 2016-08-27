@@ -95,13 +95,13 @@ static int proc_pars_init(void)
 	}	
 
 	nt_info("nt proc: 0x%x-0x%x\n"
-		"\tuser offset: 0x%x, count: %d\n" 
-		"\tflow offset: 0x%x, count: %d\n" 
-		"\tcapblk size: 0x%x\n", 
-		nt_shm_base, nt_shm_size, 
-		shm_user_offset, nt_user_max, 
-		shm_flow_offset, nt_flow_max,
-		nt_cap_block_sz);
+		"\tuser offset: 0x%x, count: %d\n"
+		"\tflow offset: 0x%x, count: %d\n"
+		"\tcapblk size: 0x%x\n",
+		(unsigned int)nt_shm_base, (unsigned int)nt_shm_size,
+		(unsigned int)shm_user_offset, nt_user_max,
+		(unsigned int)shm_flow_offset, nt_flow_max,
+		(unsigned int)nt_cap_block_sz);
 
 	return 0;
 }
@@ -122,7 +122,8 @@ static int shm_init(void **ui_base, uint32_t *ui_cnt, void ** fi_base, uint32_t 
 	shm_base_user = shm_base_addr + shm_user_offset;
 	shm_base_flow = shm_base_addr + shm_flow_offset;
 
-	nt_info("shm[off:%x, size: %x]\n\tbase: %p, user: %p, flow: %p\n", nt_shm_base, nt_shm_size, \
+	nt_info("shm[off:%x, size: %x]\n\tbase: %p, user: %p, flow: %p\n", \
+		(unsigned int)nt_shm_base, (unsigned int)nt_shm_size, \
 		shm_base_addr, shm_base_user, shm_base_flow);
 
 	*fi_base = shm_base_flow;
@@ -178,7 +179,7 @@ int nt_base_init(ntrack_t *nt)
 	}
 
 	if (shm_init(
-		(void**)&nt->ui_base, &nt->ui_count, 
+		(void**)&nt->ui_base, &nt->ui_count,
 		(void**)&nt->fi_base, &nt->fi_count)) {
 		return -EINVAL;
 	}
@@ -195,7 +196,7 @@ int nt_message_process(rbf_t *rbfp, uint32_t *running, nmsg_cb_t cb)
 		p = rbf_get_data(rbfp);
 		if (!p) {
 			// nt_debug("read empty.\n");
-			sleep(0.01); //10ms
+			usleep(500);
 			continue;
 		}
 		// nt_dump(p, 128, "node\n");

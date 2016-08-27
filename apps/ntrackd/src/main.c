@@ -1,53 +1,14 @@
 #define _GNU_SOURCE
 #define __DEBUG
 
-#include <sched.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include <fcntl.h>
-#include <errno.h>
-
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <sys/socket.h>
-
-#include <linux/netlink.h>
-
-#include <pthread.h>
-
-#include <ntrack_rbf.h>
-#include <ntrack_log.h>
-#include <ntrack_msg.h>
-#include <ntrack_auth.h>
-#include <ntrack_nacs.h>
+#include "ntrackd.h"
 
 /* kernel user node message delivery to authd. */
-extern int nt_unotify_init(void);
-extern int nt_unotify_ac(nacs_msg_t *msg);
-extern int nt_unotify_auth(auth_msg_t *auth, ntrack_t *ntrack);
+
 static ntrack_t ntrack;
 
 static int fn_message_disp(void *p)
 {
-#if 0
-	cpu_set_t set;
-	CPU_ZERO(&set);
-	if(sched_getaffinity(0, sizeof(set), &set) == -1) {
-		nt_error("get affinity.\n");
-		return 0;
-	}
-	int i;
-	for(i=0; i<CPU_COUNT(&set); i++) {
-		if(CPU_ISSET(i, &set)) {
-			nt_debug("on core: %d\n", i);
-		}
-	}
-#endif
 	int ret = -1;
 	nt_msghdr_t *hdr = p;
 	switch(hdr->type) {
@@ -139,7 +100,6 @@ int main(int argc, char *argv[])
 			nt_error("create [%d] work thread.\n", i);
 			exit(EXIT_FAILURE);
 		}
-		usleep(10);
 	}
 
 	for(i=0; i<CPU_COUNT(&set); i++) {

@@ -83,7 +83,7 @@ static void dump_userinfo(int id, int magic)
 int main(int argc, char *argv[])
 {
 	if(argc < 2) {
-		nt_error("nquery <flow|user>\n");
+		nt_error("nquery <flow|user|pcap|set>\n");
 		exit(0);
 	}
 
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 		extern int pcap_run(char *, int);
 		extern int pcap_init(void);
 		if(argc < 3) {
-			nt_error("nquery pcap file.pcap <count>\n");
+			nt_error("nquery pcap file.pcap <count: 'number of packet to send.'>\n");
 			exit(0);
 		}
 		if(pcap_init()) {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 
 	if(strcmp(argv[1], "set") == 0) {
 		if (argc < 5) {
-			nt_error("nquery set uid magic status\n");
+			nt_error("nquery set <uid> <magic> <status>\n");
 			exit(0);
 		}
 		return set_user_status(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));

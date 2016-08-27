@@ -55,6 +55,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/ntrackd.init $(1)/etc/init.d/ntrackd
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ntrackd $(1)/usr/sbin/ntrackd
+	$(INSTALL_BIN) ./files/nproto_sync $(1)/usr/sbin/nproto_sync
 endef
 
 define Build/Configure
