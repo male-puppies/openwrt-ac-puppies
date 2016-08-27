@@ -48,6 +48,7 @@ function cmd_map.route_get()
 	for _, rule in ipairs(rs) do
 		rule.metric = rule.metric == 0 and "" or rule.metric
 		rule.mtu = rule.mtu == 0 and "" or rule.mtu
+		rule.status = 0
 	end
 	return rs and reply(rs) or reply_e(e)
 end
