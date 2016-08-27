@@ -15,6 +15,6 @@ int nproto_init(void);
 void nproto_cleanup(void);
 int nproto_rules_match(nt_packet_t *pkt);
 void nproto_update(nt_packet_t *pkt, np_rule_t *rule);
-int nproto_rules_dump_name(char *out, int olen, char *buffer, int bufsz, int offset);
+int nproto_rules_dump_name(char __user *out, int olen, char *buffer, int bufsz, int offset);
 int nproto_proc_init(void);
 void nproto_proc_exit(void);

@@ -33,7 +33,6 @@ MODULE_PARM_DESC(rule_trace_id, "debug rule trace id.");
 #endif
 
 #define NP_MWM_STR "nproto"
-#define np_assert(x) BUG_ON(!(x))
 
 /* inner data struct's */
 typedef struct {
@@ -46,8 +45,8 @@ static np_rule_t *get_rule_by_id(uint16_t id)
 {
 	uint16_t idx;
 
-	np_assert(id >= 0);
-	np_assert(id < NP_RULES_COUNT_MAX);
+	NP_ASSERT(id >= 0);
+	NP_ASSERT(id < NP_RULES_COUNT_MAX);
 
 	idx = RULES_ALL.id_to_index[id];
 	return RULES_ALL.array[idx];
@@ -275,8 +274,8 @@ static int set_add_rule(np_rule_set_t *set, np_rule_t *rule)
 {
 	int i, in_mwm = -1;
 
-	np_assert(set);
-	np_assert(rule);
+	NP_ASSERT(set);
+	NP_ASSERT(rule);
 
 	/* check l7 search && patt len > 4 */
 	if(!rule->enable_l7 && !RULE_REF_HTTP(rule)) {
@@ -365,8 +364,8 @@ int np_rule_register(np_rule_t *rule)
 	}
 
 	/* invalid rule pars. */
-	np_assert(dir < NP_FLOW_DIR_MAX);
-	np_assert(proto < NP_SET_BASE_MAX);
+	NP_ASSERT(dir < NP_FLOW_DIR_MAX);
+	NP_ASSERT(proto < NP_SET_BASE_MAX);
 
 	np_info("base rule: %s, id: %d\n", rule->name_rule, rule->ID);
 	return set_add_rule(&RS_BASE[dir][proto], rule);
@@ -453,14 +452,14 @@ static void set_dump(np_rule_set_t *set, int stage)
 	return;
 }
 
-int nproto_rules_dump_name(char *out, int olen, char *buffer, int bufsz, int offset)
+int nproto_rules_dump_name(char __user *out, int olen, char *buffer, int bufsz, int offset)
 {
 	int i, len = 0;
 
 	for (i = 0; i < RULES_ALL.count; ++i) {
 		np_rule_t *rule = RULES_ALL.array[i];
 
-		len += snprintf(buffer, bufsz - len, "[%08u] %s\n", rule->crc, rule->name_rule);
+		len += snprintf(buffer + len, bufsz - len, "%4d %08x %s\n", rule->ID, rule->crc, rule->name_rule);
 		if(len <= 0) {
 			/* overflow */
 			np_error("io buffer overflow. %d\n", len);
@@ -471,11 +470,19 @@ int nproto_rules_dump_name(char *out, int olen, char *buffer, int bufsz, int off
 		return 0;
 	}
 	/* copy to user */
+	if(offset > 0) {
+		len -= offset;
+	}
 	if(len > olen) {
 		len = olen;
 	}
-	memcpy(out, buffer + offset, len);
 
+	NP_ASSERT(len >= 0);
+	i = copy_to_user(out, buffer + offset, len);
+	if(i) {
+		np_error("copy to user failed: %d of %d\n", i, len);
+		return len - i;
+	}
 	return len;
 }
 

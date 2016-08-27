@@ -117,6 +117,9 @@ static int test_pkt_init(const char *data, int dlen, struct nos_track *nt, nt_pa
 	pkt->fi = nt->flow;
 	pkt->ui = nt->ui_src;
 	pkt->pi = nt->ui_dst;
+	pkt->in = NULL;
+	pkt->out = NULL;
+	pkt->skb = NULL;
 
 	/* C->S, S->C. */
 	pkt->dir = nt_flow_dir(&nt->flow->tuple, iph);

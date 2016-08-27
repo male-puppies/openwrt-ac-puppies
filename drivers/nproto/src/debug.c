@@ -118,11 +118,12 @@ static ssize_t nproto_dump_rd(struct file *file, char __user *buffer,
 	int size = 0;
 
 	size = nproto_rules_dump_name(buffer, count, p, PROC_DBG_BUFF_SIZE, *offset);
-	if(size <= 0) {
+	if(size < 0) {
 		np_error("dump rules name failed: %d\n", size);
 		return 0;
 	}
 
+	np_debug("offset: %lu, size: %d\n", (unsigned long)*offset, size);
 	*offset += size;
 	return size;
 }

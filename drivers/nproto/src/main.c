@@ -9,7 +9,12 @@
 
 #include "nproto_private.h"
 
-static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_t *pkt)
+static int nproto_pkt_init(
+		struct net_device *in,
+		struct net_device *out,
+		struct sk_buff *skb,
+		struct nos_track *nt,
+		nt_packet_t *pkt)
 {
 	int l4len, l7len;
 	int dlen = skb->len;
@@ -27,10 +32,10 @@ static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_
 		return -EINVAL;
 	}
 
-	if((dlen < (iph->ihl * 4)) || 
-		(dlen < ntohs(iph->tot_len)) || 
-		(ntohs(iph->tot_len) < (iph->ihl * 4)) || 
-		((iph->frag_off & htons(0x1FFF)) != 0)) 
+	if((dlen < (iph->ihl * 4)) ||
+		(dlen < ntohs(iph->tot_len)) ||
+		(ntohs(iph->tot_len) < (iph->ihl * 4)) ||
+		((iph->frag_off & htons(0x1FFF)) != 0))
 	{
 		np_debug("frame length error: %d\n", dlen);
 		return -EINVAL;
@@ -76,6 +81,9 @@ static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_
 	pkt->fi = fi;
 	pkt->ui = ui;
 	pkt->pi = pi;
+	pkt->in = in;
+	pkt->out = out;
+	pkt->skb = skb;
 
 	/* C->S, S->C. */
 	pkt->dir = nt_flow_dir(&fi->tuple, iph);
@@ -84,14 +92,18 @@ static int nproto_pkt_init(struct sk_buff *skb, struct nos_track *nt, nt_packet_
 	return 0;
 }
 
-int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_device *indev)
+static int nt_context_nproto(
+		struct net_device *in,
+		struct net_device *out,
+		struct sk_buff *skb,
+		struct nos_track *nt)
 {
 	int n;
 	nt_packet_t pkt;
 	flow_info_t *fi = nt_flow(nt);
 
 	/* FIXME: tackoff-fixup the sock4/5/http proxy header. */
-	n = nproto_pkt_init(skb, nt, &pkt);
+	n = nproto_pkt_init(in, out, skb, nt, &pkt);
 	if(n) {
 		// np_debug("packet init failed: %d\n", n);
 		return n;
@@ -108,15 +120,16 @@ int nt_context_chk_fn(struct sk_buff *skb, struct nos_track *nt, struct net_devi
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
 static unsigned int nproto_hook_fn(void *priv,
-	struct sk_buff *skb, 
+	struct sk_buff *skb,
 	const struct nf_hook_state *state) {
 
 	struct net_device *in = state->in;
+	struct net_device *out = state->out;
 #else
-static unsigned int nproto_hook_fn(const struct nf_hook_ops *ops, 
+static unsigned int nproto_hook_fn(const struct nf_hook_ops *ops,
 		struct sk_buff *skb,
 		const struct net_device *in,
-		const struct net_device *out, 
+		const struct net_device *out,
 		int (*okfn)(struct sk_buff *)) {
 #endif
 
@@ -140,7 +153,7 @@ static unsigned int nproto_hook_fn(const struct nf_hook_ops *ops,
 	}
 
 	/* FIXME: context check kernel handle here. */
-	nt_context_chk_fn(skb, nos, in);
+	nt_context_nproto(in, out, skb, nos);
 	return NF_ACCEPT;
 }
 
@@ -154,7 +167,7 @@ static struct nf_hook_ops nproto_nf_hook_ops[] = {
 		.hook = nproto_hook_fn,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_FORWARD,
-		.priority = 0,
+		.priority = NF_IP_PRI_MANGLE + 1,
 	},
 };
 
@@ -167,7 +180,7 @@ int np_hook_register(np_hook_t fn)
 		if(!hk) {
 			np_hooks[i] = fn;
 			break;
-		} 
+		}
 		if (hk == fn) {
 			np_error("re-register hook fn\n");
 			return -EINVAL;
@@ -207,7 +220,7 @@ EXPORT_SYMBOL(np_hook_unregister);
 
 void nproto_update(nt_packet_t *pkt, np_rule_t *rule)
 {
-	int i;
+	int i, ret;
 	flow_info_t *fi = pkt->fi;
 	uint16_t proto_new = rule->ID;
 
@@ -219,7 +232,11 @@ void nproto_update(nt_packet_t *pkt, np_rule_t *rule)
 			if(!fn) {
 				break;
 			}
-			fn(pkt, rule->crc);
+			ret = fn(pkt, rule->crc);
+			if(ret < 0) {
+				np_debug(FMT_FLOW_STR"-droped.\n", FMT_FLOW(fi));
+				break;
+			}
 		}
 	} else {
 		np_warn(FMT_FLOW_STR"-NOT changed proto: %d\n", FMT_FLOW(fi), proto_new);
@@ -259,7 +276,6 @@ static int __init nproto_module_init(void)
 	}
 
 	nproto_proc_init();
-	// rcu_assign_pointer(nt_cck_fn, nt_context_chk_fn);
 	return 0;
 
 __error:
@@ -274,7 +290,6 @@ static void __exit nproto_module_exit(void)
 {
 	nproto_proc_exit();
 	nf_unregister_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
-	// rcu_assign_pointer(nt_cck_fn, NULL);
 
 	test_exit();
 	nproto_cleanup();

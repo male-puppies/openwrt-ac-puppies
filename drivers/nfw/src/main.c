@@ -106,10 +106,19 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 
 static int fw_nproto_callback(nt_packet_t *pkt, uint32_t proto_crc)
 {
+	/* maybe pcap rule test. */
+	if(!pkt->in ||
+		!pkt->out ||
+		!pkt->skb) 
+	{
+		return -1;
+	}
 	/*TODO: check the config rule's, markup fi->flags.*/
 	if(do_ac_table_cb(pkt->in, pkt->out, pkt->skb,
-						pkt->fi, pkt->ui, pkt->pi, proto_crc)) {
+						pkt->fi, pkt->ui, pkt->pi, proto_crc)) 
+	{
 		nt_flow_drop_set(pkt->fi, FG_FLOW_DROP_L7_FW);
+		return 1;
 	}
 	return 0;
 }
