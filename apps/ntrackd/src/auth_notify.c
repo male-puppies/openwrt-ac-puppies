@@ -11,13 +11,13 @@ char *trans_authmsg(ntrack_t *ntrack, auth_msg_t *auth, int *len)
 	char buf[128], *msg_buf = NULL;
 	int n;
 	n = sprintf(buf, "{\"cmd\":\"keepalive\",\"magic\":%u,\"uid\":%u}", auth->magic, auth->id);
-	msg_buf = (char*)malloc(n + 1);
+	msg_buf = (char*)malloc(n);
 
 	if (!msg_buf) {
 		nt_error("trans_authmsg failed: no memory\n");
 		return msg_buf;
 	}
-	bzero(msg_buf, n + 1);
+	memcpy(msg_buf, buf, n);
 	nt_debug("message uid: %u, magic: %u\n", auth->id, auth->magic);
 	ui = nt_get_user_by_id(ntrack, auth->id, auth->magic);
 	if(ui) {
@@ -27,6 +27,6 @@ char *trans_authmsg(ntrack_t *ntrack, auth_msg_t *auth, int *len)
 		msg_buf = NULL;
 		nt_error("[%u:%u]->not found userinfo.\n", auth->id, auth->magic);
 	}
-	*len = msg_buf ? (n + 1) : 0;
+	*len = msg_buf ? n : 0;
 	return msg_buf;
 }
