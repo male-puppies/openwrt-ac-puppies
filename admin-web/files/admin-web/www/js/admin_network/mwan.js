@@ -17,10 +17,8 @@ function initData() {
 	cgicall.get("mwan_get", function(d) {
 		if (d.status == 0 && typeof d.data == "object") {
 			var obj = d.data,
-				enable = obj.enable == 1 ? true : false,
 				ifaces = dtObjToArray(obj.ifaces);
 
-			$("#enable").prop("checked", enable);
 			$("input[type=radio][name=policy][value=" + obj.policy + "]").prop("checked", true);
 
 			$(".ifaces, .mline, .bline").empty();
