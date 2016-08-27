@@ -37,6 +37,13 @@ function cmd_map.iface_get()
 	if not m then return reply_e(e) end
 	return query_common(m, "iface_get")
 end
+
+function cmd_map.iface_list()
+	local m, e = validate_get({})
+	if not m then return reply_e(e) end
+	return query_common(m, "iface_list")
+end
+
 local s = [[
 {
             "name": "custom",

@@ -117,3 +117,11 @@ end
 if cmd:find("^online_") then
 	return require("admin.online").run(cmd)
 end
+
+-- curl 'http://127.0.0.1/v1/admin/api/route_del?token=9903f8226c387824266f87aba80116f3' -d 'rids=[1]'
+-- curl 'http://127.0.0.1/v1/admin/api/route_set?token=9903f8226c387824266f87aba80116f3' -d 'rid=1&target=192.168.0.0&netmask=255.255.255.255&gateway=192.168.0.1&metric=6&mtu=1500&iface=lan0'
+-- curl 'http://127.0.0.1/v1/admin/api/route_add?token=9903f8226c387824266f87aba80116f3' -d 'target=192.168.0.0&netmask=255.255.255.255&gateway=192.168.0.1&metric=6&mtu=1500&iface=lan0'
+-- curl 'http://127.0.0.1/v1/admin/api/route_get?token=9903f8226c387824266f87aba80116f3&page=1&count=10'
+if cmd:find("^route_") then
+	return require("admin.route").run(cmd)
+end

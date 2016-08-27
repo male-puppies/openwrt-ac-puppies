@@ -42,6 +42,20 @@ udp_map["iface_get"] = function(p, ip, port)
 	reply(ip, port, 0, res)
 end
 
+udp_map["iface_list"] = function(p, ip, port)
+	local path = "/etc/config/network.json"
+	local s = read(path) 	assert(s)
+	local m = js.decode(s) 	assert(m)
+	local net_name, net_cfg = m.name, m.network
+
+	local ifaces = {}
+	for iface, _ in pairs(net_cfg) do
+		table.insert(ifaces, iface)
+	end
+	local res = ifaces
+	reply(ip, port, 0, res)
+end
+
 local function compare_ports(omap, nmap)
 	for iface, oports in pairs(omap) do 
 		local r = nmap[iface]
