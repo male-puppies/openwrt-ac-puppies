@@ -134,7 +134,7 @@ static int rule_compile(np_rule_t *rule)
 			}
 		}
 	}
-	rule->crc = crc32(0, rule->name_rule, strlen(rule->name_rule));
+	rule->crc = crc32(0, rule->name_app, strlen(rule->name_app));
 	return 0;
 }
 
@@ -459,7 +459,8 @@ int nproto_rules_dump_name(char __user *out, int olen, char *buffer, int bufsz, 
 	for (i = 0; i < RULES_ALL.count; ++i) {
 		np_rule_t *rule = RULES_ALL.array[i];
 
-		len += snprintf(buffer + len, bufsz - len, "%4d %08x %s\n", rule->ID, rule->crc, rule->name_rule);
+		len += snprintf(buffer + len, bufsz - len,
+				"%08x|%s\n", rule->crc, rule->name_app);
 		if(len <= 0) {
 			/* overflow */
 			np_error("io buffer overflow. %d\n", len);
