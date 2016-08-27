@@ -17,6 +17,7 @@ local modules = {
 	acconfig = 	require("acconfig"),
 	authrule = 	require("authrule"),
 	firewall = 	require("firewall"),
+	route = 	require("route"),
 }
 
 local encode, decode = js.encode, js.decode

@@ -110,8 +110,6 @@ local function dispatch_tcp(cmd)
 end
 
 tcp_map["dbsync_firewall"] = function(p)
-	print(js.encode(p))
-
 	firewall_reload()
 end
 

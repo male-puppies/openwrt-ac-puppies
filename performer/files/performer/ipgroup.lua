@@ -97,8 +97,6 @@ local function dispatch_tcp(cmd)
 end
 
 tcp_map["dbsync_ipgroup"] = function(p)
-	print(js.encode(p))
-
 	ipgrp_reload()
 end
 
