@@ -41,6 +41,14 @@ function cmd_map.route_get()
 	local cond = adminlib.search_cond(m)
 	local sql = string.format("select * from route %s", cond.limit)
 	local rs, e = mysql_select(sql)
+	if not rs then
+		return reply_e(e)
+	end
+
+	for _, rule in ipairs(rs) do
+		rule.metric = rule.metric == 0 and "" or rule.metric
+		rule.mtu = rule.mtu == 0 and "" or rule.mtu
+	end
 	return rs and reply(rs) or reply_e(e)
 end
 
@@ -49,8 +57,8 @@ local function route_update_common(cmd, ext)
 		target			=	v_target,
 		netmask			=	v_netmask,
 		gateway			=	v_gateway,
-		metric			=	v_metric,
-		mtu				=	v_mtu,
+		--metric			=	v_metric,
+		--mtu				=	v_mtu,
 		iface			=	v_iface,
 	}
 
@@ -62,6 +70,11 @@ local function route_update_common(cmd, ext)
 	if not m then
 		return reply_e(e)
 	end
+
+	local p = e
+
+	m.metric = p.metric and v_metric(p.metric) or 0
+	m.mtu = p.mtu and v_metric(p.mtu) or 0
 
 	return query_common(m, cmd)
 end
