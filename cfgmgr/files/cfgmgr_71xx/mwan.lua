@@ -26,7 +26,7 @@ udp_map["mwan_get"] = function(p, ip, port)
 	local network_m = js.decode(network_s)	assert(network_m)
 
 	local res = {
-		disabled = mwan_m.disabled or 1,
+		enable = mwan_m.enable or 0,
 		ifaces = {},
 		policy = mwan_m.policy or "balanced",
 		main_iface = mwan_m.main_iface or {},
@@ -46,7 +46,7 @@ udp_map["mwan_get"] = function(p, ip, port)
 			if iface_exist then
 				table.insert(res.ifaces, new_ifc)
 			else
-				table.insert(res.ifaces, {name = iface, bandwidth = 0, disabled = 1})
+				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 0})
 			end
 		end
 	end
