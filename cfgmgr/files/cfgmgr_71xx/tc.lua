@@ -29,9 +29,9 @@ udp_map["tc_get"] = function(p, ip, port)
 	}
 
 	local Rules = {}
-	if (p.page - 1) * 10 < #res.Rules then
-		local count = p.page * 10 >= #res.Rules and #res.Rules or p.page * 10
-		for i = (p.page - 1) * 10 + 1, count do
+	if (p.page - 1) * p.count < #res.Rules then
+		local count = p.page * p.count >= #res.Rules and #res.Rules or p.page * p.count
+		for i = (p.page - 1) * p.count + 1, count do
 			table.insert(Rules, res.Rules[i])
 		end
 	end
