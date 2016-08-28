@@ -2,6 +2,8 @@ local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
 local common = require("common")
+local rpccli = require("rpccli")
+local simplesql = require("simplesql")
 local ipops = require("ipops")
 local md5 = require("md5")
 

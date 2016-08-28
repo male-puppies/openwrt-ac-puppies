@@ -18,6 +18,7 @@ local modules = {
 	authrule = 	require("authrule"),
 	firewall = 	require("firewall"),
 	route = 	require("route"),
+	mwan  = 	require("mwan"),
 }
 
 local encode, decode = js.encode, js.decode
@@ -110,10 +111,11 @@ local function main()
 	mqtt = start_sand_server()
 	for _, mod in pairs(modules) do 
 		mod.init(mqtt)
+		if mod.set_event_cb then
+			mod.set_event_cb(on_db_event)
+		end
 	end
-	dbevent.set_event_cb(on_db_event)
 	local _ = ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 end
 
 ski.run(main)
-
