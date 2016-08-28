@@ -11,9 +11,9 @@ local function test1(arg1, arg2)
 end
 
 local function test2(m)
-	for k = 1, m do 
+	for k = 1, m do
 		ski.go(function(i) ski.sleep(i) print(os.date(), i) end, k)
-	end 
+	end
 	print(os.date(), "go done")
 end
 
@@ -29,9 +29,9 @@ local function test4()
 		for i = 1, 100000 do
 			print(os.date(), "try read")
 			local ret, err = ch:read()
-			if not ret then 
+			if not ret then
 				print("read error", err)
-				break 
+				break
 			end
 			print(os.date(), "read", ret)
 		end
@@ -44,12 +44,12 @@ local function test4()
 		for i = 1, 100000 do
 			print(os.date(), "try write", i)
 			local ret, err = ch:write(i)
-			if not ret then 
+			if not ret then
 				print("write error", err)
-				break 
+				break
 			end
 			print(os.date(), "write", i)
-		end 
+		end
 		ch:close()
 		print("write done")
 	end)
@@ -57,7 +57,7 @@ local function test4()
 		ski.sleep(3.1)
 		ch:close()
 	end)
-	for i = 1, 5 do 
+	for i = 1, 5 do
 		ski.sleep(1)
 		print(os.date())
 	end
@@ -71,9 +71,9 @@ local function test5()
 		for i = 1, 100000 do
 			print(os.date(), "try read")
 			local ret, err = ch:read()
-			if not ret then 
+			if not ret then
 				print("read error", err)
-				break 
+				break
 			end
 			print(os.date(), "read", ret)
 		end
@@ -85,12 +85,12 @@ local function test5()
 		for i = 1, 100000 do
 			print(os.date(), "try write", i)
 			local ret, err = ch:write(i)
-			if not ret then 
+			if not ret then
 				print("write error", err)
-				break 
+				break
 			end
 			print(os.date(), "write", i)
-		end 
+		end
 		ch:close()
 		print("write done")
 	end)
@@ -98,7 +98,7 @@ local function test5()
 		ski.sleep(3.1)
 		ch:close()
 	end)
-	for i = 1, 5 do 
+	for i = 1, 5 do
 		ski.sleep(1)
 		print(os.date())
 	end
@@ -108,7 +108,7 @@ local function test6()
 	local rch, wch = ski.new_chan(5), ski.new_chan(5)
 	ski.go(function()
 		local skirver, err = tcp.listen("127.0.0.1", 8998) 	assert(skirver, err)
-		for i = 1, 2000 do 
+		for i = 1, 2000 do
 			local cli, err = skirver:accept()	assert(cli, err)
 			ski.go(function()
 				local close = function(err)
@@ -121,7 +121,7 @@ local function test6()
 					if data then
 						if #data < 4 then
 							print(#data, err)
-						end 
+						end
 						local num = string.unpack("I", data)
 						local len = tonumber(num) 	assert(len > 0)
 						local data, err = cli:read(len, 1)
@@ -132,7 +132,7 @@ local function test6()
 						-- print("server recv", data)
 					elseif err ~= "timeout" then
 						return close(err)
-					end					
+					end
 				end
 			end)
 		end
@@ -142,8 +142,8 @@ local function test6()
 	ski.go(function()
 		for i = 1, 10000000 do
 			-- print("r->", i)
-			local ret, err = rch:write(os.date()) 
-			if not ret then 
+			local ret, err = rch:write(os.date())
+			if not ret then
 				assert(err == "close")
 				rch:close()
 				break
@@ -167,7 +167,7 @@ local function test6()
 		rch:close()
 		print("writer close")
 	end)
-	
+
 	ski.sleep(1)
 end
 
@@ -181,7 +181,7 @@ local function test7()
 		print(path, stat, err)
 	end)
 
-	local pm = function(t) for k, v in pairs(t) do print(k, v) end print("-----------") end 
+	local pm = function(t) for k, v in pairs(t) do print(k, v) end print("-----------") end
 	local path = "test1.lua"
 	local stat, err = sfs.stat(path)
 	print(path, err) 	pm(stat)
@@ -189,25 +189,25 @@ local function test7()
 		local path = "test1.lua"
 		local stat, err = sfs.stat(path)
 		print(path, err) 	pm(stat)
-	end) 
+	end)
 end
 
 local function test8()
 	print(ski.time())
 end
 
-local function pt(t) 
-	for k, v in pairs(t) do print(k, v) end 
+local function pt(t)
+	for k, v in pairs(t) do print(k, v) end
 	print("-------------")
-end 
+end
 
 local function test9()
 	print(misc.exepath())
 end
 
-local function test10() 
+local function test10()
 	-- ski.go(function()
-	-- 	for i = 1, 10 do 
+	-- 	for i = 1, 10 do
 	-- 		-- print(i)
 	-- 		ski.sleep(1)
 	-- 	end
@@ -228,15 +228,15 @@ local function test12()
 	-- pt(sfs.scandir("."))
 	local fp, err = sfs.open("/usr/lib/lua/redis.lua", "r")
 	local wfp, err = sfs.open("/tmp/redis.lua.tmp", "a")
-	for i = 1, 1000 do 
+	for i = 1, 1000 do
 		local s, err = fp:read(1600)
-		if not s then 
+		if not s then
 			assert(err == "eof")
 			print(s and #s, err)
 			break
 		end
 		local ret, err = wfp:write(s)	assert(ret, err)
-		if err then 
+		if err then
 			print(err)
 		end
 	end

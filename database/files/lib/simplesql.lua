@@ -2,21 +2,21 @@ local js = require("cjson.safe")
 local code = [[
 	local conn = require("mgr").ins().conn
 	local param, isexec, memo = arg[1], arg[2], arg[3]
-	if not isexec then 
+	if not isexec then
 		local r, e = conn:select(param)
-		if not r then 
-			return nil, e 
+		if not r then
+			return nil, e
 		end
 
 		return r
 	end
 
-	if type(param) == "string" then 
+	if type(param) == "string" then
 		param = {param}
-	end 
+	end
 
 	return conn:transaction(function()
-		for _, sql in ipairs(param) do 
+		for _, sql in ipairs(param) do
 			local r, e = conn:execute(sql) 	assert(r, e)
 		end
 		local _ = memo or require("mgr").ins().ud:save_log(param, true)
@@ -39,7 +39,7 @@ function method:select2(sql)
 	return r
 end
 
-function method:execute(sql) 
+function method:execute(sql)
 	assert(type(sql) == "string")
 	return self.rpc:fetch(code_key, code, {sql, 1})
 end
@@ -50,7 +50,7 @@ function method:execute2(sql)
 	return r
 end
 
-function method:exec_batch(sqls) 
+function method:exec_batch(sqls)
 	assert(type(sqls) == "table")
 	return self.rpc:fetch(code_key, code, {sqls, 1})
 end
@@ -61,7 +61,7 @@ function method:exec_batch2(sqls)
 	return r
 end
 
-function method:executem(sql) 
+function method:executem(sql)
 	assert(type(sql) == "string")
 	return self.rpc:fetch(code_key, code, {sql, 1, 1})
 end
@@ -72,7 +72,7 @@ function method:executem2(sql)
 	return r
 end
 
-function method:exec_batchm(sqls) 
+function method:exec_batchm(sqls)
 	assert(type(sqls) == "table")
 	return self.rpc:fetch(code_key, code, {sqls, 1, 1})
 end
@@ -88,9 +88,9 @@ local mysql_code_key = "mysql_code_key"
 local mysql_code = [[
 	local myconn = require("mgr").ins().myconn
 	local sql, isexec = arg[1], arg[2]
-	if isexec then 
+	if isexec then
 		return myconn:execute(sql)
-	end 
+	end
 	return myconn:select(sql)
 ]]
 
@@ -106,7 +106,7 @@ local function new(rpc)
 	assert(rpc)
 	local obj = {rpc = rpc}
 	setmetatable(obj, mt)
-	return obj 
+	return obj
 end
 
 return {new = new}

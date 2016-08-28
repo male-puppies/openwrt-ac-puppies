@@ -7,7 +7,7 @@ local cfglib = require("cfglib")
 local udp_map = {}
 local udpsrv, mqtt, dbrpc
 
-local reply 
+local reply
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
@@ -33,7 +33,7 @@ udp_map["acrule_set"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid src_ipgroup"
 		end
 		local dipids = js.decode(dest_ipgids)
@@ -44,7 +44,7 @@ udp_map["acrule_set"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid dest_ipgroup"
 		end
 
@@ -56,7 +56,7 @@ udp_map["acrule_set"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid protocol"
 		end
 
@@ -68,38 +68,38 @@ udp_map["acrule_set"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid timegroup"
 		end
 
 		-- check ruleid exists and dup rulename
 		local sql = string.format("select * from acrule where ruleid=%s or rulename='%s'", ruleid, conn:escape(rulename))
 		local rs, e = conn:select(sql) 			assert(rs, e)
-		if not (#rs == 1 and rs[1].ruleid == ruleid) then 
+		if not (#rs == 1 and rs[1].ruleid == ruleid) then
 			return nil, "invalid ruleid or dup rulename"
 		end
 
-		-- check change 
+		-- check change
 		p.ruleid = nil
 		local change, r = false, rs[1]
-		for k, nv in pairs(p) do 
-			if r[k] ~= nv then 
+		for k, nv in pairs(p) do
+			if r[k] ~= nv then
 				change = true
-				break 
+				break
 			end
 		end
 
-		if not change then 
+		if not change then
 			return true
 		end
 
-		--update acrule 
+		--update acrule
 		local sql = string.format("update acrule set %s where ruleid=%s", conn:update_format(p), ruleid)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
-		
+		if not r then
+			return nil, e
+		end
+
 		ud:save_log(sql, true)
 		return true
 	]]
@@ -127,7 +127,7 @@ udp_map["acrule_add"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid src_ipgroup"
 		end
 		local dipids = js.decode(dest_ipgids)
@@ -138,7 +138,7 @@ udp_map["acrule_add"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid dest_ipgroup"
 		end
 
@@ -150,7 +150,7 @@ udp_map["acrule_add"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid protocol"
 		end
 
@@ -162,37 +162,37 @@ udp_map["acrule_add"] = function(p, ip, port)
 		if not rs then
 			return nil, e
 		end
-		if #rs < n then 
+		if #rs < n then
 			return nil, "invalid timegroup"
 		end
 
 		--check rulename existance
 		local rs, e = conn:select("select * from acrule") 			assert(rs, e)
 		local ruleids, priorities = {}, {}
-		for _, r in ipairs(rs) do 
+		for _, r in ipairs(rs) do
 			local name = r.rulename
 			local _ = table.insert(ruleids, r.ruleid), table.insert(priorities, r.priority)
-			if name == rulename then 
+			if name == rulename then
 				return nil, "exists rulename"
 			end
 		end
 		--get ruleid priority
 		local id, e = conn:next_id(ruleids, 16)
-		if not id then 
+		if not id then
 			return nil, e
 		end
 
 		local priority = 0
 		if #priorities > 0 then
 			table.sort(priorities)
-			priority = priorities[#priorities] + 1 
+			priority = priorities[#priorities] + 1
 		end
 
-		--insert new acrule 
+		--insert new acrule
 		p.ruleid, p.priority = id, priority
 		local sql = string.format("insert into acrule %s values %s", conn:insert_format(p))
 		local r, e = conn:execute(sql)
-		if not r then 
+		if not r then
 			return nil, e
 		end
 
@@ -217,7 +217,7 @@ udp_map["acrule_del"] = function(p, ip, port)
 
 		local sql = string.format("delete from acrule where ruleid in (%s)", in_part)
 		local r, e = conn:execute(sql)
-		if not r then 
+		if not r then
 			return nil, e
 		end
 
@@ -247,7 +247,7 @@ udp_map["acrule_adjust"] = function(p, ip, port)
 			return nil, e
 		end
 
-		if #rs ~= 2 then 
+		if #rs ~= 2 then
 			return nil, "invalid ruleids"
 		end
 
@@ -257,13 +257,13 @@ udp_map["acrule_adjust"] = function(p, ip, port)
 			for _, r in ipairs(rs) do
 				local sql = string.format("update acrule set priority='%s' where ruleid='%s'", r.priority, r.ruleid)
 				local r, e = conn:execute(sql)
-				if not r then 
+				if not r then
 					return nil, e
 				end
 				table.insert(arr, sql)
 			end
 				print("arr in is  ", js.encode(arr))
-			return arr 
+			return arr
 		end)
 				print("arr out is   ", js.encode(arr))
 		if not arr then

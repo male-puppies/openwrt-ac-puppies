@@ -33,12 +33,12 @@ end
 function on_keepalive_batch(count, arr)
 	local ukey_arr = map2arr(arr2map(arr, "ukey"))
 	local step = 100
-	for i = 1, #ukey_arr, step do 
+	for i = 1, #ukey_arr, step do
 		local exists, miss = find_missing(myconn, limit(ukey_arr, i, step))
 		local _ = empty(exists) or keepalive(myconn, exists)
 
 		if not empty(miss) then
-			for _, r in pairs(miss) do 
+			for _, r in pairs(miss) do
 				r.username = r.mac
 				r.gid = cfg.get_gid(r.rid)
 				local _ = gid and set_online(r.uid, r.magic, r.gid, r.username)

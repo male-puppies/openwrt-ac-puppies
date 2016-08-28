@@ -7,14 +7,14 @@ local read, save = common.read, common.safe
 local function start_real_server()
 	local srv = udp.new()
 	local r, e = srv:bind("127.0.0.1", 50000) 	assert(r, e)
-	while true do 
+	while true do
 		local r = srv:recv(50)
 		local _ = r and print(r)
 	end
 end
 
 ------------------------------------------------------------------
-local gfp 
+local gfp
 local maxfiles = 5
 
 local max_logsize = 1024 * 200
@@ -25,14 +25,14 @@ local function openlog()
 	if not gfp then
 		local path, e = string.format("%s/log.current", logdir)
 		gfp, e = io.open(path, "a") 	assert(gfp, e)
-	end	
-	return gfp 
+	end
+	return gfp
 end
 
 local function closelog()
-	if gfp then 
+	if gfp then
 		gfp:close()
-		gfp = nil 
+		gfp = nil
 	end
 end
 
@@ -53,7 +53,7 @@ local function limit_files()
 	local arr = {}
 	for filename in lfs.dir(logdir) do
 		local id = tonumber(filename:match("(%d%d%d%d%d%d%d%d)_"))
-		if id then 
+		if id then
 			table.insert(arr, filename)
 		end
 	end
@@ -61,16 +61,16 @@ local function limit_files()
 	table.sort(arr, function(a, b) return a > b end)
 
 	local del = {}
-	for i = maxfiles, #arr do 
+	for i = maxfiles, #arr do
 		local fullpath = string.format("%s/%s", logdir, arr[i])
-		os.remove(fullpath) 
+		os.remove(fullpath)
 	end
 end
 
 local function flush(cache)
 	local fp = openlog()
 	local size = fp:seek()
-	if size > max_logsize then 
+	if size > max_logsize then
 		closelog()
 
 		local path = get_new_file()
@@ -90,24 +90,24 @@ local function start_log_server()
 	local cache = {}
 
 	ski.go(function()
-		while true do 
+		while true do
 			ski.sleep(flush_timeout)
-			if #cache > 0 then 
+			if #cache > 0 then
 				flush(cache)
 				cache = {}
 			end
 		end
 	end)
 
-	while true do 
+	while true do
 		local r = srv:recv(5)
-		if r then 
+		if r then
 			table.insert(cache, r)
-			if #cache > max_cache then 
+			if #cache > max_cache then
 				flush(cache)
 				cache = {}
 			end
-		end 
+		end
 	end
 end
 

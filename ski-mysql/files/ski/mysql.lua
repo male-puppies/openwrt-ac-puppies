@@ -469,7 +469,7 @@ local function _recv_field_packet(self)
 end
 
 
-function _M.new(self) 
+function _M.new(self)
     return setmetatable({ sock = nil, cols_map = nil, timeout = 3600}, mt)
 end
 
@@ -479,7 +479,7 @@ function _M.set_timeout(self, timeout)
 end
 
 
-function _M.connect(self, opts) 
+function _M.connect(self, opts)
     local max_packet_size = opts.max_packet_size
     if not max_packet_size then
         max_packet_size = 1024 * 1024 -- default 1 MB
@@ -758,7 +758,7 @@ local function read_result(self, est_nrows)
         local col, err, errno, sqlstate = _recv_field_packet(self)
         if not col then
             return nil, err, errno, sqlstate
-        end 
+        end
         cols[i] = col
         cols_map[col.name] = i
     end

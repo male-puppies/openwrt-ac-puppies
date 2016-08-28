@@ -28,7 +28,7 @@ local v_sms         = gen_validate_str(2, 1024)
 local v_rids        = gen_validate_str(2, 256)
 local v_priority    = gen_validate_num(0, 99999)
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -44,8 +44,8 @@ end
 local valid_fields = {rid = 1, rulename = 1, ruledesc = 1, zonename = 1, ipgrpname = 1, authtype = 1, enable = 1, modules = 1}
 function cmd_map.authrule_get()
     local m, e = validate_get({page = 1, count = 1})
-	if not m then 
-        return reply_e(e) 
+	if not m then
+        return reply_e(e)
     end
 
     local cond = adminlib.search_cond(adminlib.search_opt(m, {order = valid_fields, search = valid_fields}))
@@ -58,41 +58,41 @@ local function validate_authrule(m)
     local authtype, modules = m.authtype, js.decode(m.modules)
     local sms, wechat = js.decode(m.sms), js.decode(m.wechat)
     local white_ip, white_mac = js.decode(m.white_ip), js.decode(m.white_mac)
-    if not (modules and sms and wechat and white_ip and white_mac) then 
+    if not (modules and sms and wechat and white_ip and white_mac) then
         return nil, "invalid param"
-    end 
+    end
 
-    if not ({auto = 1, web = 1})[authtype] then 
+    if not ({auto = 1, web = 1})[authtype] then
         return nil, "invalid authtype"
     end
 
     local module_map = {wechat = 1, sms = 1, web = 1}
-    for _, mod in ipairs(modules) do 
-        if not module_map[mod] then 
+    for _, mod in ipairs(modules) do
+        if not module_map[mod] then
             return nil, "invalid module"
-        end 
-    end 
+        end
+    end
 
-    for _, ip in ipairs(white_ip) do 
-        if not ip:find(ip_pattern) then 
+    for _, ip in ipairs(white_ip) do
+        if not ip:find(ip_pattern) then
             return nil, "invalid white_ip"
         end
     end
 
-    for _, mac in ipairs(white_mac) do 
-        if not mac:find(mac_pattern) then 
+    for _, mac in ipairs(white_mac) do
+        if not mac:find(mac_pattern) then
             return nil, "invalid white_mac"
         end
     end
 
-    for k in pairs({}) do 
-        if not sms[k] then 
+    for k in pairs({}) do
+        if not sms[k] then
             return nil, "invalid sms"
         end
     end
 
-    for k in pairs({}) do 
-        if not wechat[k] then 
+    for k in pairs({}) do
+        if not wechat[k] then
             return nil, "invalid wechat"
         end
     end
@@ -116,17 +116,17 @@ local function authrule_update_common(cmd, ext)
         sms         = v_sms,
     }
 
-    for k, v in pairs(ext or {}) do 
-        check_map[k] = v 
-    end 
+    for k, v in pairs(ext or {}) do
+        check_map[k] = v
+    end
 
     local m, e = validate_post(check_map)
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local r, e = validate_authrule(m)
-    if not r then 
+    if not r then
         return reply_e(e)
     end
 
@@ -144,18 +144,18 @@ end
 function cmd_map.authrule_del()
     local m, e = validate_post({rids = v_rids})
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local ids = js.decode(m.rids)
-    if not ids then 
+    if not ids then
         return reply_e("invalid rids")
-    end 
+    end
 
-    for _, id in ipairs(ids) do 
+    for _, id in ipairs(ids) do
         local tid = tonumber(id)
-        if not (tid and tid >= 0 and tid < 16) then 
+        if not (tid and tid >= 0 and tid < 16) then
             return reply_e("invalid rids")
         end
     end
@@ -166,18 +166,18 @@ end
 function cmd_map.authrule_adjust()
     local m, e = validate_post({rids = v_rids})
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local ids = js.decode(m.rids)
-    if not (ids and #ids == 2) then 
+    if not (ids and #ids == 2) then
         return reply_e("invalid rids")
-    end 
+    end
 
-    for _, id in ipairs(ids) do 
+    for _, id in ipairs(ids) do
         local tid = tonumber(id)
-        if not (tid and tid >= 0 and tid < 16) then 
+        if not (tid and tid >= 0 and tid < 16) then
             return reply_e("invalid rids")
         end
     end

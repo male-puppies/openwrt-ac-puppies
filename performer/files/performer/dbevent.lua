@@ -20,7 +20,7 @@ local function dispatch_tcp(cmd)
 	end
 end
 
-tcp_map["dbsync"] = function(p) 
+tcp_map["dbsync"] = function(p)
 	print(js.encode(p))
 	for tbname, n in pairs(p) do
 		n.cmd = "dbsync_" .. tbname

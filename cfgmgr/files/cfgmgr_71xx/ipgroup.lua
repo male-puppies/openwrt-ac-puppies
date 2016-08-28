@@ -22,30 +22,30 @@ udp_map["ipgroup_set"] = function(p, ip, port)
 		local ipgid, ipgrpname, ipgrpdesc, ranges = arg.ipgid, arg.ipgrpname, arg.ipgrpdesc, arg.ranges
 		local sql = string.format("select * from ipgroup where ipgid=%s or ipgrpname='%s'", ipgid, conn:escape(ipgrpname))
 		local rs, e = conn:select(sql) 			assert(rs, e)
-		if not (#rs == 1 and rs[1].ipgid == ipgid) then 
+		if not (#rs == 1 and rs[1].ipgid == ipgid) then
 			return nil, "invalid ipgid or dup ipgrpname"
 		end
 
 		-- check config change
 		p.ipgid = nil
 		local change, r = false, rs[1]
-		for k, nv in pairs(p) do 
-			if r[k] ~= nv then 
+		for k, nv in pairs(p) do
+			if r[k] ~= nv then
 				change = true
-				break 
+				break
 			end
 		end
 
-		if not change then 
+		if not change then
 			return true
 		end
 
 		-- update
 		local sql = string.format("update ipgroup set %s where ipgid=%s", conn:update_format(p), ipgid)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
+		if not r then
+			return nil, e
+		end
 
 		ud:save_log(sql, true)
 		return true
@@ -61,34 +61,34 @@ udp_map["ipgroup_add"] = function(p, ip, port)
 	local code = [[
 		local ins = require("mgr").ins()
 		local conn, ud, p = ins.conn, ins.ud, arg
-		
+
 		-- check dup ipgrpname
 		local sql = string.format("select * from ipgroup")
 		local rs, e = conn:select(sql) 			assert(rs, e)
 
 		local ids, ipgrpname = {}, p.ipgrpname
-		for _, r in ipairs(rs) do 
+		for _, r in ipairs(rs) do
 			local id, name = r.ipgid, r.ipgrpname
 			table.insert(ids, id)
-			if name == ipgrpname then 
+			if name == ipgrpname then
 				return nil, "exists ipgrpname"
 			end
 		end
 
-		-- get next rid 
+		-- get next rid
 		local id, e = conn:next_id(ids, 64)
 		print(id, e)
-		if not id then 
+		if not id then
 			return nil, e
 		end
 
-		-- insert 
+		-- insert
 		p.ipgid = id
 		local sql = string.format("insert into ipgroup %s values %s", conn:insert_format(p))
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
+		if not r then
+			return nil, e
+		end
 
 		ud:save_log(sql, true)
 		return true
@@ -112,12 +112,12 @@ udp_map["ipgroup_del"] = function(p, ip, port)
 		-- TODO check authrule tables
 		local sql = string.format("select sum(count) as count from (select 1,count(*) as count from authrule where ipgid in (%s) union select 2,count(*) as count from authrule where ipgid in (%s)) t;", in_part, in_part)
 		local rs, e = conn:select(sql)
-		if not rs then 
+		if not rs then
 			return nil, e
 		end
 
 		local count = tonumber(rs[1].count)
-		if count ~= 0 then 
+		if count ~= 0 then
 			return nil, "referenced"
 		end
 
@@ -148,8 +148,8 @@ udp_map["ipgroup_del"] = function(p, ip, port)
 
 		local sql = string.format("delete from ipgroup where ipgid in (%s)", in_part)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
+		if not r then
+			return nil, e
 		end
 
 		ud:save_log(sql, true)

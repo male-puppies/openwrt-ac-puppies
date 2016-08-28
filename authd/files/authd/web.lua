@@ -109,7 +109,7 @@ function on_login(count, arr)
 			table.insert(narr, string.format("'%s'", ukey))
 			name_map[r.username] = 1
 		end)
-		
+
 		local name_arr = reduce2(name_map, function(t, username) return rawset(t, #t + 1, string.format("'%s'", username)) end, {})
 
 		-- 查询在线用户

@@ -222,5 +222,3 @@ function cmd_map.timegroup_del()
 end
 
 return {run = run}
-
-

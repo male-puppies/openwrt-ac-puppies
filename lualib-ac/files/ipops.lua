@@ -77,7 +77,7 @@ local function int2ipstr(ip)
 	local b = _band(_rshift(ip, 16), 0x000000FF)
 	local c = _band(_rshift(ip, 8), 0x000000FF)
 	local d = _band(_rshift(ip, 0), 0x000000FF)
-	
+
 	return string.format("%u.%u.%u.%u", a, b, c, d)
 end
 
@@ -98,11 +98,11 @@ local function int2cidr(ip)
 	return 32
 end
 
-local function cidr2maskstr(cidr) 
+local function cidr2maskstr(cidr)
 	return int2ipstr(cidr2int(cidr))
 end
 
-local function maskstr2cidr(maskstr) 
+local function maskstr2cidr(maskstr)
 	return int2cidr(ipstr2int(maskstr))
 end
 
@@ -121,7 +121,7 @@ local function ipstr2range(ipstr)
 	if #ip == 4 then
 		local i = (((ip[1] * 256 + ip[2]) * 256 + ip[3]) * 256 + ip[4])
 		return {i, i}
-	end 
+	end
 
 	if #ip == 5 and ip[5] >=1 and ip[5] <= 32 then
 		local i = (((ip[1] * 256 + ip[2]) * 256 + ip[3]) * 256 + ip[4])
@@ -129,8 +129,8 @@ local function ipstr2range(ipstr)
 		local s = _band(i, m)
 		local e = _bor(i, _bnot(m))
 		return {s, e}
-	end 
-	
+	end
+
 	if #ip == 8 then
 		local s = (((ip[1] * 256 + ip[2]) * 256 + ip[3]) * 256 + ip[4])
 		local e = (((ip[5] * 256 + ip[6]) * 256 + ip[7]) * 256 + ip[8])

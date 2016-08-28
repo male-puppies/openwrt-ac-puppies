@@ -15,13 +15,13 @@ local dbrpc, proxy, udpsrv
 local cmd_map = {}
 
 local function broadcast(change)
-	for _ in pairs(change) do 
+	for _ in pairs(change) do
 		proxy:publish("a/ac/database_sync", js.encode({pld = {cmd = "dbsync", data = change}}))
 		break
 	end
 end
 
-function cmd_map.rpc(cmd, ctx)  
+function cmd_map.rpc(cmd, ctx)
 	local r = dbrpc:execute(cmd)
 	local change = sync.sync()
 	broadcast(change)
@@ -37,15 +37,15 @@ local function start_sand_server()
 		local cmd = pld.cmd
 		if not cmd then return end
 		local func = cmd_map[cmd]
-		if not func then return end 
+		if not func then return end
 		func(pld, map)
-	end 
+	end
 	local args = {
 		log = log,
-		unique = unique, 
-		clitopic = {unique}, 
-		srvtopic = {unique .. "_srv"}, 
-		on_message = on_message, 
+		unique = unique,
+		clitopic = {unique},
+		srvtopic = {unique .. "_srv"},
+		on_message = on_message,
 		on_disconnect = function(st, err) log.fatal("disconnect %s %s", st, err) end,
 	}
 	proxy = sandcproxy.run_new(args)
@@ -55,11 +55,11 @@ end
 local function start_udp_server()
 	local srv = udp.new()
 	local r, e = srv:bind("127.0.0.1", 51234) 	assert(r, e)
-	while true do 
+	while true do
 		local r, e, p = srv:recv()
 		if r then
 			local m = js.decode(r)
-			if m.cmd == "rpc" then 
+			if m.cmd == "rpc" then
 				local r = dbrpc:execute(m)
 				local _ = r and srv:send(e, p, type(r) == "string" and r or js.encode(r))
 			end
@@ -87,13 +87,13 @@ local function connect_mysql()
    	return db
 end
 
-local function test_sync() 
-	while true do 
-		for i = 1, 1 do 
-			ski.sleep(1) 
+local function test_sync()
+	while true do
+		for i = 1, 1 do
+			ski.sleep(1)
 		end
 		sync.sync()
-	end 
+	end
 end
 
 local function main()
@@ -101,9 +101,9 @@ local function main()
 	local ud = updatelog.new(cfg)
 	ud:prepare()
 	local conn = dc.new(cfg:get_workdb(), {{path = cfg:get_memodb(), alias = "memo"}})
-	local myconn = connect_mysql() 
+	local myconn = connect_mysql()
 	mgr.new(conn, myconn, ud, cfg)
-	
+
 	local st = ski.time()
 	local change = sync.sync(true)
 	log.info("sync init spends %ss", ski.time() - st)

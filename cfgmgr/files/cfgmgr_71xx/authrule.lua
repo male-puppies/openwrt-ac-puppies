@@ -25,38 +25,38 @@ udp_map["authrule_set"] = function(p, ip, port)
 		local zid, ipgid = p.zid, p.ipgid
 		local sql = string.format("select sum(count) as sum from (select 1,count(*) as count from ipgroup where ipgid=%s union select 2, count(*) as count from zone where zid=%s)t;", ipgid, zid)
 		local rs, e = conn:select(sql) 		assert(rs, e)
-		if tonumber(rs[1].sum) ~= 2 then 
+		if tonumber(rs[1].sum) ~= 2 then
 			return nil, "invalid reference"
 		end
-	
+
 		-- check rid exists and dup rulename
 		local sql = string.format("select * from authrule where rid=%s or rulename='%s'", rid, conn:escape(rulename))
 		local rs, e = conn:select(sql) 			assert(rs, e)
-		if not (#rs == 1 and rs[1].rid == rid) then 
+		if not (#rs == 1 and rs[1].rid == rid) then
 			return nil, "invalid rid or dup rulename"
 		end
-	
-		-- check change 
+
+		-- check change
 		p.rid = nil
 		local change, r = false, rs[1]
-		for k, nv in pairs(p) do 
-			if r[k] ~= nv then 
+		for k, nv in pairs(p) do
+			if r[k] ~= nv then
 				change = true
-				break 
+				break
 			end
 		end
-	
-		if not change then 
+
+		if not change then
 			return true
 		end
-		
+
 		-- update authrule
 		local sql = string.format("update authrule set %s where rid=%s", conn:update_format(p), rid)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
-		
+		if not r then
+			return nil, e
+		end
+
 		ud:save_log(sql, true)
 		return true
 	]]
@@ -72,45 +72,45 @@ udp_map["authrule_add"] = function(p, ip, port)
 		local ins = require("mgr").ins()
 		local conn, ud, p = ins.conn, ins.ud, arg
 		local rulename = p.rulename
-		
+
 		-- check zid/ipgid existance
 		local zid, ipgid = p.zid, p.ipgid
 		local sql = string.format("select sum(count) as sum from (select 1,count(*) as count from ipgroup where ipgid=%s union select 2, count(*) as count from zone where zid=%s)t;", ipgid, zid)
 		local rs, e = conn:select(sql) 		assert(rs, e)
-		if tonumber(rs[1].sum) ~= 2 then 
+		if tonumber(rs[1].sum) ~= 2 then
 			return nil, "invalid reference"
 		end
 
 		-- check dup rulename
 		local rs, e = conn:select("select * from authrule") 			assert(rs, e)
 		local ids, priorities = {}, {}
-		for _, r in ipairs(rs) do 
+		for _, r in ipairs(rs) do
 			local name = r.rulename
 			local _ = table.insert(ids, r.rid), table.insert(priorities, r.priority)
-			if name == rulename then 
+			if name == rulename then
 				return nil, "exists rulename"
 			end
 		end
 
-		-- get next rid 
+		-- get next rid
 		local id, e = conn:next_id(ids, 16)
-		if not id then 
+		if not id then
 			return nil, e
 		end
 
 		local priority = 0
-		if #priorities > 0 then 
+		if #priorities > 0 then
 			table.sort(priorities)
 			priority = priorities[#priorities] + 1
-		end 
+		end
 
 		-- insert new authrule
 		p.rid, p.priority = id, priority
 		local sql = string.format("insert into authrule %s values %s", conn:insert_format(p))
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
-		end 
+		if not r then
+			return nil, e
+		end
 
 		ud:save_log(sql, true)
 		return true
@@ -130,11 +130,11 @@ udp_map["authrule_del"] = function(p, ip, port)
 		local rids = js.decode(arg.rids)
 
 		local in_part = table.concat(rids, ",")
-		
+
 		local sql = string.format("delete from authrule where rid in (%s)", in_part)
 		local r, e = conn:execute(sql)
-		if not r then 
-			return nil, e 
+		if not r then
+			return nil, e
 		end
 
 		ud:save_log(sql, true)
@@ -156,32 +156,32 @@ udp_map["authrule_adjust"] = function(p, ip, port)
 		local rid1, rid2 = rids[1], rids[2]
 
 		local in_part = table.concat(rids, ",")
-		
+
 		local sql = string.format("select rid, priority from authrule where rid in (%s)", in_part)
 		local rs, e = conn:select(sql) 	assert(rs, e)
-		if not rs then 
-			return nil, e 
+		if not rs then
+			return nil, e
 		end
 
-		if #rs ~= 2 then 
+		if #rs ~= 2 then
 			return nil, "invalid rids"
-		end 
+		end
 
 		rs[1].priority, rs[2].priority = rs[2].priority, rs[1].priority
 		local arr, e = conn:transaction(function()
 			local arr = {}
-			for _, r in ipairs(rs) do 
+			for _, r in ipairs(rs) do
 				local sql = string.format("update authrule set priority='%s' where rid='%s'", r.priority, r.rid)
 				local r, e = conn:execute(sql)
-				if not r then 
-					return nil, e 
+				if not r then
+					return nil, e
 				end
 				table.insert(arr, sql)
 			end
 			return arr
 		end)
 		if not arr then
-			return nil, e 
+			return nil, e
 		end
 
 		ud:save_log(arr, true)

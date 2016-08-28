@@ -18,9 +18,9 @@ end
 
 tcp_map["dbsync"] = function(p)
 	local authrule = p.authrule
-	if not authrule then 
-		return 
-	end 
+	if not authrule then
+		return
+	end
 
 	log.info("authrule change, reload. %s", js.encode(authrule))
 	cfg.clear_authtype()
@@ -28,4 +28,3 @@ end
 
 return {init = init, dispatch_tcp = dispatch_tcp}
 
- 

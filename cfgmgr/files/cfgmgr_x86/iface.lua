@@ -41,13 +41,13 @@ udp_map["iface_add"] = function(p, ip, port)
 		local ins = require("mgr").ins()
 		local conn = ins.conn
 		return conn:protect(function()
-			local r, e = conn:select("select * from kv") 		assert(r, e) 
+			local r, e = conn:select("select * from kv") 		assert(r, e)
 			return r
 		end)
 	]]
 
 	local r, e = dbrpc:fetch("cfgmgr_iface_add", code)
-	if e then io.stderr:write("error ", e, "\n") os.exit(-1) end 	
+	if e then io.stderr:write("error ", e, "\n") os.exit(-1) end
 	log.debug("%s", js.encode({r, e}))
 	reply(ip, port, 0, {r, e})
 end

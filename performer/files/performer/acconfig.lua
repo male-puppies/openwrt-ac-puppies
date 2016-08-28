@@ -226,10 +226,10 @@ local function tm_contained(tmgrps, tm)
 	return false
 end
 
---[[ 
+--[[
 {
-["ipset_key"] = ipset_key, ["ipset_name"] = item.sub_cate, 
-["ipset_type"] = ipset_type, ["ipset_list"] = set_item.set_list 
+["ipset_key"] = ipset_key, ["ipset_name"] = item.sub_cate,
+["ipset_type"] = ipset_type, ["ipset_list"] = set_item.set_list
 }
 ]]
 local function reference_ipset(type_key, config, ref)
@@ -257,7 +257,7 @@ end
 
 
 local function create_ipset(config)
-	for _, info in ipairs(config) do 
+	for _, info in ipairs(config) do
 		local create_cmd = string.format("ipset create '%s' '%s'", info.ipset_name, info.ipset_type) assert(create_cmd)
 		log.debug("create:%s", create_cmd)
 		os.execute(create_cmd)
@@ -325,7 +325,7 @@ commit_config["Set"] = function(cate_arr, new_config)
 		local set_item = new_config[item.cate][item.sub_cate]	assert(set_item)
 		local ipset_key = ipset_map[set_item.map_key].set_key   assert(ipset_key)
 		local ipset_type = ipset_map[set_item.map_key].set_type assert(ipset_type)
-		local commit_item = 
+		local commit_item =
 			{
 				ipset_key = ipset_key,
 				ipset_name = item.sub_cate,
@@ -373,7 +373,7 @@ a.input parameters:old and old[cate] and new and new[cate] must be true
 return format {ret = true/false, list = [{cate = Audit/Control, sub_cate = xx}, {}]}
 Rule concerns only cate
 --]]
-local compare_config = {} 
+local compare_config = {}
 compare_config["Rule"] = function(old, new)
 	assert(new)
 	local cmp_res, ret, err = {}, true
@@ -387,7 +387,7 @@ compare_config["Rule"] = function(old, new)
 
 	for _, cate in ipairs(ConfigCate) do
 		if old[cate] == nil or new[cate] == nil then
-			err = string.format("old[%s] is %s, new[%s] is %s", 
+			err = string.format("old[%s] is %s, new[%s] is %s",
 								old[cate] and "not nil" or "nil",
 								new[cate] and "not nil" or "nil")
 			return nil, err
@@ -404,8 +404,8 @@ end
 
 --[[
 compare set config
-@old, new   
-	{"Audit": 
+@old, new
+	{"Audit":
 		{
 	        "AuditIPWhiteListSet": {"map_key": "IpWhiteList", "set_list": []},
 	        "AuditMacWhiteListSet": {"map_key": "MacWhiteList", "set_list": []}
@@ -433,7 +433,7 @@ compare_config["Set"] = function(old, new)
 		for name, info in pairs(new_cate_config) do
 			local new_list = info.set_list
 			local old_list = old_cate_config[name].set_list
-			
+
 			local ret, err = array_cmp(old_list, new_list)
 			if not ret and err then
 				return nil, err
@@ -507,7 +507,7 @@ translate_config["Rule"] = function(raw_rule_config)
 				return nil, err
 			end
 		end
-		rule_config[cate] = tmp_config 
+		rule_config[cate] = tmp_config
 	end
 
 	return rule_config
@@ -534,7 +534,7 @@ translate_config["Set"] = function(raw_set_config)
 
 			elseif set_info.settype == "mac" then
 				ipset_key = (set_info.action == "bypass") and  "MacWhiteList" or "MacBlackList"
-			
+
 			else
 				return nil, "invalid settype"
 			end
@@ -583,11 +583,11 @@ local fetch_raw_config = {}
 --fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
 	local fetch_rule = function(cate)
-		local sql = string.format("select * from acrule where ruletype='%s' and enable=1 order by priority desc", cate) 
+		local sql = string.format("select * from acrule where ruletype='%s' and enable=1 order by priority desc", cate)
 		if not sql then
 			return nil, "construct sql failed"
 		end
-		
+
 		local rule_arr = {}
 		local tmp_arr, err = simple:mysql_select(sql)
 		if err then
@@ -601,8 +601,8 @@ fetch_raw_config["Rule"] = function()
 			if type(tmgrpids) ~= "table" or #tmgrpids == 0 then
 				return nil, "tmgrpids is empty"
 			end
-	
-			local sql = string.format("select days,tmlist from timegroup where tmgid in (%s)", table.concat(tmgrpids, ",")) 
+
+			local sql = string.format("select days,tmlist from timegroup where tmgid in (%s)", table.concat(tmgrpids, ","))
 			if not sql then
 				return nil, "construct sql failed"
 			end
@@ -618,9 +618,9 @@ fetch_raw_config["Rule"] = function()
 			end
 
 			for _, detail in ipairs(detail_arr) do
-				local days = js.decode(detail.days)		
-				local tmlist = js.decode(detail.tmlist)	
-				
+				local days = js.decode(detail.days)
+				local tmlist = js.decode(detail.tmlist)
+
 				if days == nil or tmlist == nil then
 					return nil, "decode tm detail failed"
 				end
@@ -639,7 +639,7 @@ fetch_raw_config["Rule"] = function()
 
 	local rule_config = {}
 	for _, cate in ipairs(ConfigCate) do
-		local res, err = fetch_rule(string.lower(cate)) 
+		local res, err = fetch_rule(string.lower(cate))
 		if not res then
 			--if fetch failed, ignore what already have fetched
 			return nil, err
@@ -662,7 +662,7 @@ fetch_raw_config["Set"] = function()
 		if err then
 			return nil, err
 		end
-		
+
 		return set_arr
 	end
 
