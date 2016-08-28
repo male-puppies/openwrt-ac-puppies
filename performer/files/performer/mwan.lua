@@ -105,9 +105,7 @@ local function generate_mwan_cmds(mwan)
 		table.insert(arr["mwan3"], string.format("uci set mwan3.https.use_policy='%s'", mwan.policy))
 
 		table.insert(arr["mwan3"], string.format("uci set mwan3.default_rule='rule'"))
-		table.insert(arr["mwan3"], string.format("uci set mwan3.default_rule.sticky='0'"))
-		table.insert(arr["mwan3"], string.format("uci set mwan3.default_rule.dest_port='443'"))
-		table.insert(arr["mwan3"], string.format("uci set mwan3.default_rule.proto='tcp'"))
+		table.insert(arr["mwan3"], string.format("uci set mwan3.default_rule.dest_ip='0.0.0.0/0'"))
 		table.insert(arr["mwan3"], string.format("uci set mwan3.default_rule.use_policy='%s'", mwan.policy))
 	end
 
