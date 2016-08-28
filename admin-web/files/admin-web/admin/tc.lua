@@ -30,9 +30,7 @@ function cmd_map.tc_get()
 	return query_common(m, "tc_get")
 end
 
-local function v_Enabled(v)
-	return v == "true" and 1 or 0
-end
+local v_Enabled = gen_validate_num(0,1)
 
 local function v_Ip(v)
 	return string.match(v, "%d+%.%d+%.%d+%.%d+-%d+%.%d+%.%d+%.%d+")
