@@ -45,7 +45,7 @@ udp_map["mwan_get"] = function(p, ip, port)
 			if iface_exist then
 				table.insert(res.ifaces, new_ifc)
 			else
-				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 0})
+				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 1})
 			end
 		end
 	end

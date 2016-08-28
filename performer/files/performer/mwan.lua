@@ -8,20 +8,42 @@ local md5 = require("md5")
 local read = common.read
 
 local function load_mwan()
-	local path = "/etc/config/mwan.json"
-	local s = read(path)
-	local m = js.decode(s or "{}")
-	return m
+	local mwan_path = '/etc/config/mwan.json'
+	local mwan_s = read(mwan_path) or '{}'
+	local mwan_m = js.decode(mwan_s)	assert(mwan_m)
+	local network_path = '/etc/config/network.json'
+	local network_s = read(network_path)	assert(network_path)
+	local network_m = js.decode(network_s)	assert(network_m)
+
+	local res = {
+		ifaces = {},
+		policy = mwan_m.policy or "balanced",
+		main_iface = mwan_m.main_iface or {},
+	}
+
+	for iface, _ in pairs(network_m.network) do
+		if iface:find("^wan") then
+			local iface_exist = false
+			local new_ifc = nil
+			for _, ifc in ipairs(mwan_m.ifaces or {}) do
+				if ifc.name == iface then
+					iface_exist = true
+					new_ifc = ifc
+					break
+				end
+			end
+			if iface_exist then
+				table.insert(res.ifaces, new_ifc)
+			else
+				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 1})
+			end
+		end
+	end
+
+	return res
 end
 
-local function load_network()
-	local path = "/etc/config/network.json"
-	local s = read(path)	assert(s)
-	local m = js.decode(s)	assert(m)
-	return m.network
-end
-
-local function generate_mwan_cmds(mwan, network)
+local function generate_mwan_cmds(mwan)
 	local arr = {}
 	arr["mwan3"] = {}
 
@@ -30,24 +52,11 @@ local function generate_mwan_cmds(mwan, network)
 	table.insert(arr["mwan3"], string.format("while uci delete mwan3.@member[0] >/dev/null 2>&1; do :; done"))
 	table.insert(arr["mwan3"], string.format("while uci delete mwan3.@interface[0] >/dev/null 2>&1; do :; done"))
 
-	local wans = {}
-	for name, _ in pairs(network) do
-		if name:find("^wan") then
-			table.insert(wans, name)
-		end
-	end
-
 	local mwan_ifaces = {}
 	local mwan_line = 0
 	local m = 2
 	for i, iface in ipairs(mwan.ifaces or {}) do
-		local found = false
-		for _, name in ipairs(wans) do
-			if name == iface.name then
-				found = true
-			end
-		end
-		if found and iface.enable == 1 then
+		if iface.enable == 1 then
 			mwan_line = mwan_line + 1
 			mwan_ifaces[iface.name] = {
 				w = tonumber(iface.bandwidth) == 0 and 1 or tonumber(iface.bandwidth)
@@ -107,7 +116,6 @@ end
 
 local function mwan_reload()
 	local mwan = load_mwan()
-	local network = load_network()
 	local cmd = ""
 	local new_md5, old_md5
 	local arr = {}
@@ -123,7 +131,7 @@ local function mwan_reload()
 
 	orders = {"mwan3"}
 
-	local mwan_arr = generate_mwan_cmds(mwan, network)
+	local mwan_arr = generate_mwan_cmds(mwan)
 
 	for _, name in ipairs(orders) do
 		for _, line in ipairs(mwan_arr[name]) do
