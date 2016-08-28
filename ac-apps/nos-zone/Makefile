@@ -45,6 +45,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_DATA) ./files/nos-zone.config $(1)/etc/config/nos-zone
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) ./files/nos-zone.sh $(1)/usr/bin/nos-zone
+	cp -r ./files/etc/* $(1)/etc/
 endef
 
 define Build/Configure

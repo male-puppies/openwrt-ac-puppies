@@ -3,8 +3,6 @@
 . /lib/functions.sh
 . /lib/functions/network.sh
 
-$LOG notice "$ACTION interface $INTERFACE (${DEVICE:-unknown})"
-
 case "$ACTION" in
 	ifup)
 		/etc/init.d/nos-zone restart
