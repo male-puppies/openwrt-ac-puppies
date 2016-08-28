@@ -24,7 +24,8 @@ local modules = {
 	mwan		=	require("mwan"),
 	acgroup		= 	require("acgroup"),
 	user 		= 	require("user"),
-	route 		= 	require("route"),
+	route		= 	require("route"),
+	tc			= 	require("tc"),
 }
 
 local encode, decode = js.encode, js.decode

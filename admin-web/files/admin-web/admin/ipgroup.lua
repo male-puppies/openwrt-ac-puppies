@@ -18,7 +18,7 @@ local v_desc        = gen_validate_str(1, 64, true)
 local v_name        = gen_validate_str(1, 32, true)
 
 
-local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end 
+local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
 local cmd_map = {}
 
@@ -34,9 +34,9 @@ end
 local ipgrp_fields = {ipgid = 1, ipgrpname = 1, ipgrpdesc = 1, ranges = 1}
 function cmd_map.ipgroup_get()
 	local m, e = validate_get({page = 1, count = 1})
-	if not m then 
-        return reply_e(e) 
-    end
+	if not m then
+		return reply_e(e)
+	end
 
     local cond = adminlib.search_cond(adminlib.search_opt(m, {order = ipgrp_fields, search = ipgrp_fields}))
     local sql = string.format("select * from ipgroup %s %s %s", cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
@@ -47,20 +47,20 @@ end
 
 local range_patterns = {
     {
-        pattern = "^(.+)/(%d+)$", 
+        pattern = "^(.+)/(%d+)$",
         func = function(ip, mask)
             local bits = tonumber(mask)
             return bits and bits > 0 and bits < 32 and ip:find(ip_pattern)
         end
     },
     {
-        pattern = "^(.+)%-(.+)$", 
+        pattern = "^(.+)%-(.+)$",
         func = function(ip, ip2)
             return ip:find(ip_pattern) and ip2:find(ip_pattern)
         end
     },
-    {   
-        pattern = "^(.+)$", 
+    {
+        pattern = "^(.+)$",
         func = function(ip)
             return ip:find(ip_pattern)
         end
@@ -69,23 +69,23 @@ local range_patterns = {
 
 local function validate_ranges(s)
     local ranges = js.decode(s)
-    if not ranges then 
+    if not ranges then
         return nil, "invalid ranges"
     end
 
     for _, part in ipairs(ranges) do
-        for _, r in ipairs(range_patterns) do 
+        for _, r in ipairs(range_patterns) do
             local a, b = part:match(r.pattern)
             if a then
-                if not r.func(a, b) then 
+                if not r.func(a, b) then
                     return nil, "invalid ranges"
-                end 
-                break 
+                end
+                break
             end
         end
     end
 
-    return true 
+    return true
 end
 
 function cmd_map.ipgroup_set()
@@ -96,17 +96,17 @@ function cmd_map.ipgroup_set()
         ranges      = v_range_str
     })
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local ipgid = m.ipgid
-    if ipgid == 63 then 
+    if ipgid == 63 then
         return reply_e("cannot modify ALL")
     end
 
     local r, e = validate_ranges(m.ranges)
-    if not r then 
+    if not r then
         return reply_e(e)
     end
 
@@ -120,12 +120,12 @@ function cmd_map.ipgroup_add()
         ranges = v_range_str
     })
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local r, e = validate_ranges(m.ranges)
-    if not r then 
+    if not r then
         return reply_e(e)
     end
 
@@ -135,18 +135,18 @@ end
 function cmd_map.ipgroup_del()
     local m, e = validate_post({ipgids = v_ipgids})
 
-    if not m then 
+    if not m then
         return reply_e(e)
     end
 
     local ids = js.decode(m.ipgids)
-    if not ids then 
+    if not ids then
         return reply_e("invalid ipgids")
-    end 
+    end
 
-    for _, id in ipairs(ids) do 
+    for _, id in ipairs(ids) do
         local tid = tonumber(id)
-        if not (tid and tid >= 0 and tid < 63) then 
+        if not (tid and tid >= 0 and tid < 63) then
             return reply_e("invalid ipgids")
         end
     end

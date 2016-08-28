@@ -125,3 +125,12 @@ end
 if cmd:find("^route_") then
 	return require("admin.route").run(cmd)
 end
+
+-- curl 'http://127.0.0.1/v1/admin/api/tc_del?token=9903f8226c387824266f87aba80116f3' -d 'Names=["aaa","bbbb"]'
+-- curl 'http://127.0.0.1/v1/admin/api/tc_gset?token=9903f8226c387824266f87aba80116f3' -d 'GlobalSharedUpload=1Mbps&GlobalSharedDownload=2Mbps'
+-- curl 'http://127.0.0.1/v1/admin/api/tc_set?token=9903f8226c387824266f87aba80116f3' -d 'Enabled=1&Ip=0.0.0.0-1.1.1.1&Name=XX&SharedDownload=0MBytes&SharedUpload=1MBytes&PerIpDownload=1KBytes&PerIpUpload=0MBytes'
+-- curl 'http://127.0.0.1/v1/admin/api/tc_add?token=9903f8226c387824266f87aba80116f3' -d 'Enabled=1&Ip=0.0.0.0-1.1.1.1&Name=XX&SharedDownload=0MBytes&SharedUpload=1MBytes&PerIpDownload=1KBytes&PerIpUpload=0MBytes'
+-- curl 'http://127.0.0.1/v1/admin/api/tc_get?token=9903f8226c387824266f87aba80116f3&page=1&count=10'
+if cmd:find("^tc_") then
+	return require("admin.tc").run(cmd)
+end
