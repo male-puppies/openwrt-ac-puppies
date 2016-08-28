@@ -140,8 +140,7 @@ function OnSubmit() {
 	var ifaces = [],
 		main_iface = [],
 		obj = {
-			"policy": $("input[name='policy']:checked").val(),
-			"enable": $("#enable").is(":checked") ? 1 : 0
+			"policy": $("input[name='policy']:checked").val()
 		};
 
 	$(".wan-text").each(function(index, element) {
