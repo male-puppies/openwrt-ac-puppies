@@ -92,26 +92,15 @@ local function toarr(map)
 end
 
 local function get_iface()
-	local s = read("ip ro", io.popen)
-	s = s .. "\n"
-
-	local wan, lan, all = {}, {}, {}
-	for part in s:gmatch("(.-)\n") do
-		local ifname = part:match("dev%s+(.-)%s")
-		if ifname and not wan[ifname] then
-			all[ifname] = 1
-
-			local iswlan = part:find("^default")
-			if iswlan then
-				wan[ifname] = 1
-			end
-		end
+	local wan, lan = {}, {}
+	local w = read("fw3 -q zone wan", io.popen)
+	for iface in w:gmatch("(.-)\n") do
+		wan[iface] = 1
 	end
 
-	for ifname in pairs(all) do
-		if not wan[ifname] then
-			lan[ifname] = 1
-		end
+	local l = read("fw3 -q zone lan", io.popen)
+	for iface in l:gmatch("(.-)\n") do
+		lan[iface] = 1
 	end
 
 	return lan, wan

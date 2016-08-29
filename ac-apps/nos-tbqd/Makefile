@@ -47,6 +47,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/nos-tbqd.sh $(1)/usr/bin/nos-tbqd
 	$(INSTALL_DIR) $(1)/usr/share/nos-tbqd
 	$(INSTALL_DATA) ./files/settc.lua $(1)/usr/share/nos-tbqd/settc.lua
+	cp -r ./files/etc/* $(1)/etc/
 endef
 
 define Build/Configure
