@@ -101,7 +101,7 @@ udp_map["tc_del"] = function(p, ip, port)
 		local idx = nil
 		local Rules = {}
 		for i, rule in ipairs(tc_m.Rules) do
-			if rule.Name == Name then
+			if rule.Name == name then
 				idx = i
 			else
 				table.insert(Rules, rule)

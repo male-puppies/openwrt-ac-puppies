@@ -108,6 +108,8 @@ function cmd_map.tc_del()
 		return reply_e("invalid Names")
 	end
 
+	m.Names = Names
+
 	return query_common(m, "tc_del")
 end
 
