@@ -19,6 +19,7 @@ local modules = {
 	firewall = 	require("firewall"),
 	route = 	require("route"),
 	mwan  = 	require("mwan"),
+	tc	=	 	require("tc"),
 }
 
 local encode, decode = js.encode, js.decode
