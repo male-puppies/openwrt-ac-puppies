@@ -12,7 +12,7 @@ test -n "$MACADDR" || MACADDR=`head -c6 /dev/random | hexdump -e '/1 "%02X:"' | 
 
 test $version -lt 1 && {
 	uci get system.@system[0] && {
-		uci set system.@system[0].hostname='${DISTRIB_ID}'
+		uci set system.@system[0].hostname="${DISTRIB_ID}"
 		uci set system.@system[0].zonename='Asia/Shanghai'
 		uci set system.@system[0].timezone='CST-8'
 		uci commit system
