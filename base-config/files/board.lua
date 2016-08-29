@@ -19,9 +19,10 @@ local network = {}
 if board.options[1] then
 	network.name = board.options[1].name
 	network.network = {}
-	for ifname, ports in pairs(board.options[1].map) do
-		network.network[ifname] = board.networks[ifname]
-		network.network[ifname].ports = ports
+	for i, port in ipairs(board.options[1].layout) do
+		network.network[port.name] = board.networks[port.name]
+		network.network[port.name].ports = network.network[port.name].ports or {}
+		table.insert(network.network[port.name].ports, i)
 	end
 end
 

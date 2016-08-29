@@ -1,6 +1,17 @@
 {
     "ports": [
         {
+            "ifname": "eth0",
+            "type": "ether",
+            "device": "eth0",
+            "outer_ports": [
+                {
+                    "num": 1,
+                    "mac": "__MAC_ADDRESS_0__"
+                }
+            ]
+        },
+        {
             "ifname": "eth1",
             "type": "switch",
             "device": "switch0",
@@ -23,69 +34,102 @@
                 }
             ],
             "inner_port": 0
-        },
-        {
-            "ifname": "eth0",
-            "type": "ether",
-            "device": "eth0",
-            "outer_ports": [
-                {
-                    "num": 1,
-                    "mac": "__MAC_ADDRESS_0__"
-                }
-            ]
         }
     ],
     "options": [
         {
             "name": "1lan1wan",
-            "map": {
-                "lan0": [
-                    1,
-                    2,
-                    3,
-                    4
-                ],
-                "wan0": [
-                    5
-                ]
-            }
+            "layout": [
+                {
+                    "name": "wan",
+                    "enable": 1,
+                    "fixed": 1
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 1
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 0
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 0
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 0
+                }
+            ]
         },
         {
             "name": "1lan2wan",
-            "map": {
-                "lan0": [
-                    1,
-                    2,
-                    3
-                ],
-                "wan1": [
-                    4
-                ],
-                "wan0": [
-                    5
-                ]
-            }
+            "layout": [
+                {
+                    "name": "wan",
+                    "enable": 1,
+                    "fixed": 1
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 1
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 0
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 0
+                },
+                {
+                    "name": "wan1",
+                    "enable": 1,
+                    "fixed": 0
+                }
+            ]
         },
         {
             "name": "2lan1wan",
-            "map": {
-                "lan0": [
-                    1,
-                    2
-                ],
-                "lan1": [
-                    3,
-                    4
-                ],
-                "wan0": [
-                    5
-                ]
-            }
+            "layout": [
+                {
+                    "name": "wan",
+                    "enable": 1,
+                    "fixed": 1
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 1
+                },
+                {
+                    "name": "lan1",
+                    "enable": 1,
+                    "fixed": 0
+                },
+                {
+                    "name": "lan2",
+                    "enable": 1,
+                    "fixed": 0
+                },
+                {
+                    "name": "lan2",
+                    "enable": 1,
+                    "fixed": 0
+                }
+            ]
         }
     ],
     "networks": {
-        "lan0": {
+        "lan1": {
             "proto": "static",
             "ipaddr": "172.16.0.1/16",
             "mtu": "",
@@ -96,27 +140,7 @@
             "dhcpd": {
                 "enabled": 1,
                 "start": "172.16.0.100",
-                "end": "172.16.200.254",
-                "leasetime": "12h",
-                "dynamicdhcp": 1,
-                "staticlease": [],
-                "dns": ""
-            },
-            "pppoe_account": "",
-            "pppoe_password": ""
-        },
-        "lan1": {
-            "proto": "static",
-            "ipaddr": "172.17.0.1/16",
-            "mtu": "",
-            "mac": "",
-            "metric": "",
-            "gateway": "",
-            "dns": "",
-            "dhcpd": {
-                "enabled": 1,
-                "start": "172.17.0.100",
-                "end": "172.17.200.254",
+                "end": "172.16.32.99",
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
@@ -127,7 +151,7 @@
         },
         "lan2": {
             "proto": "static",
-            "ipaddr": "172.18.0.1/16",
+            "ipaddr": "172.17.0.1/16",
             "mtu": "",
             "mac": "",
             "metric": "",
@@ -135,8 +159,8 @@
             "dns": "",
             "dhcpd": {
                 "enabled": 1,
-                "start": "172.18.0.100",
-                "end": "172.18.200.254",
+                "start": "172.17.0.100",
+                "end": "172.17.32.99",
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
@@ -147,6 +171,26 @@
         },
         "lan3": {
             "proto": "static",
+            "ipaddr": "172.18.0.1/16",
+            "mtu": "",
+            "mac": "",
+            "metric": "",
+            "gateway": "",
+            "dns": "",
+            "dhcpd": {
+                "enabled": 1,
+                "start": "172.18.0.100",
+                "end": "172.18.32.99",
+                "leasetime": "12h",
+                "dynamicdhcp": 1,
+                "staticlease": [],
+                "dns": ""
+            },
+            "pppoe_account": "",
+            "pppoe_password": ""
+        },
+        "lan4": {
+            "proto": "static",
             "ipaddr": "172.19.0.1/16",
             "mtu": "",
             "mac": "",
@@ -156,7 +200,7 @@
             "dhcpd": {
                 "enabled": 1,
                 "start": "172.19.0.100",
-                "end": "172.19.200.254",
+                "end": "172.19.32.99",
                 "leasetime": "12h",
                 "dynamicdhcp": 1,
                 "staticlease": [],
@@ -165,7 +209,7 @@
             "pppoe_account": "",
             "pppoe_password": ""
         },
-        "wan0": {
+        "wan": {
             "proto": "dhcp",
             "ipaddr": "",
             "mtu": "",

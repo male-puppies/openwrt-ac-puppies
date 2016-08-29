@@ -25,19 +25,20 @@ udp_map["iface_get"] = function(p, ip, port)
 	local m = js.decode(s) 	assert(m)
 	local net_name, net_cfg = m.name, m.network
 
-	local custom_map = {}
-	if net_name ~= "custom" then
-		local lan0, wan0 = {}, {#ports}
-		for i = 1, #ports - 1 do
-			table.insert(lan0, i)
-		end
-		custom_map.lan0,custom_map.wan0 = lan0, wan0
-	else
-		for iface, r in pairs(net_cfg) do
-			custom_map[iface] = r.ports
+	local layout = {}
+	for iface, cfg in pairs(net_cfg) do
+		for _, i in ipairs(cfg.ports) do
+			layout[i] = {name = iface, enable = 1, fixed = 0}
 		end
 	end
-	table.insert(options,  {name = "custom", map = custom_map})
+	for i = 1, #ports do
+		if not layout[i] then
+			layout[i] = {name = "", enable = 0, fixed = 0}
+		end
+		layout[i].fixed = options[1].layout[i].fixed
+	end
+
+	table.insert(options,  {name = "custom", layout = layout})
 	local res = {ports = ports, options = options, networks = networks, network = m}
 	reply(ip, port, 0, res)
 end
