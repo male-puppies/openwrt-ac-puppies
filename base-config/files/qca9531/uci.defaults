@@ -2,13 +2,19 @@
 version=`uci get base_config.@status[0].version`
 test -n "$version" || version=0
 
+. /etc/openwrt_release
+test -n "${DISTRIB_ID}" || DISTRIB_ID=AC
+DISTRIB_ID=`echo -n $DISTRIB_ID | tr a-z A-Z`
+
+MACADDR=`cat /sys/class/net/eth0/address | tr a-z A-Z`
+test -n "$MACADDR" || MACADDR=`cat /sys/class/net/eth1/address | tr a-z A-Z`
+test -n "$MACADDR" || MACADDR=`head -c6 /dev/random | hexdump -e '/1 "%02X:"' | head -c17`
+
 test $version -lt 1 && {
 	uci get system.@system[0] && {
-		uci -q batch <<-EOT
-			set system.@system[0].hostname='AC'
-			set system.@system[0].zonename='Asia/Shanghai'
-			set system.@system[0].timezone='CST-8'
-		EOT
+		uci set system.@system[0].hostname='${DISTRIB_ID}'
+		uci set system.@system[0].zonename='Asia/Shanghai'
+		uci set system.@system[0].timezone='CST-8'
 		uci commit system
 	}
 	uci -q batch <<-EOT
@@ -55,8 +61,7 @@ test $version -lt 2 && {
 }
 
 test $version -lt 3 && {
-	macaddr=`cat /sys/class/net/eth0/address | tr A-Z a-z`
-	test -n "$macaddr" || macaddr=`head -c6 /dev/random | hexdump -e '/1 "%02x:"' | head -c17`
+	macaddr=`echo -n $MACADDR | tr A-Z a-z`
 	cp /usr/share/base-config/board.json /tmp/board.json
 	NR=`cat /tmp/board.json | grep -o __MAC_ADDRESS_ | wc -l`
 	IDX=0
@@ -74,8 +79,8 @@ test $version -lt 3 && {
 }
 
 test $version -lt 4 && {
-	SUBFIX=`sed 's/://g' /sys/class/net/eth0/address | tr a-z A-Z | tail -c5`
-	SSID=AC9531_${SUBFIX}
+	SUBFIX=`echo -n $MACADDR | sed 's/://g' | tr a-z A-Z | tail -c4`
+	SSID=${DISTRIB_ID}_${SUBFIX}
 	SSID_PASSWD=88888888
 
 	while uci delete wireless.@wifi-iface[0]; do :; done
@@ -90,7 +95,7 @@ test $version -lt 4 && {
 		obj=`uci add wireless wifi-iface`
 		test -n "$obj" && {
 			uci set wireless.$obj.device='radio0'
-			uci set wireless.$obj.network='lan0'
+			uci set wireless.$obj.network='lan1'
 			uci set wireless.$obj.mode='ap'
 			uci set wireless.$obj.ssid="${SSID}"
 			uci set wireless.$obj.encryption='psk2'
@@ -108,7 +113,7 @@ test $version -lt 4 && {
 		obj=`uci add wireless wifi-iface`
 		test -n "$obj" && {
 			uci set wireless.$obj.device='radio0'
-			uci set wireless.$obj.network='lan0'
+			uci set wireless.$obj.network='lan1'
 			uci set wireless.$obj.mode='ap'
 			uci set wireless.$obj.ssid="${SSID}"
 			uci set wireless.$obj.encryption='psk2'
@@ -128,7 +133,7 @@ test $version -lt 4 && {
 		test -n "$obj" && {
 			uci set wireless.$obj.device='wifi0'
 			uci set wireless.$obj.disabled='0'
-			uci set wireless.$obj.network='lan0'
+			uci set wireless.$obj.network='lan1'
 			uci set wireless.$obj.mode='ap'
 			uci set wireless.$obj.ssid="${SSID}"
 			uci set wireless.$obj.encryption='psk2'
@@ -147,7 +152,7 @@ test $version -lt 4 && {
 		test -n "$obj" && {
 			uci set wireless.$obj.device='wifi1'
 			uci set wireless.$obj.disabled='0'
-			uci set wireless.$obj.network='lan0'
+			uci set wireless.$obj.network='lan1'
 			uci set wireless.$obj.mode='ap'
 			uci set wireless.$obj.ssid="${SSID}"
 			uci set wireless.$obj.encryption='psk2'
