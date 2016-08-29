@@ -1,6 +1,10 @@
 local js = require("cjson.safe")
 local query = require("common.query")
 local adminlib = require("admin.adminlib")
+local common = require("common")
+local ipops = require("ipops")
+
+local read = common.read
 
 local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
@@ -32,6 +36,91 @@ local function query_common(m, cmd)
 	return (not r) and reply_e(e) or ngx.say(r)
 end
 
+local function load_iface_map()
+	local board_s = read("/etc/config/board.json")	assert(board_s)
+	local board_m = js.decode(board_s)	assert(board_m)
+	local ports = board_m.ports
+	local port_map = {}
+
+	for _, dev in ipairs(ports) do
+		if dev.type == "switch" then
+			for idx, port in ipairs(dev.outer_ports) do
+				table.insert(port_map, {ifname = dev.ifname, mac = port.mac, type = dev.type, device = dev.device, num = port.num, inner_port = dev.inner_port})
+			end
+		elseif dev.type == "ether" then
+			table.insert(port_map, {ifname = dev.ifname, mac = dev.outer_ports[1].mac, type = dev.type, device = dev.device})
+		end
+	end
+
+	local path = "/etc/config/network.json"
+	local network_s = read("/etc/config/network.json")	assert(network_s)
+	local network_m = js.decode(network_s)	assert(network_m)
+	local network = network_m.network
+
+	local iface_map = {}
+	local uci_network = {}
+
+	for name, option in pairs(network) do
+		uci_network[name] = option
+		if name:find("^lan") or #option.ports > 1 then
+			uci_network[name].type = 'bridge'
+		end
+
+		uci_network[name].ifname = ""
+		local ifnames = {}
+		local vlan = nil
+		for _, i in ipairs(option.ports) do
+			if port_map[i].type == 'switch' then
+				vlan = vlan or tostring(i)
+				ifnames[port_map[i].ifname .. "." .. vlan] = tonumber(vlan)
+			else
+				ifnames[port_map[i].ifname] = i
+			end
+		end
+
+		for ifname, i in pairs(ifnames) do
+			if uci_network[name].ifname == "" then
+				uci_network[name].ifname = ifname
+			else
+				uci_network[name].ifname = uci_network[name].ifname .. " " .. ifname
+			end
+		end
+
+		if uci_network[name].proto == "static" or uci_network[name].proto == "dhcp" then
+			if uci_network[name].type == 'bridge' then
+				iface_map["br-" .. name] = name
+			else
+				iface_map[uci_network[name].ifname] = name
+			end
+		elseif uci_network[name].proto == "pppoe" then
+			iface_map["pppoe-" .. name] = name
+		end
+	end
+
+	return iface_map
+end
+
+local function load_active_route()
+	local iface_map = load_iface_map()
+	local s = read("/proc/net/route")
+	local h = {}
+	for iface, target, gateway, _, _, _, metric, netmask, mtu, _, _ in s:gmatch("(.-)\t(.-)\t(.-)\t(.-)\t(.-)\t(.-)\t(.-)\t(.-)\t(.-)\t(.-)\t(.-)\n") do
+		if target ~= "Destination" and iface_map[iface] then
+			local r = {
+				iface = iface_map[iface],
+				target = ipops.hexstr2ipstr(target),
+				netmask = ipops.hexstr2ipstr(netmask),
+				gateway = ipops.hexstr2ipstr(gateway),
+				metric = tonumber(metric),
+				mtu = tonumber(mtu),
+				status = 255,
+			}
+			h[string.format("%s%s%s%s%u%u", r.iface, r.target, r.netmask, r.gateway, r.metric, r.mtu)] = r
+		end
+	end
+	return h
+end
+
 function cmd_map.route_get()
 	local m, e = validate_get({page = 1, count = 1})
 	if not m then
@@ -45,11 +134,27 @@ function cmd_map.route_get()
 		return reply_e(e)
 	end
 
+	local h = load_active_route()
 	for _, rule in ipairs(rs) do
+		local r = h[string.format("%s%s%s%s%u%u", rule.iface, rule.target, rule.netmask, rule.gateway, rule.metric, rule.mtu)]
+		if not r then
+			rule.status = 1
+		else
+			rule.status = 0
+			r.status = 0
+		end
 		rule.metric = rule.metric == 0 and "" or rule.metric
 		rule.mtu = rule.mtu == 0 and "" or rule.mtu
-		rule.status = 0
 	end
+
+	for _, rule in pairs(h) do
+		if rule.status == 255 then
+			rule.metric = rule.metric == 0 and "" or rule.metric
+			rule.mtu = rule.mtu == 0 and "" or rule.mtu
+			table.insert(rs, rule)
+		end
+	end
+
 	return rs and reply(rs) or reply_e(e)
 end
 

@@ -214,6 +214,24 @@ for _, ipstr in ipairs(ipranges) do
 end
 ]]
 
+local function hexstr2ipstr(hexstr)
+	local ip = tonumber(hexstr, 16)
+	local a = _band(_rshift(ip, 0), 0x000000FF)
+	local b = _band(_rshift(ip, 8), 0x000000FF)
+	local c = _band(_rshift(ip, 16), 0x000000FF)
+	local d = _band(_rshift(ip, 24), 0x000000FF)
+	return string.format("%u.%u.%u.%u", a, b, c, d)
+end
+
+local function ipstr2hexstr(ipstr)
+	local i = ipstr2int(ipstr)
+	local a = _band(_rshift(ip, 0), 0x000000FF)
+	local b = _band(_rshift(ip, 8), 0x000000FF)
+	local c = _band(_rshift(ip, 16), 0x000000FF)
+	local d = _band(_rshift(ip, 24), 0x000000FF)
+	return string.format("%02X%02X%02X%02X", a, b, c, d)
+end
+
 return {
 	ipstr2int 				= ipstr2int,
 	int2ipstr 				= int2ipstr,
@@ -234,5 +252,8 @@ return {
 	ipranges2ipgroup 		= ipranges2ipgroup,
 	ipgroup2ipranges 		= ipgroup2ipranges,
 	ipgroup_add 			= ipgroup_add,
-	ipstr2range 			= ipstr2range
+	ipstr2range 			= ipstr2range,
+
+	hexstr2ipstr			= hexstr2ipstr,
+	ipstr2hexstr			= ipstr2hexstr,
 }
