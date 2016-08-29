@@ -1,12 +1,11 @@
-local se = require("se")
-local const = require("constant")
 local log = require("log")
 local lfs = require("lfs")
+local const = require("constant")
+
 local LAUNCH_FLAG 		= "launch_flag"
 local FINISH_FLAG 		= "finish_flag"
 local FAILED_FLAG 		= "failed_flag"
 local MD5_SUFFIX_LEN 	= 6
-
 
 local function read(path, func)
 	func = func and func or io.open
@@ -18,7 +17,6 @@ local function read(path, func)
 	fp:close()
 	return s
 end
-
 
 --[[
 	下载指定的文件url到指定的位置
@@ -60,7 +58,6 @@ local function download_pack(url, dst_dir, file_name)
 	return true
 end
 
-
 local function get_md5sum(file)
 	if not lfs.attributes(file) then
 		log.error(" %s isn't exist.", file)
@@ -81,7 +78,6 @@ local function get_md5sum(file)
 	log.debug("md5sum of %s:%s", file, md5sum_val)
 	return md5sum_val
 end
-
 
 --[[xxxxxxxxxxxx.xxxxxxxxxx.xxxxxx.tgz 完整性检测--]]
 local function  check_pack_inter(file)
@@ -109,7 +105,6 @@ local function  check_pack_inter(file)
 	log.debug("md5 check failed of %s: %s ~= %s", file, md5sum_suffix, exp_md5)
 	return false
 end
-
 
 local function config_to_dst(package, cfg_type)
 	if not lfs.attributes(package) then
@@ -148,7 +143,6 @@ local function config_to_dst(package, cfg_type)
 	return false
 end
 
-
 local function update_config(url, file_name, cfg_type)
 	local ret
 
@@ -169,7 +163,6 @@ local function update_config(url, file_name, cfg_type)
 	return true
 end
 
-
 --删除临时文件
 local function clear_tm_config(file)
 	if lfs.attributes(file) then
@@ -177,7 +170,6 @@ local function clear_tm_config(file)
 		os.remove(file)
 	end
 end
-
 
 --cfg_type:ad/dev
 local url, file_name, cfg_type = ...

@@ -1,18 +1,19 @@
-require("global")
-local se = require("se")
+local ski = require("ski")
 local log = require("log")
 local lfs = require("lfs")
 local common = require("common")
 local js = require("cjson.safe")
-local sandc = require("sandclient")
 local const = require("constant")
-local defaultcfg = require("defaultcfg")
+local sandcproxy = require("sandcproxy")
 
+local unique = "a/local/cloudcli"
 local cfgpath = "/etc/config/cloud.json"
-local read, save, save_safe = common.read, common.save, common.save_safe
-local g_kvmap, g_devid = {}
+local read, save_safe = common.read, common.save_safe
+local firmware_detail = js.encode({major = "ac", minor = "9563"})
 
-local mqtt
+local g_kvmap, g_devid
+
+local proxy
 
 -- 读取本唯一ID
 local function read_id()
@@ -20,48 +21,59 @@ local function read_id()
 	g_devid = id
 end
 
+-- 检查/注册本机配置
 local function upload()
 	local register_topic = "a/ac/cfgmgr/register"
 	local request = function(data)
 		while true do
-			local res = mqtt:request(register_topic, data)
-			if res ~= nil then
-				return res
+			local r, e = proxy:query_r(register_topic, data)
+			if r then
+				return r
 			end
-			log.error("register fail %s %s", js.encode(res), js.encode(data))
-			se.sleep(10)
+
+			log.error("register fail %s %s", js.encode(r), js.encode(data))
+
+			ski.sleep(10)
 		end
 	end
 
+	-- 检查云端是否已经注册了
 	local cmd = {cmd = "check", data = {devid = g_devid, account = g_kvmap.account}}
 	local res = request(cmd)
-	if res == 1 then
+	if res == 1 or res.status == 1 then
 		log.debug("already register %s %s", g_devid, g_kvmap.account)
 		return
 	end
 
+	-- 上报注册本机
 	log.debug("upload config")
+
 	local cmd = {cmd = "upload", data = {devid = g_devid, account = g_kvmap.account, config = g_kvmap}}
 	local res = request(cmd)
 	local _ = (type(res) == "table" and res.status and res.msg) or log.fatal("upload fail %s", js.encode(res))
+
 	if res.status ~= 0 and res.msg == "invalid account" then
-		os.execute("touch /tmp/invalid_account;  /etc/init.d/base restart")
+		os.execute("touch /tmp/invalid_account;  /etc/init.d/proxybase restart")
 		log.fatal("invalid account, notify base to stop connect")
 	end
+
 	log.info("register success")
 end
 
 local function reset_cloud()
 	local request = function(data)
 		while true do
-			local res = mqtt:request("a/ac/cfgmgr/modify", data)
-			if res ~= nil then
+			local res = proxy:query_r("a/ac/cfgmgr/modify", data)
+			if res then
 				return res
 			end
+
 			log.error("reset_ac fail %s", js.encode(data))
-			se.sleep(10)
+
+			ski.sleep(10)
 		end
 	end
+
 	local cmd = {cmd = "reset_ac", data = {devid = g_devid, account = g_kvmap.account, config = g_kvmap}}
 	local res = request(cmd)
 	if res == 1 then
@@ -70,27 +82,24 @@ local function reset_cloud()
 	end
 end
 
-local function set_detail()
-	g_kvmap.detail = js.encode({major = "ac", minor = "7621"})
-end
-
 local function set_default()
-	g_kvmap = defaultcfg.default_cloud()
-	set_detail()
+	g_kvmap = {account = "yjs", ac_host = "", ac_port = 61889, detail = firmware_detail}
 end
 
 local function load()
 	if not lfs.attributes(cfgpath) then
 		return set_default()
 	end
+
 	local s = read(cfgpath)
 	local map = js.decode(s)
 	if not map then
 		os.remove(cfgpath)
 		return set_default()
 	end
+
 	g_kvmap = map
-	set_detail()
+	g_kvmap.detail = firmware_detail
 end
 
 local cmd_map = {}
@@ -141,7 +150,7 @@ function cmd_map.proxypass(map)
 
 	local respath = "/tmp/sshresult.txt"
 	local cmd = string.format("%s '%s' '%s' '%s' '%s' '%s' '%s' '%s' &", proxypass_sh, map.username, map.cloudport, map.localport, map.remote_ip, map.remote_port, map.footprint, respath)
-	se.go(function()
+	ski.go(function()
 		if sshreverse_running then
 			return
 		end
@@ -149,20 +158,20 @@ function cmd_map.proxypass(map)
 		os.remove(respath)
 		os.execute(cmd)
 
-		local start = se.time()
+		local start = ski.time()
 		sshreverse_running = true
 		while true do
 			if lfs.attributes(respath) then
 				os.remove(respath)
-				log.debug("sshreverse use time %s", se.time() - start)
+				log.debug("sshreverse use time %s", ski.time() - start)
 				break
 			end
-			if se.time() - start > 30 then
+			if ski.time() - start > 30 then
 				log.error("sshreverse timeout")
 
 				break
 			end
-			se.sleep(0.3)
+			ski.sleep(0.3)
 		end
 		sshreverse_running = false
 	end)
@@ -185,11 +194,9 @@ local function  get_server_ip()
 	return nil
 end
 
-
 local function get_account()
 	return g_kvmap and g_kvmap["account"] or "default"
 end
-
 
 local function get_devid()
 	if g_devid then
@@ -198,11 +205,9 @@ local function get_devid()
 	return nil
 end
 
-
 local function get_switch()
 	return g_kvmap and g_kvmap["switch"] or "1"
 end
-
 
 local function restore_cfg_ver_info()
 	if not lfs.attributes(const.default_version) then
@@ -242,7 +247,6 @@ local function check_valid_cfg_ver_info(map)
 	return true
 end
 
-
 local function get_cfg_ver_info()
 	local cfg_ver_file = const.config_version
 	if not lfs.attributes(cfg_ver_file) then
@@ -272,7 +276,6 @@ local function get_cfg_ver_info()
 	return true
 end
 
-
 local function set_cfg_ver_info()
 	local path = const.config_version
 	local tmp, del = path .. ".tmp", path .. ".del"
@@ -292,7 +295,6 @@ local function set_cfg_ver_info()
 	return true
 end
 
-
 local function get_cfg_version(cfg_type)
 	if type(cfg_type) ~= "string" then
 		local version_map = {}
@@ -309,7 +311,6 @@ local function get_cfg_version(cfg_type)
 	log.error("get %s cfg version failed.", cfg_type)
 	return nil
 end
-
 
 local function set_cfg_version(cfg_type, version, file_map)
 	if not (version and type(cfg_type) == "string" and (cfg_type == "ad" or cfg_type == "dev"))  then
@@ -333,12 +334,10 @@ local function set_cfg_version(cfg_type, version, file_map)
 	return true
 end
 
-
 local function set_cfg_version_to_default(cfg_type)
 	local def_ver = "1970-01-01 00:00:00"
 	return set_cfg_version(cfg_type, def_ver)
 end
-
 
 local function get_cfg_files(cfg_type)
 	if type(cfg_type) ~= "string" then
@@ -352,7 +351,6 @@ local function get_cfg_files(cfg_type)
 	return nil
 end
 
-
 --[[
 	???????package_dirĿ¼
 --]]
@@ -365,7 +363,6 @@ local function clear_adcfg()
 	end
 	return true
 end
-
 
 local function override_adcfg()
 	local cmd
@@ -395,7 +392,6 @@ local function override_adcfg()
 	return true
 end
 
-
 local function get_text_cfg_files()
 	local file_map = {}
 
@@ -413,7 +409,6 @@ local function get_text_cfg_files()
 
 	return file_map
 end
-
 
 local function override_devcfg()
 	local del_files = {}
@@ -452,7 +447,6 @@ local function override_devcfg()
 	return true, file_map
 end
 
-
 local function commit_notify(cmd)
 	if type(cmd) == "string" then
 		log.debug("%s notify related process.", cmd)
@@ -460,7 +454,6 @@ local function commit_notify(cmd)
 	end
 	--todo restart related process
 end
-
 
 local function get_complete_url(url)
 	if type(url) ~= "string" then
@@ -478,7 +471,6 @@ local function get_complete_url(url)
 	return url
 end
 
-
 --data = {subcmd = "GET/KEEP/CLEAR", url = ""/xxx, version = xxx}
 local function check_notify_valid(cfg_type, map)
 	if type(map) ~= "table" then
@@ -491,7 +483,6 @@ local function check_notify_valid(cfg_type, map)
 	end
 	return true
 end
-
 
 local function process_dlconfig(cfg_type, file_name)
 	local timeout, cnt, intval = 240, 0, 2
@@ -511,7 +502,7 @@ local function process_dlconfig(cfg_type, file_name)
 			break
 		end
 		cnt = cnt + intval
-		se.sleep(intval)
+		ski.sleep(intval)
 	end
 	if finish == 1 then
 		if cfg_type == "ad" then
@@ -524,7 +515,6 @@ local function process_dlconfig(cfg_type, file_name)
 		return false
 	end
 end
-
 
 local function process_cfg_notify(cfg_type, map)
 	local valid = check_notify_valid(cfg_type, map)
@@ -598,7 +588,6 @@ local function process_cfg_notify(cfg_type, map)
 	return false
 end
 
-
 function cmd_map.devcfg_notify(map)
 	local switch = get_switch()
 	if switch ~= "1" then
@@ -613,7 +602,6 @@ function cmd_map.devcfg_notify(map)
 
 end
 
-
 function cmd_map.adcfg_notify(map)
 	local switch = get_switch()
 	if switch ~= "1" then
@@ -626,7 +614,6 @@ function cmd_map.adcfg_notify(map)
 		query_version_intval = EMERGY_QUERY_INTVAL
 	end
 end
-
 
 --[[
 	???Ҫ?????evcfg??dcfg;
@@ -643,10 +630,9 @@ local function send_query_version_req()
 			version_map = {["ad"] = "1970-01-01 00:00:00", ["dev"]="1970-01-01 00:00:00"}
 		end
 
-		mqtt:request("a/ac/query/version", {["account"] = account, ["devid"] = devid, ["version"] = version_map}, 1)
+		proxy:query_r("a/ac/query/version", {["account"] = account, ["devid"] = devid, ["version"] = version_map}, 1)
 	end
 end
-
 
 local function query_cfg_version()
 	while true do
@@ -655,10 +641,9 @@ local function query_cfg_version()
 			send_query_version_req()
 		end
 
-		se.sleep(query_version_intval)
+		ski.sleep(query_version_intval)
 	end
 end
-
 
 local function on_message(map)
 	local cmd, data = map.cmd, map.data
@@ -674,12 +659,6 @@ local function on_message(map)
 	end
 
 	func(data)
-end
-
-local function connect_mqtt()
-	mqtt = sandc.new()
-	mqtt:set_callback("on_message", on_message)
-	mqtt:run()
 end
 
 local function check_cfg_change()
@@ -703,12 +682,10 @@ local function check_cfg_change()
 				end
 			end
 		end
-		se.sleep(1)
+		ski.sleep(1)
 	end
 end
 
-
---todo??С???ָ?????ȣ??ad??devΪ??λ?????ǻָ???
 local function check_cfg_version()
 	local timeout = 300
 	local file_dir, continue = const.config_dir, true
@@ -740,45 +717,64 @@ local function check_cfg_version()
 				end
 			end
 		end
-		se.sleep(timeout)
+		ski.sleep(timeout)
 	end
 end
 
-
 local function report_status()
 	local get_state = function()
+		-- TODO where is version
 		local firmware = read("/etc/openwrt_version") or ""
 		local uptime = read("uptime | awk  -F, '{print $1}'", io.popen) or ""
 		return {firmware = firmware:gsub("[ \t\r\n]$", ""), uptime = uptime:gsub("[ \t\r\n]$", "")}
 	end
 
-	se.sleep(3)
+	ski.sleep(3)
 	while true do
 		local map = {
 			out_topic = "a/ac/report",
 			data = {
 				mod = "a/local/cloudcli",
-				deadline = math.floor(se.time()) + 5,
+				deadline = math.floor(ski.time()) + 5,
 				pld = {g_kvmap.account, g_devid, {acstate = get_state()}},
-			},
+			}
 		}
-		mqtt:publish("a/ac/proxy", js.encode(map))
-		se.sleep(600)
+
+		proxy:publish_r("a/ac/proxy", js.encode(map))
+
+		ski.sleep(600)
 	end
+end
+
+local function start_sand_server()
+	local pld, cmd, map, r, e
+
+	local args = {
+		log = log,
+		unique = unique,
+		clitopic = {unique, "a/ac/database_sync"},
+		srvtopic = {unique .. "_srv"},
+		on_message = on_message,
+		on_disconnect = function(st, err) log.fatal("disconnect %s %s", st, err) end,
+	}
+
+	return sandcproxy.run_new(args)
 end
 
 local function main()
 	read_id()
-	connect_mqtt()
+	proxy = start_sand_server()
+
 	load()
 	upload()
+
 	reset_cloud()
-	se.go(report_status)
-	se.go(query_cfg_version)
-	se.go(check_cfg_version)
-	se.go(check_cfg_change)
+
+	ski.go(report_status)
+	ski.go(query_cfg_version)
+	ski.go(check_cfg_version)
+	ski.go(check_cfg_change)
 end
 
 log.setmodule("cm")
-log.setdebug(true)
-se.run(main)
+ski.run(main)

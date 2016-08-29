@@ -1,18 +1,18 @@
+-- yjs
+-- special edition sands client, connecting to cloud sands only
+
 local ski = require("ski")
 local log = require("log")
 local tcp = require("ski.tcp")
-local encrypt = require("encrypt")
-local sandutil = require("sandutil")
-local parser = require("redis.parser")
+local encrypt 	= require("encrypt")
+local sandutil 	= require("sandutil")
+local parser 	= require("redis.parser")
 
+local fatal = log.fatal
 local encode, decode, header = encrypt.encode, encrypt.decode, encrypt.header
 local tomap, toarr, checkarr = sandutil.tomap, sandutil.toarr, sandutil.checkarr
 
 local st_new, st_run, st_stop = "new", "run", "stop"
-local function fatal(fmt, ...)
-	io.stderr:write(string.format(fmt, ...))
-	os.exit(-1)
-end
 
 local method = {}
 local mt = {__index = method}
@@ -54,6 +54,7 @@ end
 
 function method.publish(ins, topic, payload)
 	assert(ins and topic and payload)
+
 	if not ins:running() then
 		return false
 	end
@@ -319,7 +320,6 @@ local function run_internal(ins)
 	while ins:running() do
 		local data, rerr = ins.client:read2()
 		if data then
-			print(data)
 			local now = ski.time()
 			ins.active = now 				-- recv data, update active time
 			ins.data = ins.data .. data 	-- cache data

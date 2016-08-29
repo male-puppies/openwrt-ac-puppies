@@ -8,11 +8,12 @@ local sandc1 = require("sandc1")
 local js = require("cjson.safe")
 
 local remote_mqtt, local_mqtt
-local read, save, save_safe = common.read, common.save, common.save_safe
+local read, save_safe = common.read, common.save_safe
+
 local cfgpath = "/etc/config/cloud.json"
 
 local g_kvmap, g_devid
-local default_cfg = {ac_host = "192.168.0.213", ac_port = 61886}
+local default_cfg = {ac_host = "192.168.0.213", ac_port = 61886, account = "yjs"} -- TODO
 
 -- 读取本唯一ID
 local function read_id()
@@ -84,7 +85,6 @@ end
 
 -- 查找host对应的ip，测试host/port是否可连接
 local function try_connect(host, port)
-	print(host, port)
 	local ip = host
 	local pattern = "^%d%d?%d?%.%d%d?%d?%.%d%d?%d?%.%d%d?%d?$"
 	if not ip:find(pattern) then
@@ -110,7 +110,7 @@ local function try_connect(host, port)
 		if ski.time() - start > max_timeout then
 			return
 		end
-		print(ip, port, 111)
+
 		local cli = tcp.connect(ip, port)
 		if cli then
 			print("connect ok", ip, port)
@@ -145,7 +145,7 @@ local function start_local()
 	mqtt:set_callback("on_disconnect", function(st, e) log.fatal("mqtt disconnect %s %s %s %s %s", unique, ip, port, st, e) end)
 
 	mqtt:set_callback("on_message", function(topic, payload)
-		print(topic, payload)
+		print("222", topic, payload)
 		if not remote_mqtt then
 			log.error("skip %s %s", topic, payload:sub(1, 100))
 			return
@@ -158,7 +158,7 @@ local function start_local()
 		end
 
 		map.data.tpc = remote_topic()
-
+		print(map.out_topic, js.encode(map.data))
 		remote_mqtt:publish(map.out_topic, js.encode(map.data))
 	end)
 
@@ -186,6 +186,7 @@ local function start_remote()
 	mqtt:set_extend(js.encode({account = account, devid = g_devid}))
 
 	mqtt:set_callback("on_message", function(topic, payload)
+		print("111", topic, payload)
 		if not local_mqtt then
 			log.error("skip %s %s", topic, payload)
 			return
@@ -206,17 +207,22 @@ local function start_remote()
 	mqtt:run()
 	log.info("connect ok %s %s %s", unique, ip, port)
 
-	local_mqtt = mqtt
+	remote_mqtt = mqtt
 end
 
 local function main()
 	save_status(0)
 	local _ = read_id(), load()
+
+	-- cloudcli会向云端注册，如果帐号不对，会touch /tmp/invalid_account
 	if not lfs.attributes("/tmp/invalid_account") then
 		ski.go(start_local)
+
+		-- ac_host默认是""
 		while g_kvmap.ac_host == "" do
 			ski.sleep(1)
 		end
+
 		ski.go(start_remote)
 	end
 end
