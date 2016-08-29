@@ -40,7 +40,9 @@
 						<th>网关</th>
 						<th>跃点数</th>
 						<th>MTU</th>
+						<th>状态</th>
 						<th>操作</th>
+						<th data-toggle="tooltip" data-container="body" data-trigger="hover" title="仅勾选当前页"><input type="checkbox" class="checkall" value="1 0" /></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -51,6 +53,7 @@
 			</table>
 			<div class="btn-group">
 				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
+				<a class="btn btn-default delete"><i class="icon-trash"></i>删除</a>
 			</div>
 		</div>
 	</div>
@@ -69,9 +72,9 @@
 					<fieldset>
 						<legend>基本参数</legend>
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="interface">接口</label>
+							<label class="col-xs-4 control-label" for="iface">接口</label>
 							<div class="col-xs-5">
-								<select id="interface" class="form-control">
+								<select id="iface" class="form-control">
 									<option value="wan0">wan0</option>
 									<option value="lan0">lan0</option>
 								</select>
@@ -101,7 +104,7 @@
 						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="metric">跃点数</label>
 							<div class="col-xs-5">
-								<input type="text" id="metric" class="form-control" maxlength="5" verify="numsp 1 255" />
+								<input type="text" id="metric" class="form-control" placeholder="0" maxlength="5" verify="numsp 1 255" />
 							</div>
 							<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~255。跃点数越小优先级越高。"><i class="icon-question-sign"></i></span>
@@ -110,10 +113,10 @@
 						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="mtu">MTU</label>
 							<div class="col-xs-5">
-								<input type="text" id="mtu" class="form-control" maxlength="9" verify="numsp 1 1500" />
+								<input type="text" id="mtu" class="form-control" placeholder="1500" maxlength="9" verify="numsp 500 1500" />
 							</div>
 							<div class="col-xs-3 tip-icons">
-								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1500。"><i class="icon-question-sign"></i></span>
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字500~1500。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 					</fieldset>

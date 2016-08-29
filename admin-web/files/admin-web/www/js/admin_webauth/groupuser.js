@@ -227,19 +227,20 @@ function OnAddUser() {
 					return;
 				}
 			}
+			$("#username").prop("disabled", false);
+			$("#enable").prop("checked", true);
+			$(".empty").val("");
+			$('#expire_chk, #multi, #mac_chk, #ip_chk').prop("checked", false);
+			OnBindmac();
+			OnBindip();
+			OnExpire();
+			$('#modal_edit').modal("show");
 		}
 		else{
-			console.log("获取gid失败");
+			createModalTips("获取用户组失败！请尝试重新加载！");
 		}
 	})
-	$("#username").prop("disabled", false);
-	$("#enable").prop("checked", true);
-	$(".empty").val("");
-	$('#expire_chk, #multi, #mac_chk, #ip_chk').prop("checked", false);
-	OnBindmac();
-	OnBindip();
-	OnExpire();
-	$('#modal_edit').modal("show");
+
 }
 
 function OnDelete(that) {
