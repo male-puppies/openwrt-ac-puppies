@@ -374,6 +374,6 @@ void klog_module_fini(void)
 module_init(klog_module_init);
 module_exit(klog_module_fini);
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("JinSheng");
+MODULE_AUTHOR("js@stt.com.cn");
 
 

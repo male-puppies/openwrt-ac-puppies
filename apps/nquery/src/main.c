@@ -57,8 +57,10 @@ static void dump_flowinfo(void)
 		}
 		ui = nt_get_user_by_flow(&ntrack, fi);
 
-		nt_print(FMT_FLOW_STR" l7: %d\n\t"FMT_USER_STR"\n", 
+		nt_print(FMT_FLOW_STR" l7: %d, recv:[%llu, %llu] xmit:[%llu, %llu]\n\t"FMT_USER_STR"\n",
 			FMT_FLOW(fi), nt_flow_nproto(fi),
+			fi->hdr.recv_pkts, fi->hdr.recv_bytes,
+			fi->hdr.xmit_pkts, fi->hdr.xmit_bytes,
 			FMT_USER(ui));
 	}
 }
@@ -75,7 +77,10 @@ static void dump_userinfo(int id, int magic)
 		if(id >= 0 && (uint32_t)id == ui->id) {
 			nt_dump(&ui->hdr, sizeof(ui->hdr), FMT_USER_STR"\n", FMT_USER(ui));
 		} else {
-			nt_print(FMT_USER_STR"\n", FMT_USER(ui));
+			nt_print(FMT_USER_STR" recv:[%llu, %llu] xmit:[%llu, %llu]\n",
+				FMT_USER(ui),
+				ui->hdr.recv_pkts, ui->hdr.recv_bytes,
+				ui->hdr.xmit_pkts, ui->hdr.xmit_bytes);
 		}
 	}
 }

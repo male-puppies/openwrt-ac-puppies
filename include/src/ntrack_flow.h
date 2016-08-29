@@ -220,12 +220,28 @@ enum __em_flow_dir {
 	NP_FLOW_DIR_MAX,
 };
 
-static inline int nt_flow_dir(flow_tuple_t *tuple, struct iphdr *iph)
+enum  __em_user_dir {
+	NP_USER_XMIT = 0,
+	NP_USER_RECV,
+};
+
+static inline int16_t nt_flow_dir(flow_tuple_t *tuple, struct iphdr *iph)
 {
-	int dir = NP_FLOW_DIR_C2S;
+	int16_t dir = NP_FLOW_DIR_C2S;
 
 	if(__be32_to_cpu(iph->saddr) == tuple->ip_dst) {
 		dir = NP_FLOW_DIR_S2C;
 	}
 	return dir;
 }
+#define FLOW_DIR_IS_C2S(dir) ((dir) == NP_FLOW_DIR_C2S ? 1 : 0)
+
+static inline int16_t nt_user_dir(user_info_t *ui, struct iphdr *iph)
+{
+	if(__be32_to_cpu(iph->saddr) == ui->ip) {
+		return NP_USER_XMIT;
+	} else {
+		return NP_USER_RECV;
+	}
+}
+#define USER_DIR_IS_XMIT(dir) ((dir) == NP_USER_XMIT ? 1 : 0)

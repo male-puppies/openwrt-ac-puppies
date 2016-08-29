@@ -19,6 +19,7 @@ static int nproto_pkt_init(
 	int l4len, l7len;
 	int dlen = skb->len;
 	uint8_t *l4ptr = NULL, *l7ptr = NULL;
+	int16_t dir;
 	struct iphdr *iph = ip_hdr(skb);
 	nt_pkt_nproto_t *np = nt_skb_nproto(skb, pkt);
 
@@ -40,6 +41,11 @@ static int nproto_pkt_init(
 		np_debug("frame length error: %d\n", dlen);
 		return -EINVAL;
 	}
+
+	/* statistic */
+	dir = nt_flow_dir(&fi->tuple, iph);
+	stat_flow(fi, FLOW_DIR_IS_C2S(dir), dlen);
+	stat_user(ui, pi, USER_DIR_IS_XMIT(nt_user_dir(ui, iph)), dlen);
 
 	l4ptr = ((uint8_t *)iph + (iph->ihl * 4));
 	l4len = ntohs(iph->tot_len) - (iph->ihl * 4);
@@ -86,7 +92,8 @@ static int nproto_pkt_init(
 	pkt->skb = skb;
 
 	/* C->S, S->C. */
-	pkt->dir = nt_flow_dir(&fi->tuple, iph);
+	pkt->dir = dir;
+
 	/* init the packet parser. */
 	memset(np, 0, sizeof(nt_pkt_nproto_t));
 	return 0;
