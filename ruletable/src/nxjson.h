@@ -39,7 +39,7 @@ typedef struct nx_json {
   nx_json_type type;       // type of json node, see above
   const char* key;         // key of the property; for object's children only
   const char* text_value;  // text value of STRING node
-  long int_value;          // the value of INTEGER or BOOL node
+  unsigned int int_value;  // the value of INTEGER or BOOL node
 #ifndef __KERNEL__
   double dbl_value;        // the value of DOUBLE node
 #endif

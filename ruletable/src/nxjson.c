@@ -146,7 +146,7 @@ static char* unescape_string(char* s, char** end, nx_json_unicode_encoder encode
         case 't':
           *d++='\t'; p++;
           break;
-        case 'u': // unicode 
+        case 'u': // unicode
 		{
 		  char *ps;
 		  int h1, h2, h3, h4;
@@ -312,7 +312,7 @@ static char* parse_value(nx_json* parent, const char* key, char* p, nx_json_unic
           js=create_json(NX_JSON_INTEGER, key, parent);
 		  if (!js)
 		  	return 0;
-          js->int_value=strtol(p, &pe, 0);
+          js->int_value=strtoul(p, &pe, 0);
           if (pe==p) {
             NX_JSON_REPORT_ERROR("invalid number", p);
             return 0; // error
@@ -411,7 +411,7 @@ const nx_json* nx_json_get(const nx_json* json, const char* key) {
 
 const nx_json* nx_json_item(const nx_json* json, int idx) {
   nx_json* js;
-  if (!json) return &dummy; // never return null  
+  if (!json) return &dummy; // never return null
   for (js=json->child; js; js=js->next) {
     if (!idx--) return js;
   }
