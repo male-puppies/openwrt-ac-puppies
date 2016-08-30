@@ -25,14 +25,14 @@ function initData() {
 
 			$(".ifaces, .mline, .bline").empty();
 			for (var i = 0, ien = ifaces.length; i < ien; i++) {
-				var disabled = ifaces[i].disabled == 1 ? true : false,
+				var enable = ifaces[i].enable == 1 ? true : false,
 					name = ifaces[i].name,
 					// bandwidth = disabled ? ifaces[i].bandwidth : "",
 					bandwidth = ifaces[i].bandwidth,
 					main_iface = dtObjToArray(obj.main_iface),
 					check = $.inArray(name, main_iface) > -1 ? true : false,
 					policy = obj.policy == "balanced" ? true : false,
-					wan_node = consWanNode(name, bandwidth, disabled),
+					wan_node = consWanNode(name, bandwidth, enable),
 					mline_node = consLineNode(name, policy, check, "main"),
 					bline_node = consLineNode(name, policy, !check, "backup");
 
@@ -54,7 +54,7 @@ function initData() {
 	});
 }
 
-function consWanNode(name, bandwidth, disabled) {
+function consWanNode(name, bandwidth, enable) {
 	return $("<div>", {
 					"class": "form-group clearfix"
 				}
@@ -77,7 +77,7 @@ function consWanNode(name, bandwidth, disabled) {
 								"type": "checkbox",
 								"id": name + "_check",
 								"class": "wan-check",
-								"checked": disabled,
+								"checked": enable,
 								"value": "1 0"
 							})
 						)
@@ -87,7 +87,7 @@ function consWanNode(name, bandwidth, disabled) {
 							"id": name,
 							"class": "form-control wan-text",
 							"value": bandwidth,
-							"disabled": !disabled,
+							"disabled": !enable,
 							"verify": "num 0 1000"
 						})
 					)
@@ -150,7 +150,7 @@ function OnSubmit() {
 		var o = {},
 			id = $(element).attr("id");
 
-		o.disabled = $("#" + id + "_check").is(":checked") ? 1 : 0;
+		o.enable = $("#" + id + "_check").is(":checked") ? 1 : 0;
 		o.name = id;
 		o.bandwidth = $(element).val();
 		ifaces.push(o);

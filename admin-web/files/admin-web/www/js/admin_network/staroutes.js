@@ -104,25 +104,37 @@ function createDtStaroutes() {
 				"render": function(d,t,f){
 					if (d == 0) {
 						return "<span class='text-success'>有效</span>"
-					} else{
+					} if (d == 1) {
 						return "<span class='text-danger'>无效</span>"
+					} else {
+						return "<span class='text-success'>自动</span>"
 					}
 				}
 			},
 			{
-				"data": null,
+				"data": "status",
 				"width": 80,
 				"orderable": false,
 				"render": function(d, t, f) {
-					return '<div class="btn-group btn-group-xs"><a class="btn btn-zx" onclick="edit(this)" data-toggle="tooltip" data-container="body" title="编辑"><i class="icon-pencil"></i></a><a class="btn btn-danger" onclick="OnDelete(this)" data-toggle="tooltip" data-container="body" title="删除"><i class="icon-trash"></i></a></div>';
+					if (d == 255) {
+						return '<div class="btn-group btn-group-xs"><a class="btn btn-primary disabled" onclick="" data-toggle="tooltip" data-container="body" title="禁止编辑默认组"><i class="icon-pencil"></i></a><a class="btn btn-danger disabled" onclick="" data-toggle="tooltip" data-container="body" title="禁止删除默认组"><i class="icon-trash"></i></a></div>';
+					} else {
+						return '<div class="btn-group btn-group-xs"><a class="btn btn-zx" onclick="edit(this)" data-toggle="tooltip" data-container="body" title="编辑"><i class="icon-pencil"></i></a><a class="btn btn-danger" onclick="OnDelete(this)" data-toggle="tooltip" data-container="body" title="删除"><i class="icon-trash"></i></a></div>';
+					}
 				}
 			},
 			{
-			"data": null,
-			"width": 60,
-			"orderable": false,
-			"searchable": false,
-			"defaultContent": '<input type="checkbox" value="1 0" />'
+				"data": "status",
+				"width": 60,
+				"orderable": false,
+				"searchable": false,
+				"render": function(d, t, f) {
+					if (d == 255) {
+						return '<input type="checkbox" value="1 0" disabled />';
+					} else {
+						return '<input type="checkbox" value="1 0" />';
+					}
+				}
 			}
 		],
 		"rowCallback": function(nTd, sData, oData, iRow, iCol) {

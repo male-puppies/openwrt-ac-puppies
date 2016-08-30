@@ -10,12 +10,12 @@ $(function() {
 
 function createDtWlan() {
 	var cgiobj = {
-		"page": 1,
-		"count": 10000,
-		"order": "ssid",
-		"desc": 1,
-		"search": "ssid",
-		"link": "all"
+		page: 1,
+		count: 10000,
+		order: "ssid",
+		desc: 1,
+		search: "ssid",
+		link: "all"
 	}
 	return $("#table_wlanconfig").dataTable({
 		"pagingType": "full_numbers",
@@ -103,18 +103,33 @@ function initData() {
 }
 
 function OnAdd() {
-	opr = 'add';
-	var oSSID = {
-		'enable': '1',
-		'band': 'all',
-		'ssid': '',
-		'encrypt': 'none',
-		'password': '',
-		'hide': "0",
-	};
-	jsonTraversal(oSSID, jsTravSet);
-	OnEncrypt();
-	$('#modal_edit').modal("show");
+	cgicall.get("iface_list", function(d) {
+		if (d.status == 0 && typeof d.data == "object" && ObjCountLength(d.data) > 0) {
+			var lan = $.grep(d.data,function (value) {
+				return value.indexOf("lan") != -1
+			})
+			lan.sort();
+			var str = "";
+			for (var i = 0; i < lan.length; i++) {
+				 str += "<option value='" + lan[i] + "'>" + lan[i] + "</option>";
+			 }
+			$("#network").html(str);
+			opr = 'add';
+			var oSSID = {
+				enable: '1',
+				band: 'all',
+				ssid: '',
+				encrypt: 'none',
+				password: '',
+				hide: '0',
+			};
+			jsonTraversal(oSSID, jsTravSet);
+			OnEncrypt();
+			$('#modal_edit').modal("show");
+		} else {
+			createModalTips("获取接口失败！请尝试重新加载！");
+		}
+	});
 }
 
 function edit(that) {
@@ -144,13 +159,14 @@ function set_enable(that) {
 function DoSave() {
 	if(!verification()) return;
 	var oSSID = {
-		'enable': '1',
-		'band': 'all',
-		'ssid': '',
-		'encrypt': 'none',
-		'password': 'none',
-		'hide': "0",
-		'wlanid':"0"
+		enable: '1',
+		band: 'all',
+		ssid: '',
+		encrypt: 'none',
+		password: 'none',
+		hide: '0',
+		wlanid: '0',
+		network: ''
 	}
 	var obj = jsonTraversal(oSSID,jsTravGet);
 	if(opr == 'add') {

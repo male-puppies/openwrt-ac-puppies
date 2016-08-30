@@ -52,6 +52,7 @@
 	height: 64px;
 	
 }
+.opt-icon.lan,
 .opt-icon.lan0,
 .opt-icon.lan1,
 .opt-icon.lan2,
@@ -61,6 +62,7 @@
 .opt-icon.lan6 {
 	background: url('../../images/ethernet_lan.png') #f4f7fd no-repeat 30px;
 }
+.opt-icon.wan,
 .opt-icon.wan0,
 .opt-icon.wan1,
 .opt-icon.wan2,
@@ -124,24 +126,24 @@
 					</div>
 					<div id="eth_ops" class="col-md-8 clearfix">
 						<div class="options">
-							<div class="opt-icon lan0"></div>
-							<div class="opt-select">lan0</div>
+							<div class="opt-icon wan"></div>
+							<div class="opt-select">wan</div>
 						</div>
 						<div class="options">
-							<div class="opt-icon lan0"></div>
-							<div class="opt-select">lan0</div>
+							<div class="opt-icon lan1"></div>
+							<div class="opt-select">lan1</div>
 						</div>
 						<div class="options">
-							<div class="opt-icon lan0"></div>
-							<div class="opt-select">lan0</div>
+							<div class="opt-icon lan1"></div>
+							<div class="opt-select">lan1</div>
 						</div>
 						<div class="options">
-							<div class="opt-icon lan0"></div>
-							<div class="opt-select">lan0</div>
+							<div class="opt-icon lan1"></div>
+							<div class="opt-select">lan1</div>
 						</div>
 						<div class="options">
-							<div class="opt-icon wan0"></div>
-							<div class="opt-select">wan0</div>
+							<div class="opt-icon lan1"></div>
+							<div class="opt-select">lan1</div>
 						</div>
 					</div>
 				</div>
@@ -157,25 +159,25 @@
 					<form class="form-horizontal" id="form_lan">
 						<ul class="nav nav-tabs">
 							<li class="active">
-								<a href="#tabs_lan0" data-toggle="tab">lan0</a>
+								<a href="#tabs_lan1" data-toggle="tab">lan1</a>
 							</li>
 						</ul>
 
 						<div class="tab-content">
-							<div class="tab-pane active" id="tabs_lan0" data-mtip="lan0">
+							<div class="tab-pane active" id="tabs_lan1" data-mtip="lan1">
 								<div class="form-group clearfix">
 									<label class="col-xs-3 control-label only">基本配置</label>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__ipaddr">IP地址</label>
+									<label class="col-xs-3 control-label" for="lan1__ipaddr">IP地址</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__ipaddr" class="form-control" verify="ip" />
+										<input type="text" id="lan1__ipaddr" class="form-control" verify="ip" />
 									</div>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__netmask">子网掩码</label>
+									<label class="col-xs-3 control-label" for="lan1__netmask">子网掩码</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__netmask" class="form-control" verify="lan_mask" />
+										<input type="text" id="lan1__netmask" class="form-control" verify="lan_mask" />
 									</div>
 									<div class="col-xs-3 tip-icons">
 										<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="请输入大于255.0.0.0的子网掩码。"><i class="icon-question-sign"></i></span>
@@ -186,35 +188,35 @@
 									<label class="col-xs-3 control-label only">DHCP配置</label>
 								</div>
 								<div class="form-group clearfix check-dhcp">
-									<label class="col-xs-3 control-label" for="lan0__dhcpd__enabled">启用DHCP</label>
+									<label class="col-xs-3 control-label" for="lan1__dhcpd__enabled">启用DHCP</label>
 									<div class="col-xs-6">
 										<div class="checkbox">
-											<label><input type="checkbox" id="lan0__dhcpd__enabled" class="denable" value="1 0" checked /></label>
+											<label><input type="checkbox" id="lan1__dhcpd__enabled" class="denable" value="1 0" checked /></label>
 										</div>
 									</div>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__dhcpd__start">起始IP地址</label>
+									<label class="col-xs-3 control-label" for="lan1__dhcpd__start">起始IP地址</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__dhcpd__start" class="form-control verifymask" verify="ipmask lan0__ipaddr lan0__netmask none" />
+										<input type="text" id="lan1__dhcpd__start" class="form-control verifymask" verify="ipmask lan1__ipaddr lan1__netmask none" />
 									</div>
 									<div class="col-xs-3 tip-icons">
 										<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入DHCP分配的起始IP地址。"><i class="icon-question-sign"></i></span>
 									</div>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__dhcpd__end">结束IP地址</label>
+									<label class="col-xs-3 control-label" for="lan1__dhcpd__end">结束IP地址</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__dhcpd__end" class="form-control verifymask" verify="ipmask lan0__ipaddr lan0__netmask lan0__dhcpd__start" />
+										<input type="text" id="lan1__dhcpd__end" class="form-control verifymask" verify="ipmask lan1__ipaddr lan1__netmask lan1__dhcpd__start" />
 									</div>
 									<div class="col-xs-3 tip-icons">
 										<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入DHCP分配的结束IP地址。"><i class="icon-question-sign"></i></span>
 									</div>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__dhcpd__leasetime">租用时间</label>
+									<label class="col-xs-3 control-label" for="lan1__dhcpd__leasetime">租用时间</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__dhcpd__leasetime" class="form-control" verify="num 1 65535" />
+										<input type="text" id="lan1__dhcpd__leasetime" class="form-control" verify="num 1 65535" />
 									</div>
 									<div class="col-xs-3 tip-icons">
 										<span class="units">小时</span>
@@ -222,15 +224,15 @@
 									</div>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__dhcpd__dns1">DNS1</label>
+									<label class="col-xs-3 control-label" for="lan1__dhcpd__dns1">DNS1</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__dhcpd__dns1" class="form-control" verify="ipsp" />
+										<input type="text" id="lan1__dhcpd__dns1" class="form-control" verify="ipsp" />
 									</div>
 								</div>
 								<div class="form-group clearfix">
-									<label class="col-xs-3 control-label" for="lan0__dhcpd__dns2">DNS2</label>
+									<label class="col-xs-3 control-label" for="lan1__dhcpd__dns2">DNS2</label>
 									<div class="col-xs-6">
-										<input type="text" id="lan0__dhcpd__dns2" class="form-control" verify="ipsp" />
+										<input type="text" id="lan1__dhcpd__dns2" class="form-control" verify="ipsp" />
 									</div>
 								</div>
 							</div>
@@ -247,93 +249,93 @@
 					<form class="form-horizontal" id="form_wan">
 						<ul class="nav nav-tabs">
 							<li class="active">
-								<a href="#tabs_wan0" data-toggle="tab">wan0</a>
+								<a href="#tabs_wan" data-toggle="tab">wan</a>
 							</li>
 						</ul>
 						
 						<div class="tab-content">
-							<div class="tab-pane active" id="tabs_wan0" data-mtip="wan0">
+							<div class="tab-pane active" id="tabs_wan" data-mtip="wan">
 								<fieldset>
 									<div class="form-group clearfix check-connect">
 										<label class="col-xs-3 control-label">接入方式</label>
 										<div class="col-xs-6">
 											<div class="radio">
 												<span class="padr">
-													<label><input type="radio" id="wan0__proto" name="wan0__proto" value="dhcp" checked />自动获取</label>
+													<label><input type="radio" id="wan__proto" name="wan__proto" value="dhcp" checked />自动获取</label>
 												</span>
 												<span class="padr">
-													<label><input type="radio" id="" name="wan0__proto" value="pppoe" />PPPoE</label>
+													<label><input type="radio" id="" name="wan__proto" value="pppoe" />PPPoE</label>
 												</span>
 												<span class="padr">
-													<label><input type="radio" id="" name="wan0__proto" value="static" />静态IP</label>
+													<label><input type="radio" id="" name="wan__proto" value="static" />静态IP</label>
 												</span>
 											</div>
 										</div>
 									</div>
 									<div class="form-group pppoe ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__pppoe_account">用户名</label>
+										<label class="col-xs-3 control-label" for="wan__pppoe_account">用户名</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__pppoe_account" class="form-control" disabled="disabled" verify="notspace" />
+											<input type="text" id="wan__pppoe_account" class="form-control" disabled="disabled" verify="notspace" />
 										</div>
 									</div>
 									<div class="form-group pppoe ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__pppoe_password">密码</label>
+										<label class="col-xs-3 control-label" for="wan__pppoe_password">密码</label>
 										<div class="col-xs-6">
-											<input type="password" id="wan0__pppoe_password" class="form-control" disabled="disabled" verify="notspace" />
+											<input type="password" id="wan__pppoe_password" class="form-control" disabled="disabled" verify="notspace" />
 										</div>
 										<div class="col-xs-3 tip-icons">
 											<span class="icon-tip showlock" data-toggle="tooltip" data-placement="bottom" title="显示/隐藏密码"><i class="icon-lock icon-large"></i></span>
 										</div>
 									</div>
 									<div class="form-group static ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__ipaddr">IP地址</label>
+										<label class="col-xs-3 control-label" for="wan__ipaddr">IP地址</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__ipaddr" class="form-control" disabled="disabled" verify="ip" />
+											<input type="text" id="wan__ipaddr" class="form-control" disabled="disabled" verify="ip" />
 										</div>
 									</div>
 									<div class="form-group static ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__netmask">子网掩码</label>
+										<label class="col-xs-3 control-label" for="wan__netmask">子网掩码</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__netmask" class="form-control" disabled="disabled" verify="mask" />
+											<input type="text" id="wan__netmask" class="form-control" disabled="disabled" verify="mask" />
 										</div>
 									</div>
 									<div class="form-group static ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__gateway">网关</label>
+										<label class="col-xs-3 control-label" for="wan__gateway">网关</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__gateway" class="form-control" disabled="disabled" verify="ip" />
+											<input type="text" id="wan__gateway" class="form-control" disabled="disabled" verify="ip" />
 										</div>
 									</div>
 									<div class="form-group static ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__dns1">DNS1</label>
+										<label class="col-xs-3 control-label" for="wan__dns1">DNS1</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__dns1" class="form-control" disabled="disabled" verify="ip" />
+											<input type="text" id="wan__dns1" class="form-control" disabled="disabled" verify="ip" />
 										</div>
 									</div>
 									<div class="form-group static ischeck clearfix">
-										<label class="col-xs-3 control-label" for="wan0__dns2">DNS2</label>
+										<label class="col-xs-3 control-label" for="wan__dns2">DNS2</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__dns2" class="form-control" disabled="disabled" verify="ipsp" />
+											<input type="text" id="wan__dns2" class="form-control" disabled="disabled" verify="ipsp" />
 										</div>
 									</div>
 									<div class="form-group clearfix">
-										<label class="col-xs-3 control-label" for="wan0__metric">使用网关跃点</label>
+										<label class="col-xs-3 control-label" for="wan__metric">使用网关跃点</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__metric" class="form-control empty" maxlength="5" verify="numsp 1 255" />
+											<input type="text" id="wan__metric" class="form-control empty" maxlength="5" verify="numsp 1 255" />
 										</div>
 										<div class="col-xs-3 tip-icons">
 											<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~255。用于决定主次网关，跃点数越小优先级越高，不同WAN口须配置不同的跃点数。"><i class="icon-question-sign"></i></span>
 										</div>
 									</div>
 									<div class="form-group clearfix">
-										<label class="col-xs-3 control-label" for="wan0__mac">MAC地址</label>
+										<label class="col-xs-3 control-label" for="wan__mac">MAC地址</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__mac" class="form-control empty" verify="macsp" />
+											<input type="text" id="wan__mac" class="form-control empty" verify="macsp" />
 										</div>
 									</div>
 									<div class="form-group clearfix">
-										<label class="col-xs-3 control-label" for="wan0__mtu">设置MTU</label>
+										<label class="col-xs-3 control-label" for="wan__mtu">设置MTU</label>
 										<div class="col-xs-6">
-											<input type="text" id="wan0__mtu" class="form-control empty" maxlength="9" verify="numsp 1 1500" />
+											<input type="text" id="wan__mtu" class="form-control empty" maxlength="9" verify="numsp 1 1500" />
 										</div>
 										<div class="col-xs-3 tip-icons">
 											<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1500。若无特殊需求，请勿修改。"><i class="icon-question-sign"></i></span>

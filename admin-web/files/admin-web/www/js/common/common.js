@@ -26,7 +26,7 @@
 			$.get(url, function(d, x, s) {
 				d = initBackDatas(d);
 				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
-					window.location.href = "/view/admin_login/login.html";
+					window.location.href = "/view/admin_login/tologin.html";
 				}
 				callfn(d, x, s);
 			}, "json");
@@ -478,7 +478,7 @@
 	root.cgicall				= cgicall;					//cgi
 	root.cgiDtUrl				= cgiDtUrl;					//datatable的ajax的URL
 	root.cgicallBack			= cgicallBack;				//回调
-	// root.initBackDatas			= initBackDatas;			//初始化回调数据
+	root.initBackDatas			= initBackDatas;			//初始化回调数据
 	root.jsonTraversal			= jsonTraversal;			//取值赋值入口
 	root.jsTravGet				= jsTravGet;				//取值
 	root.jsTravSet				= jsTravSet;				//赋值

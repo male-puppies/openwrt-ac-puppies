@@ -30,7 +30,7 @@ function initHtml(datas) {
 		} else {
 			return str.toUpperCase();
 		}
-		
+
 		return upper[obj.lan] + "LAN " + upper[obj.wan] + "WAN模式";
 	}
 
@@ -53,6 +53,26 @@ function initHtml(datas) {
 		obj.wan.sort();
 		obj.lan.sort();
 		return obj;
+	}
+
+	var getOptionsLayout = function(opts, val) {
+		var layout = [];
+		for (var i = 0, ien = opts.length; i < ien; i++) {
+			if (opts[i]["name"] == val) {
+				layout = opts[i]["layout"];
+				break;
+			}
+		}
+		return layout;
+	}
+
+	var getNetworksKey = function(networks) {
+		var arr = [];
+		for (var k in networks) {
+			arr.push(k);
+		}
+
+		return arr.sort();
 	}
 
 	this.datas = (function(d) {
@@ -126,6 +146,7 @@ function initHtml(datas) {
 		datas.network.network = network;
 
 		g_networks = ObjClone(datas.networks);
+		console.log(datas)
 		return datas;
 	}(datas));
 
@@ -141,72 +162,61 @@ function initHtml(datas) {
 			var name = opts[i]["name"];
 			select[0][i] = new Option(nameReplace(name), name);
 		}
-		
+
 		setnode.html(select);
 		$(".select-opts", setnode).on("change", function() {
 			var val = $(this).val();
-			var arr;
-			if (val == "custom" && self.datas.network.name == "custom") {
-				arr = self.numberNetwork(val);
-			} else {
-				arr = self.numberOpts(val);
-			}
+			var arr = self.numberOpts(val);
 			self.consOptsHtml(arr, val);
 			self.setConfigHtml();
 		});
 	}
 
 	this.numberOpts = function(val) {
-		var map = {};
-		var arr = [];
-		var opts = this.datas.options;
-		for (var i = 0, ien = opts.length; i < ien; i++) {
-			if (opts[i]["name"] == val) {
-				map = opts[i]["map"];
-				break;
+		var arr = [],
+			layout = getOptionsLayout(this.datas.options, val);
+
+		for (var l = 0, len = layout.length; l < len; l++) {
+			var name = layout[l]["name"];
+			if (typeof name != "undefined") {
+				arr.push(name);
 			}
 		}
 
-		for (var k in map) {
-			for (var i = 0, ien = map[k].length; i < ien; i++) {
-				arr.splice(map[k][i] - 1, 0, k);
-			}
-		}
-		
 		return arr;
 	}
-	
+
 	this.consOptsHtml = function(arr, val) {
 		var self = this;
 		var ien = arr.length;
 		var setnode = $("#eth_ops").empty();
+		var layout = getOptionsLayout(self.datas.options, val);
+		var options = getNetworksKey(self.datas.networks);
 
 		for (var i = 0; i < ien; i++) {
 			var node_s = $("<div>", {
 					"class": "opt-select"
 				});
 
-			if (val == "custom" && i !== 0 && i !== ien - 1) {
-				var select = $("<select>", {
-					"class": "form-control input-sm"
-				});
-				for (var s = 0; s < ien - 1; s++) {
-					select[0][s] = new Option("lan" + s, "lan" + s);
-				}
+			if (val == "custom" && typeof layout[i] != "undefined" && layout[i]["fixed"] != 1) {
+				var onum = 0,
+					select = $("<select>", {
+						"class": "form-control input-sm"
+					});
 
-				for (var w = s, len = 0; w < (ien - 1) * 2; w++) {
-					var wanN = "wan" + (w - s);
-					var inleng = $.inArray(wanN, arr);
-					if (inleng > -1 && i != inleng) {
-						len++;
+				for (var o = 0, oen = options.length; o < oen; o++) {
+					var opt = options[o];
+					var inleng = $.inArray(opt, arr);
+					if (!(inleng > -1 && opt.indexOf("wan") > -1 && i != inleng)) {
+						select[0][o - onum] = new Option(opt, opt);
 					} else {
-						select[0][w - len] = new Option(wanN, wanN);
+						onum++;
 					}
 				}
-				
+
 				node_s = node_s.append(select);
 				select.val(arr[i]);
-				
+
 				$("select", node_s).on("change", function() {
 					self.consOptsHtml(getSelectEth(), val);
 					self.setConfigHtml();
@@ -226,68 +236,64 @@ function initHtml(datas) {
 					.appendTo(setnode);
 		}
 	}
-	
+
 	this.setConfigHtml = function() {
 		var obj = configWanLan(),
 			lan_arr = obj.lan,
 			wan_arr = obj.wan,
-			str_lan = '<li class="active"><a href="#tabs_lan0" data-toggle="tab">lan0</a></li>',
-			str_wan = '<li class="active"><a href="#tabs_wan0" data-toggle="tab">wan0</a></li>';
+			str_lan = '',
+			str_wan = '',
+			wan_temhtml = $($("#form_wan .tab-pane")[0]).html(),
+			lan_temhtml = $($("#form_lan .tab-pane")[0]).html(),
+			wan_id = $($("#form_wan .tab-pane")[0]).attr("id").replace("tabs_", ""),
+			lan_id = $($("#form_lan .tab-pane")[0]).attr("id").replace("tabs_", "");
 
-		$("#form_wan .tab-pane").each(function(index, element) {
-			var has_id = $(element).attr("id").replace("tabs_", "");
-			if ($.inArray(has_id, wan_arr) == -1 && has_id != "wan0") {
-				$(element).remove();
-			}
-		});
-
-		$("#form_lan .tab-pane").each(function(index, element) {
-			var has_id = $(element).attr("id").replace("tabs_", "");
-			if ($.inArray(has_id, lan_arr) == -1 && has_id != "lan0") {
-				$(element).remove();
-			}
-		});
+		$("#form_wan .tab-pane, #form_lan .tab-pane").remove();
 
 		for (var w = 0, wen = wan_arr.length; w < wen; w++) {
-			str_wan += '<li><a href="#tabs_' + wan_arr[w] + '" data-toggle="tab">' + wan_arr[w] + '</a></li>';
-			this.consConfigHtml("wan", wan_arr[w]);
+			if (w == 0) {
+				str_wan += '<li class="active"><a href="#tabs_' + wan_arr[w] + '" data-toggle="tab">' + wan_arr[w] + '</a></li>';
+			} else {
+				str_wan += '<li><a href="#tabs_' + wan_arr[w] + '" data-toggle="tab">' + wan_arr[w] + '</a></li>';
+			}
+			this.consConfigHtml(wan_id, wan_arr[w], wan_temhtml);
 		}
 
 		for (var l = 0, len = lan_arr.length; l < len; l++) {
-			str_lan += '<li><a href="#tabs_' + lan_arr[l] + '" data-toggle="tab">' + lan_arr[l] + '</a></li>';
-			this.consConfigHtml("lan", lan_arr[l]);
+			if (l == 0) {
+				str_lan += '<li class="active"><a href="#tabs_' + lan_arr[l] + '" data-toggle="tab">' + lan_arr[l] + '</a></li>';
+			} else {
+				str_lan += '<li><a href="#tabs_' + lan_arr[l] + '" data-toggle="tab">' + lan_arr[l] + '</a></li>';
+			}
+			this.consConfigHtml(lan_id, lan_arr[l], lan_temhtml);
 		}
 
 		$("#form_wan .nav").html(str_wan);
 		$("#form_lan .nav").html(str_lan);
-		$("#tabs_wan0").addClass("active").siblings().removeClass("active");
-		$("#tabs_lan0").addClass("active").siblings().removeClass("active");
+		$($("#form_wan .tab-pane")[0]).addClass("active").siblings().removeClass("active");
+		$($("#form_lan .tab-pane")[0]).addClass("active").siblings().removeClass("active");
 	}
-	
-	this.consConfigHtml = function(str, eth) {
-		var id = "#tabs_" + eth,
-			temp,
-			result,
-			results;
 
-		if ($(id).length > 0) {
+	this.consConfigHtml = function(id, eth, temp) {
+		var tabs_id = "#tabs_" + eth,
+			reg = new RegExp(id + "__", 'g'),
+			result = temp.replace(reg, eth + "__"),
+			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
+
+		if ($(tabs_id).length > 0) {
 			return;
 		}
-		if (str == "wan") {
-			temp = $("#tabs_wan0").html();
-			result = temp.replace(/wan0__/g, eth + "__");
-			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
+
+		if (id.indexOf("wan") > -1) {
 			$("#form_wan .tab-content").append(results);
 		} else {
-			temp = $("#tabs_lan0").html();
-			result = temp.replace(/lan0__/g, eth + "__");
-			results = '<div class="tab-pane" data-mtip="' + eth + '" id="tabs_' + eth + '">' + result + '</div>';
 			$("#form_lan .tab-content").append(results);
 		}
+
 		this.setValue(eth);
-		$(id + ' [data-toggle="tooltip"]').tooltip();
-		verifyEventsInit(id);
-		$(id).find(".has-error").removeClass("has-error");
+		$(tabs_id + ' [data-toggle="tooltip"]').tooltip();
+		verifyEventsInit(tabs_id);
+		$(tabs_id).find(".has-error").removeClass("has-error");
 	}
 
 	this.setValue = function(eth) {
@@ -300,7 +306,7 @@ function initHtml(datas) {
 			arr.push(eth);
 		} else {
 			//无eth时，为初始化赋值
-			var init_arr = this.numberNetwork(val);
+			var init_arr = this.numberOpts(val);
 			$("#select_opts select").val(val);
 			this.consOptsHtml(init_arr, val);
 			this.setConfigHtml();
@@ -321,7 +327,7 @@ function initHtml(datas) {
 
 			obj[arr[i]] = data;
 			jsonTraversal(obj, jsTravSet);
-			
+
 			if (arr[i].indexOf("wan") > -1) {
 				var s_arr = getSelectEth();
 				var num = $.inArray(arr[i], s_arr);
@@ -334,21 +340,21 @@ function initHtml(datas) {
 		OnCheckProto();
 		OnCheckDhcp();
 	}
-	
-	this.numberNetwork = function(val) {
-		var arr = [];
-		var network = this.datas.network.network;
-		
-		for (var k in network) {
-			var ports = network[k]["ports"] || [];
-			for (var i = 0, ien = ports.length; i < ien; i++) {
-				arr.splice(ports[i] - 1, 0, k);
-			}
-		}
 
-		return arr;
-	}
-	
+	// this.numberNetwork = function(val) {
+		// var arr = [];
+		// var network = this.datas.network.network;
+
+		// for (var k in network) {
+			// var ports = network[k]["ports"] || [];
+			// for (var i = 0, ien = ports.length; i < ien; i++) {
+				// arr.splice(ports[i] - 1, 0, k);
+			// }
+		// }
+
+		// return arr;
+	// }
+
 	this.init = function() {
 		this.setOptsHtml()
 		this.setConfigHtml();
@@ -361,7 +367,7 @@ function intToIpstr(ip) {
 	return String((ip >>> 24) & 0xff) + "." + String((ip >>> 16) & 0xff) + "." + String((ip >>> 8) & 0xff) + "." + String((ip >>> 0) & 0xff);
 }
 
-//0.0.255.255 -> 65535 
+//0.0.255.255 -> 65535
 function ipstrToInt(ipstr) {
 	var ip = ipstr.split(".");
 	return (Number(ip[0]) * 16777216) + (Number(ip[1]) * 65536) + (Number(ip[2]) * 256) + (Number(ip[3]) * 1);
@@ -400,7 +406,7 @@ function maskstrToCidr(maskstr) {
 }
 
 //检查IP/MASK 对应的IP1 是否合法
-//比如 IP=192.168.0.1 MASK=255.255.0.0 
+//比如 IP=192.168.0.1 MASK=255.255.0.0
 // 那么 IP1=192.168.16.11 合法
 // IP1=192.177.0.11 非法
 // function checkIpMask(ipstr, maskstr, ipstr1) {
@@ -449,7 +455,7 @@ function getSubmitObj() {
 		if (typeof obj[k]["dhcpd"] != "undefined" && typeof obj[k]["dhcpd"]["leasetime"] != "undefined" && obj[k]["dhcpd"]["leasetime"] != "") {
 			obj[k]["dhcpd"]["leasetime"] = obj[k]["dhcpd"]["leasetime"] + "h";
 		}
-	
+
 		var fdns;
 		if (k.indexOf("wan") > -1) {
 			fdns = obj[k];
@@ -463,15 +469,15 @@ function getSubmitObj() {
 		}
 		delete fdns["dns1"];
 		delete fdns["dns2"];
-		
+
 		obj[k]["ports"] = ports[k] || [];
 	}
-	
+
 	obj = {
 		"name": $("#select_opts select").val(),
 		"network": obj
 	}
-	
+
 	return obj;
 }
 

@@ -22,11 +22,15 @@ function createDtFlow(){
 			"url": cgiDtUrl("tc_get", cgiobj),
 			"type": "GET",
 			"dataSrc": function(d) {
-				if (d.status == 0) {
+				var data = initBackDatas(d);
+				if (data.status == 0 && typeof d.data != "undefined" && typeof d.data.Rules != "undefined") {
 					$("#GlobalSharedDownload").val(parseInt(d.data.GlobalSharedDownload));
 					$("#GlobalSharedUpload").val(parseInt(d.data.GlobalSharedUpload));
+					return dtObjToArray(data.data.Rules);
+				} else if (data.data.indexOf("timeout") > -1) {
+					window.location.href = "/login/admin_login/login.html";
 				}
-				return dtDataCallback(d);
+				return [];
 			}
 		},
 		"columns": [
@@ -55,7 +59,7 @@ function createDtFlow(){
 			{
 				"data": "Enabled",
 				"render": function(d, t, f) {
-					if (typeof d != "undefined" && d.toString() != "true") {
+					if (typeof d != "undefined" && d != 1) {
 						return '<a class="btn btn-danger btn-xs" onclick="set_enable(this)" data-toggle="tooltip" data-container="body" title="点击启用"><i class="icon-remove"></i> 已禁用 </a>';
 					} else {
 						return '<a class="btn btn-success btn-xs" onclick="set_enable(this)" data-toggle="tooltip" data-container="body" title="点击禁用"><i class="icon-ok"></i> 已启用 </a>';
@@ -106,11 +110,8 @@ function edit(that) {
 
 function set_enable(that) {
 	getSelected(that);
-	var obj = {
-		"Name": nodeEdit[0].Name,
-		"Enabled": nodeEdit[0].Enabled.toString() == 'true' ? false : true
-	}
-	cgicall.post("tc_set", obj, function(d) {
+	nodeEdit[0].Enabled = nodeEdit[0].Enabled == 1 ? 0 : 1
+	cgicall.post("tc_set", nodeEdit[0], function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("修改失败！" + (d.data ? d.data : ""));
 		});
@@ -151,7 +152,7 @@ function DoDelete() {
 		arr.push(nodeEdit[i].Name);
 	}
 
-	cgicall.post('tc_del', arr, function(d) {
+	cgicall.post('tc_del', {Names: arr}, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("删除失败！" + (d.data ? d.data : ""));
 		});
@@ -172,7 +173,7 @@ function initEvents(){
 
 function onAdd() {
 	var oRule = {
-			"Enabled": true,
+			"Enabled": 1,
 			"Ip": "0.0.0.0-255.255.255.255",
 			"Name": "流量控制",
 			"SharedDownload": "0MBytes",
