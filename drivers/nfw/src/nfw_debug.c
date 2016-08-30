@@ -14,7 +14,7 @@
 #define CMD_S_bypass	"bypass="
 
 #define DBG_CMD_BUFF_SZ (512)
-#define DBG_IO_BUFF_SZ 	(1024 * 8)
+#define DBG_IO_BUFF_SZ 	(1024 * 16)
 
 typedef struct {
 	struct mutex lock;

@@ -174,7 +174,7 @@ static struct nf_hook_ops nproto_nf_hook_ops[] = {
 		.hook = nproto_hook_fn,
 		.pf = NFPROTO_IPV4,
 		.hooknum = NF_INET_FORWARD,
-		.priority = NF_IP_PRI_MANGLE + 1,
+		.priority = NF_IP_PRI_NAT_DST + 1,
 	},
 };
 

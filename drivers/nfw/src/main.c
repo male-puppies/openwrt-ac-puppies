@@ -6,6 +6,9 @@
 #include <net/ip.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <ntrack_packet.h>
+
+#define __DEBUG 1
+
 extern int do_ac_table_hk(
 	struct net_device *in, struct net_device *out, struct sk_buff *skb,
 	flow_info_t *fi, user_info_t *ui, user_info_t *pi);
@@ -82,7 +85,10 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 		if(ret > 0) {
 			fw_debug(FMT_FLOW_STR " log & bypass %d.\n", FMT_FLOW(fi), ret);
 			/* BYPASS */
-			fw_log(FMT_FLOW_STR " bypass\n", FMT_FLOW(fi));
+			if(!nt_flow_dbg_rlmt(fi)) {
+				fw_log(FMT_FLOW_STR " bypass\n", FMT_FLOW(fi));
+				nt_flow_dbg_rlmt_set(fi);
+			}
 			return NF_ACCEPT;
 		} else {
 			fw_debug(FMT_FLOW_STR " log & droped %d.\n", FMT_FLOW(fi), ret);

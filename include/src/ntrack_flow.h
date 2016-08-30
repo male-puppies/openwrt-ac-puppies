@@ -39,6 +39,8 @@ static inline uint16_t flow_dport(flow_info_t *fi)
 #define FLOW_DROP_MASK 		(0x000000FFU << FLOW_DROP_SHIFT)
 #define FLOW_ACCEPT_SHIFT	(16)
 #define FLOW_ACCEPT_MASK 	(0x000000FFU << FLOW_ACCEPT_SHIFT)
+#define FLOW_DBG_SHIFT 		(24)
+#define FLOW_DBG_MASK 		(0x000000FFU << FLOW_DBG_SHIFT)
 enum em_flow_flags {
 	/* byte: normal flags. */
 	FG_FLOW_NPROTO_FIN		= 1<<(FLOW_STAT_SHIFT + 0), /* identify finished. */
@@ -55,6 +57,8 @@ enum em_flow_flags {
 	/* next byte: accept flags. */
 	FG_FLOW_ACCEPT_L4_FW	= 1<<(FLOW_ACCEPT_SHIFT + 0), /* accepted by layer 4 firewall, such as whitelist*/
 	FG_FLOW_ACCEPT_L7_FW	= 1<<(FLOW_ACCEPT_SHIFT + 1), /* accepted by layer 7 firewall, such as user ACL rules. */
+	/* debug use flags bits */
+	FG_LFOW_DBG_RATELIMIT 	= 1<<(FLOW_DBG_SHIFT + 0), /* DROP list bypass ratelimits */
 };
 
 static inline uint32_t nt_flow_flags(const flow_info_t *fi)
@@ -162,6 +166,21 @@ static inline void nt_flow_accept_clr(flow_info_t *fi, uint32_t drop)
 static inline int nt_flow_accepted(flow_info_t *fi)
 {
 	return fi->hdr.flags & FLOW_ACCEPT_MASK;
+}
+
+static inline int nt_flow_dbg_rlmt(flow_info_t *fi)
+{
+	return fi->hdr.flags & FG_LFOW_DBG_RATELIMIT;
+}
+
+static inline void nt_flow_dbg_rlmt_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FG_LFOW_DBG_RATELIMIT;
+}
+
+static inline void nt_flow_dbg_rlmt_clr(flow_info_t *fi)
+{
+	fi->hdr.flags &= ~(FG_LFOW_DBG_RATELIMIT);
 }
 
 /* ########################## */
