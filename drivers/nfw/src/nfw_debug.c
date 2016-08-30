@@ -119,7 +119,12 @@ static ssize_t nfw_write(struct file *file,
 					 size_t count, loff_t *offset)
 {
 	char *buf = NULL;
-	const char *cmd;
+	const char *cmd = NULL;
+
+	if(count < 2){
+		/* filter \r\n */
+		return count;
+	}
 
 	if(count > DBG_CMD_BUFF_SZ) {
 		fw_error("io buffer overflow: %d->%d\n", DBG_CMD_BUFF_SZ, (int)count);
@@ -184,7 +189,7 @@ static ssize_t nfw_write(struct file *file,
 	}
 
 	/* review */
-	printk("addr=x.x.x.x/xx port=xxxx\n"
+	printk("usage: echo 'addr=x.x.x.x/xx port=xxxx' > /proc/nfw/debug \n"
 		"\t%u.%u.%u.%u/%u.%u.%u.%u:%u, bypass: %u\n",
 			NIPQUAD(GDBG.addr), NIPQUAD(GDBG.mask), ntohs(GDBG.port), GDBG.bypass);
 
