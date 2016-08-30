@@ -8,6 +8,7 @@ local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local simplesql = require("simplesql")
 local ipops = require("ipops")
+local fp = require("fp")
 
 local tcp_map = {}
 
@@ -297,7 +298,9 @@ commit_config["Rule"] = function(cate_arr, new_config)
 		local cate_config = {}
 		local rule_key = item.cate.."Rule"
 		cate_config[rule_key] = new_config[item.cate]
-		local cmd_str = string.format("ruletable -s '%s'", js.encode(cate_config)) assert(cmd_str)
+		local cfg_str = js.encode(cate_config) assert(cfg_str)
+		cfg_str = string.gsub(cfg_str, string.format('"%s":{}', rule_key), string.format('"%s":[]', rule_key)) assert(cfg_str)
+		local cmd_str = string.format("ruletable -s '%s'", cfg_str) assert(cmd_str)
 		log.debug("commit:rules(%d) %s",#(new_config[item.cate]), cmd_str)
 		os.execute(cmd_str)
 	end
@@ -461,8 +464,9 @@ translate_config["Rule"] = function(raw_rule_config)
 	local generate_rule = function(rule_config, cur_tm)
 		local fetch_leaf_protoids = function(ids)
 			local id_arr = {}
+			local nids = fp.reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
 			local sel = "select distinct a.proto_id from acproto as a, acproto as b "
-			local wh = string.format("where b.proto_id in (%s) and ", table.concat(ids, ", "))
+			local wh = string.format("where b.proto_id in (%s) and ", table.concat(nids, ", "))
 			local wh_ext = "((a.pid =b.proto_id and a.node_type='leaf') or (b.proto_id = a.proto_id and b.node_type='leaf'))"
 			local sql = string.format("%s%s%s", sel, wh, wh_ext) assert(sql)
 			local proto_ids, err = simple:mysql_select(sql)
@@ -470,7 +474,7 @@ translate_config["Rule"] = function(raw_rule_config)
 				return nil, err or string.format("invalid proto_ids:(%s)", table.concat(ids, ","))
 			end
 			for _, proto in ipairs(proto_ids) do
-				table.insert(id_arr, proto.proto_id)
+				table.insert(id_arr, tonumber(proto.proto_id, 16))
 			end
 			return id_arr
 		end
@@ -488,10 +492,10 @@ translate_config["Rule"] = function(raw_rule_config)
 						ProtoIds = js.decode(item.proto_ids) and fetch_leaf_protoids(js.decode(item.proto_ids)),
 						Actions = js.decode(item.actions)
 					}
-				local _ = #rule_item.ProtoIds > 0 and table.sort(rule_item.ProtoIds)
 				for _, key in ipairs(item_keys) do
 					assert(rule_item[key], string.format("missing %s", key))
 				end
+				local _ = #rule_item.ProtoIds > 0 and table.sort(rule_item.ProtoIds)
 				table.insert(rule_arr, rule_item)
 			end
 		end
