@@ -57,62 +57,10 @@ udp_map["iface_list"] = function(p, ip, port)
 	reply(ip, port, 0, res)
 end
 
-local function compare_ports(omap, nmap)
-	for iface, oports in pairs(omap) do
-		local r = nmap[iface]
-		if not (r and r.ports) then
-			return nil, "invalid param"
-		end
-
-		for i, op in ipairs(oports) do
-			if op ~= r.ports[i] then
-				return nil, "invalid port"
-			end
-		end
-	end
-
-	for iface, r in pairs(nmap) do
-		local nports = r.ports
-		if not nports then
-			return nil, "invalid param"
-		end
-
-		local oports = omap[iface]
-		if not oports then
-			return nil, "invalid param"
-		end
-
-		for i, np in ipairs(nports) do
-			if np ~= oports[i] then
-				return nil, "invalid port"
-			end
-		end
-	end
-
-	return true
-end
-
 udp_map["iface_set"] = function(p, ip, port)
 	local config = p.network
-	local name, network = config.name, config.network
-	local r = board.load()
-	local options = arr2map(r.options, "name")
 
-	-- check ports
-	if name ~= "custom" then
-		local opt = options[name]
-		if not opt then
-			return reply(ip, port, 1, "invaild name")
-		end
-
-		local omap = opt.map
-		local r, e = compare_ports(omap, network)
-		if not r then
-			return reply(ip, port, 1, e)
-		end
-	end
-
-	local _ = network and save_safe("/etc/config/network.json", js.encode(config))
+	local _ = config and save_safe("/etc/config/network.json", js.encode(config))
 	reply(ip, port, 0, "ok")
 	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "network"}}))
 end
