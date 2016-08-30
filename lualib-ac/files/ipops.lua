@@ -1,4 +1,5 @@
 local bit = require("bit")
+local struct = require("struct")
 
 local function _lshift(a, i)
 	return a * 2^i
@@ -214,22 +215,32 @@ for _, ipstr in ipairs(ipranges) do
 end
 ]]
 
+local function big_endian()
+	local s = string.char(0x12, 0x34)
+	local u = struct.unpack("I2", s)
+	return u == 0x1234
+end
+
+local function little_endian()
+	return not big_endian()
+end
+
 local function hexstr2ipstr(hexstr)
 	local ip = tonumber(hexstr, 16)
-	local a = _band(_rshift(ip, 0), 0x000000FF)
-	local b = _band(_rshift(ip, 8), 0x000000FF)
-	local c = _band(_rshift(ip, 16), 0x000000FF)
-	local d = _band(_rshift(ip, 24), 0x000000FF)
-	return string.format("%u.%u.%u.%u", a, b, c, d)
+	local a = _band(_rshift(ip, 24), 0x000000FF)
+	local b = _band(_rshift(ip, 16), 0x000000FF)
+	local c = _band(_rshift(ip, 8), 0x000000FF)
+	local d = _band(_rshift(ip, 0), 0x000000FF)
+	return big_endian() and string.format("%u.%u.%u.%u", a, b, c, d) or string.format("%u.%u.%u.%u", d, c, b, a)
 end
 
 local function ipstr2hexstr(ipstr)
 	local i = ipstr2int(ipstr)
-	local a = _band(_rshift(ip, 0), 0x000000FF)
-	local b = _band(_rshift(ip, 8), 0x000000FF)
-	local c = _band(_rshift(ip, 16), 0x000000FF)
-	local d = _band(_rshift(ip, 24), 0x000000FF)
-	return string.format("%02X%02X%02X%02X", a, b, c, d)
+	local a = _band(_rshift(ip, 24), 0x000000FF)
+	local b = _band(_rshift(ip, 16), 0x000000FF)
+	local c = _band(_rshift(ip, 8), 0x000000FF)
+	local d = _band(_rshift(ip, 0), 0x000000FF)
+	return big_endian() and string.format("%02X%02X%02X%02X", a, b, c, d) or string.format("%02X%02X%02X%02X", d, c, b, a)
 end
 
 return {
@@ -256,4 +267,7 @@ return {
 
 	hexstr2ipstr			= hexstr2ipstr,
 	ipstr2hexstr			= ipstr2hexstr,
+
+	big_endian				= big_endian,
+	little_endian			= little_endian,
 }
