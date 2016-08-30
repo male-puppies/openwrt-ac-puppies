@@ -42,12 +42,10 @@ function initHtml(datas) {
 		};
 		for (var i = 0, ien = arr.length; i < ien; i++) {
 			var eth = arr[i];
-			if (eth != "wan0" && eth != "lan0") {
-				if (eth.indexOf("wan") > -1 && $.inArray(eth, obj.wan) == -1) {
-					obj.wan.push(eth);
-				} else if (eth.indexOf("lan") > -1 && $.inArray(eth, obj.lan) == -1) {
-					obj.lan.push(eth);
-				}
+			if (eth.indexOf("wan") > -1 && $.inArray(eth, obj.wan) == -1) {
+				obj.wan.push(eth);
+			} else if (eth.indexOf("lan") > -1 && $.inArray(eth, obj.lan) == -1) {
+				obj.lan.push(eth);
 			}
 		}
 		obj.wan.sort();
@@ -76,9 +74,10 @@ function initHtml(datas) {
 	}
 
 	this.datas = (function(d) {
-		var datas = ObjClone(d);
-		var network = datas.network.network;
-		var networks = datas.networks;
+		var datas = ObjClone(d),
+			network = datas.network.network,
+			networks = datas.networks;
+
 		for (var k in network) {
 			var ipd = network[k].ipaddr;
 			if (typeof ipd != "undefined") {
@@ -146,7 +145,7 @@ function initHtml(datas) {
 		datas.network.network = network;
 
 		g_networks = ObjClone(datas.networks);
-		console.log(datas)
+
 		return datas;
 	}(datas));
 
@@ -214,8 +213,9 @@ function initHtml(datas) {
 					}
 				}
 
+				select[0][o - onum] = new Option("关闭", "none");
 				node_s = node_s.append(select);
-				select.val(arr[i]);
+				select.val(arr[i] != "" ? arr[i] : "none");
 
 				$("select", node_s).on("change", function() {
 					self.consOptsHtml(getSelectEth(), val);
@@ -229,7 +229,7 @@ function initHtml(datas) {
 						"class": "options"
 					})
 					.append($("<div>", {
-							"class": "opt-icon " + arr[i]
+							"class": "opt-icon " + (arr[i] != "" ? arr[i] : "none")
 						})
 					)
 					.append(node_s)
@@ -341,20 +341,6 @@ function initHtml(datas) {
 		OnCheckDhcp();
 	}
 
-	// this.numberNetwork = function(val) {
-		// var arr = [];
-		// var network = this.datas.network.network;
-
-		// for (var k in network) {
-			// var ports = network[k]["ports"] || [];
-			// for (var i = 0, ien = ports.length; i < ien; i++) {
-				// arr.splice(ports[i] - 1, 0, k);
-			// }
-		// }
-
-		// return arr;
-	// }
-
 	this.init = function() {
 		this.setOptsHtml()
 		this.setConfigHtml();
@@ -404,17 +390,6 @@ function maskstrToCidr(maskstr) {
 	var ip = ipstrToInt(maskstr);
 	return intToCidr(ip);
 }
-
-//检查IP/MASK 对应的IP1 是否合法
-//比如 IP=192.168.0.1 MASK=255.255.0.0
-// 那么 IP1=192.168.16.11 合法
-// IP1=192.177.0.11 非法
-// function checkIpMask(ipstr, maskstr, ipstr1) {
-	// ip = ipstrToInt(ipstr);
-	// mask = ipstrToInt(maskstr);
-	// ip1 = ipstrToInt(ipstr1);
-	// return (ip & mask) == (ip1 & mask);
-// }
 
 function getSelectEth() {
 	var arr = [];
@@ -492,6 +467,54 @@ function initEvents() {
 function OnSubmit() {
 	if (!verification()) return false;
 
+	var value = $("#form_wan .tab-pane").length;
+	if (value > 1) {
+		var sameip = [],
+			sameic = [],
+			samemac = [],
+			notempty = true;
+
+		$("#form_wan .tab-pane").each(function(index, element) {
+			var id = $(element).attr("data-mtip"),
+				metric = $("#" + id + "__metric"),
+				ipaddr = $("#" + id + "__ipaddr"),
+				mac = $("#" + id + "__mac");
+
+			if (typeof id == "undefined") return true;
+
+			if (metric.val() == "" && !(metric.is(":disabled"))) {
+				createModalTips("当启用多个WAN口时，跃点数不能为空！请重新输入！");
+				notempty = false;
+				return false;
+			}
+			if (!(ipaddr.is(":disabled"))) {
+				sameip.push(ipaddr.val());
+			}
+			if (!(metric.is(":disabled"))) {
+				sameic.push(metric.val());
+			}
+			if (!(mac.is(":disabled")) && mac.val() != "") {
+				samemac.push(mac.val());
+			}
+		});
+
+		if (!notempty) return;
+
+		if (isRepeat(sameip)) {
+			createModalTips("WAN口 IP地址不能相同！");
+			return;
+		}
+		if (isRepeat(sameic)) {
+			createModalTips("WAN口 跃点数不能相同！");
+			return;
+		}
+		console.log(samemac)
+		if (isRepeat(samemac)) {
+			createModalTips("WAN口 MAC地址不能相同！");
+			return;
+		}
+	}
+
 	var obj = getSubmitObj();
 	var sobj = {
 		"arg": JSON.stringify(obj)
@@ -504,6 +527,15 @@ function OnSubmit() {
 			createModalTips("保存失败！");
 		}
 	});
+}
+
+function isRepeat(arr) {
+	var hash = {};
+	for(var i in arr) {
+		if (hash[arr[i]]) return true;
+		hash[arr[i]] = true;
+	}
+	return false;
 }
 
 function OnCheckDhcp() {
