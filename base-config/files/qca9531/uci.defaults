@@ -63,6 +63,7 @@ test $version -lt 2 && {
 test $version -lt 3 && {
 	macaddr=`echo -n $MACADDR | tr A-Z a-z`
 	cp /usr/share/base-config/board.json /tmp/board.json
+	sed -i "s/__DEVID__/${macaddr}/" /tmp/board.json
 	NR=`cat /tmp/board.json | grep -o __MAC_ADDRESS_ | wc -l`
 	IDX=0
 	while :; do

@@ -1,4 +1,7 @@
 {
+    "model": {
+        "devid": "__DEVID__"
+    },
     "ports": [
         {
             "ifname": "eth0",
