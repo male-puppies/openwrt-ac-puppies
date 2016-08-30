@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +ski +luasocket +luabitop
+  DEPENDS:= +ski +luasocket +luabitop +struct
 endef
 
 define Package/$(PKG_NAME)

@@ -492,7 +492,7 @@ CONFIG_TARGET_INIT_SUPPRESS_STDERR=y
 CONFIG_VERSIONOPT=y
 CONFIG_VERSION_DIST="AC9531"
 CONFIG_VERSION_NICK="puppies"
-CONFIG_VERSION_NUMBER="V2.0-201608291314"
+CONFIG_VERSION_NUMBER="V2.0-201608301142"
 CONFIG_VERSION_REPO="http://downloads.openwrt.org/snapshots/trunk/%S/packages"
 CONFIG_VERSION_MANUFACTURER="Puppies"
 CONFIG_VERSION_MANUFACTURER_URL="http://router.puppies.com/"
@@ -5614,12 +5614,14 @@ CONFIG_PACKAGE_admin-web=y
 CONFIG_PACKAGE_auth-web=y
 CONFIG_PACKAGE_authd=y
 CONFIG_PACKAGE_cfgmgr=y
+# CONFIG_PACKAGE_cloudcli is not set
 CONFIG_PACKAGE_database=y
 # CONFIG_PACKAGE_ipcalc is not set
 CONFIG_PACKAGE_libcjson=y
 CONFIG_PACKAGE_libpps=y
 CONFIG_PACKAGE_logserver=y
 CONFIG_PACKAGE_lua-encrypt=y
+# CONFIG_PACKAGE_lua-redis-parser is not set
 CONFIG_PACKAGE_lualib-ac=y
 CONFIG_PACKAGE_luanos=y
 CONFIG_PACKAGE_luv=y
@@ -5634,6 +5636,7 @@ CONFIG_PACKAGE_nquery=y
 CONFIG_PACKAGE_ntrackd=y
 CONFIG_PACKAGE_performer=y
 CONFIG_PACKAGE_pps_comm=y
+# CONFIG_PACKAGE_proxybase is not set
 CONFIG_PACKAGE_rdsparser=y
 CONFIG_PACKAGE_redis=y
 # CONFIG_PACKAGE_resty-mysql is not set
@@ -5642,6 +5645,7 @@ CONFIG_PACKAGE_ruletable=y
 CONFIG_PACKAGE_sands=y
 CONFIG_PACKAGE_ski=y
 # CONFIG_PACKAGE_ski-mysql is not set
+CONFIG_PACKAGE_struct=y
 
 #
 # QCA Proprietary software
