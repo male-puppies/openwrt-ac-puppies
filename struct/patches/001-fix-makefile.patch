@@ -1,0 +1,21 @@
+diff --git a/makefile b/makefile
+index 8a7d5fd..f4d293e 100644
+--- a/makefile
++++ b/makefile
+@@ -1,6 +1,5 @@
+ # point it to where the compiler can find the Lua header files (lua.h, etc.)
+ # LUADIR = ../lua
+-LUADIR = /usr/include/lua5.1/
+
+ # define your own "large" integer type; not defining a proper type
+ # will default to 'long', which may cause problems with 'size_t'
+@@ -16,8 +15,7 @@ CWARNS = -Wall -W -pedantic \
+         -Wshadow \
+         -Wwrite-strings
+
+-CFLAGS = -D_POSIX_SOURCE $(CWARNS) $(INTTYPE) -O2 -I$(LUADIR)
+-CC = gcc
++CFLAGS += -D_POSIX_SOURCE $(CWARNS) $(INTTYPE) -O2
+
+ struct.so: struct.c makefile
+	$(CC) $(CFLAGS) -shared -fpic -o struct.so struct.c
