@@ -56,11 +56,6 @@ int do_nt_unotify(void *buff, int len, int port)
 	return 0;
 }
 
-int nt_unotify(void *buff, int len)
-{
-	return do_nt_unotify(buff, len, 50002);
-}
-
 
 int nt_unotify_auth(auth_msg_t *auth, ntrack_t *ntrack)
 {
@@ -82,7 +77,7 @@ int nt_unotify_ac(nacs_msg_t *msg)
 	int len = 0, ret = -1;
 	char *buf = trans_aclog(msg, &len);
 	if (buf) {
-		ret = do_nt_unotify(buf, len, 60000);
+		ret = len > 0 ? do_nt_unotify(buf, len, 60000) : -1;
 		if (ret != 0) {
 			nt_error("nt_unotify ac failed: %s\n", strerror(errno));
 		}
