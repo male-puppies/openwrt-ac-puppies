@@ -1,3 +1,5 @@
+-- yjs
+
 local ski = require("ski")
 local log = require("log")
 local lfs = require("lfs")
@@ -6,6 +8,7 @@ local sandc = require("sandc")
 local common = require("common")
 local sandc1 = require("sandc1")
 local js = require("cjson.safe")
+local sandcproxy = require("sandcproxy")
 
 local remote_mqtt, local_mqtt
 local read, save_safe = common.read, common.save_safe
@@ -45,42 +48,6 @@ end
 
 local function remote_topic()
 	return "a/dev/" .. g_devid
-end
-
--- 本地sands客户端
-local function start_local()
-	local  unique = "a/ac/proxy"
-	local mqtt = sandc.new(unique)
-	mqtt:set_auth("ewrdcv34!@@@zvdasfFD*s34!@@@fadefsasfvadsfewa123$", "1fff89167~!223423@$$%^^&&&*&*}{}|/.,/.,.,<>?")
-	mqtt:pre_subscribe(unique)
-	mqtt:set_callback("on_message", function(topic, payload)
-		print(topic, payload)
-		if not remote_mqtt then
-			log.error("skip %s %s", topic, payload:sub(1, 100))
-			return
-		end
-
-		local map = js.decode(payload)
-		if not (map and map.data and map.out_topic) then
-			log.error("invalid payload %s %s", topic, payload:sub(1, 100))
-			return
-		end
-
-		map.data.tpc = remote_topic()
-
-		remote_mqtt:publish(map.out_topic, js.encode(map.data))
-	end)
-
-	mqtt:set_callback("on_disconnect", function(st, e) log.fatal("remote mqtt disconnect %s %s", st, e) end)
-
-	local host, port = "127.0.0.1", 61886
-	local r, e = mqtt:connect(host, port)
-	local _ = r or log.fatal("connect fail %s", e)
-	mqtt:run()
-
-	local_mqtt = mqtt
-
-	log.info("connect ok %s %s", host, port)
 end
 
 -- 查找host对应的ip，测试host/port是否可连接
@@ -145,7 +112,6 @@ local function start_local()
 	mqtt:set_callback("on_disconnect", function(st, e) log.fatal("mqtt disconnect %s %s %s %s %s", unique, ip, port, st, e) end)
 
 	mqtt:set_callback("on_message", function(topic, payload)
-		print("222", topic, payload)
 		if not remote_mqtt then
 			log.error("skip %s %s", topic, payload:sub(1, 100))
 			return
@@ -158,7 +124,6 @@ local function start_local()
 		end
 
 		map.data.tpc = remote_topic()
-		print(map.out_topic, js.encode(map.data))
 		remote_mqtt:publish(map.out_topic, js.encode(map.data))
 	end)
 
@@ -171,6 +136,7 @@ local function start_local()
 	local_mqtt = mqtt
 end
 
+-- 远程客户端
 local function start_remote()
 	local ip, port = get_active_addr()
 	local unique = remote_topic()
@@ -178,7 +144,17 @@ local function start_remote()
 	local mqtt = sandc1.new(unique)
 	mqtt:set_auth("ewrdcv34!@@@zvdasfFD*s34!@@@fadefsasfvadsfewa123$", "1fff89167~!223423@$$%^^&&&*&*}{}|/.,/.,.,<>?")
 	mqtt:pre_subscribe(unique)
-	mqtt:set_callback("on_disconnect", function(st, e) print(14, st, e)  log.fatal("mqtt disconnect %s %s %s %s %s", unique, ip, port, st, e) end)
+	mqtt:set_callback("on_connect", function(st, err) save_status(1, ip, port) end)
+	mqtt:set_callback("on_disconnect", function(st, e)
+		save_status(0, host, port)
+		local _ = local_mqtt and local_mqtt:publish("a/local/cloudcli", js.encode({pld = {cmd = "proxybase", data = "exit"}}))
+		log.fatal("mqtt disconnect %s %s %s %s %s", unique, ip, port, st, e)
+	end)
+
+	mqtt:set_callback("on_encode_type", function(n, o)
+		mqtt:set_encode_type(n) 	-- 设置加密方式
+		log.info("encode type change %s->%s", o, n)
+	end)
 
 	local account, connect_data = get_connect_payload()
 	mqtt:set_connect("a/ac/query/connect", js.encode({pld = connect_data}))
@@ -186,7 +162,6 @@ local function start_remote()
 	mqtt:set_extend(js.encode({account = account, devid = g_devid}))
 
 	mqtt:set_callback("on_message", function(topic, payload)
-		print("111", topic, payload)
 		if not local_mqtt then
 			log.error("skip %s %s", topic, payload)
 			return
@@ -210,6 +185,28 @@ local function start_remote()
 	remote_mqtt = mqtt
 end
 
+local function start_sand_server()
+	local pld, cmd, map, r, e
+	local unique = "a/local/proxybase"
+
+	local on_message = function(topic, payload)
+		log.info("recv and exit. %s", payload)
+		save_status(0)
+		os.exit(0) 		-- cloud.json变了，重启进程
+	end
+
+	local args = {
+		log = log,
+		unique = unique,
+		clitopic = {unique},
+		srvtopic = {},
+		on_message = on_message,
+		on_disconnect = function(st, err) log.fatal("disconnect %s %s", st, err) end,
+	}
+
+	return sandcproxy.run_new(args)
+end
+
 local function main()
 	save_status(0)
 	local _ = read_id(), load()
@@ -224,6 +221,7 @@ local function main()
 		end
 
 		ski.go(start_remote)
+		start_sand_server()
 	end
 end
 

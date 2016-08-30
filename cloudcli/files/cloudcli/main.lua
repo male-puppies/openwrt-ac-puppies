@@ -88,6 +88,10 @@ function cmd_map.proxypass2(s)
 	os.execute(cmd)
 end
 
+function cmd_map.proxybase(s)
+	log.fatal("recv msg from proxybase %s", s)
+end
+
 local function on_message(topic, payload)
 	local m = js.decode(payload)
 	if not (m and m.pld) then

@@ -134,3 +134,9 @@ end
 if cmd:find("^tc_") then
 	return require("admin.tc").run(cmd)
 end
+
+-- curl 'http://127.0.0.1/v1/admin/api/cloud_get?token=4d80c3efd70160824fb5825638043a5f'
+-- curl 'http://127.0.0.1/v1/admin/api/cloud_set?token=4d80c3efd70160824fb5825638043a5f' -d 'account=yjs&ac_host=192.168.0.213&ac_port=61886&description=hello'
+if cmd:find("^cloud_") then
+	return require("admin.cloud").run(cmd)
+end
