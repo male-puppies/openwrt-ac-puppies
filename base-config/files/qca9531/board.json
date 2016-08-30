@@ -20,19 +20,19 @@
             "device": "switch0",
             "outer_ports": [
                 {
-                    "num": 1,
+                    "num": 4,
                     "mac": "__MAC_ADDRESS_1__"
                 },
                 {
-                    "num": 2,
+                    "num": 3,
                     "mac": "__MAC_ADDRESS_2__"
                 },
                 {
-                    "num": 3,
+                    "num": 2,
                     "mac": "__MAC_ADDRESS_3__"
                 },
                 {
-                    "num": 4,
+                    "num": 1,
                     "mac": "__MAC_ADDRESS_4__"
                 }
             ],
