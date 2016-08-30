@@ -1098,9 +1098,8 @@ int nproto_rules_match(nt_packet_t *npt)
 		nproto_update(npt, mlast);
 
 		/* DEBUG */
-		np_info(FMT_FLOW_STR"\n\t\t[%s] --- matched %s--- \n",
-			FMT_FLOW(npt->fi),
-			mlast->name_rule,
+		np_info(FMT_FLOW_STR"\n\t\t[%s] ---[%s]--- \n",
+			FMT_FLOW(npt->fi), mlast->name_rule,
 			RULE_IS_FIN(mlast)?"fin":"mid");
 		/* END debug. */
 	}
