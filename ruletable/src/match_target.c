@@ -20,7 +20,7 @@ static char target_flag_map[AC_ACTION_MAX] = {
 };
 
 
-void display_ac_flow_match(const struct ac_flow_match *flow_match) 
+void display_ac_flow_match(const struct ac_flow_match *flow_match)
 {
 	int idx_offset = 0;
 	flow_id_t *base = NULL;
@@ -30,8 +30,8 @@ void display_ac_flow_match(const struct ac_flow_match *flow_match)
 		return;
 	}
 	AC_DEBUG("---------FLOW_MATCH START---------\n\n");
-	AC_PRINT("	match_size:%d addr:%p elems addr:%p align:%d\n\n", 
-				flow_match->match_size, flow_match, 
+	AC_PRINT("	match_size:%d addr:%p elems addr:%p align:%d\n\n",
+				flow_match->match_size, flow_match,
 				flow_match->elems, __alignof__(struct ac_flow_match));
 	base = (flow_id_t*)flow_match->elems;
 	for (int i = 0; i < AC_FLOW_TYPE_MAX; ++i) {
@@ -49,8 +49,8 @@ void display_ac_flow_match(const struct ac_flow_match *flow_match)
 
 
 /*
-*Notice: type of input parameters is "unsinged int", 
-*it differents from flow_id_t 
+*Notice: type of input parameters is "unsinged int",
+*it differents from flow_id_t
 */
 struct ac_flow_match* generate_flow_match(
 	unsigned int *src_zone_ids, unsigned int src_zone_num,
@@ -70,7 +70,7 @@ struct ac_flow_match* generate_flow_match(
 		AC_ERROR("invalid parameters\n");
 		return NULL;
 	}
-	
+
 	elem_size = sizeof(flow_id_t);
 	elems_num = src_zone_num + src_ipgrp_num + dst_zone_num + dst_ipgrp_num;
 
@@ -91,19 +91,19 @@ struct ac_flow_match* generate_flow_match(
 
 	for (int i = 0; i < AC_FLOW_TYPE_MAX; ++i) {
 		switch(i) {
-			case AC_FLOW_TYPE_SRCZONEID:	
+			case AC_FLOW_TYPE_SRCZONEID:
 				ids = src_zone_ids;
 				break;
 
-			case AC_FLOW_TYPE_SRCIPGRPID:	
+			case AC_FLOW_TYPE_SRCIPGRPID:
 				ids = src_ipgrp_ids;
 				break;
 
-			case AC_FLOW_TYPE_DSTZONEID:	
+			case AC_FLOW_TYPE_DSTZONEID:
 				ids = dst_zone_ids;
 				break;
 
-			case AC_FLOW_TYPE_DSTIPGRPID:	
+			case AC_FLOW_TYPE_DSTIPGRPID:
 				ids = dst_ipgrp_ids;
 				break;
 
@@ -118,12 +118,12 @@ struct ac_flow_match* generate_flow_match(
 		}
 		idx_offset += flow_match->number[i];
 	}
-	display_ac_flow_match(flow_match);
+	//display_ac_flow_match(flow_match);
 	return flow_match;
 }
 
 
-void display_ac_proto_match(const struct ac_proto_match* proto_match) 
+void display_ac_proto_match(const struct ac_proto_match* proto_match)
 {
 	#define IDS_NUM_PER_ROW 8
 	proto_id_t *base = NULL;
@@ -132,14 +132,14 @@ void display_ac_proto_match(const struct ac_proto_match* proto_match)
 		return;
 	}
 	AC_DEBUG("---------PROTO_MATCH START---------\n\n");
-	AC_PRINT("	match_size:%d addr:%p elems addr:%p align:%d\n\n", 
-				proto_match->match_size, proto_match, 
+	AC_PRINT("	match_size:%d addr:%p elems addr:%p align:%d\n\n",
+				proto_match->match_size, proto_match,
 				proto_match->elems, __alignof__(struct ac_proto_match));
 
 	AC_PRINT("	%s(number=%d):[", AC_RULE_PROTOIDS_KEY, proto_match->number);
 	base = (proto_id_t*)proto_match->elems;
 	for (int i = 0; i < proto_match->number; ++i) {
-		AC_PRINT("%d, ", *(base + i));
+		AC_PRINT("%u, ", *(base + i));
 		if (i && (i % IDS_NUM_PER_ROW) == 0) {
 			AC_PRINT("\n");
 		}
@@ -147,12 +147,12 @@ void display_ac_proto_match(const struct ac_proto_match* proto_match)
 
 	AC_PRINT("]\n\n");
 	AC_DEBUG("---------PROTO_MATCH END---------\n\n\n\n");
-	#undef IDS_NUM_PER_ROW 
+	#undef IDS_NUM_PER_ROW
 }
 
 
 struct ac_proto_match* generate_proto_match(
-	unsigned int *proto_ids, 
+	unsigned int *proto_ids,
 	unsigned int proto_num)
 {
 	int match_size = 0;
@@ -181,7 +181,7 @@ struct ac_proto_match* generate_proto_match(
 	for (int i = 0; i < proto_match->number; ++i) {
 		*(base + i)= (proto_id_t)proto_ids[i];
 	}
-	display_ac_proto_match(proto_match);
+	//display_ac_proto_match(proto_match);
 	return proto_match;
 }
 
@@ -193,7 +193,7 @@ void display_ac_target(const struct ac_target *target)
 		return;
 	}
 	AC_DEBUG("--------TARGET START------\n\n");
-	AC_PRINT("	addr:%p target_size:%d flags:%u [", target, target->size, target->flags);
+	AC_PRINT("target_size:%d addr:%p flags:%u [", target->size, target, target->flags);
 	for (int i = 0; i < AC_ACTION_MAX; ++i) {
 		if (target->flags & target_flag_map[i]) {
 			AC_PRINT("%s, ", target_map[i]);
@@ -211,7 +211,7 @@ struct ac_target *generate_target(char *action[], unsigned int action_num)
 	if (action == NULL || action_num == 0) {
 		AC_ERROR("invalid parameters\n");
 		return NULL;
-	} 
+	}
 	size = AC_ALIGN(sizeof(struct ac_target));
 	target = (struct ac_target*)malloc(size);
 	if (target == NULL) {
@@ -227,6 +227,6 @@ struct ac_target *generate_target(char *action[], unsigned int action_num)
 			}
 		}
 	}
-	display_ac_target(target);
+	//display_ac_target(target);
 	return target;
 }

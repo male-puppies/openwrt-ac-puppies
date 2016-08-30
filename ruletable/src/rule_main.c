@@ -22,6 +22,7 @@ static const char *opt_string = "s:gt:h?";	/*support -s -g -t -h -? */
 /*parse config, and then, commit to kernel*/
 static int commit_config(const char *config_str)
 {
+	int ret = 0;
 	if (config_str == NULL || strlen(config_str) <= 1) {
 		AC_DEBUG("invalid parameter\n");
 		return -1;
@@ -30,10 +31,10 @@ static int commit_config(const char *config_str)
 	AC_DEBUG("****************COMMIT CONFIG START****************\n");
 	if (do_commit_config(config_str, strlen(config_str)) != 0) {
 		AC_ERROR("commit failed...\n");
-		return -1;
+		ret = -1;
 	}
-	AC_DEBUG("****************COMMIT CONFIG END****************\n\n");
-	return 0;
+	AC_DEBUG("****************COMMIT CONFIG END****************\n\n\n\n");
+	return ret;
 }
 
 
@@ -45,7 +46,7 @@ static int fetch_config()
 		AC_ERROR("fetch config failed...\n");
 		return -1;
 	}
-	AC_DEBUG("****************FETCH CONFIG END****************\n\n");
+	AC_DEBUG("****************FETCH CONFIG END****************\n\n\n\n");
 	return 0;
 }
 
@@ -101,23 +102,23 @@ int main(int argc, char **argv)
 			case 's':
 				commit_config(optarg);
 				break;
-				
+
 			case 'g':
 				fetch_config();
 				break;
-				
+
 			case 't':
 				parse_config(optarg);
 				break;
-			
+
 			case 'v':
 				display_version();
 				break;
 
-			case 'h':	
+			case 'h':
 				display_usage();
 				break;
-				
+
 			default:
 				display_usage();
 				break;

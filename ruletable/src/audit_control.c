@@ -12,7 +12,7 @@ static const char ipset_key_map[CONTROL_IPSET_TYPE_MAX][AC_IPSET_SETKEY_MAXLEN +
 	CONTROL_MACWHITELIST_SET_KEY,
 	CONTROL_IPWHITELIST_SET_KEY,
 	CONTROL_MACBLACKLIST_SET_KEY,
-	CONTROL_IPBLACKLIST_SET_KEY 
+	CONTROL_IPBLACKLIST_SET_KEY
 };
 
 
@@ -32,7 +32,7 @@ static void id_list_cleanup(unsigned int *list)
 /*init id which type is 'unsigned int';
 if the function occur failed, it will free all memory alloced by itself.
 */
-static int id_list_init(unsigned int **list, unsigned int *number, const nx_json *js, unsigned int min, unsigned int max) 
+static int id_list_init(unsigned int **list, unsigned int *number, const nx_json *js, unsigned int min, unsigned int max)
 {
 	int ret = -1, idx = 0;
 	const nx_json *js_elem = NULL;
@@ -40,7 +40,7 @@ static int id_list_init(unsigned int **list, unsigned int *number, const nx_json
 		AC_ERROR("invalid parameter");
 		return -1;
 	}
-	
+
 	*list = malloc(sizeof(unsigned int) * js->length);
 	if (*list == NULL) {
 		return -1;
@@ -60,11 +60,11 @@ static int id_list_init(unsigned int **list, unsigned int *number, const nx_json
 
 /*init c string;
 if the function occur failed, it will free all memory alloced by itself.*/
-static int str_list_init(char *list[], unsigned int *number, const nx_json *js) 
+static int str_list_init(char *list[], unsigned int *number, const nx_json *js)
 {
 	int ret = -1, idx = 0;
 	const nx_json *js_elem = NULL;
-	
+
 	if (list == NULL || number == NULL || js == NULL || js->type == NX_JSON_NULL) {
 		AC_ERROR("invalid parameters");
 		return -1;
@@ -156,42 +156,42 @@ static int ac_rule_item_init(struct ac_rule_item *rule_item, const nx_json *js)
 
 	js_elem = nx_json_get(js, AC_RULE_SRC_ZONEIDS_KEY);
 	if (check_list_valid(js_elem, AC_ID_MAXNUM_PERMATCH) == 0) {
-		if (id_list_init(&rule_item->src_zone_ids, &rule_item->src_zone_num, 
+		if (id_list_init(&rule_item->src_zone_ids, &rule_item->src_zone_num,
 							js_elem, AC_ZONE_MINID, AC_ZONE_MAXID) == -1) {
 			goto fail;
-		} 
+		}
 	}
 
 	js_elem = nx_json_get(js, AC_RULE_SRC_IPGRPIDS_KEY);
 	if (check_list_valid(js_elem, AC_ID_MAXNUM_PERMATCH) == 0) {
-		if (id_list_init(&rule_item->src_ipgrp_ids, &rule_item->src_ipgrp_num, 
+		if (id_list_init(&rule_item->src_ipgrp_ids, &rule_item->src_ipgrp_num,
 							js_elem, AC_IPGRP_MINID, AC_IPGRP_MAXID) == -1) {
 			goto fail;
-		} 
+		}
 	}
 
 	js_elem = nx_json_get(js, AC_RULE_DST_ZONEIDS_KEY);
 	if (check_list_valid(js_elem, AC_ID_MAXNUM_PERMATCH) == 0) {
-		if (id_list_init(&rule_item->dst_zone_ids, &rule_item->dst_zone_num, 
+		if (id_list_init(&rule_item->dst_zone_ids, &rule_item->dst_zone_num,
 							js_elem, AC_ZONE_MINID, AC_ZONE_MAXID) == -1) {
 			goto fail;
-		} 
+		}
 	}
 
 	js_elem = nx_json_get(js, AC_RULE_DST_IPGRPIDS_KEY);
 	if (check_list_valid(js_elem, AC_ID_MAXNUM_PERMATCH) == 0) {
-		if (id_list_init(&rule_item->dst_ipgrp_ids, &rule_item->dst_ipgrp_num, 
+		if (id_list_init(&rule_item->dst_ipgrp_ids, &rule_item->dst_ipgrp_num,
 							js_elem, AC_IPGRP_MINID, AC_IPGRP_MAXID) == -1) {
 			goto fail;
-		} 
+		}
 	}
 
 	js_elem = nx_json_get(js, AC_RULE_PROTOIDS_KEY);
 	if (check_list_valid(js_elem, AC_ID_MAXNUM_PERMATCH) == 0) {
-		if (id_list_init(&rule_item->proto_ids, &rule_item->proto_num, 
+		if (id_list_init(&rule_item->proto_ids, &rule_item->proto_num,
 							js_elem, AC_PROTO_MINID, AC_PROTO_MAXID) == -1) {
 			goto fail;
-		} 
+		}
 	}
 
 	js_elem = nx_json_get(js, AC_ACTION_KEY);
@@ -203,25 +203,25 @@ static int ac_rule_item_init(struct ac_rule_item *rule_item, const nx_json *js)
 
 	return 0;
 fail:
-	ac_rule_item_cleanup(rule_item);	
+	ac_rule_item_cleanup(rule_item);
 	return -1;
 }
 
 
 /*parse ac rule*/
-int do_parse_ac_rule(const nx_json *js, struct ac_rule *rule)
-{	
+int do_parse_ac_rule(const nx_json *js, struct ac_rule *rule, const char *key)
+{
 	int ret = -1;
 	if (js == NULL || rule == NULL) {
 		AC_ERROR("invalid parameters\n");
 		return ret;
 	}
 
-	ret = nx_json_array_map(&rule->items, &rule->number, js, 
-							CONTROL_RULE_KEY, RULE_MAXNUM, 
+	ret = nx_json_array_map(&rule->items, &rule->number, js,
+							key, RULE_MAXNUM,
 							struct ac_rule_item, ac_rule_item_init, ac_rule_item_cleanup);
 	if (ret == -1) {
-		AC_ERROR("Parse %s failed\n", CONTROL_RULE_KEY);
+		AC_ERROR("Parse %s failed\n", key);
 	}
 	rule->updated = 1;
 	return ret;
@@ -229,20 +229,20 @@ int do_parse_ac_rule(const nx_json *js, struct ac_rule *rule)
 
 
 /*Display details of rule*/
-void display_raw_ac_rule(struct ac_rule *rule) 
+void display_raw_ac_rule(struct ac_rule *rule)
 {
 	int i = 0, j = 0;
 	if (rule == NULL) {
 		AC_ERROR("invalid parameter.");
 		return;
 	}
-	
+
 	if (rule->number == 0) {
 		AC_DEBUG("No rule to display\n");
 		return;
 	}
 
-	
+
 	AC_DEBUG("**********RULE ITEMS START**********\n\n");
 	AC_PRINT("Total number of control rule:%d\n", rule->number);
 	for (i = 0; i < rule->number; i++) {
@@ -276,7 +276,7 @@ void display_raw_ac_rule(struct ac_rule *rule)
 
 		AC_PRINT("proto_num number:%d [", item->proto_num);
 		for (j = 0; j < item->proto_num; ++j) {
-			AC_PRINT("%d, ", item->proto_ids[j]);
+			AC_PRINT("%u, ", item->proto_ids[j]);
 		}
 		AC_PRINT("]\n");
 
@@ -296,22 +296,22 @@ void display_raw_ac_rule(struct ac_rule *rule)
 Description:Parse rule of control,all memory alloced by itself.
 If parse success, the caller should response for freeing memory.
 */
-int do_parse_control_rule(const nx_json *js, struct ac_rule *rule)
+int do_parse_control_rule(const nx_json *js, struct ac_rule *rule, const char *key)
 {
-	return do_parse_ac_rule(js, rule);
+	return do_parse_ac_rule(js, rule, key);
 }
 
 
 /*Display details of control rule*/
-void display_raw_control_rule(struct ac_rule *rule) 
+void display_raw_control_rule(struct ac_rule *rule)
 {
 	return display_raw_ac_rule(rule);
 }
 
 
-int do_parse_audit_rule(const nx_json *js, struct ac_rule *rule)
+int do_parse_audit_rule(const nx_json *js, struct ac_rule *rule, const char *key)
 {
-	return do_parse_ac_rule(js, rule);
+	return do_parse_ac_rule(js, rule, key);
 }
 
 
@@ -352,7 +352,7 @@ int do_parse_ac_set(const nx_json *js, struct ac_set *set)
 			set->updated |= (1 << idx);
     	}
     }
-    
+
     return 0;
 fail:
 	if (set->ipsets) {
@@ -367,7 +367,7 @@ fail:
 		free(set->ipsets);
 		set->ipsets = NULL;
 	}
-	
+
 	return -1;
 }
 

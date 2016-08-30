@@ -13,7 +13,7 @@
 /*the keys of ipsets, you can add more keys here.
 *The lenght of keys should be less than AC_IPSET_SETKEY_MAXLEN
 */
-#define AC_IPSET_SETKEY_MAXLEN 31		
+#define AC_IPSET_SETKEY_MAXLEN 31
 #define CONTROL_MACWHITELIST_SET_KEY 	"MacWhiteListSetName"
 #define CONTROL_IPWHITELIST_SET_KEY 	"IpWhiteListSetName"
 #define CONTROL_MACBLACKLIST_SET_KEY 	"MacBlackListSetName"

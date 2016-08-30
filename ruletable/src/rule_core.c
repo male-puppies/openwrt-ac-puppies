@@ -28,7 +28,7 @@ static int init_global_config()
 	s_config.control = (struct ac_config*)malloc(sizeof(struct ac_config));
 	if (s_config.control == NULL) {
 		goto fail;
-	}	
+	}
 
 	s_config.audit = (struct ac_config*)malloc(sizeof(struct ac_config));
 	if (s_config.audit == NULL) {
@@ -64,7 +64,7 @@ int do_parse_config(const char *json_str, unsigned int size)
 	int ret = -1;
 	char *json_str_cpy = NULL;
 	const nx_json *js = NULL, *js_elem = NULL;
-	
+
 	if (json_str == NULL || size <= 0) {
 		AC_ERROR("invalid parameters.");
 		return -1;
@@ -88,7 +88,7 @@ int do_parse_config(const char *json_str, unsigned int size)
 	}
 
 	init_global_config();
-	
+
 	/*parse control set*/
 	js_elem = nx_json_get(js, CONTROL_SET_KEY);
 	if (js_elem->type != NX_JSON_NULL) {
@@ -108,18 +108,18 @@ int do_parse_config(const char *json_str, unsigned int size)
 	/*parse control rule*/
 	js_elem = nx_json_get(js, CONTROL_RULE_KEY);
 	if (js_elem->type != NX_JSON_NULL) {
-		if (do_parse_control_rule(js_elem, &s_config.control->rule) == 0) {
+		if (do_parse_control_rule(js_elem, &s_config.control->rule, CONTROL_RULE_KEY) == 0) {
 			display_raw_control_rule(&s_config.control->rule);
 		}
 		else {
 			goto out;
 		}
 	}
-	
+
 	/*parse audit rule*/
 	js_elem = nx_json_get(js, AUDIT_RULE_KEY);
 	if (js_elem->type != NX_JSON_NULL) {
-		if (do_parse_audit_rule(js_elem, &s_config.audit->rule) == 0) {
+		if (do_parse_audit_rule(js_elem, &s_config.audit->rule, AUDIT_RULE_KEY) == 0) {
 			display_raw_audit_rule(&s_config.audit->rule);
 		}
 		else {
@@ -143,7 +143,7 @@ out:
 
 
 /*commit config to kernel*/
-int do_commit_config(const char *config_str, unsigned int len) 
+int do_commit_config(const char *config_str, unsigned int len)
 {
 	int ret = -1;
 	struct ac_repl_table_info *control_table_info = NULL;
@@ -155,13 +155,14 @@ int do_commit_config(const char *config_str, unsigned int len)
 		return -1;
 	}
 	if (do_parse_config(config_str, len) != 0) {
-		AC_ERROR("do_parse_config failed\n");
+		AC_ERROR("do_parse_config failed:%s\n", config_str);
 		return -1;
 	}
 
 	if (s_config.control->rule.updated) {
 		control_table_info = generate_ac_table(&s_config.control->rule, RULE_TYPE_CONTROL);
 		if (control_table_info) {
+			display_ac_table(control_table_info);
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_TABLE, control_table_info, sizeof(struct ac_repl_table_info) + control_table_info->size) != 0) {
 				goto out;
 			}
@@ -171,15 +172,17 @@ int do_commit_config(const char *config_str, unsigned int len)
 	if (s_config.control->set.updated) {
 		control_set_info = generate_ac_set(&s_config.control->set, RULE_TYPE_CONTROL);
 		if (control_set_info) {
+			display_ac_set(control_set_info);
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_SET, control_set_info, sizeof(struct ac_repl_set_info) + control_set_info->size) != 0) {
 				goto out;
 			}
-		}	
+		}
 	}
 
 	if (s_config.audit->rule.updated) {
 		audit_table_info = generate_ac_table(&s_config.audit->rule, RULE_TYPE_AUDIT);
 		if (audit_table_info) {
+			display_ac_table(audit_table_info);
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_TABLE, audit_table_info, sizeof(struct ac_repl_table_info) + audit_table_info->size) != 0) {
 				goto out;
 			}
@@ -189,6 +192,7 @@ int do_commit_config(const char *config_str, unsigned int len)
 	if (s_config.audit->set.updated) {
 		audit_set_info = generate_ac_set(&s_config.audit->set, RULE_TYPE_AUDIT);
 		if (audit_set_info) {
+			display_ac_set(audit_set_info);
 			if (do_rule_ipc_set(AC_SO_SET_REPLACE_SET, audit_set_info, sizeof(struct ac_repl_set_info) + audit_set_info->size) != 0) {
 				goto out;
 			}

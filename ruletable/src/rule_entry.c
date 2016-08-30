@@ -87,7 +87,7 @@ static struct ac_entry *generate_ac_entry(struct ac_rule_item *rule_item)
 	memcpy((void*)entry + entry->target_offset, target, AC_ALIGN(sizeof(struct ac_target)));
 
 out:
-	
+
 	if (flow_match) {
 		free(flow_match);
 	}
@@ -108,7 +108,7 @@ void display_ac_table(const struct ac_repl_table_info *table)
 	void *table_base = NULL;
 	unsigned int offset = 0;
 	struct ac_entry *entry = NULL;
-	
+
 	if (table == NULL) {
 		AC_ERROR("invalid parameter: table is NULL\n");
 		return;
@@ -129,7 +129,7 @@ struct ac_repl_table_info *generate_empty_ac_table()
 	if (table) {
 		bzero(table, sizeof(struct ac_repl_table_info));
 		return table;
-	}	
+	}
 	AC_ERROR("out of memory\n");
 	return NULL;
 }
@@ -237,7 +237,7 @@ out:
 }
 
 
-void display_ac_set(struct ac_repl_set_info *set_info) 
+void display_ac_set(struct ac_repl_set_info *set_info)
 {
 	int entry_offset = 0;
 	char (*ipset_name)[AC_IPSET_MAXNAMELEN + 1] = NULL;
@@ -252,7 +252,7 @@ void display_ac_set(struct ac_repl_set_info *set_info)
 	entry_base = set_info->entries;
 	AC_DEBUG("***************AC_SET START*******************\n\n");
 	AC_PRINT("the total size of entries = %u\n", set_info->size);
-	AC_PRINT("category = %u number= %u size = %u updated = %u\n\n", 
+	AC_PRINT("category = %u number= %u size = %u updated = %u\n\n",
 				set_info->category, set_info->number, set_info->size, set_info->updated);
 	AC_PRINT("set=%p entries=%p\n", set_info, set_info->entries);
 	if (set_info->category == RULE_TYPE_CONTROL) {
@@ -269,7 +269,7 @@ void display_ac_set(struct ac_repl_set_info *set_info)
 					i, ipset_name[i], entry->ipset_id, entry->flags, entry->size);
 		}
 	}
-	AC_DEBUG("***************AC_SET END*******************\n\n"); 
+	AC_DEBUG("***************AC_SET END*******************\n\n");
 }
 
 /*
@@ -280,14 +280,14 @@ void display_ac_set(struct ac_repl_set_info *set_info)
 #define AC_IPSET_TYPE_MAX		4
 */
 static int ac_set_action_map[AC_IPSET_TYPE_MAX] = {
-	(AC_IGNORE | AC_ACCEPT),	/*MACWHITE*/ 
+	(AC_IGNORE | AC_ACCEPT),	/*MACWHITE*/
 	(AC_IGNORE | AC_ACCEPT),	/*IPWHITE*/
-	(AC_AUDIT | AC_REJECT),		/*MACBLACK*/ 
+	(AC_AUDIT | AC_REJECT),		/*MACBLACK*/
 	(AC_AUDIT | AC_REJECT),		/*IPBLACK*/
 };
 
 
-struct ac_repl_set_info *generate_ac_set(struct ac_set *set, int category) 
+struct ac_repl_set_info *generate_ac_set(struct ac_set *set, int category)
 {
 	int offset = 1, entry_size = 0, entry_offset = 0, total_size = 0;
 	struct ac_repl_set_info *set_info = NULL;
@@ -307,7 +307,7 @@ struct ac_repl_set_info *generate_ac_set(struct ac_set *set, int category)
 		AC_ERROR("Out of memory\n");
 		goto out;
 	}
-	
+
 	bzero(set_info, total_size);
 	set_info->size = entry_size;
 	set_info->updated = set->updated;
@@ -315,7 +315,7 @@ struct ac_repl_set_info *generate_ac_set(struct ac_set *set, int category)
 	set_info->number = set->number;
 	entry_base = set_info->entries;
 	entry_offset = AC_ALIGN(sizeof(struct ac_hybrid_entry));
-	
+
 	if (set_info->category == RULE_TYPE_CONTROL) {
 		ipset_name = set_info->u.control.ipset_name;
 	}
@@ -323,17 +323,17 @@ struct ac_repl_set_info *generate_ac_set(struct ac_set *set, int category)
 		ipset_name = set_info->u.audit.ipset_name;
 	}
 
-	AC_PRINT("set_info addr=%p total_size = %u entry_size= %u, " 
-				"per_entry_size = %u number = %u entries addr =%p\n", 
-			set_info, total_size, entry_size, 
-			entry_offset, set_info->number, set_info->entries);
+	// AC_PRINT("set_info addr=%p total_size = %u entry_size= %u, "
+	// 			"per_entry_size = %u number = %u entries addr =%p\n",
+	// 		set_info, total_size, entry_size,
+	// 		entry_offset, set_info->number, set_info->entries);
 
 	for (int i = 0; i < set->number; ++i) {
 		if (set->updated & (1 << i)) {
 			memcpy(ipset_name[i], set->ipsets[i], (AC_IPSET_MAXNAMELEN + 1));
-		} 
+		}
 		entry = (struct ac_hybrid_entry*)(entry_base + i * entry_offset);
-		AC_PRINT("entry addr:%p entry_offset:%u\n", entry, AC_ALIGN(sizeof(struct ac_hybrid_entry)));
+		//AC_PRINT("entry addr:%p entry_offset:%u\n", entry, AC_ALIGN(sizeof(struct ac_hybrid_entry)));
 		entry->size = AC_ALIGN(sizeof(struct ac_hybrid_entry));
 		entry->ipset_id = IPSET_INVALID_ID;
 		entry->flags = ac_set_action_map[i];
@@ -367,7 +367,7 @@ struct ac_repl_table_info *fetch_ac_table(unsigned int cate, unsigned int info_c
 	if (do_rule_ipc_get(info_cmd, &entries_info, total_size) != 0) {
 		AC_ERROR("get entries_info failed\n");
 		goto failed;
-	} 
+	}
 	display_entries_info(&entries_info);
 
 	total_size = sizeof(struct ac_repl_table_info) + entries_info.size;
@@ -416,8 +416,8 @@ struct ac_repl_set_info *fetch_ac_set(unsigned int cate, unsigned int info_cmd, 
 	if (do_rule_ipc_get(info_cmd, &sets_info, total_size) != 0) {
 		AC_ERROR("get sets_info failed\n");
 		goto failed;
-	} 
-  
+	}
+
  	display_sets_info(&sets_info);
 
 	total_size = sizeof(struct ac_repl_set_info) + sets_info.size;
