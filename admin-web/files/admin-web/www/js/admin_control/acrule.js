@@ -284,7 +284,7 @@ function consProto() {
 							})
 						)
 						.append(
-							$("<span>").html(obj[key][i]["proto_name"])
+							$("<span>").html(obj[key][i]["proto_desc"])
 						);
 
 			li_node.find("span").on("click", function() {
@@ -376,9 +376,12 @@ function edit(that) {
 	proto = obj.proto_ids;
 	str = "";
 	for (var i = 0, ien = proto.length; i < ien; i++) {
-		var p_id = "li__" + proto[i].proto_id
-		str += '<li value="' + p_id + '">' + proto[i].proto_name + '</li>';
-		$("#proto_edit .left li#" + p_id).hide();
+		var p_id = "li__" + proto[i].proto_id;
+		var p_desc = proto[i].proto_desc;
+		if (typeof p_desc != "undefined") {
+			str += '<li value="' + p_id + '">' + proto[i].proto_desc + '</li>';
+			$("#proto_edit .left li#" + p_id).hide();
+		}
 	}
 	$("#proto_sel").html(str);
 
@@ -388,16 +391,17 @@ function edit(that) {
 function set_enable(that) {
 	var node = $(that).closest("tr");
 	var obj = oTab.api().row(node).data();
+	var sobj = ObjClone(obj);
 	if (obj.enable == "1") {
-		obj.enable = "0"
+		sobj.enable = "0"
 	} else {
-		obj.enable = "1"
+		sobj.enable = "1"
 	}
 
-	obj.tmgrp_ids = [(obj.tmgrp_ids && obj.tmgrp_ids[0] && obj.tmgrp_ids[0].tmgid) && obj.tmgrp_ids[0].tmgid || 255];
-	obj.src_ipgids = [(obj.src_ipgids && obj.src_ipgids[0] && obj.src_ipgids[0].ipgid) && obj.src_ipgids[0].ipgid || 63];
-	obj.dest_ipgids = [(obj.dest_ipgids && obj.dest_ipgids[0] && obj.dest_ipgids[0].ipgid) && obj.dest_ipgids[0].ipgid || 63];
-	obj.proto_ids = (function(){
+	sobj.tmgrp_ids = [(obj.tmgrp_ids && obj.tmgrp_ids[0] && obj.tmgrp_ids[0].tmgid) && obj.tmgrp_ids[0].tmgid || 255];
+	sobj.src_ipgids = [(obj.src_ipgids && obj.src_ipgids[0] && obj.src_ipgids[0].ipgid) && obj.src_ipgids[0].ipgid || 63];
+	sobj.dest_ipgids = [(obj.dest_ipgids && obj.dest_ipgids[0] && obj.dest_ipgids[0].ipgid) && obj.dest_ipgids[0].ipgid || 63];
+	sobj.proto_ids = (function(){
 		var arr = [];
 		var ids = obj.proto_ids;
 		for (var i = 0, ien = ids.length; i < ien; i++) {
@@ -406,7 +410,7 @@ function set_enable(that) {
 		return arr;
 	}());
 
-	cgicall.post("acrule_set", obj, function(d) {
+	cgicall.post("acrule_set", sobj, function(d) {
 		cgicallBack(d, initData, function() {
 			createModalTips("修改失败！" + (d.data ? d.data : ""));
 		});
@@ -430,16 +434,16 @@ function DoSave() {
 
 	var obj = jsonTraversal(acrule, jsTravGet);
 	obj.actions = [obj.actions || "", "ADUIT"];
-	obj.tmgrp_ids = [obj.tmgrp_ids || ""];
-	obj.src_ipgids = [obj.src_ipgids || ""];
-	obj.dest_ipgids = [obj.dest_ipgids || ""];
+	obj.tmgrp_ids = [parseInt(obj.tmgrp_ids) || 255];
+	obj.src_ipgids = [parseInt(obj.src_ipgids) || 63];
+	obj.dest_ipgids = [parseInt(obj.dest_ipgids) || 63];
 	obj.proto_ids = [];
 
 	$("#proto_sel li").each(function(index, element) {
 		var id = $(element).attr("value");
-		var reg = new RegExp("li__([0-9]*)", "g");
+		var reg = new RegExp("li__([0-9a-zA-Z]*)", "g");
 		if (reg.test(id)) {
-			obj.proto_ids.push(parseInt(RegExp.$1));
+			obj.proto_ids.push(RegExp.$1);
 		}
 	});
 
