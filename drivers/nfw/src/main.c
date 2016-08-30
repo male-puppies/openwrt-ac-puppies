@@ -9,32 +9,25 @@
 
 #define __DEBUG 1
 
-extern int do_ac_table_hk(
-	struct net_device *in, struct net_device *out, struct sk_buff *skb,
-	flow_info_t *fi, user_info_t *ui, user_info_t *pi);
-extern int do_ac_table_cb(
-	struct net_device *in, struct net_device *out, struct sk_buff *skb,
-	flow_info_t *fi, user_info_t *ui, user_info_t *pi, uint32_t proto_new);
-
 #include "nfw_private.h"
 
 #define DRV_VERSION	"0.1.1"
 #define DRV_DESC	"ntrack layer 7 firewall system driver"
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
-static unsigned int nfw_hook_fn(void *priv, 
+static unsigned int nfw_hook_fn(void *priv,
 		struct sk_buff *skb,
 		const struct nf_hook_state *state)
 #else
-static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops, 
+static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 		struct sk_buff *skb,
 		const struct net_device *in,
-		const struct net_device *out, 
+		const struct net_device *out,
 		int (*okfn)(struct sk_buff *))
 #endif
 {
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(3,18,20))
-	 struct net_device *in = state->in, *out = state->out;
+	 //struct net_device *in = state->in, *out = state->out;
 #endif
 
 	int ret = NF_ACCEPT;
@@ -66,7 +59,7 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 	if(!fi || !ui || !pi) {
 		return NF_ACCEPT;
 	}
-	do_ac_table_hk(in, out, skb, fi, ui, pi);
+
 	if (nt_flow_accepted(fi)) {
 		fw_debug(FMT_FLOW_STR "accepted\n", FMT_FLOW(fi));
 		return NF_ACCEPT;
@@ -115,25 +108,6 @@ static struct nf_hook_ops ntrack_nf_hook_ops[] = {
 	}
 };
 
-static int fw_nproto_callback(nt_packet_t *pkt, uint32_t proto_crc)
-{
-	/* maybe pcap rule test. */
-	if(!pkt->in ||
-		!pkt->out ||
-		!pkt->skb) 
-	{
-		return -1;
-	}
-	/*TODO: check the config rule's, markup fi->flags.*/
-	if(do_ac_table_cb(pkt->in, pkt->out, pkt->skb,
-						pkt->fi, pkt->ui, pkt->pi, proto_crc)) 
-	{
-		nt_flow_drop_set(pkt->fi, FG_FLOW_DROP_L7_FW);
-		return 1;
-	}
-	return 0;
-}
-
 void *nfw_klog_fd = NULL;
 static int __init nfw_modules_init(void)
 {
@@ -155,7 +129,6 @@ static int __init nfw_modules_init(void)
 		goto __err;
 	}
 
-	np_hook_register(fw_nproto_callback);
 	return 0;
 
 __err:
@@ -170,7 +143,7 @@ static void __exit nfw_modules_exit(void)
 {
 	fw_info("module cleanup.\n");
 
-	np_hook_unregister(fw_nproto_callback);
+	nfw_dbg_exit();
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
 	nfw_dbg_exit();
 
