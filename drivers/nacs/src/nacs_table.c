@@ -82,7 +82,7 @@ void display_ac_flow_match(const struct ac_flow_match *flow_match)
 		NACS_ERROR("Number of %s is %d:[", flow_match_map[i], flow_match->number[i]);
 
 		for (j = 0; j < flow_match->number[i]; ++j) {
-			NAC_PRINT_DEBUG("%d, ", *(base + idx_offset + j));
+			NACS_DEBUG("%d, ", *(base + idx_offset + j));
 		}
 		idx_offset += flow_match->number[i];
 	}
@@ -104,7 +104,7 @@ void display_ac_proto_match(const struct ac_proto_match* proto_match)
 	NACS_ERROR("Number of ids is %d:", proto_match->number);
 	base = (proto_id_t*)proto_match->elems;
 	for (i = 0; i < proto_match->number; ++i) {
-		NAC_PRINT_DEBUG("%u, ", *(base + i));
+		NACS_DEBUG("%u, ", *(base + i));
 		if (i && (i % IDS_NUM_PER_ROW) == 0) {
 			NACS_ERROR("\n");
 		}
@@ -127,7 +127,7 @@ void display_ac_target(const struct ac_target *target)
 
 	for (i = 0; i < AC_ACTION_MAX; ++i) {
 		if (target->flags & target_flag_map[i]) {
-			NAC_PRINT_DEBUG("%s, ", target_map[i]);
+			NACS_DEBUG("%s, ", target_map[i]);
 		}
 	}
 	NACS_ERROR("---------TARGET END-------\n\n");
@@ -194,7 +194,7 @@ static void display_ac_table_kernel(struct ac_table_info *table) {
 		ac_entry_foreach(entry, table_base, table->size) {
 			display_ac_entry(entry);
 		}
-		NAC_PRINT_DEBUG("\n\n\n\n");
+		NACS_DEBUG("\n\n\n\n");
 	}
 }
 
@@ -211,11 +211,11 @@ void display_ac_set(struct ac_set_info *set_info)
 
 	entry = (struct ac_hybrid_entry*)set_info->entries;
 	NACS_WARN("***************AC_SET START*******************\n");
-	NAC_PRINT_DEBUG("the total size of entries = %u\n", set_info->size);
-	NAC_PRINT_DEBUG("category = %u number= %u size = %u updated = %u\n\n",
+	NACS_DEBUG("the total size of entries = %u\n", set_info->size);
+	NACS_DEBUG("category = %u number= %u size = %u updated = %u\n\n",
 				set_info->category, set_info->number, set_info->size, set_info->updated);
 
-	NAC_PRINT_DEBUG("set=%p entries=%p\n", set_info, set_info->entries);
+	NACS_DEBUG("set=%p entries=%p\n", set_info, set_info->entries);
 	if (set_info->category == RULE_TYPE_CONTROL) {
 		ipset_name = set_info->u.control.ipset_name;
 	}
@@ -247,11 +247,11 @@ void display_ac_set_kernel(struct ac_set_info *set_info)
 
 	entry = (struct ac_hybrid_entry*)set_info->entries;
 	NACS_WARN("***************AC_SET START*******************\n");
-	NAC_PRINT_DEBUG("the total size of entries = %u\n", set_info->size);
-	NAC_PRINT_DEBUG("category = %u number= %u size = %u updated = %u\n\n",
+	NACS_DEBUG("the total size of entries = %u\n", set_info->size);
+	NACS_DEBUG("category = %u number= %u size = %u updated = %u\n\n",
 				set_info->category, set_info->number, set_info->size, set_info->updated);
 
-	NAC_PRINT_DEBUG("set=%p entries=%p\n", set_info, set_info->entries);
+	NACS_DEBUG("set=%p entries=%p\n", set_info, set_info->entries);
 	if (set_info->category == RULE_TYPE_CONTROL) {
 		ipset_name = set_info->u.control.ipset_name;
 	}
@@ -1185,40 +1185,40 @@ static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 	}
 
 	NACS_DEBUG("----------process check result start-----\n");
-	NAC_PRINT_DEBUG("Match in:[%s %s]\n",
+	NACS_DEBUG("Match in:[%s %s]\n",
 		result->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT",
 		result->rule_sub_type == RULE_SUB_TYPE_SET ? "SET" :"RULE");
 
 	if (result->rule_sub_type == RULE_SUB_TYPE_RULE) {
-		NAC_PRINT_DEBUG("proto_id=%u\n", result->u.rule.proto_id);
+		NACS_DEBUG("proto_id=%u\n", result->u.rule.proto_id);
 	}
 	else {
 		switch(result->u.set.set_type) {
 			case AC_MACWHITELIST_SET:
-				NAC_PRINT_DEBUG("Set:%s\n", "MACWHITELIST");
+				NACS_DEBUG("Set:%s\n", "MACWHITELIST");
 				break;
 
 			case AC_IPWHITELIST_SET:
-				NAC_PRINT_DEBUG("Set:%s\n", "IPWHITELIST");
+				NACS_DEBUG("Set:%s\n", "IPWHITELIST");
 				break;
 
 			case AC_MACBLACKLIST_SET:
-				NAC_PRINT_DEBUG("Set:%s\n", "MACBLACKLIST");
+				NACS_DEBUG("Set:%s\n", "MACBLACKLIST");
 				break;
 
 			case AC_IPBLACKLIST_SET:
-				NAC_PRINT_DEBUG("Set:%s\n", "IPBLACKLIST");
+				NACS_DEBUG("Set:%s\n", "IPBLACKLIST");
 				break;
 
 			default:
 				break;
 		}
 	}
-	NAC_PRINT_DEBUG(FMT_MAC_STR, FMT_MAC(result->macaddr));
-	NAC_PRINT_DEBUG("src(%u.%u.%u.%u:%d), dst_ip(%u.%u.%u.%u:%d)\n",
+	NACS_DEBUG(FMT_MAC_STR, FMT_MAC(result->macaddr));
+	NACS_DEBUG("src(%u.%u.%u.%u:%d), dst_ip(%u.%u.%u.%u:%d)\n",
 				NIPQUAD(result->src_ip), ntohs(result->src_port),
 				NIPQUAD(result->dst_ip), ntohs(result->dst_port));
-	NAC_PRINT_DEBUG("Actions:%u\n", result->actions);
+	NACS_DEBUG("Actions:%u\n", result->actions);
 	NACS_DEBUG("----------process check result end--------\n");
 
 	nt_msghdr_init(&hdr, en_MSG_NACS, sizeof(nacs_msg_t));
@@ -1255,7 +1255,6 @@ static int do_ac_table(
 		.pi 	= pi,
 		.proto_id = proto,
 	};
-	printk("%s:proto %u\n", __func__, proto);
 	memset(&result, 0, sizeof(nacs_msg_t));
 	for (rule_type = 0; rule_type < RULE_TYPE_MAX; ++rule_type) {
 		if (__do_ac_table(&check_req, &nac_table, rule_type, &result) != -1) {
