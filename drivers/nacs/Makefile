@@ -18,7 +18,7 @@ define KernelPackage/$(PKG_NAME)
   SUBMENU:=Nos kernel modules
   TITLE:=nacs kernel driver
   FILES:=$(PKG_BUILD_DIR)/$(PKG_NAME).ko
-  DEPENDS:=+kmod-klog +kmod-ipt-ipset +pps_comm
+  DEPENDS:=+kmod-klog +kmod-ipt-ipset +pps_comm +kmod-nproto
   AUTOLOAD:=$(call AutoProbe, nacs)
   KCONFIG:=
 endef
@@ -28,7 +28,7 @@ define KernelPackage/$(PKG_NAME)/description
 endef
 
 EXTRA_KCONFIG:= \
-	CONFIG_NACS=m 
+	CONFIG_NACS=m
 
 EXTRA_CFLAGS:= \
 	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \

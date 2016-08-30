@@ -2,6 +2,7 @@
 #define _NACS_COMM_H
 #include <linux/timer.h>
 #include <ntrack_nacs.h>
+#include <linux/version.h>
 
 /*fixme:just for compile error caused by ntrack_log.h*/
 #define nt_debug(fmt...) do{}while(0)
@@ -10,9 +11,6 @@
 #define nt_error(fmt...) do{}while(0)
 #define nt_dump(fmt...) do{}while(0)
 #include <ntrack_msg.h>
-
-#define KERNEL_VERSION(a,b,c) (a+b+c)
-#define LINUX_VERSION_CODE  8
 
 struct nac_check_req {
 	struct net_device *in, *out;

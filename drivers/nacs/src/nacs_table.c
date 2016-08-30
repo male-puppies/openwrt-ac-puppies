@@ -37,7 +37,7 @@ static struct ac_table nac_table = {
 
 
 /*Notice:In process context, before we access nac_table, we need hold a lock*/
-static struct ac_table* get_table_withlock(void) 
+static struct ac_table* get_table_withlock(void)
 {
 	mutex_lock(&nac_mutex);
 	return &nac_table;
@@ -66,7 +66,7 @@ static char target_flag_map[AC_ACTION_MAX] = {
 };
 
 
-void display_ac_flow_match(const struct ac_flow_match *flow_match) 
+void display_ac_flow_match(const struct ac_flow_match *flow_match)
 {
 	int idx_offset = 0, i = 0, j = 0;
 	flow_id_t *base = NULL;
@@ -90,7 +90,7 @@ void display_ac_flow_match(const struct ac_flow_match *flow_match)
 }
 
 
-void display_ac_proto_match(const struct ac_proto_match* proto_match) 
+void display_ac_proto_match(const struct ac_proto_match* proto_match)
 {
 	#define IDS_NUM_PER_ROW 6
 	int i = 0;
@@ -104,14 +104,14 @@ void display_ac_proto_match(const struct ac_proto_match* proto_match)
 	NACS_ERROR("Number of ids is %d:", proto_match->number);
 	base = (proto_id_t*)proto_match->elems;
 	for (i = 0; i < proto_match->number; ++i) {
-		NAC_PRINT_DEBUG("%d, ", *(base + i));
+		NAC_PRINT_DEBUG("%u, ", *(base + i));
 		if (i && (i % IDS_NUM_PER_ROW) == 0) {
 			NACS_ERROR("\n");
 		}
 	}
 
 	NACS_ERROR("---------PROTO_MATCH END---------\n\n");
-	#undef IDS_NUM_PER_ROW 
+	#undef IDS_NUM_PER_ROW
 }
 
 
@@ -159,11 +159,11 @@ static void display_ac_entry(struct ac_entry *entry)
 }
 
 
-static void display_ac_table(struct ac_table_info *table) 
+static void display_ac_table(struct ac_table_info *table)
 {
 	void *table_base = NULL;
 	struct ac_entry *entry = NULL;
-	
+
 	if (table == NULL) {
 		NACS_WARN("invalid parameter: table is NULL\n");
 		return;
@@ -179,7 +179,7 @@ static void display_ac_table_kernel(struct ac_table_info *table) {
 	int i = 0;
 	void *table_base = NULL;
 	struct ac_entry *entry = NULL;
-	
+
 	if (table == NULL) {
 		NACS_WARN("invalid parameter: table is NULL\n");
 		return;
@@ -188,8 +188,8 @@ static void display_ac_table_kernel(struct ac_table_info *table) {
 	for (i = 0; i < num_possible_cpus(); ++i) {
 		table_base = (void*)table->entries + SMP_ALIGN(table->size) * i;
 		NACS_WARN("Core %d, table_base:%p\n", i , table_base);
-		NACS_WARN("category=%u, szie:%u, align_size = %u, number=%u\n", 
-				table->category , table->size, 
+		NACS_WARN("category=%u, szie:%u, align_size = %u, number=%u\n",
+				table->category , table->size,
 				SMP_ALIGN(table->size), table->number);
 		ac_entry_foreach(entry, table_base, table->size) {
 			display_ac_entry(entry);
@@ -198,7 +198,7 @@ static void display_ac_table_kernel(struct ac_table_info *table) {
 	}
 }
 
-void display_ac_set(struct ac_set_info *set_info) 
+void display_ac_set(struct ac_set_info *set_info)
 {
 	int i = 0, entry_offset = 0;
 	char (*ipset_name)[AC_IPSET_MAXNAMELEN + 1] = NULL;
@@ -212,7 +212,7 @@ void display_ac_set(struct ac_set_info *set_info)
 	entry = (struct ac_hybrid_entry*)set_info->entries;
 	NACS_WARN("***************AC_SET START*******************\n");
 	NAC_PRINT_DEBUG("the total size of entries = %u\n", set_info->size);
-	NAC_PRINT_DEBUG("category = %u number= %u size = %u updated = %u\n\n", 
+	NAC_PRINT_DEBUG("category = %u number= %u size = %u updated = %u\n\n",
 				set_info->category, set_info->number, set_info->size, set_info->updated);
 
 	NAC_PRINT_DEBUG("set=%p entries=%p\n", set_info, set_info->entries);
@@ -230,11 +230,11 @@ void display_ac_set(struct ac_set_info *set_info)
 		}
 		entry = (struct ac_hybrid_entry*)((char*)entry + entry_offset);
 	}
-	NACS_WARN("***************AC_SET END*******************\n\n"); 
+	NACS_WARN("***************AC_SET END*******************\n\n");
 }
 
 
-void display_ac_set_kernel(struct ac_set_info *set_info) 
+void display_ac_set_kernel(struct ac_set_info *set_info)
 {
 	int i = 0, entry_offset = 0, j = 0;
 	char (*ipset_name)[AC_IPSET_MAXNAMELEN + 1] = NULL;
@@ -248,7 +248,7 @@ void display_ac_set_kernel(struct ac_set_info *set_info)
 	entry = (struct ac_hybrid_entry*)set_info->entries;
 	NACS_WARN("***************AC_SET START*******************\n");
 	NAC_PRINT_DEBUG("the total size of entries = %u\n", set_info->size);
-	NAC_PRINT_DEBUG("category = %u number= %u size = %u updated = %u\n\n", 
+	NAC_PRINT_DEBUG("category = %u number= %u size = %u updated = %u\n\n",
 				set_info->category, set_info->number, set_info->size, set_info->updated);
 
 	NAC_PRINT_DEBUG("set=%p entries=%p\n", set_info, set_info->entries);
@@ -263,8 +263,8 @@ void display_ac_set_kernel(struct ac_set_info *set_info)
 	for (j = 0; j < num_possible_cpus(); ++j) {
 		entry = (struct ac_hybrid_entry*)((void*)set_info->entries + SMP_ALIGN(set_info->size) * j);
 		NACS_WARN("Core %d, entry_base:%p\n", j , entry);
-		NACS_WARN("category=%u, szie:%u, align_size = %u, number=%u updated=%u\n", 
-					set_info->category , set_info->size, 
+		NACS_WARN("category=%u, szie:%u, align_size = %u, number=%u updated=%u\n",
+					set_info->category , set_info->size,
 					SMP_ALIGN(set_info->size), set_info->number, set_info->updated);
 
 		for (i = 0; i < set_info->number; ++i) {
@@ -276,7 +276,7 @@ void display_ac_set_kernel(struct ac_set_info *set_info)
 		}
 		NACS_WARN("\n\n\n");
 	}
-	NACS_WARN("***************AC_SET END*******************\n\n"); 
+	NACS_WARN("***************AC_SET END*******************\n\n");
 }
 
 /********************************Update rule Start******************************/
@@ -288,7 +288,7 @@ static struct ac_table_info *alloc_ac_table_info(unsigned int size)
 {
 	struct ac_table_info *info = NULL;
 	/*per-cpu data and align, sz is the real meomry size*/
-	size_t sz = sizeof(*info) + SMP_ALIGN(size) * num_possible_cpus();	
+	size_t sz = sizeof(*info) + SMP_ALIGN(size) * num_possible_cpus();
 
 	if (sz < sizeof(*info)) {
 		return NULL;
@@ -327,13 +327,13 @@ static void free_ac_table_info(struct ac_table_info *info)
 
 
 static int check_entry_size(
-		struct ac_entry *entry, 
+		struct ac_entry *entry,
 		const unsigned char *base,
 		const unsigned char *limit
 	)
 {
-	NACS_DEBUG("entry=%p next=%p offset =%u limit=%p\n", 
-				entry, ((unsigned char*)entry + entry->next_offset),  
+	NACS_DEBUG("entry=%p next=%p offset =%u limit=%p\n",
+				entry, ((unsigned char*)entry + entry->next_offset),
 				entry->next_offset, limit);
 
 	if (((unsigned char*)entry + entry->next_offset) > limit) {
@@ -354,8 +354,8 @@ static int check_entry_size(
 
 /*Checks and translates the user-supplied table segment(hold in newinfo)*/
 static int translate_table(
-			struct ac_table_info *new_info, 
-			void *first_entry, 
+			struct ac_table_info *new_info,
+			void *first_entry,
 			const struct ac_repl_table_info *repl)
 {
 	int ret = 0, i = 0;
@@ -410,7 +410,7 @@ static int  __do_replace_table(struct ac_table *table, struct ac_table_info *new
 
 
 /*
-*replace table contains 
+*replace table contains
 *a.copy header from user
 *b.copy body from user ,and then,translate_table
 *c.get speicified table pointer
@@ -423,7 +423,7 @@ int do_replace_table(const void __user *user, unsigned int len)
 	int ret = 0;
 	struct ac_table *table = NULL;
 	struct ac_repl_table_info tmp;
-	struct ac_table_info *new_info = NULL; 
+	struct ac_table_info *new_info = NULL;
 	void *loc_cpu_entry;
 
 	if (copy_from_user(&tmp, user, sizeof(tmp)) != 0) {
@@ -432,11 +432,11 @@ int do_replace_table(const void __user *user, unsigned int len)
 	}
 
 	if (len != sizeof(tmp) + tmp.size) {
-		NACS_WARN("user data:real len=%u != assumption len=(header=%u + body=%u)\n", 
+		NACS_WARN("user data:real len=%u != assumption len=(header=%u + body=%u)\n",
 					len, (unsigned int)sizeof(tmp), tmp.size);
 		return -ENOPROTOOPT;
 	}
-	NACS_WARN("user data:real len=%u == assumption len=(header:%u + body:%u)\n", 
+	NACS_WARN("user data:real len=%u == assumption len=(header:%u + body:%u)\n",
 				len, (unsigned int)sizeof(tmp), tmp.size);
 	new_info = alloc_ac_table_info(tmp.size);
 	if (new_info == NULL) {
@@ -523,8 +523,8 @@ static void free_ac_set_info(struct ac_set_info *info)
 
 
 static int translate_set(
-			struct ac_set_info *new_info, 
-			void *first_entry, 
+			struct ac_set_info *new_info,
+			void *first_entry,
 			struct ac_repl_set_info *repl)
 {
 	struct ac_hybrid_entry *entry = NULL;
@@ -547,7 +547,7 @@ static int translate_set(
 		ipset_name = new_info->u.control.ipset_name;
 	}
 	else {
-		ipset_name = new_info->u.audit.ipset_name; 
+		ipset_name = new_info->u.audit.ipset_name;
 	}
 
 	entry_base = first_entry;
@@ -603,7 +603,7 @@ int do_replace_set(const void __user *user, unsigned int len)
 	}
 
 	if (len != sizeof(tmp) + tmp.size) {
-		NACS_WARN("user data:real len=%u != assumption len=(header=%u + body=%u)\n", 
+		NACS_WARN("user data:real len=%u != assumption len=(header=%u + body=%u)\n",
 					len, (unsigned int)sizeof(tmp), tmp.size);
 		return -ENOPROTOOPT;
 	}
@@ -694,7 +694,7 @@ int do_get_set_info(void __user *user, int *len)
 	}
 
 	if (*len != sizeof(tmp)) {
-		NACS_WARN("user data:real_len=%i != assumption len=%u\n", 
+		NACS_WARN("user data:real_len=%i != assumption len=%u\n",
 					*len, (unsigned int)sizeof(tmp));
 		return -ENOPROTOOPT;
 	}
@@ -731,7 +731,7 @@ int do_get_entries(void __user *user, int *len)
 		NACS_WARN("copy from user failed\n");
 		return -EFAULT;
 	}
-	printk("tmp:%u %u %u %u\n", tmp.category, tmp.size, tmp.number, (unsigned int)sizeof(tmp));
+
 	if (*len != sizeof(tmp) + tmp.size) {
 		NACS_WARN("user data:real_len=%i != assumption len=%u\n", *len, (unsigned int)sizeof(tmp) + tmp.size);
 		return -ENOPROTOOPT;
@@ -744,8 +744,8 @@ int do_get_entries(void __user *user, int *len)
 
 	table = get_table_withlock();
 	table_info = table->priv_tables[tmp.category];
-	if (tmp.category != table_info->category || 
-		tmp.size != table_info->size || 
+	if (tmp.category != table_info->category ||
+		tmp.size != table_info->size ||
 		tmp.number != table_info->number) {
 		NACS_WARN("invalid parameters\n");
 		ret =  -EINVAL;
@@ -773,14 +773,14 @@ int do_get_sets(void __user *user, int *len)
 	struct ac_repl_set_info tmp;
 	struct ac_set_info *set_info = NULL;
 	struct ac_table *table = NULL;
-	//do_ac_table(NULL, NULL, NULL);
+
 	if (copy_from_user(&tmp, user, sizeof(tmp)) != 0) {
 		NACS_WARN("copy from user failed\n");
 		return -EFAULT;
 	}
 
 	if (*len != sizeof(tmp) + tmp.size) {
-		NACS_WARN("user data:real_len=%i != assumption len=(header=%u + body=%u)\n", 
+		NACS_WARN("user data:real_len=%i != assumption len=(header=%u + body=%u)\n",
 					*len, (unsigned int)sizeof(tmp), tmp.size);
 		return -ENOPROTOOPT;
 	}
@@ -792,7 +792,7 @@ int do_get_sets(void __user *user, int *len)
 
 	table = get_table_withlock();
 	set_info = table->priv_sets[tmp.category];
-	if (tmp.category != set_info->category || 
+	if (tmp.category != set_info->category ||
 		tmp.size != set_info->size ||
 		tmp.number != set_info->number ||
 		tmp.updated != set_info->updated) {
@@ -829,8 +829,8 @@ fail:
 *notice:the proto_id is asc sorted
 */
 static int binary_search(
-	proto_id_t *proto_id, 
-	int number, 
+	proto_id_t *proto_id,
+	int number,
 	proto_id_t value)
 {
 	int left = 0, middle = 0, right = 0;
@@ -856,9 +856,9 @@ static int binary_search(
 *valid zone range[0~254], zone255 means all of zones
 */
 static int ac_zone_check(
-	flow_id_t *zone, 
-	int number, 
-	flow_id_t zone_id) 
+	flow_id_t *zone,
+	int number,
+	flow_id_t zone_id)
 {
 	int i = 0, matched = 0;
 
@@ -879,15 +879,15 @@ static int ac_zone_check(
 *ipgrp_bits:every bit represent a ipgrp,eg, ipgrp_bits:10 been set, means ipgrp10 been set
 */
 static int ac_ipgrp_check(
-	flow_id_t *ipgrp, 
-	int number, 
+	flow_id_t *ipgrp,
+	int number,
 	__u64 ipgrp_bits) {
 
 	#define IPGRP_BITS_SIZE 64
 	int i = 0, matched = 0;
 
 	for (i = 0; i < number; ++i) {
-		/*notice: ipgrp[i] maybe greater than 63, we should take care*/ 
+		/*notice: ipgrp[i] maybe greater than 63, we should take care*/
 		if ((ipgrp[i] < IPGRP_BITS_SIZE) && (ipgrp_bits & (1ULL << ipgrp[i]))) {
 			NACS_DEBUG("ipgrp[%d] = %d, ipgrp_bits=0x%llx matched\n", i, ipgrp[i], ipgrp_bits);
 			matched = 1;
@@ -936,7 +936,7 @@ static int flow_match_check(struct ac_flow_match *match, struct dpi_flow *flow)
 				{
 					matched = ac_ipgrp_check(base + offset, match->number[i], flow->dst_ipgrp_bits);
 					break;
-				}	
+				}
 
 			default:
 				matched = 0;
@@ -963,15 +963,15 @@ static int proto_match_check(struct ac_proto_match *match, __u32 proto_id)
 	/*Notice: all arraies are sorted by asc*/
 	proto_ids = (proto_id_t*)match->elems;
 	match_idx = binary_search(proto_ids, match->number, proto_id);
-	NACS_DEBUG("proto_id=%d match_idx=%d\n\n", proto_id, match_idx);
-	return match_idx < 0 ? 0 : 1; 
+	NACS_DEBUG("proto_id=%u match_idx=%d\n\n", proto_id, match_idx);
+	return match_idx < 0 ? 0 : 1;
 }
 
 
 static int __do_set(
 	const struct net_device *in,
 	const struct net_device *out,
-	struct sk_buff *skb, 
+	struct sk_buff *skb,
 	struct ac_set_info *set_info, nacs_msg_t *result)
 {
 	int ret = -1, i = 0, entry_offset = 0;
@@ -993,7 +993,7 @@ static int __do_set(
 				case AC_IPWHITELIST_SET:
 						if (ip_set_test_src_ip(in, out, skb, entry->ipset_id)) {
 							ret = AC_IPWHITELIST_SET;
-						}	
+						}
 						break;
 
 				case AC_MACBLACKLIST_SET:
@@ -1005,13 +1005,17 @@ static int __do_set(
 				case AC_IPBLACKLIST_SET:
 						if (ip_set_test_src_ip(in, out, skb, entry->ipset_id)) {
 							ret = AC_IPBLACKLIST_SET;
-						}	
+						}
 						break;
 
 				default:
 					ret = -1;
 					break;
 			}
+		}
+
+		if (ret != -1) {
+			break;
 		}
 	}
 
@@ -1037,14 +1041,13 @@ static int __do_table(
 	struct ac_proto_match *proto_match = NULL;
 	struct ac_target *target = NULL;
 	struct ac_entry *entry = NULL;
-
 	struct dpi_flow flow = {
 		.src_zone = req->src_zone,
 		.dst_zone = req->dst_zone,
 		.src_ipgrp_bits = req->src_ipgrp_bits,
 		.dst_ipgrp_bits = req->dst_ipgrp_bits
 	};
-	
+
 	table_info_base = table_info->entries + SMP_ALIGN(table_info->size) * smp_processor_id();
 	ac_entry_foreach(entry, table_info_base, table_info->size) {
 		flow_match = (struct ac_flow_match*)entry->elems;
@@ -1071,13 +1074,13 @@ static int __do_table(
 
 
 /*
-*the main behind the curtain, it will check set and rule, 
+*the main behind the curtain, it will check set and rule,
 *and then, generate check result
 */
 static int __do_ac_table(
-	struct nac_check_req *req, 
+	struct nac_check_req *req,
 	struct ac_table *table,
-	int rule_type, nacs_msg_t *result) 
+	int rule_type, nacs_msg_t *result)
 {
 
 	int ret = -1;
@@ -1109,7 +1112,7 @@ static int __do_ac_table(
 	}
 
 	/*matched fill flow info*/
-fill_flow:	
+fill_flow:
 	result->rule_type = rule_type;
 	result->src_ip = req->fi->tuple.ip_src;
 	result->dst_ip = req->fi->tuple.ip_dst;
@@ -1141,7 +1144,7 @@ static int flow_flags_setdef(flow_info_t *fi, __u8 rule_type)
 {
 	if (rule_type == RULE_TYPE_CONTROL) {
 		nt_flow_control_fin_set(fi);
-		return 0;	
+		return 0;
 	}
 	nt_flow_audit_fin_set(fi);
 	return 0;
@@ -1153,7 +1156,7 @@ static int flow_flags_setdef(flow_info_t *fi, __u8 rule_type)
 *a.set action flag and processed flag
 *b.log the event
 */
-static int process_check_result(flow_info_t *fi, nacs_msg_t *result) 
+static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 {
 	__u32 rejected = 0;
 	nt_msghdr_t hdr;
@@ -1170,11 +1173,11 @@ static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 
 		if (result->rule_sub_type == RULE_SUB_TYPE_SET) {
 			rejected ? nt_flow_drop_set(fi, FG_FLOW_DROP_L4_FW) : nt_flow_accept_set(fi, FG_FLOW_ACCEPT_L4_FW);
-		} 
+		}
 		else {
 			rejected ? nt_flow_drop_set(fi, FG_FLOW_DROP_L7_FW) : nt_flow_accept_set(fi, FG_FLOW_ACCEPT_L7_FW);
 		}
-	} 
+	}
 
 	/*fixme:we keep audit flag for special purpose*/
 	if ((result->rule_type == RULE_TYPE_AUDIT) && (result->actions & AC_AUDIT)) {
@@ -1182,10 +1185,10 @@ static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 	}
 
 	NACS_DEBUG("----------process check result start-----\n");
-	NAC_PRINT_DEBUG("Match in:[%s %s]\n", 
-		result->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT", 
+	NAC_PRINT_DEBUG("Match in:[%s %s]\n",
+		result->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT",
 		result->rule_sub_type == RULE_SUB_TYPE_SET ? "SET" :"RULE");
-	
+
 	if (result->rule_sub_type == RULE_SUB_TYPE_RULE) {
 		NAC_PRINT_DEBUG("proto_id=%u\n", result->u.rule.proto_id);
 	}
@@ -1232,11 +1235,11 @@ static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 *b:check set and rule of control, if matched, result hold the check result, then processit
 *c:check set and rule of audit, process flow just like control
 */
-static int do_ac_table(	
+static int do_ac_table(
 	struct net_device *in,
 	struct net_device *out,
 	struct sk_buff *skb,
-	flow_info_t *fi, 
+	flow_info_t *fi,
 	user_info_t *ui,
 	user_info_t *pi,
 	__u32 proto)
@@ -1252,6 +1255,7 @@ static int do_ac_table(
 		.pi 	= pi,
 		.proto_id = proto,
 	};
+	printk("%s:proto %u\n", __func__, proto);
 	memset(&result, 0, sizeof(nacs_msg_t));
 	for (rule_type = 0; rule_type < RULE_TYPE_MAX; ++rule_type) {
 		if (__do_ac_table(&check_req, &nac_table, rule_type, &result) != -1) {
@@ -1262,21 +1266,24 @@ static int do_ac_table(
 }
 
 
-int do_ac_table_hk(	
+int do_ac_table_hk(
 	struct net_device *in,
 	struct net_device *out,
-	struct sk_buff *skb, 
-	flow_info_t *fi, 
+	struct sk_buff *skb,
+	flow_info_t *fi,
 	user_info_t *ui,
 	user_info_t *pi)
 {
 	__u32 magic = 0, proto = 0;
 	nt_flow_nacs_t *flow_nacs = NULL;
-	
 	BUG_ON(!in || !out || !skb || !fi  || !ui || !pi);
 	flow_nacs = nt_flow_priv_nacs(fi); BUG_ON(!flow_nacs);
 	magic = atomic_read(&nac_table.magic);
 	proto = fi->hdr.proto;
+
+	if (proto == 0) {
+		return 0;
+	}
 	/*only magic updated will occur do table*/
 	if (magic == flow_nacs->magic) {
 		return 0;
@@ -1302,7 +1309,6 @@ int do_ac_table_cb(
 {
 	__u32 proto_old = 0, magic = 0;
 	nt_flow_nacs_t *flow_nacs = NULL;
-
 	BUG_ON(!in);
 	BUG_ON(!out);
 	BUG_ON(!skb);
@@ -1393,7 +1399,7 @@ int nacs_table_init(void)
 
 
 void nacs_table_fini(void)
-{	
+{
 	table_fini();
 	NACS_INFO("nacs_table_fini success\n");
 }
