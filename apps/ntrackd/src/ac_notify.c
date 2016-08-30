@@ -1,10 +1,11 @@
 #include <stdlib.h>
+#include <string.h>
 #include <ntrack_nacs.h>
 #include <ntrack_log.h>
 #include <rule_table.h>
 #include <cJSON.h>
 
-static cJSON* create_ipgrp_array(uint64_t ipgrp_bits) 
+static cJSON* create_ipgrp_array(uint64_t ipgrp_bits)
 {
 	#define IPGRP_BITS_SIZE 64
 	int i = 0;
@@ -35,9 +36,9 @@ char *trans_aclog(nacs_msg_t *msg, int *len)
 	char *out = NULL, buf[256];
 	cJSON *root = NULL,*user = NULL, *flow = NULL, *rule = NULL, *actions = NULL;
 
-	root = cJSON_CreateObject(); 
+	root = cJSON_CreateObject();
 	user = cJSON_CreateObject();
-	flow = cJSON_CreateObject(); 
+	flow = cJSON_CreateObject();
 	rule = cJSON_CreateObject();
 	actions = cJSON_CreateArray();
 	if (!root || !user || !flow ||!rule || !actions) {
@@ -46,9 +47,9 @@ char *trans_aclog(nacs_msg_t *msg, int *len)
 	}
 
 	cJSON_AddStringToObject(root, "cmd", "aclog_add");
-	cJSON_AddStringToObject(root, "ruletype", 
+	cJSON_AddStringToObject(root, "ruletype",
 				msg->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT");
-	cJSON_AddStringToObject(root, "subtype", 
+	cJSON_AddStringToObject(root, "subtype",
 				msg->rule_sub_type == RULE_SUB_TYPE_SET ? "SET": "RULE");
 	cJSON_AddItemToObject(root, "actions", actions);
 	cJSON_AddItemToObject(root, "user", user);
@@ -69,7 +70,7 @@ char *trans_aclog(nacs_msg_t *msg, int *len)
 	n = sprintf(buf, FMT_MAC_STR, FMT_MAC(msg->macaddr));
 	if (n > 0) {
 		cJSON_AddStringToObject(user, "mac", buf);
-	} 
+	}
 	n = sprintf(buf, "%u.%u.%u.%u", NIPQUAD(msg->src_ip));
 	if (n > 0) {
 		cJSON_AddStringToObject(user, "ip", buf);
@@ -90,16 +91,16 @@ char *trans_aclog(nacs_msg_t *msg, int *len)
 
 		if (ipgrp_arr = create_ipgrp_array(msg->u.rule.src_ipgrp_bits)) {
 			cJSON_AddItemToObject(rule, "src_ipgrp_bits", ipgrp_arr);
-		}	
+		}
 
 		if (ipgrp_arr = create_ipgrp_array(msg->u.rule.dst_ipgrp_bits)) {
 			cJSON_AddItemToObject(rule, "dst_ipgrp_bits", ipgrp_arr);
-		}	
+		}
 	}
 	else {
 		#define IPSET_TYPE_MAXLEN 32
 		char ipset_type[AC_IPSET_TYPE_MAX][IPSET_TYPE_MAXLEN] = {
-				"MACWHITELIST", "IPWHITELIST", 
+				"MACWHITELIST", "IPWHITELIST",
 				"MACBLACKLIST", "IPBLACKLIST"
 			};
 		if (msg->u.set.set_type >= 0 && msg->u.set.set_type < AC_IPSET_TYPE_MAX) {
@@ -108,6 +109,7 @@ char *trans_aclog(nacs_msg_t *msg, int *len)
 	}
 
 	out = cJSON_Print(root);
+	*len = strlen(out);
 	cJSON_Delete(root);
 	return out;
 failed:
