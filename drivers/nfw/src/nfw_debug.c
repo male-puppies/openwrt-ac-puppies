@@ -1,3 +1,5 @@
+#include <linux/kernel.h>
+#include <linux/vmalloc.h>
 #include <linux/proc_fs.h>
 #include <linux/inet.h>
 
@@ -7,11 +9,12 @@
 #define PROC_DBG_FNAME "debug"
 #define PROC_DBG_DNAME DRIVER_NAME
 
-#define CMD_S_IPADDR	"addr="
-#define CMD_S_PORT		"port="
-#define CMD_S_BYPASS		"bypass="
+#define CMD_S_addr	"addr="
+#define CMD_S_port		"port="
+#define CMD_S_bypass	"bypass="
 
-#define PROC_DBG_BUFF_SIZE 512
+#define DBG_CMD_BUFF_SZ (512)
+#define DBG_IO_BUFF_SZ 	(1024 * 8)
 
 typedef struct {
 	struct mutex lock;
@@ -20,7 +23,39 @@ typedef struct {
 	struct proc_dir_entry *proc_dir, *proc_file_dbg;
 } nfw_debug_t;
 
+static void *io_buff = NULL;
+static int32_t io_length = 0, io_offset = 0;
+static DEFINE_SPINLOCK(io_lock);
+
 static nfw_debug_t GDBG;
+
+void fw_log(const char *fmt, ...)
+{
+	int32_t len, room;
+	int32_t total_len = DBG_IO_BUFF_SZ;
+	va_list args;
+
+	if(!spin_trylock_bh(&io_lock)) {
+		return;
+	}
+
+	va_start(args, fmt);
+	room = total_len - io_offset;
+	len = vsnprintf(io_buff + io_offset, room, fmt, args);
+	if(len > room) {
+		/* rollback */
+		io_offset = 0;
+	} else {
+		io_offset += len;
+	}
+	io_length += len;
+	if(io_length >= DBG_IO_BUFF_SZ) {
+		io_length = DBG_IO_BUFF_SZ;
+	}
+	va_end(args);
+
+	spin_unlock_bh(&io_lock);
+}
 
 int nfw_droplist_match(flow_info_t *fi)
 {
@@ -85,92 +120,112 @@ static ssize_t nfw_write(struct file *file,
 {
 	char *buf = NULL;
 	const char *cmd;
-	int err = 0;
 
-	if(count > PROC_DBG_BUFF_SIZE) {
-		fw_error("io buffer overflow: %d->%d\n", PROC_DBG_BUFF_SIZE, (int)count);
+	if(count > DBG_CMD_BUFF_SZ) {
+		fw_error("io buffer overflow: %d->%d\n", DBG_CMD_BUFF_SZ, (int)count);
 		return -EIO;
 	}
 
-	buf = kzalloc(PROC_DBG_BUFF_SIZE, GFP_KERNEL);
+	buf = kzalloc(DBG_CMD_BUFF_SZ, GFP_KERNEL);
 	if (!buf) {
-		fw_error("alloc failed, %d\n", PROC_DBG_BUFF_SIZE);
+		fw_error("alloc failed, %d\n", DBG_CMD_BUFF_SZ);
 		return -ENOMEM;
 	}
 	if (copy_from_user(buf, buffer, count)) {
-		err = -EFAULT;
 		goto __error_out;
 	}
 	/* parse the cmdline */
-	cmd = strstr(buf, CMD_S_IPADDR);
+	cmd = strstr(buf, CMD_S_addr);
 	if(cmd) {
-		const char *cmd_end;
+		int ret, len;
+		const char *cmd_start, *cmd_end;
 		uint32_t addr, mask = 0;
 
-		mask = in4_pton(cmd + sizeof(CMD_S_IPADDR),
-			count - (cmd - buf + sizeof(CMD_S_IPADDR)),
-			(uint8_t*)&addr, ' ', &cmd_end);
-		if(mask) {
-			fw_error("parse addr err[%s]: %d\n", cmd, mask);
+		cmd_start = cmd + strlen(CMD_S_addr);
+		len = strchr(cmd, '/') - cmd_start;
+		ret = in4_pton(cmd_start, len, (uint8_t*)&addr, -1, &cmd_end);
+		if(ret != 1) { /* shit, 1==success */
+			fw_error("parse addr err[%s]: %d\n", cmd_start, ret);
 			goto __error_out;
 		}
 		if(*cmd_end =='/') {
 			/* net mask */
-			cmd = cmd_end++;
+			cmd = cmd_end + 1;
 			if(strlen(cmd) >= 1) {
 				if(sscanf(cmd, "%u", &mask) != 1) {
 					fw_error("parse mask failed [%s].\n", cmd);
 				}
 			}
 			if(mask>32) {
-				mask = 0;
+				/* default 255.255.255.255 */
+				mask = 32;
 			}
 			mask = 0xFFFFFFFFU << (32 - mask);
 		}
 		fw_debug_set_addr(addr, mask);
 	}
-	cmd = strstr(buf, CMD_S_PORT);
+	cmd = strstr(buf, CMD_S_port);
 	if(cmd) {
 		uint32_t port;
-		if(sscanf(cmd + sizeof(CMD_S_PORT), "%u", &port) != 1) {
+		if(sscanf(cmd + strlen(CMD_S_port), "%u", &port) != 1) {
 			fw_error("parse port err[%s]\n", cmd);
 			goto __error_out;
 		}
 		fw_debug_set_port((uint16_t)port);
 	}
-	cmd = strstr(buf, CMD_S_BYPASS);
+	cmd = strstr(buf, CMD_S_bypass);
 	if(cmd) {
 		uint32_t bypass;
-		if(sscanf(cmd + sizeof(CMD_S_BYPASS), "%u", &bypass) != 1) {
+		if(sscanf(cmd + strlen(CMD_S_bypass), "%u", &bypass) != 1) {
 			fw_error("parse bypass err[%s]\n", cmd);
 			goto __error_out;
 		}
 		fw_debug_set_bypass((uint16_t)bypass);
 	}
 
+	/* review */
+	printk("addr=x.x.x.x/xx port=xxxx\n"
+		"\t%u.%u.%u.%u/%u.%u.%u.%u:%u, bypass: %u\n",
+			NIPQUAD(GDBG.addr), NIPQUAD(GDBG.mask), ntohs(GDBG.port), GDBG.bypass);
+
  __error_out:
 	if(buf) {
 		kfree(buf);
 	}
-	if (err < 0)
-		return err;
 	return count;
 }
 
 static ssize_t nfw_read(struct file *file, char __user *buffer,
 				   size_t count, loff_t * offset)
 {
-	int size = 0;
+	int size = 0, buff_off = 0, ret = 0;
 
-	if(*offset != 0) {
-		return 0;
+	/* read buff to userspace. */
+	spin_lock_bh(&io_lock);
+	if(!io_length) {
+		/* empty */
+		goto __out;
 	}
-
-	size = snprintf(buffer, count, "addr=x.x.x.x/mask port=xx\n"
-		"\t%u.%u.%u.%u/%u.%u.%u.%u:%u, bypass: %u\n",
-		NIPQUAD(GDBG.addr), NIPQUAD(GDBG.mask), ntohs(GDBG.port), GDBG.bypass);
-
+	buff_off = io_offset - io_length;
+	if(buff_off < 0) {
+		/* rollback */
+		buff_off += DBG_IO_BUFF_SZ;
+		size = DBG_IO_BUFF_SZ - buff_off;
+	} else {
+		size = io_length;
+	}
+	if(size > count) {
+		size = count;
+	}
+	ret = copy_to_user(buffer, io_buff + buff_off, size);
+	if(ret) {
+		size -= ret;
+	}
+	io_length -= size;
 	*offset += size;
+
+__out:
+	spin_unlock_bh(&io_lock);
 	return size;
 }
 
@@ -189,6 +244,15 @@ int nfw_dbg_init(void)
 
 	memset(&GDBG, 0, sizeof(GDBG));
 	mutex_init(&GDBG.lock);
+	GDBG.mask=0xFFFFFFFFU;
+
+	/* alloc mem */
+	io_buff = vmalloc(DBG_IO_BUFF_SZ);
+	if(!io_buff) {
+		fw_error("alloc io buffer %d failed\n", DBG_IO_BUFF_SZ);
+		return -ENOMEM;
+	}
+
 	/* create proc dir */
 	if(GDBG.proc_dir) {
 		fw_error("re-inited ...\n");
@@ -215,4 +279,7 @@ void nfw_dbg_exit(void)
 {
 	remove_proc_entry(PROC_DBG_FNAME, GDBG.proc_dir);
 	remove_proc_entry(PROC_DBG_DNAME, NULL);
+	if(io_buff) {
+		vfree(io_buff);
+	}
 }

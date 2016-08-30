@@ -65,24 +65,29 @@ static unsigned int nfw_hook_fn(const struct nf_hook_ops *ops,
 	}
 	do_ac_table_hk(in, out, skb, fi, ui, pi);
 	if (nt_flow_accepted(fi)) {
+		fw_debug(FMT_FLOW_STR "accepted\n", FMT_FLOW(fi));
 		return NF_ACCEPT;
 	}
 
 	/* lookup flow drop flags here */
 	ret = nt_flow_droped(fi);
 	if(ret != 0) {
-		fw_debug(FMT_FLOW_STR " droped by: %x\n", FMT_FLOW(fi), ret);
-
 		/* TODO: log to userspace this acction. */
 		ret = nfw_droplist_match(fi);
 		if(ret == 0){
+			fw_debug(FMT_FLOW_STR " droplist not care.\n", FMT_FLOW(fi));
 			return NF_DROP;
 		}
+		/* TODO: LOG & DROP */
 		if(ret > 0) {
+			fw_debug(FMT_FLOW_STR " log & bypass %d.\n", FMT_FLOW(fi), ret);
 			/* BYPASS */
+			fw_log(FMT_FLOW_STR " bypass\n", FMT_FLOW(fi));
 			return NF_ACCEPT;
 		} else {
-			/* TODO: LOG & DROP */
+			fw_debug(FMT_FLOW_STR " log & droped %d.\n", FMT_FLOW(fi), ret);
+			/* DROP */
+			fw_log(FMT_FLOW_STR " drop\n", FMT_FLOW(fi));
 			return NF_DROP;
 		}
 	}
@@ -159,11 +164,11 @@ static void __exit nfw_modules_exit(void)
 {
 	fw_info("module cleanup.\n");
 
-	nfw_dbg_exit();
 	np_hook_unregister(fw_nproto_callback);
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
-	klog_fini(nfw_klog_fd);
+	nfw_dbg_exit();
 
+	klog_fini(nfw_klog_fd);
 	synchronize_rcu();
 	return;
 }

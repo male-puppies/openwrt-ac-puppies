@@ -120,7 +120,7 @@ static int nt_context_nproto(
 	if(!nt_flow_nproto_fin(fi)) {
 		n = nproto_rules_match(&pkt);
 	} else {
-		np_info(FMT_FLOW_STR" l7: %d\n", FMT_FLOW(fi), nt_flow_nproto(fi));
+		np_debug(FMT_FLOW_STR" l7: %d\n", FMT_FLOW(fi), nt_flow_nproto(fi));
 	}
 	return n;
 }
@@ -185,7 +185,8 @@ int np_hook_register(np_hook_t fn)
 	for (; i < NP_HOOK_MAX; ++i) {
 		np_hook_t hk = np_hooks[i];
 		if(!hk) {
-			np_hooks[i] = fn;
+			np_info("hook: %d fn: %p\n", i, fn);
+			rcu_assign_pointer(np_hooks[i], fn);
 			break;
 		}
 		if (hk == fn) {
@@ -206,6 +207,8 @@ int np_hook_unregister(np_hook_t fn)
 	for (; i < NP_HOOK_MAX; ++i) {
 		if(np_hooks[i] && np_hooks[i] == fn) {
 			int j = i;
+			np_info("hook: %d fn: %p\n", i, fn);
+			rcu_assign_pointer(np_hooks[i], NULL);
 			for(; j < NP_HOOK_MAX - 1; j++) {
 				np_hooks[j] = np_hooks[j+1];
 				if(!np_hooks[j]) {
@@ -235,7 +238,7 @@ void nproto_update(nt_packet_t *pkt, np_rule_t *rule)
 
 	if(fi->hdr.proto != proto_new) {
 		for (i = 0; i < NP_HOOK_MAX; ++i) {
-			np_hook_t fn = np_hooks[i];
+			np_hook_t fn = rcu_dereference(np_hooks[i]);
 			if(!fn) {
 				break;
 			}

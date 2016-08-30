@@ -23,6 +23,19 @@
 
 ntrack_t ntrack;
 
+static int set_flow_flags(uint32_t fid, uint32_t magic, uint32_t flags)
+{
+	flow_info_t *fi = nt_get_flow_by_id(&ntrack, fid, magic);
+	if(!fi) {
+		nt_error("flow: %u-%u not found.\n", fid, magic);
+		return -EINVAL;
+	}
+	nt_print(FMT_FLOW_STR "[0x%08x]\n", FMT_FLOW(fi), nt_flow_flags(fi));
+
+	nt_flow_flags_set(fi, flags);
+	return 0;
+}
+
 static int set_user_status(uint32_t uid, uint32_t magic, uint32_t status)
 {
 	uint32_t s_prev;
@@ -116,7 +129,15 @@ int main(int argc, char *argv[])
 	// nt_dump(ntrack.fi_base, 64, "flow base: %p\n", ntrack.fi_base);
 
 	if(strcmp(argv[1], "flow") == 0) {
-		dump_flowinfo();
+		if(argc >= 3) {
+			if(strcmp(argv[2], "set") == 0 && argc >= 6) {
+				return set_flow_flags(atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+			} 
+			nt_error("nquery flow set <fid> <magic> <flags>\n");
+			return -EINVAL;
+		} else {
+			dump_flowinfo();
+		}
 	}
 
 	if(strcmp(argv[1], "user") == 0) {

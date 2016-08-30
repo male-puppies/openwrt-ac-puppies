@@ -5,12 +5,12 @@
 #include <ntrack_comm.h>
 #include <ntrack_log.h>
 
-#define FMT_FLOW_STR "fid: %u-%u [%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u-%u]"
+#define FMT_FLOW_STR "fid: %u-%u [%u.%u.%u.%u:%u -> %u.%u.%u.%u:%u-%u:%08x]"
 #define FMT_FLOW(fi) \
 			(fi)->id, (fi)->magic, \
 			NIPQUAD((fi)->tuple.ip_src), ntohs((fi)->tuple.port_src), \
 			NIPQUAD((fi)->tuple.ip_dst), ntohs((fi)->tuple.port_dst), \
-			(fi)->tuple.proto
+			(fi)->tuple.proto, (fi)->hdr.flags
 
 static inline uint32_t flow_srcip(flow_info_t *fi)
 {
@@ -56,6 +56,18 @@ enum em_flow_flags {
 	FG_FLOW_ACCEPT_L4_FW	= 1<<(FLOW_ACCEPT_SHIFT + 0), /* accepted by layer 4 firewall, such as whitelist*/
 	FG_FLOW_ACCEPT_L7_FW	= 1<<(FLOW_ACCEPT_SHIFT + 1), /* accepted by layer 7 firewall, such as user ACL rules. */
 };
+
+static inline uint32_t nt_flow_flags(const flow_info_t *fi)
+{
+	return fi->hdr.flags;
+}
+
+/* just for test, do not use this api directly !!!
+** use api spec target: nproto_fin, track, ...  */
+static inline void nt_flow_flags_set(flow_info_t *fi, uint32_t flags)
+{
+	fi->hdr.flags = flags;
+}
 
 static inline int nt_flow_nproto_fin(const flow_info_t *fi)
 {
@@ -181,6 +193,14 @@ typedef struct {
 	*/
 	uint32_t magic;	/* version of nacs config */
 }nt_flow_nacs_t;
+/* split into module's private */
+#define NT_FLOW_OFF_NPROTO 		0
+#define NT_FLOW_OFF_AUTHD 		sizeof(nt_flow_nproto_t)
+#define NT_FLOW_OFF_NACS 		sizeof(nt_flow_nproto_t) + sizeof(nt_flow_nacs_t)
+/* total defined struct size */
+#define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) \
+			+ sizeof(nt_flow_authd_t) \
+			+ sizeof(nt_flow_nacs_t)
 /* END NACS */
 
 static inline uint16_t nt_flow_nproto(const flow_info_t *fi)
@@ -190,20 +210,19 @@ static inline uint16_t nt_flow_nproto(const flow_info_t *fi)
 
 static inline nt_flow_nproto_t* nt_flow_priv_nproto(flow_info_t *fi)
 {
-	return (nt_flow_nproto_t*)&fi->private[0];
+	return (nt_flow_nproto_t*)&fi->private[NT_FLOW_OFF_NPROTO];
 }
 
 static inline nt_flow_authd_t* nt_flow_priv_authd(flow_info_t *fi)
 {
-	return (nt_flow_authd_t*)&fi->private[sizeof(nt_flow_nproto_t)];
+	return (nt_flow_authd_t*)&fi->private[NT_FLOW_OFF_AUTHD];
 }
 
 static inline nt_flow_nacs_t* nt_flow_priv_nacs(flow_info_t *fi)
 {
-	return (nt_flow_nacs_t*)&fi->private[sizeof(nt_flow_nproto_t) + sizeof(nt_flow_nacs_t)];
+	return (nt_flow_nacs_t*)&fi->private[NT_FLOW_OFF_NACS];
 }
 
-#define NT_FLOW_CMM_HDR_SIZE sizeof(nt_flow_nproto_t) + sizeof(nt_flow_authd_t) + sizeof(nt_flow_nacs_t)
 static inline void* nt_flow_priv_data(flow_info_t *fi, size_t *size)
 {
 	/* assert size */

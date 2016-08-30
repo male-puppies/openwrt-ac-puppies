@@ -138,8 +138,10 @@ static int mwm_http_match(void *par, void *in, void *out)
 	end = end_ptr - npt->l7_ptr;
 
 	/* debug */
+	#if 0//__DEBUG
 	np_print("%4d:[%4d-%4d]: %s\n", idx, start, end, http_headers[idx]);
 	np_dump((uint8_t*)out + 1, end-start, "dump:");
+	#endif
 
 	nproto->du.http.headers_range[idx][0] = start;
 	nproto->du.http.headers_range[idx][1] = end;
