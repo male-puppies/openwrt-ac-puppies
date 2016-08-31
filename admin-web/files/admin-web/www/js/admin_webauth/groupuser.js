@@ -224,7 +224,7 @@ function OnAddUser() {
 			for (var i = d.data.length-1; i >= 0; i--) {
 				if(d.data[i].groupname == "default"){
 					gid = d.data[i].gid;
-					return;
+					break;
 				}
 			}
 			$("#username").prop("disabled", false);

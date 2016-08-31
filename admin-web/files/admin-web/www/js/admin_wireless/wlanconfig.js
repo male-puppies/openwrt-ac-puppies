@@ -90,7 +90,7 @@ function createInitModal() {
 }
 
 function initEvents() {
-	$(".add").on("click", OnAdd);
+	$(".add").on("click", function(){ edit(); });
 	$(".delete").on("click", function() { OnDelete(); });
 	$(".checkall").on("click", OnSelectAll);
 	$("#encrypt").on("change", OnEncrypt);
@@ -102,7 +102,7 @@ function initData() {
 	dtReloadData(oTabWlan, false)
 }
 
-function OnAdd() {
+function edit(that) {
 	cgicall.get("iface_list", function(d) {
 		if (d.status == 0 && typeof d.data == "object" && ObjCountLength(d.data) > 0) {
 			var lan = $.grep(d.data,function (value) {
@@ -114,30 +114,29 @@ function OnAdd() {
 				 str += "<option value='" + lan[i] + "'>" + lan[i] + "</option>";
 			 }
 			$("#network").html(str);
-			opr = 'add';
-			var oSSID = {
-				enable: '1',
-				band: 'all',
-				ssid: '',
-				encrypt: 'none',
-				password: '',
-				hide: '0',
-			};
-			jsonTraversal(oSSID, jsTravSet);
+			if (typeof that == "undefined") {
+				opr = 'add';
+				var oSSID = {
+					enable: '1',
+					band: 'all',
+					ssid: '',
+					encrypt: 'none',
+					password: '',
+					hide: '0',
+				};
+				jsonTraversal(oSSID, jsTravSet);
+			}
+			else{
+				opr = 'edit';
+				getSelected(that);
+				jsonTraversal(nodeEdit[0], jsTravSet);
+			}
 			OnEncrypt();
 			$('#modal_edit').modal("show");
 		} else {
 			createModalTips("获取接口失败！请尝试重新加载！");
 		}
 	});
-}
-
-function edit(that) {
-	opr = 'edit';
-	getSelected(that);
-	jsonTraversal(nodeEdit[0], jsTravSet);
-	OnEncrypt();
-	$('#modal_edit').modal("show");
 }
 
 function set_enable(that) {
