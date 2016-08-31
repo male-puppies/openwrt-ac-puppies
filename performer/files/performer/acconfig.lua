@@ -169,7 +169,6 @@ local function destroy_ipset(config)
 	return true
 end
 
-
 local function create_ipset(config)
 	for _, info in ipairs(config) do
 		local create_cmd = string.format("ipset create '%s' '%s'", info.ipset_name, info.ipset_type) assert(create_cmd)
@@ -237,7 +236,7 @@ commit_config["Set"] = function(cate_arr, new_config)
 		if not cate_config[item.cate] then
 			cate_config[item.cate] = {}
 		end
-		--["setname"]={["map_key"] = xxx, ["set_list"] = xx}
+		-- ["setname"]={["map_key"] = xxx, ["set_list"] = xx}
 		local set_item = new_config[item.cate][item.sub_cate]	assert(set_item)
 		local ipset_key = ipset_map[set_item.map_key].set_key   assert(ipset_key)
 		local ipset_type = ipset_map[set_item.map_key].set_type assert(ipset_type)
@@ -251,7 +250,7 @@ commit_config["Set"] = function(cate_arr, new_config)
 		table.insert(cate_config[item.cate], commit_item)
 	end
 	log.debug("commit:set %s", js.encode(cate_config))
-	--dereference allset in kernel,destroy ipset, create ipset, update ipset, reference allset in kernel
+	-- dereference allset in kernel,destroy ipset, create ipset, update ipset, reference allset in kernel
 	for cate, config in pairs(cate_config) do
 		local cate_key = cate.."Set"
 		ret, err = reference_ipset(cate_key, new_config[cate], false)
@@ -293,7 +292,7 @@ local compare_config = {}
 compare_config["Rule"] = function(old, new)
 	assert(new)
 	local cmp_res, ret, err = {}, true
-	--old is nil when process lanuched, need to update rule to kernel
+	-- old is nil when process lanuched, need to update rule to kernel
 	if old == nil then
 		for _, cate in ipairs(ConfigCate) do
 			table.insert(cmp_res, {cate = cate})
@@ -331,7 +330,7 @@ Set concerns both cate and subcate
 compare_config["Set"] = function(old, new)
 	assert(new)
 	local cmp_res, ret, err = {}, true
-	--old is nil when process lanuched, need to update rule to kernel
+	-- old is nil when process lanuched, need to update rule to kernel
 	if old == nil then
 		for _, cate in ipairs(ConfigCate) do
 			for name, info in pairs(new[cate]) do
@@ -361,6 +360,50 @@ compare_config["Set"] = function(old, new)
 	return cmp_res
 end
 
+-- a recursive function:fetch leaves
+local function fetch_leaf_protoids(ids)
+	local fetch_proto = function(sql)
+		local protos, err = simple:mysql_select(sql)
+		if not protos then
+			return nil, err
+		end
+		return protos
+	end
+
+	if not ids or #ids == 0 then
+		return {}
+	end
+	print("arr:", js.encode(ids))
+	local leaf_ids = {}
+	local nids = fp.reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
+	local sql = string.format("select proto_id, node_type from acproto where proto_id in (%s)", table.concat(nids, ", ")) assert(sql)
+	local protos = fetch_proto(sql)
+	local leafs = protos and fp.reduce(protos, function(t, r) if r.node_type == "leaf" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
+	for _, proto_id in ipairs(leafs) do
+		table.insert(leaf_ids, proto_id)
+	end
+
+	local nodes = protos and fp.reduce(protos, function(t, r) if r.node_type == "node" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
+	if #nodes == 0 then
+		return leaf_ids
+	end
+
+	print("leafs:",js.encode(leafs))
+	print("nodes:",js.encode(nodes))
+	nids = fp.reduce(nodes, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
+	sql = string.format("select a.proto_id as proto_id from acproto as a, acproto as b where b.proto_id in (%s) and a.pid = b.proto_id", table.concat(nids, ", "))
+	local protos = fetch_proto(sql)
+	if protos and #protos > 0 then
+		local proto_ids = protos and fp.reduce(protos, function(t, r) return rawset(t, #t + 1, r.proto_id) end, {})
+		local leafs = fetch_leaf_protoids(proto_ids)
+		for _, proto_id in ipairs(leafs) do
+			table.insert(leaf_ids, proto_id)
+		end
+	end
+	print("self_id:",id, "all_id:", js.encode(leaf_ids))
+	return leaf_ids
+end
+
 --[[
 		"Id":,
 		"SrcZoneIds":[],
@@ -372,26 +415,9 @@ end
 		"TmGrp":{days = "{}", tmlist = ""}
 --]]
 local translate_config = {}
---generate two categories rule config:audit and control
+-- generate two categories rule config:audit and control
 translate_config["Rule"] = function(raw_rule_config)
 	local generate_rule = function(rule_config, cur_tm)
-		local fetch_leaf_protoids = function(ids)
-			local id_arr = {}
-			local nids = fp.reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
-			local sel = "select distinct a.proto_id from acproto as a, acproto as b "
-			local wh = string.format("where b.proto_id in (%s) and ", table.concat(nids, ", "))
-			local wh_ext = "((a.pid =b.proto_id and a.node_type='leaf') or (b.proto_id = a.proto_id and b.node_type='leaf'))"
-			local sql = string.format("%s%s%s", sel, wh, wh_ext) assert(sql)
-			local proto_ids, err = simple:mysql_select(sql)
-			if not proto_ids or #proto_ids == 0 then
-				return nil, err or string.format("invalid proto_ids:(%s)", table.concat(ids, ","))
-			end
-			for _, proto in ipairs(proto_ids) do
-				table.insert(id_arr, tonumber(proto.proto_id, 16))
-			end
-			return id_arr
-		end
-
 		local rule_arr = {}
 		local item_keys = {"Id", "SrcZoneIds", "SrcIpgrpIds", "DstZoneIds", "DstIpgrpIds", "ProtoIds", "Actions"}
 		for _, item in ipairs(rule_config) do
@@ -471,7 +497,7 @@ translate_config["Set"] = function(raw_set_config)
 				set_content = ipops.ipgroup2ipranges(ipgrp)
 
 			elseif set_info.settype == "mac" and #set_content > 0 then
-				--reduce make it to map, toarr make it to arr
+				-- reduce make it to map, toarr make it to arr
 				set_content = fp.toarr(fp.reduce(set_content, function(t, v) return rawset(t, v, v) end, {}))
 
 			end
@@ -498,7 +524,7 @@ translate_config["Set"] = function(raw_set_config)
 end
 
 local fetch_raw_config = {}
---fetch two categories rule config:audit and control
+-- fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
 	local fetch_rule = function(cate)
 		local sql = string.format("select * from acrule where ruletype='%s' and enable=1 order by priority desc", cate)
@@ -530,7 +556,7 @@ fetch_raw_config["Rule"] = function()
 				return nil, err or string.format("invalid time groups:(%s)", table.concat(tmgrpids, ","))
 			end
 
-			--notice, it's an error, but not a fatal one
+			-- notice, it's an error, but not a fatal one
 			if #detail_arr ~= #tmgrpids then
 				log.error("tmgrp number:expected %d ~= real %d", #tmgrpids, #detail_arr)
 			end
@@ -546,7 +572,7 @@ fetch_raw_config["Rule"] = function()
 			end
 
 			if tmgrps and #tmgrps > 0 then
-				--notice: translate ids to detail info
+				-- notice: translate ids to detail info
 				rule.TmGrp = tmgrps
 				rule.tmgrp_ids = nil
 				table.insert(rule_arr, rule)
@@ -559,7 +585,7 @@ fetch_raw_config["Rule"] = function()
 	for _, cate in ipairs(ConfigCate) do
 		local res, err = fetch_rule(string.lower(cate))
 		if not res then
-			--if fetch failed, ignore what already have fetched
+			-- if fetch failed, ignore what already have fetched
 			return nil, err
 		end
 		rule_config[cate] = res
@@ -567,10 +593,10 @@ fetch_raw_config["Rule"] = function()
 	return rule_config
 end
 
---fetch two categories set config:audit and control
+-- fetch two categories set config:audit and control
 fetch_raw_config["Set"] = function()
 	local fetch_set = function(cate)
-		--notice:we need all setname, so ignore whether state is enable or disable
+		-- notice:we need all setname, so ignore whether state is enable or disable
 		local sql = string.format("select * from acset where setclass='%s'", cate) assert(sql)
 		if not sql then
 			return nil, "construct sql failed"
@@ -585,7 +611,7 @@ fetch_raw_config["Set"] = function()
 	end
 
 	local set_config = {}
-	--notice:Control contains four ipsets; Audit contains two ipsets
+	-- notice:Control contains four ipsets; Audit contains two ipsets
 	local check_number = {Control = 4, Audit = 2}
 	for _, cate in ipairs(ConfigCate) do
 		local number = 0
@@ -593,7 +619,7 @@ fetch_raw_config["Set"] = function()
 		if not res then
 			return nil, err
 		end
-		--must check ipset intergrity
+		-- must check ipset intergrity
 		if #res ~= check_number[cate] then
 			return nil, string.format("fetch %s set number: real(%d) ~= expected(%d)", cate, #res, check_number[cate])
 		end
@@ -602,7 +628,7 @@ fetch_raw_config["Set"] = function()
 	return set_config
 end
 
---load config:Rule and set
+-- load config:Rule and set
 local function load_config()
 	local raw_config = {}
 	for _, config_type in ipairs(ConfigType) do
@@ -648,7 +674,7 @@ local function check_config_update()
 		new_ac_config[config_type] = new_config
 		old_config = cur_ac_config[config_type]
 
-		--a array which contains：[{cate = Audit/Control, sub_cate = xx}, ]
+		-- a array which contains：[{cate = Audit/Control, sub_cate = xx}, ]
 		res, err = cmp_func(old_config, new_config)
 		if not res then
 			log.error("compare config(type=%s) failed for %s", config_type, err)
@@ -664,14 +690,14 @@ local function check_config_update()
 				return false
 			end
 			log.debug("commit acconfig success")
-			--notice:update config after commit success
+			-- notice:update config after commit success
 			cur_ac_config[config_type] = new_ac_config[config_type]
 		end
 	end
 	return true
 end
 
---periodical routine
+-- periodical routine
 local function run_routine()
 	while true do
 		check_config_update()
@@ -683,10 +709,10 @@ local function default_reload_config()
 	return check_config_update()
 end
 
-tcp_map["dbsync_ipgroup"] = default_reload_config
-tcp_map["dbsync_timegroup"] = default_reload_config
-tcp_map["dbsync_acrule"] = default_reload_config
-tcp_map["dbsync_acset"] = default_reload_config
+tcp_map["dbsync_ipgroup"]	= default_reload_config
+tcp_map["dbsync_timegroup"]	= default_reload_config
+tcp_map["dbsync_acrule"]	= default_reload_config
+tcp_map["dbsync_acset"]		= default_reload_config
 
 local function dispatch_tcp(cmd)
 	local f = tcp_map[cmd.cmd]
@@ -695,7 +721,7 @@ local function dispatch_tcp(cmd)
 	end
 end
 
---entrance of acconfig
+-- entrance of acconfig
 local function init(p)
 	mqtt = p
 
