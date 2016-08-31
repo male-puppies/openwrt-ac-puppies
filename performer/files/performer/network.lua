@@ -288,8 +288,10 @@ local function network_reload()
 			cmd = table.concat(arr[name], "\n")
 			print(cmd)
 			os.execute(cmd)
-			if name == "network" then
-				on_event_cb({cmd = "network_change"})
+
+			local call = on_event_cb
+			if name == "network" and call then
+				call({cmd = "network_change"})
 			end
 		end
 	end
