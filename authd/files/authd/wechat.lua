@@ -75,13 +75,11 @@ end
 ]]
 udp_map["/bypass_host"] = function(p, ip, port)
 	local uid, magic, mac = p.uid, p.magic, p.mac
-	local r, e = nos.user_set_bypass(uid, magic)
+	local r, e = cache.bypass(mac, p)
 	if not r then
-		log.error("set_bypass fail %s", e)
+		log.error("bypass fail %s %s %s %s", uid, magic, mac, e)
 		return reply(ip, port, 1, e)
 	end
-
-	cache.bypass(mac, {ski.time() + 15, uid, magic, mac})
 
 	reply(ip, port, 0, "ok")
 end
@@ -121,7 +119,7 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 	local appid, timestamp, shop_id, authurl, ssid, bssid, secretkey = n.appid, p.now, n.shop_id, redirect_url, n.ssid, "", n.secretkey
 	local arr = {appid, extend, timestamp, shop_id, authurl, mac, ssid, bssid, secretkey}
 	local sign = md5.sumhexa(table.concat(arr))
-	local r = {
+	local info = {
 		AppID 		= appid,
 		Extend 		= extend,
 		TimeStamp 	= timestamp,
@@ -145,9 +143,15 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 		ssid 		= ssid,
 	}
 
-	-- TODO set timeout
+	local r, e = cache.bypass(mac, p)
+	if not r then
+		log.error("bypass fail %s %s %s %s", uid, magic, mac, e)
+		return reply(ip, port, 1, e)
+	end
+
 	wechat_timeout:emit({sec + 15, mac, ssid, extend})
-	reply(cli_ip, cli_port, 0, r)
+
+	reply(cli_ip, cli_port, 0, info)
 end
 
 --[[

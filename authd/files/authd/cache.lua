@@ -4,6 +4,7 @@ local fp 	= require("fp")
 local ski 	= require("ski")
 local log 	= require("log")
 local batch	= require("batch")
+local nos 	= require("luanos")
 local js 	= require("cjson.safe")
 local rpccli 	= require("rpccli")
 local simplesql = require("simplesql")
@@ -136,19 +137,20 @@ function on_bypass_timeout(count, arr)
 	local idx = 1
 	local f = function()
 		local r, now = arr[idx], ski.time()
-		if r[1] >= now then
+		if r.deadline >= now then
 			return ski.sleep(1)
 		end
 
 		idx = idx + 1
 
-		local uid, magic, mac = r[2], r[3], r[4]
+		local mac = r.mac
 		if not bypass_wait_map[mac] then
 			return
 		end
 
 		bypass_wait_map[mac] = nil
 
+		local uid, magic = r.uid, r.magic
 		log.real1("bypass timeout %s %s %s", uid, magic, mac)
 
 		local r, e = nos.user_set_offline(uid, magic)
@@ -159,9 +161,18 @@ function on_bypass_timeout(count, arr)
 end
 
 local function bypass(mac, p)
+	local uid, magic = p.uid, p.magic
+
+	local r, e = nos.user_set_bypass(uid, magic)
+	if not r then
+		return nil, e
+	end
+
 	bypass_wait_map[mac] = 1
-	bypass_timeout:emit({ski.time() + 15, p.uid, p.magic, p.mac})
+	bypass_timeout:emit({deadline = ski.time() + 20, uid = uid, magic = magic, mac = mac})
 	log.real1("bypass %s", js.encode(p))
+
+	return true
 end
 
 local function bypass_cancel(mac)
