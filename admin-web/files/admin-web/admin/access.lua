@@ -3,13 +3,13 @@
 package.path = "/usr/share/admin-web/?.lua;" .. package.path
 local adminlib = require("admin.adminlib")
 
-local login_html = "/view/admin_login/login.html"
+local login_html = "/view/admin_login/tologin.html"
 local function redirect()
 	ngx.redirect(login_html)
 end
 
 local uri = ngx.var.uri
-if uri:find("login.html$") then
+if uri:find("tologin.html$") then
 	return
 end
 
