@@ -47,7 +47,7 @@ local function dispatch_tcp_loop()
 end
 
 local handlers = {}
-local function on_db_event(cmd)
+local function on_ext_event(cmd)
 	local arr = handlers[cmd.cmd]
 	if arr then
 		for _, f in ipairs(arr) do
@@ -113,7 +113,7 @@ local function main()
 	for _, mod in pairs(modules) do
 		mod.init(mqtt)
 		if mod.set_event_cb then
-			mod.set_event_cb(on_db_event)
+			mod.set_event_cb(on_ext_event)
 		end
 	end
 	local _ = ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)

@@ -171,4 +171,8 @@ tcp_map["mwan"] = function(p)
 	mwan_reload()
 end
 
+tcp_map["network_change"] = function(p)
+	mwan_reload()
+end
+
 return {init = init, dispatch_tcp = dispatch_tcp}

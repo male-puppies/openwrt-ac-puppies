@@ -8,7 +8,7 @@ local ipops = require("ipops")
 local md5 = require("md5")
 
 local tcp_map = {}
-local mqtt, simple
+local mqtt, simple, on_event_cb
 
 local read = common.read
 
@@ -288,6 +288,9 @@ local function network_reload()
 			cmd = table.concat(arr[name], "\n")
 			print(cmd)
 			os.execute(cmd)
+			if name == "network" then
+				on_event_cb("network_change")
+			end
 		end
 	end
 end
@@ -298,6 +301,10 @@ local function init(p)
 	simple = simplesql.new(dbrpc)
 
 	network_reload()
+end
+
+local function set_event_cb(cb)
+	on_event_cb = cb
 end
 
 local function dispatch_tcp(cmd)
@@ -311,4 +318,4 @@ tcp_map["network"] = function(p)
 	network_reload()
 end
 
-return {init = init, dispatch_tcp = dispatch_tcp}
+return {init = init, dispatch_tcp = dispatch_tcp, set_event_cb = set_event_cb}
