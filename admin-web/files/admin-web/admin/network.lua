@@ -32,8 +32,8 @@ local validate_map = {
 	mtu = function(v)
 		if v ~= "" then
 			local nv = tonumber(v)
-			if not (nv and nv > 0 and nv <= 1500) then
-				return nil, "invalid mtu"
+			if not (nv and nv >= 500 and nv <= 1500) then
+				return nil, "invalid mtu (500-1500)"
 			end
 		end
 		return v
@@ -53,7 +53,7 @@ local validate_map = {
 		if #v >= 0 and #v <= 32 then
 			return v
 		end
-		return nil, "invalid pppoe_account"
+		return nil, "invalid pppoe_account len = 0-32"
 	end,
 	pppoe_password = function(v)
 		if #v >= 0 and #v <= 32 then
@@ -70,8 +70,8 @@ local validate_map = {
 	metric = function(v)
 		if v ~= "" then
 			local nv = tonumber(v)
-			if not (nv and nv > 0 and nv <= 1500) then
-				return nil, "invalid mtu"
+			if not (nv and nv > 0 and nv <= 255) then
+				return nil, "invalid metric"
 			end
 		end
 		return v

@@ -120,7 +120,7 @@ tcp_map["dbsync_kv"] = function(p)
 		["auth_bypass_dst"] = 1,
 	}
 
-	for _, key in ipairs(p.set) do
+	for _, key in ipairs(p.set or {}) do
 		if map[key] == 1 then
 			authrule_reload()
 			return
