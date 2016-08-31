@@ -215,7 +215,9 @@ function same_aux(a, b)
 			if not (type(v1) == "table" and type(v2) == "table") then
 				return false
 			end
-			return same_aux(v1, v2)
+			if not same_aux(v1, v2) then
+				return false
+			end
 		end
 	end
 	return true
