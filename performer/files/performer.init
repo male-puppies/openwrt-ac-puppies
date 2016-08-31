@@ -18,5 +18,5 @@ start_service() {
 }
 
 stop_service() {
-	ps | grep -E "performer/main.lua" | grep -v grep  | awk '{print $1}' | xargs kill
+	$BIN stop
 }

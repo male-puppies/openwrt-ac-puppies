@@ -23,5 +23,5 @@ start_service() {
 }
 
 stop_service() {
-	ps | grep -E "authd/main.lua" | grep -v grep  | awk '{print $1}' | xargs kill
+	$BIN stop
 }
