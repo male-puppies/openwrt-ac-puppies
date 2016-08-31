@@ -64,7 +64,7 @@
 			$.post(url, sobj, function(d, x, s) {
 				d = initBackDatas(d);
 				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
-					window.location.href = "/view/admin_login/login.html";
+					window.location.href = "/view/admin_login/tologin.html";
 				}
 				callfn(d, x, s);
 			}, "json");
@@ -126,6 +126,8 @@
 				try {
 					if (typeof obj[k] === "object") {
 						throw new Error("");
+					} else if (!isNaN(obj[k])) {
+						throw new Error("");
 					} else {
 						o = JSON.parse(obj[k]);
 					}
@@ -141,6 +143,8 @@
 				var o;
 				try {
 					if (typeof obj[i] === "object") {
+						throw new Error("");
+					} else if (!isNaN(obj[k])) {
 						throw new Error("");
 					} else {
 						o = JSON.parse(obj[i]);
