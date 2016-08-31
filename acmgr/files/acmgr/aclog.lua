@@ -10,45 +10,37 @@ local queue = require("queue")
 local rpccli = require("rpccli")
 local simplesql = require("simplesql")
 
+local ctrl_path = "/tmp/memfile/ctrllog.json"
+local audit_path = "/tmp/memfile/auditlog.json"
 local log_limit, ctrl_log,  audit_log = 300
 local udp_srv, mqtt, dbrpc, reply
 
 local udp_map = {}
---cmd from ntrackd
+-- cmd from ntrackd
 udp_map["aclog_add"] = function(p, ip, port)
-	local fetch_rulename = function(rule_id)
-		local sql = string.format("select rulename from acproto where proto_id = %s", rule_id)
-		if not sql then
-			return nil, "construct sql failed"
-		end
-
+	local fetch_property = function(sql, name)
+		local _ = assert(sql), assert(name)
 		local tmp, err = simple:mysql_select(sql)
+		print(sql, name, js.encode(tmp))
 		if err then
 			return nil, err
 		end
-		return #tmp > 0 and tmp[1].proto_name or "unknow proto"
-	end
-
-	local fetch_protoname = function(proto_id)
-		local sql = string.format("select proto_name from acproto where proto_id = %s", proto_id)
-		if not sql then
-			return nil, "construct sql failed"
-		end
-
-		local tmp, err = simple:mysql_select(sql)
-		if err then
-			return nil, err
-		end
-		return #tmp > 0 and tmp[1].proto_name or "unknow proto"
+		return #tmp > 0 and tmp[1][name] or "unknown"
 	end
 
 	local rulename, protoname
 	if p.subtype == "RULE" then
-		rulename = fetch_rulename(p.rule.proto_id)
-		protoname = fetch_protoname(p.rule.proto_id)
+		local sql = string.format("select rulename from acrule where ruleid = %s", p.rule.rule_id)
+		rulename = fetch_property(sql, "rulename")
+		-- !!!todo lua can't represent uint32
+		-- local sql = string.format("select proto_name from acproto where proto_id='%s'", string.format("%x", tonumber(p.rule.proto_id)))
+		-- protoname = fetch_property(sql, "proto_name")
 	else
-		rulename = p.rule.set_name
-		protoname = "set"
+		local sql = string.format("select setdesc from acset where setname = '%s'", p.rule.set_name)
+		rulename = fetch_property(sql, "setdesc")
+
+		local sql = string.format("select settype from acset where setname = '%s'", p.rule.set_name)
+		protoname = fetch_property(sql, "settype")
 	end
 
 	local aclog = {
@@ -62,13 +54,15 @@ udp_map["aclog_add"] = function(p, ip, port)
 
 	if p.ruletype == "CONTROL" then
 		ctrl_log:push(aclog)
+		ctrl_log:save()
 	else
 		audit_log:push(aclog)
+		audit_log:save()
 	end
 	return true
 end
 
---cmd from webui
+-- cmd from webui
 udp_map["ctrllog_get"] = function (p, ip, port)
 	local page, count, res = p.page, p.count, {}	assert(count > 0)
 	local idx = page > 1 and ((page - 1) * count + 1)  or 1	assert(idx > 0)
@@ -94,8 +88,8 @@ end
 
 local function init(p, u)
 	udp_srv, mqtt = p, u
-	ctrl_log = queue.new(log_limit) assert(ctrl_log)
-	audit_log = queue.new(log_limit) assert(audit_log)
+	ctrl_log = queue.new(ctrl_path, log_limit) assert(ctrl_log)
+	audit_log = queue.new(audit_path, log_limit) assert(audit_log)
 	reply = aclib.gen_reply(udp_srv) assert(reply)
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 	if not dbrpc then
