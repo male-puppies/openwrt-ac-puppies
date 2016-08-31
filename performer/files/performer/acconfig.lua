@@ -73,110 +73,23 @@ local new_ac_config = {}
 	structure of acconfig that ruletable can parse.
 	{
 		"ControlSet":{
-				{"MacWhiteListSetName":CtrlMacWhiteListSet, "MacWhite":[]},
-				{"IpWhiteListSetName":CtrlIpWhiteListSet, 	"IpWhite":[]},
-				{"MacBlackListSetName"CtrlMacBlackListSet, "MacBlack":[]},
-				{"IpBlackListSetName":CtrlIpBlackListSet, "IpBlack":[]}
+				{"MacWhiteListSetName":access_white_ip, "MacWhite":[]},
+				{"IpWhiteListSetName":access_white_mac, 	"IpWhite":[]},
+				{"MacBlackListSetName"access_black_mac, "MacBlack":[]},
+				{"IpBlackListSetName":access_black_ip, "IpBlack":[]}
 		},
 
 		"ControlRule": [],
 
 		"AuditSet": {
-				{"MacWhiteListSetName":AuditMacWhiteListSet, "MacWhite":[]},
-				{"IpWhiteListSetName":AuditIpWhiteListSet, 	"IpWhite":[]},
+				{"MacWhiteListSetName":audit_white_mac, "MacWhite":[]},
+				{"IpWhiteListSetName":audit_white_ip, 	"IpWhite":[]},
 		},
 
 		"AuditRule":[]
 	}
 --]]
 
-
---[[
-compare array
-@old, new both of them are array
-@return true--different, false--same
-]]
-local function array_cmp(old, new)
-	local _ = assert(old), assert(new)
-	local old_map, new_map = {}, {}
-	if type(old) ~= "table" or type(new) ~= "table" then
-		return nil, "invalid parameters:not table"
-	end
-
-	if #old ~= #new then
-		return true
-	end
-
-	for _, v in ipairs(old) do
-		old_map[v] = 1
-	end
-
-	for _, v in ipairs(new) do
-		new_map[v] = 1
-	end
-
-	for k, v in pairs(new_map) do
-		if not old_map[k]  then
-			return true
-		end
-	end
-	return false
-end
-
---remove repeated items in array
-local function array2set(array)
-	local new_set, set_map = {}, {}
-	if type(array) ~= "table" then
-		return nil, "invalid parameter:not table"
-	end
-
-	if #array == 0 then
-		return new_set
-	end
-
-	for _, v in ipairs(array) do
-		set_map[v] = 1
-	end
-
-	for k, v in pairs(set_map) do
-		table.insert(new_set, k)
-	end
-	return new_set
-end
-
---[[
-compare rule one by one
---]]
-local function ac_rule_cmp(old, new)
-	local _ = assert(old), assert(new)
-
-	if type(old) ~= "table" or type(new) ~= "table" then
-		return nil, "invalid parameters"
-	end
-
-	if #old ~= #new then
-		return true
-	end
-
-	local sorted_arr_keys = {"SrcZoneIds", "SrcIpgrpIds", "DstZoneIds", "DstIpgrpIds", "ProtoIds", "Actions"}
-
-	for i=1, #old do
-		local old_item, new_item = old[i], new[i]
-		local old_ids, new_ids = {}, {}
-
-		if old_item.Id ~= new_item.Id then
-			return true
-		end
-
-		for _, key in ipairs(sorted_arr_keys) do
-			if array_cmp(old_item[key], new_item[key]) then
-				return true
-			end
-		end
-	end
-
-	return false
-end
 
 --[[
 Check whether tm is contained by tmlist
@@ -395,12 +308,9 @@ compare_config["Rule"] = function(old, new)
 								new[cate] and "not nil" or "nil")
 			return nil, err
 		end
-		--maybe a error occured
-		ret, err = ac_rule_cmp(old[cate], new[cate])
-		if not ret and err then
-			return nil, err
-		end
-		local _ = ret and table.insert(cmp_res, {cate = cate})
+
+		ret = fp.same(old[cate], new[cate])
+		local _ = (ret == false) and table.insert(cmp_res, {cate = cate})
 	end
 	return cmp_res
 end
@@ -436,12 +346,15 @@ compare_config["Set"] = function(old, new)
 		for name, info in pairs(new_cate_config) do
 			local new_list = info.set_list
 			local old_list = old_cate_config[name].set_list
-
-			local ret, err = array_cmp(old_list, new_list)
-			if not ret and err then
+			if old_list == nil or new_list == nil then
+				err = string.format("old[%s] is %s, new[%s] is %s",
+									old_list and "not nil" or "nil",
+									new_list and "not nil" or "nil")
 				return nil, err
 			end
-			local _ = ret and table.insert(cmp_res, {cate = cate, sub_cate = name})
+
+			local ret = fp.same(old_list, new_list)
+			local _ = (ret == false) and table.insert(cmp_res, {cate = cate, sub_cate = name})
 		end
 	end
 
@@ -558,7 +471,8 @@ translate_config["Set"] = function(raw_set_config)
 				set_content = ipops.ipgroup2ipranges(ipgrp)
 
 			elseif set_info.settype == "mac" and #set_content > 0 then
-				set_content = array2set(set_content)
+				--reduce make it to map, toarr make it to arr
+				set_content = fp.toarr(fp.reduce(set_content, function(t, v) return rawset(t, v, v) end, {}))
 
 			end
 			assert(set_content)
@@ -765,26 +679,14 @@ local function run_routine()
 	end
 end
 
-tcp_map["dbsync_ipgroup"] = function(p)
-	check_config_update()
-	return true
+local function default_reload_config()
+	return check_config_update()
 end
 
-tcp_map["dbsync_timegroup"] = function(p)
-	check_config_update()
-	return true
-
-end
-
-tcp_map["dbsync_acrule"] = function(p)
-	check_config_update()
-	return true
-end
-
-tcp_map["dbsync_acset"] = function(p)
-	check_config_update()
-	return true
-end
+tcp_map["dbsync_ipgroup"] = default_reload_config
+tcp_map["dbsync_timegroup"] = default_reload_config
+tcp_map["dbsync_acrule"] = default_reload_config
+tcp_map["dbsync_acset"] = default_reload_config
 
 local function dispatch_tcp(cmd)
 	local f = tcp_map[cmd.cmd]
