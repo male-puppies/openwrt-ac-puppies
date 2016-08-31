@@ -6,7 +6,6 @@ local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
 local ip_pattern = adminlib.ip_pattern
 local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
-local validate_post_get_all = adminlib.validate_post_get_all
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local v_fwid = gen_validate_num(0, 63)
@@ -81,7 +80,7 @@ local function dnat_update_common(cmd, ext)
 		check_map[k] = v
 	end
 
-	local m, e = validate_post_get_all(check_map)
+	local m, e = validate_post(check_map)
 	if not m then
 		return reply_e(e)
 	end
@@ -91,6 +90,8 @@ local function dnat_update_common(cmd, ext)
 	if not r then
 		return reply_e(e)
 	end
+
+	local p = ngx.req.get_post_args()
 
 	m.type = "redirect"
 	m.action = "DNAT"
