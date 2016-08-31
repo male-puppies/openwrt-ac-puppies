@@ -33,7 +33,7 @@ end
 local v_Enabled = gen_validate_num(0,1)
 
 local function v_Ip(v)
-	return string.match(v, "%d+%.%d+%.%d+%.%d+-%d+%.%d+%.%d+%.%d+")
+	return string.match(v, "%d+%.%d+%.%d+%.%d+-%d+%.%d+%.%d+%.%d+$") or string.match(v, "%d+%.%d+%.%d+%.%d+$")
 end
 
 local function v_Bytes(v)

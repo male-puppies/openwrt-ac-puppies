@@ -35,7 +35,7 @@ local function load_mwan()
 			if iface_exist then
 				table.insert(res.ifaces, new_ifc)
 			else
-				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 1})
+				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 1, track_ip = {}})
 			end
 		end
 	end
@@ -59,7 +59,8 @@ local function generate_mwan_cmds(mwan)
 		if iface.enable == 1 then
 			mwan_line = mwan_line + 1
 			mwan_ifaces[iface.name] = {
-				w = tonumber(iface.bandwidth) == 0 and 1 or tonumber(iface.bandwidth)
+				w = tonumber(iface.bandwidth) == 0 and 1 or tonumber(iface.bandwidth),
+				track_ip = iface.track_ip,
 			}
 			if mwan.policy == "backup" then
 				mwan_ifaces[iface.name].m = m
@@ -86,7 +87,9 @@ local function generate_mwan_cmds(mwan)
 			table.insert(arr["mwan3"], string.format("uci set mwan3.%s.interval='5'", name))
 			table.insert(arr["mwan3"], string.format("uci set mwan3.%s.down='3'", name))
 			table.insert(arr["mwan3"], string.format("uci set mwan3.%s.up='3'", name))
-			--table.insert(arr["mwan3"], string.format("uci add_list mwan3.%s.track_ip='114.114.114.114'", name))
+			for _, track_ip in ipairs(value.track_ip) do
+				table.insert(arr["mwan3"], string.format("uci add_list mwan3.%s.track_ip='%s'", name, track_ip))
+			end
 
 			local member = string.format("%s_m%u_w%u", name, value.m, value.w)
 			table.insert(arr["mwan3"], string.format("uci set mwan3.%s=member", member))

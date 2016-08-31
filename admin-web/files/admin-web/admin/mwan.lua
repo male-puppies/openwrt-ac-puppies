@@ -26,7 +26,24 @@ end
 local function mwan_validate(s)
 	local m = js.decode(s)
 	if not m then
-		return nil, "invalid param 1"
+		return nil, "invalid param arg"
+	end
+	if not m.main_iface then
+		return nil, "arg missing main_iface"
+	end
+	if not m.policy then
+		return nil, "arg missing policy"
+	end
+	if not m.ifaces then
+		return nil, "arg missing ifaces"
+	end
+
+	for _, iface in ipairs(m.ifaces) do
+		for _, track_ip in ipairs(iface.track_ip or {}) do
+			if not string.match(track_ip, "%d+%.%d+%.%d+%.%d+$") then
+				return nil, "arg bad track_ip"
+			end
+		end
 	end
 
 	return m
