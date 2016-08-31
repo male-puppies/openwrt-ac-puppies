@@ -118,7 +118,7 @@ local function convert(s)
 	setTCRate(tbqcfg.Rules[1], tc.GlobalSharedUpload, tc.GlobalSharedDownload, tc.GlobalSharedUpload, tc.GlobalSharedDownload)
 
 	for _, rule in ipairs(tc.Rules) do
-		if rule.Enabled then
+		if rule.Enabled == 1 then
 			local tbqrule = new_rule()
 			tbqrule.Name = string.format("UI-<%s>", rule.Name)
 			tbqrule.IpIncluded = {rule.Ip}
