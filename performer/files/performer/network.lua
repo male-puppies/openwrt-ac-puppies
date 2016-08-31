@@ -289,7 +289,7 @@ local function network_reload()
 			print(cmd)
 			os.execute(cmd)
 			if name == "network" then
-				on_event_cb("network_change")
+				on_event_cb({cmd = "network_change"})
 			end
 		end
 	end
