@@ -251,11 +251,11 @@ local function network_reload()
 
 	arr_cmd["network"] = {
 		string.format("uci commit network"),
-		string.format("/etc/init.d/network restart")
+		string.format("/etc/init.d/network reload")
 	}
 	arr_cmd["dhcp"] = {
 		string.format("uci commit dhcp"),
-		string.format("/etc/init.d/dnsmasq restart")
+		string.format("/etc/init.d/dnsmasq reload")
 	}
 	arr_cmd["nos-zone"] = {
 		string.format("uci commit nos-zone"),
@@ -263,7 +263,7 @@ local function network_reload()
 	}
 	arr_cmd["firewall"] = {
 		string.format("uci commit firewall"),
-		string.format("/etc/init.d/firewall restart")
+		string.format("/etc/init.d/firewall reload")
 	}
 
 	orders = {"network", "dhcp", "nos-zone", "firewall"}

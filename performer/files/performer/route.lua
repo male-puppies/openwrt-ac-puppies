@@ -23,9 +23,7 @@ local function generate_route_cmds()
 		table.insert(arr["network"], string.format("	uci set network.$obj.target='%s'", rule.target))
 		table.insert(arr["network"], string.format("	uci set network.$obj.netmask='%s'", rule.netmask))
 		table.insert(arr["network"], string.format("	uci set network.$obj.gateway='%s'", rule.gateway))
-		if rule.metric and rule.metric ~= 0 then
-			table.insert(arr["network"], string.format("	uci set network.$obj.metric='%u'", rule.metric))
-		end
+		table.insert(arr["network"], string.format("	uci set network.$obj.metric='%u'", rule.metric))
 		if rule.mtu and rule.mtu ~= 0 then
 			table.insert(arr["network"], string.format("	uci set network.$obj.mtu='%u'", rule.mtu))
 		end
@@ -45,7 +43,7 @@ local function route_reload()
 	arr["network"] = {}
 	arr_cmd["network"] = {
 		string.format("uci commit network"),
-		string.format("/etc/init.d/network restart")
+		string.format("/etc/init.d/network reload")
 	}
 
 	local route_arr = generate_route_cmds()

@@ -66,7 +66,7 @@ local function firewall_reload()
 	arr["firewall"] = {}
 	arr_cmd["firewall"] = {
 		string.format("uci commit firewall"),
-		string.format("/etc/init.d/firewall restart")
+		string.format("/etc/init.d/firewall reload")
 	}
 
 	local firewall_arr = generate_firewall_cmds()
