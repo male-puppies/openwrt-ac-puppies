@@ -82,7 +82,7 @@ local validate_map = {
 		end
 		local ip, bits = v:match("(.-)/(%d+)")
 		bits = tonumber(bits)
-		if not (ip and ip:find(ip_pattern) and bits > 0 and bits < 32) then
+		if not (ip and ip:find(ip_pattern) and bits => 0 and bits <= 32) then
 			return nil, "invalid ipaddr"
 		end
 		return v
