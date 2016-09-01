@@ -30,8 +30,7 @@ local ipset_map = {
 Both rules and sets support disable and enable option.
 When disable is set, all rules or ip&mac are cleared in kernel
 When enable is set, rules or ip&mac are set to kernel
-fixme: it's not a good practice:it always do check option in kernel, even disable is set.
-this will cost cpu, of course, the cost is very low.
+Notice:When set to disable, the rules/sets will be cleared in kernel
 --]]
 
 --[[
@@ -48,6 +47,7 @@ a.fetch config from db:receving config update news
 b.translate the config to new_ac_sets:add/del items of ip or mac;disable or enable is set
 c.compare cur_ac_sets and new_ac_sets:if they are different, reset config to kernel with ipset,
 	and then update cur_ac_sets with new_ac_sets
+Notice:Be careful of the deferencing/referencing of ipset
 --]]
 
 --raw configs
@@ -96,13 +96,22 @@ Check whether tm is contained by tmlist
 the tmgrp format is {days = {}, tmlist = []}
 tm is provided by os.time()
 --]]
-local function tm_contained(tmgrps, tm)
-	local cur_tm = tm
-	local cur_weekday = tostring(os.date("%w", tm)) --0~6 sunday~saturday
-	local cur_year = os.date("%Y", tm)
-	local cur_month = os.date("%m", tm)
-	local cur_day = os.date("%d", tm)
+local function tmgrp_contained(tmgrps, tm)
+	local tm_contained = function(cur_tmgrp, cur_year, cur_month, cur_day, tm)
+		for _, tm_item in ipairs(cur_tmgrp.tmlist) do
+			local start_tm = os.time({year = cur_year, month = cur_month, day = cur_day,
+										hour = tm_item.hour_start, min = tm_item.min_start})
+			local end_tm = os.time({year = cur_year, month = cur_month, day = cur_day,
+										hour = tm_item.hour_end, min = tm_item.min_end})
+			if os.difftime(tm, start_tm) >= 0 and os.difftime(end_tm, tm) >= 0 then
+				return true
+			end
+		end
+		return false
+	end
 
+	local cur_weekday = tostring(os.date("%w", tm)) --0~6 sunday~saturday
+	local cur_year, cur_month, cur_day = os.date("%Y", tm), os.date("%m", tm), os.date("%d", tm)
 	local day_map = {
 		["0"] = "sun",
 		["1"] = "mon",
@@ -112,31 +121,17 @@ local function tm_contained(tmgrps, tm)
 		["5"] = "fri",
 		["6"] = "sat",
 	}
-	local cur_tmgrp
 
 	local day_key = day_map[cur_weekday] assert(day_key)
 	for _, tmgrp in ipairs(tmgrps) do
 		for day_name, day_value in pairs(tmgrp.days) do
-			if day_name == day_key then
-				if day_value ~= 1 then
-					return false
+			if day_name == day_key and day_value == 1 then
+				if tm_contained(tmgrp, cur_year, cur_month, cur_day, tm) then
+					return true
 				end
-				cur_tmgrp = tmgrp
-				break
 			end
 		end
 	end
-
-	for _, tm_item in ipairs(cur_tmgrp.tmlist) do
-		local start_tm = os.time({year = cur_year, month = cur_month, day = cur_day,
-									hour = tm_item.hour_start, min = tm_item.min_start})
-		local end_tm = os.time({year = cur_year, month = cur_month, day = cur_day,
-									hour = tm_item.hour_end, min = tm_item.min_end})
-		if os.difftime(tm, start_tm) >= 0 and os.difftime(end_tm, tm) >= 0 then
-			return true
-		end
-	end
-
 	return false
 end
 
@@ -154,7 +149,7 @@ local function reference_ipset(type_key, config, ref)
 	end
 	ref_map[type_key] = item_map
 
-	local ref_cmd = string.format("ruletable -s '%s'", js.encode(ref_map)) assert(ref_cmd)
+	local ref_cmd = string.format("ruletable -s '%s' 2>&1 >/dev/null", js.encode(ref_map)) assert(ref_cmd)
 	log.debug("%s ipset:%s", ref and "reference" or "dereference", ref_cmd)
 	os.execute(ref_cmd)
 	return true
@@ -212,7 +207,7 @@ commit_config["Rule"] = function(cate_arr, new_config)
 		cate_config[rule_key] = new_config[item.cate]
 		local cfg_str = js.encode(cate_config) assert(cfg_str)
 		cfg_str = string.gsub(cfg_str, string.format('"%s":{}', rule_key), string.format('"%s":[]', rule_key)) assert(cfg_str)
-		local cmd_str = string.format("ruletable -s '%s'", cfg_str) assert(cmd_str)
+		local cmd_str = string.format("ruletable -s '%s' 2>&1 >/dev/null", cfg_str) assert(cmd_str)
 		log.debug("commit:rules(%d) %s",#(new_config[item.cate]), cmd_str)
 		os.execute(cmd_str)
 	end
@@ -301,15 +296,16 @@ compare_config["Rule"] = function(old, new)
 	end
 
 	for _, cate in ipairs(ConfigCate) do
-		if old[cate] == nil or new[cate] == nil then
+		if not(old[cate] and new[cate]) then
 			err = string.format("old[%s] is %s, new[%s] is %s",
 								old[cate] and "not nil" or "nil",
 								new[cate] and "not nil" or "nil")
 			return nil, err
 		end
 
-		ret = fp.same(old[cate], new[cate])
-		local _ = (ret == false) and table.insert(cmp_res, {cate = cate})
+		if not fp.same(old[cate], new[cate]) then
+			table.insert(cmp_res, {cate = cate})
+		end
 	end
 	return cmp_res
 end
@@ -345,15 +341,16 @@ compare_config["Set"] = function(old, new)
 		for name, info in pairs(new_cate_config) do
 			local new_list = info.set_list
 			local old_list = old_cate_config[name].set_list
-			if old_list == nil or new_list == nil then
+			if not (old_list and new_list) then
 				err = string.format("old[%s] is %s, new[%s] is %s",
 									old_list and "not nil" or "nil",
 									new_list and "not nil" or "nil")
 				return nil, err
 			end
 
-			local ret = fp.same(old_list, new_list)
-			local _ = (ret == false) and table.insert(cmp_res, {cate = cate, sub_cate = name})
+			if not fp.same(old_list, new_list) then
+				table.insert(cmp_res, {cate = cate, sub_cate = name})
+			end
 		end
 	end
 
@@ -373,7 +370,7 @@ local function fetch_leaf_protoids(ids)
 	if not ids or #ids == 0 then
 		return {}
 	end
-	print("arr:", js.encode(ids))
+
 	local leaf_ids = {}
 	local nids = fp.reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
 	local sql = string.format("select proto_id, node_type from acproto where proto_id in (%s)", table.concat(nids, ", ")) assert(sql)
@@ -388,8 +385,6 @@ local function fetch_leaf_protoids(ids)
 		return leaf_ids
 	end
 
-	print("leafs:",js.encode(leafs))
-	print("nodes:",js.encode(nodes))
 	nids = fp.reduce(nodes, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
 	sql = string.format("select a.proto_id as proto_id from acproto as a, acproto as b where b.proto_id in (%s) and a.pid = b.proto_id", table.concat(nids, ", "))
 	local protos = fetch_proto(sql)
@@ -400,7 +395,7 @@ local function fetch_leaf_protoids(ids)
 			table.insert(leaf_ids, proto_id)
 		end
 	end
-	print("self_id:",id, "all_id:", js.encode(leaf_ids))
+
 	return leaf_ids
 end
 
@@ -421,7 +416,7 @@ translate_config["Rule"] = function(raw_rule_config)
 		local rule_arr = {}
 		local item_keys = {"Id", "SrcZoneIds", "SrcIpgrpIds", "DstZoneIds", "DstIpgrpIds", "ProtoIds", "Actions"}
 		for _, item in ipairs(rule_config) do
-			if tm_contained(item.TmGrp, cur_tm) then
+			if tmgrp_contained(item.TmGrp, cur_tm) then
 				local rule_item = {
 						Id = tonumber(item.ruleid),
 						SrcZoneIds = js.decode(item.src_zids),
@@ -498,7 +493,8 @@ translate_config["Set"] = function(raw_set_config)
 
 			elseif set_info.settype == "mac" and #set_content > 0 then
 				-- reduce make it to map, toarr make it to arr
-				set_content = fp.toarr(fp.reduce(set_content, function(t, v) return rawset(t, v, v) end, {}))
+				local toarr, reduce = fp.toarr, fp.reduce
+				set_content = toarr(reduce(set_content, function(t, v) return rawset(t, v, v) end, {}))
 
 			end
 			assert(set_content)
@@ -585,7 +581,7 @@ fetch_raw_config["Rule"] = function()
 	for _, cate in ipairs(ConfigCate) do
 		local res, err = fetch_rule(string.lower(cate))
 		if not res then
-			-- if fetch failed, ignore what already have fetched
+			-- if fetch failed, ignore what we have fetched before
 			return nil, err
 		end
 		rule_config[cate] = res
@@ -597,7 +593,7 @@ end
 fetch_raw_config["Set"] = function()
 	local fetch_set = function(cate)
 		-- notice:we need all setname, so ignore whether state is enable or disable
-		local sql = string.format("select * from acset where setclass='%s'", cate) assert(sql)
+		local sql = string.format("select * from acset where setclass='%s'", cate)
 		if not sql then
 			return nil, "construct sql failed"
 		end
