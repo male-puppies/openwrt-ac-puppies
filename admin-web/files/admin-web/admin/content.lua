@@ -147,6 +147,8 @@ if cmd:find("^nettool_") then
 end
 
 -- curl 'http://127.0.0.1/v1/admin/api/system_get?token=f9eeb5c037ac033a969f6f806bdc4617&keys=%5B%22time%22,%22timezone%22%5D'
+-- curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=synctime&sec=1472719031'
+-- curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=timezone&zonename=xxx'
 if cmd:find("^system_") then
 	return require("admin.system").run(cmd)
 end

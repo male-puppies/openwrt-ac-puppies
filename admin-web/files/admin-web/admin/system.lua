@@ -487,22 +487,40 @@ end
 
 local check_map = {}
 check_map.timezone = function(p)
-	local zonename = p.zonename
-	if not zonename then
+	local check = function()
+		local zonename = p.zonename
+		if not zonename then
+			return nil, "invalid zonename"
+		end
+
+		local m = {}
+		for _, r in ipairs(get_timezones()) do
+			local name, zone = r[1], r[2]
+			if zonename == name then
+				m.zonename = zonename
+				m.timezone = zone
+				return m
+			end
+		end
+
 		return nil, "invalid zonename"
 	end
 
-	local m = {}
-	for _, r in ipairs(get_timezones()) do
-		local name, zone = r[1], r[2]
-		if zonename == name then
-			m.zonename = zonename
-			m.timezone = zone
-			return m
-		end
+	local m, e = check()
+	if not m then
+		return reply_e(e)
 	end
 
-	return nil, "invalid zonename"
+	query_common(m, "kv_set")
+end
+
+check_map.synctime = function(p)
+	local sec = p.sec
+	if not (sec and sec:find("^%d%d%d%d%d%d%d%d%d%d$")) then
+		return reply_e("invalid synctime")
+	end
+
+	query_common({sec = sec}, "system_synctime")
 end
 
 function cmd_map.system_set()
@@ -521,12 +539,7 @@ function cmd_map.system_set()
 		return reply_e("invalid request")
 	end
 
-	local m, e = f(p)
-	if not m then
-		return reply_e(e)
-	end
-
-	query_common(m, "kv_set")
+	f(p)
 end
 
 return {run = run}
