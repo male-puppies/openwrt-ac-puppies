@@ -62,8 +62,7 @@ udp_map["user_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_user_set", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -104,8 +103,7 @@ udp_map["user_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_user_add", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -129,8 +127,7 @@ udp_map["user_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_user_del", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

@@ -51,7 +51,7 @@ udp_map["firewall_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_firewall_set", code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -97,7 +97,7 @@ udp_map["firewall_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_firewall_add", code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -135,7 +135,7 @@ udp_map["firewall_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_firewall_del", code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -181,7 +181,7 @@ udp_map["firewall_adjust"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_firewall_adjust", code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

@@ -52,8 +52,7 @@ udp_map["timegroup_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_timegroup_add", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -72,8 +71,7 @@ udp_map["timegroup_del"] = function(p, ip, port)
 			return nil, e
 		end
 
-		 -- judge cited id 判断被引用的id号
-		local refer_tmgids = {}
+		 -- judge cited id ??媳?????d??		local refer_tmgids = {}
 		for _, tmgrp in ipairs(rs) do
 			local detail = js.decode(tmgrp.tmgrp_ids)  assert(detail)
 			for _, tmgrpid in ipairs(detail) do
@@ -101,8 +99,7 @@ udp_map["timegroup_del"] = function(p, ip, port)
 
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_timegroup_del", code, p)
-	--local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -146,8 +143,7 @@ udp_map["timegroup_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_timegroup_set", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

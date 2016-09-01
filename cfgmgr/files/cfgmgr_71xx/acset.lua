@@ -39,8 +39,7 @@ udp_map["acset_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acset_set", code, p)
-	--local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

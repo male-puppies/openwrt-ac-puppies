@@ -105,8 +105,7 @@ udp_map["acrule_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acrule_set", code, p)
-	--local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -201,8 +200,7 @@ udp_map["acrule_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acrule_add", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -226,8 +224,7 @@ udp_map["acrule_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acrule_del", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -275,8 +272,7 @@ udp_map["acrule_adjust"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acrule_adjust", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
