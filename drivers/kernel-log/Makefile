@@ -41,10 +41,9 @@ MAKE_OPTS:= \
 	$(EXTRA_KCONFIG)
 
 define Build/Prepare
-	@echo --- $(TOOLCHAIN_DIR) ---
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
-	$(CP) ./src/klog.h $(TOOLCHAIN_DIR)/include/linux/
+	$(CP) ./src/klog.h $(LINUX_DIR)/include/linux/
 endef
 
 define Build/Compile

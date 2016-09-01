@@ -15,7 +15,7 @@
 /* valid the regex patt format. */
 #define PARSE_REGEX         "(?<!\\\\)/(.*(?<!(?<!\\\\)\\\\))/([^\"]*)"
 
-static pcre2_code *parse_regex;
+static pcre2_code *parse_regex = NULL;
 static bool sysctl_jit_enable = true;
 static int sysctl_jit_stack_start = 16; /* KB */
 static int sysctl_jit_stack_max = 64; /* KB */
@@ -259,7 +259,7 @@ static int sysctl_pcre_jit(struct ctl_table *ctl, int write,
 	return ret;
 }
 
-static struct ctl_table_header *pcre_table_header;
+static struct ctl_table_header *pcre_table_header = NULL;
 
 static struct ctl_table pcre_table[] = {
     {

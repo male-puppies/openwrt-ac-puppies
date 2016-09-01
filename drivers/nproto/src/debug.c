@@ -2,15 +2,15 @@
 
 #include "nproto_private.h"
 
-#define PROC_DNAME_DBG 	DRIVER_NAME
-#define PROC_FNAME_DBG 	"debug"
-#define PROC_FNAME_DUMP	"dump"
-#define CMD_S_TRACE 	"trace_id="
+#define PROC_dir_dbg 	DRIVER_NAME
+#define PROC_file_dbg 	"debug"
+#define PROC_file_dump	"dump"
+#define CMD_str_trace 	"trace_id="
 
 #define PROC_DBG_BUFF_SIZE (1024*8)
 
 static struct mutex io_lock;
-static struct proc_dir_entry *nproto_proc_dir;
+static struct proc_dir_entry *nproto_proc_dir = NULL;
 static int nproto_open(struct inode *inode, struct file *file)
 {
 	int err;
@@ -64,10 +64,10 @@ static ssize_t nproto_write(struct file *file,
 		goto __error_out;
 	}
 	/* parse the cmdline */
-	cmd = strstr(buf, CMD_S_TRACE);
+	cmd = strstr(buf, CMD_str_trace);
 	if(cmd) {
 		int value;
-		if(sscanf(cmd + sizeof(CMD_S_TRACE), "%d", &value) != 1) {
+		if(sscanf(cmd + strlen(CMD_str_trace), "%d", &value) != 1) {
 			np_error("parse trace id err[%s]\n", cmd);
 			goto __error_out;
 		}
@@ -89,8 +89,8 @@ static ssize_t nproto_read(struct file *file, char __user *buffer,
 		return 0;
 	}
 
-	size = snprintf(buffer, count, "trace_id=\n"
-		"\ttrace_id: %u\n", rule_trace_id);
+	size = snprintf(buffer, count,
+		"trace_id=\n""\ttrace_id: %u\n", rule_trace_id);
 
 	*offset += size;
 	return size;
@@ -138,40 +138,56 @@ static const struct file_operations dump_ops = {
 
 int nproto_proc_init(void)
 {
-	struct proc_dir_entry *dir, *file;
+	int err;
+	struct proc_dir_entry *dir, *dbg, *dump;
 
 	mutex_init(&io_lock);
 	/* create proc dir */
 	if(nproto_proc_dir) {
 		np_error("re-inited ...\n");
-		return -EINVAL;
+		err = -EINVAL;
+		goto __err_dir;
 	}
-	dir = proc_mkdir(PROC_DNAME_DBG, NULL);
+	dir = proc_mkdir(PROC_dir_dbg, NULL);
 	if(!dir) {
 		np_error("create dir failed.\n");
-		return -EINVAL;
+		err = -EINVAL;
+		goto __err_dir;
 	}
-	file = proc_create_data(PROC_FNAME_DBG, 655, dir, &debug_ops, NULL);
-	if(!file) {
+	dbg = proc_create_data(PROC_file_dbg, 655, dir, &debug_ops, NULL);
+	if(!dbg) {
 		np_error("create debug file failed.\n");
-		remove_proc_entry(PROC_DNAME_DBG, NULL);
-		return -EINVAL;
+		err = -EINVAL;
+		goto __err_dir;
 	}
-	file = proc_create_data(PROC_FNAME_DUMP, 655, dir, &dump_ops, NULL);
-	if(!file) {
+	dump = proc_create_data(PROC_file_dump, 655, dir, &dump_ops, NULL);
+	if(!dump) {
 		np_error("create dump file failed.\n");
-		remove_proc_entry(PROC_FNAME_DBG, nproto_proc_dir);
-		remove_proc_entry(PROC_DNAME_DBG, NULL);
-		return -EINVAL;
+		err = -EINVAL;
+		goto __err_dir;
 	}
-
 	nproto_proc_dir = dir;
 	return 0;
+
+__err_dir:
+	if(dir && dbg) {
+		remove_proc_entry(PROC_file_dbg, dir);
+	}
+	if(dir && dump) {
+		remove_proc_entry(PROC_file_dump, dir);
+	}
+	if(dir) {
+		remove_proc_entry(PROC_dir_dbg, NULL);
+	}
+	return err;
 }
 
 void nproto_proc_exit(void)
 {
-	remove_proc_entry(PROC_FNAME_DUMP, nproto_proc_dir);
-	remove_proc_entry(PROC_FNAME_DBG, nproto_proc_dir);
-	remove_proc_entry(PROC_DNAME_DBG, NULL);
+	if(nproto_proc_dir) {
+		remove_proc_entry(PROC_file_dbg, nproto_proc_dir);
+		remove_proc_entry(PROC_file_dump, nproto_proc_dir);
+		remove_proc_entry(PROC_dir_dbg, NULL);
+		nproto_proc_dir = NULL;
+	}
 }
