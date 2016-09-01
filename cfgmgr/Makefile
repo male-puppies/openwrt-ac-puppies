@@ -50,6 +50,7 @@ ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/main.lua $(1)/usr/share/cfgmgr/main.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/mwan.lua $(1)/usr/share/cfgmgr/mwan.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/route.lua $(1)/usr/share/cfgmgr/route.lua
+	$(INSTALL_DATA) ./files/cfgmgr_71xx/system.lua $(1)/usr/share/cfgmgr/system.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/tc.lua $(1)/usr/share/cfgmgr/tc.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/timegroup.lua $(1)/usr/share/cfgmgr/timegroup.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/user.lua $(1)/usr/share/cfgmgr/user.lua
