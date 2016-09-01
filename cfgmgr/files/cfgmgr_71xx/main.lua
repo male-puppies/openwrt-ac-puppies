@@ -27,6 +27,7 @@ local modules = {
 	route		= 	require("route"),
 	tc			= 	require("tc"),
 	cloud		= 	require("cloud"),
+	system 		= 	require("system")
 }
 
 local encode, decode = js.encode, js.decode

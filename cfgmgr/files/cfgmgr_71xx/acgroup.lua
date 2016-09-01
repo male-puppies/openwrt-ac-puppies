@@ -60,8 +60,7 @@ udp_map["acgroup_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acgroup_set", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -119,8 +118,7 @@ udp_map["acgroup_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acgroup_add", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -156,8 +154,7 @@ udp_map["acgroup_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_acgroup_del", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

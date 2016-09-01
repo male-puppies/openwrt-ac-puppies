@@ -2,6 +2,7 @@ local js = require("cjson.safe")
 local rds = require("common.rds")
 local adminlib = require("admin.adminlib")
 
+local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
 
 local function check()
@@ -15,26 +16,29 @@ local function check()
 end
 
 local function auth(p)
-	-- local sql = string.format("select count(*) as count, perm from csadmin where username='%s' and password='%s'", p.username, p.password)
-
-	-- local r, e = mysql.query(function(db)
-	-- 	local rs, e = db:query(sql)
-	-- 	if not rs then
-	-- 		return nil, e
-	-- 	end
-	-- 	return rs[1]
-	-- end)
-
-	-- if not r then
-	-- 	return nil, e
-	-- end
-	local r = {username = p.username, count = 1, perm = js.encode({})}
-	if tonumber(r.count) == 0 then
-		return nil, "invalid auth"
+	local username = p.username
+	local sql = string.format("select v from kv where k='username' and v='%s'", username)
+	local rs, e = mysql_select(sql)
+	if not (rs and #rs == 1) then
+		return nil, "auth fail"
 	end
 
-	r.username = p.username
-	return r
+	local sql = string.format("select v from kv where k='password'")
+	local rs, e = mysql_select(sql)
+	if not (rs and #rs == 1) then
+		return nil, "auth fail"
+	end
+
+	local admin_password, password = rs[1].v, p.password
+	if #admin_password == 32 then
+		if ngx.md5(password) ~= admin_password then
+			return nil, "invalid password"
+		end
+	elseif admin_password ~= password then
+		return nil, "invalid password"
+	end
+
+	return {username = username, count = 1, perm = js.encode({})}
 end
 
 local cache_auth_code = [[

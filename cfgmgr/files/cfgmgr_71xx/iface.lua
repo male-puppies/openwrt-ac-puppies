@@ -49,7 +49,6 @@ udp_map["iface_list"] = function(p, ip, port)
 	for iface, _ in pairs(net_cfg) do
 		table.insert(ifaces, iface)
 	end
-	table.sort(ifaces)
 	local res = ifaces
 	reply(ip, port, 0, res)
 end

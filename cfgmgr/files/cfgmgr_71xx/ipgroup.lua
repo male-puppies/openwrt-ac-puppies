@@ -52,8 +52,7 @@ udp_map["ipgroup_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_set", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -95,8 +94,7 @@ udp_map["ipgroup_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_add", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -157,8 +155,7 @@ udp_map["ipgroup_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_ipgroup_del", code, p)
-	-- local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

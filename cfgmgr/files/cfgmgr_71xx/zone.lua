@@ -75,7 +75,7 @@ udp_map["zone_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_zone_set", code, p)
+	local r, e = dbrpc:once(code, p)
 	if not r then
 		return reply(ip, port, 1, e)
 	end
@@ -117,7 +117,7 @@ udp_map["zone_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_zone_add", code, p)
+	local r, e = dbrpc:once(code, p)
 	if not r then
 		return reply(ip, port, 1, e)
 	end
@@ -160,7 +160,7 @@ udp_map["zone_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:fetch("cfgmgr_zone_del", code, p)
+	local r, e = dbrpc:once(code, p)
 	if not r then
 		return reply(ip, port, 1, e)
 	end
