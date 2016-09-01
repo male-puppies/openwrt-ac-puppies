@@ -10,6 +10,7 @@ PKG_LICENSE_FILES:=
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
+include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/pps_comm
@@ -24,6 +25,7 @@ endef
 
 define Build/Prepare
 	$(CP) -a ./src/* $(TOOLCHAIN_DIR)/include/
+	$(CP) -a ./src/* $(LINUX_DIR)/include/
 endef
 
 define Build/Compile
