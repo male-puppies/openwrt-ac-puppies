@@ -9,7 +9,7 @@ local function redirect()
 end
 
 local uri = ngx.var.uri
-if uri:find("tologin.html$") then
+if uri:find("tologin.html$") or uri:find("login.html$") then
 	return
 end
 
