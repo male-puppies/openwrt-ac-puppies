@@ -373,20 +373,26 @@ local function fetch_leaf_protoids(ids)
 
 	local leaf_ids, reduce = {}, fp.reduce
 	local nids = reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
-	local sql = string.format("select proto_id, node_type from acproto where proto_id in (%s)", table.concat(nids, ", ")) assert(sql)
+	local sql = string.format([["select proto_id, node_type from acproto where proto_id in (%s)"]], table.concat(nids, ", ")) assert(sql)
 	local protos = fetch_proto(sql)
 	local leafs = protos and reduce(protos, function(t, r) if r.node_type == "leaf" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
 	-- need convert from hex to decimal
 	leaf_ids = reduce(leafs, function(t, r) return rawset(t, #t + 1, tonumber(r, 16)) end, leaf_ids)
-	local nodes = protos and reduce(protos, function(t, r) if r.node_type == "node" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
+	local nodes = protos and reduce(protos, function(t, r)
+		if r.node_type == "node" then
+			return rawset(t, #t + 1, r.proto_id)
+		end
+		return t
+	end, {})
 	if #nodes == 0 then
 		return leaf_ids
 	end
 
 	nids = reduce(nodes, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
-	local sel = "select a.proto_id as proto_id from acproto as a, acproto as b "
-	local wh = string.format("where b.proto_id in (%s) and a.pid = b.proto_id", table.concat(nids, ", "))
-	sql = sel..wh
+	local sql = string.format([[
+			select a.proto_id as proto_id from acproto as a, acproto as b
+			where b.proto_id in (%s) and a.pid = b.proto_id
+		]], table.concat(nids, ", "))
 	local protos = fetch_proto(sql)
 	if protos and #protos > 0 then
 		local proto_ids = protos and reduce(protos, function(t, r) return rawset(t, #t + 1, r.proto_id) end, {})
