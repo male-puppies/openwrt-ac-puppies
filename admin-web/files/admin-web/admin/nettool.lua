@@ -26,14 +26,14 @@ function cmd_map.nettool_get(cmd)
 		return reply_e(e)
 	end
 
-	local timeout_map = {ping = 30000, traceroute = 60000, nslookup = 30000}
+	local timeout_map = {ping = 30, traceroute = 60, nslookup = 30}
 	local timeout = timeout_map[m.tool]
 	if not timeout then
 		return reply_e("invalid tool")
 	end
 
 	m.timeout = timeout
-	return query_common(m, cmd, timeout)
+	return query_common(m, cmd, timeout * 1000)
 end
 
 return {run = run}

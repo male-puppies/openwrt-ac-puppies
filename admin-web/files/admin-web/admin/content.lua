@@ -141,7 +141,7 @@ if cmd:find("^cloud_") then
 	return require("admin.cloud").run(cmd)
 end
 
--- curl 'http://127.0.0.1/v1/admin/api/nettool_get?token=e496dc36928071d7e2942d3af3645cb1&cmd=ping&host=www.baidu.com'
+-- curl 'http://127.0.0.1/v1/admin/api/nettool_get?token=d4ebd1ce9d867b0009213386f3b7a923&tool=ping&host=www.baidu.com'
 if cmd:find("^nettool_") then
 	return require("admin.nettool").run(cmd)
 end
