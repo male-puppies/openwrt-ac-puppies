@@ -55,6 +55,8 @@ ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/timegroup.lua $(1)/usr/share/cfgmgr/timegroup.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/user.lua $(1)/usr/share/cfgmgr/user.lua
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/zone.lua $(1)/usr/share/cfgmgr/zone.lua
+	$(INSTALL_DATA) ./files/cfgmgr_71xx/radio.lua $(1)/usr/share/cfgmgr/radio.lua
+	$(INSTALL_DATA) ./files/cfgmgr_71xx/wlanssid.lua $(1)/usr/share/cfgmgr/wlanssid.lua
 endif
 endef
 
