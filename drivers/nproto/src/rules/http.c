@@ -217,7 +217,7 @@ np_rule_t inner_http_req = {
 				.match = {
 					.type = MHTP_REGEXP,
 					.offset = 0,
-					.patt = "/^(GET|POST|CONNECT|HEAD|OPTIONS) \\//",
+					.patt = "/^GET|^POST|^CONNECT|^HEAD|^OPTIONS \\//",
 				},
 			},
 		},

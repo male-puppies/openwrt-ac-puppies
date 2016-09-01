@@ -6,8 +6,8 @@
 #include "nfw_private.h"
 
 #define DRIVER_NAME "nfw"
-#define PROC_DBG_FNAME "debug"
-#define PROC_DBG_DNAME DRIVER_NAME
+#define PROC_name_file "debug"
+#define PROC_name_dir DRIVER_NAME
 
 #define CMD_S_addr	"addr="
 #define CMD_S_port		"port="
@@ -20,7 +20,7 @@ typedef struct {
 	struct mutex lock;
 	uint32_t addr, mask;
 	uint16_t port, bypass;
-	struct proc_dir_entry *proc_dir, *proc_file_dbg;
+	struct proc_dir_entry *nfw_dir;
 } nfw_debug_t;
 
 static void *io_buff = NULL;
@@ -245,6 +245,7 @@ static const struct file_operations debug_ops = {
 
 int nfw_dbg_init(void)
 {
+	int err = 0;
 	struct proc_dir_entry *dir, *file;
 
 	memset(&GDBG, 0, sizeof(GDBG));
@@ -255,35 +256,56 @@ int nfw_dbg_init(void)
 	io_buff = vmalloc(DBG_IO_BUFF_SZ);
 	if(!io_buff) {
 		fw_error("alloc io buffer %d failed\n", DBG_IO_BUFF_SZ);
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto __error_out;
 	}
 
 	/* create proc dir */
-	if(GDBG.proc_dir) {
+	if(GDBG.nfw_dir) {
 		fw_error("re-inited ...\n");
-		return -EINVAL;
+		err = -EINVAL;
+		goto __error_out;
 	}
-	dir = proc_mkdir(PROC_DBG_DNAME, NULL);
+	dir = proc_mkdir(PROC_name_dir, NULL);
 	if(!dir) {
 		fw_error("create dir failed.\n");
-		return -EINVAL;
+		err = -EINVAL;
+		goto __err_dir;
 	}
-	file = proc_create_data(PROC_DBG_FNAME, 655, dir, &debug_ops, NULL);
+	file = proc_create_data(PROC_name_file, 655, dir, &debug_ops, NULL);
 	if(!file) {
 		fw_error("create debug file failed.\n");
-		remove_proc_entry(PROC_DBG_DNAME, NULL);
-		return -EINVAL;
+		err = -EINVAL;
+		goto __err_dir;
 	}
 
-	GDBG.proc_dir = dir;
-	GDBG.proc_file_dbg = file;
+	GDBG.nfw_dir = dir;
 	return 0;
+
+__err_dir:
+	if(dir && file) {
+		remove_proc_entry(PROC_name_file, dir);
+	}
+	if(dir) {
+		remove_proc_entry(PROC_name_dir, NULL);
+	}
+
+__error_out:
+	if(io_buff) {
+		vfree(io_buff);
+		io_buff = NULL;
+	}
+
+	return err;
 }
 
 void nfw_dbg_exit(void)
 {
-	remove_proc_entry(PROC_DBG_FNAME, GDBG.proc_dir);
-	remove_proc_entry(PROC_DBG_DNAME, NULL);
+	if(GDBG.nfw_dir) {
+		remove_proc_entry(PROC_name_file, GDBG.nfw_dir);
+		remove_proc_entry(PROC_name_dir, NULL);
+		GDBG.nfw_dir = NULL;
+	}
 	if(io_buff) {
 		vfree(io_buff);
 	}

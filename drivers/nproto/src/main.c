@@ -99,6 +99,7 @@ static int nproto_pkt_init(
 	return 0;
 }
 
+static nt_packet_t npkt_pcpu[NR_CPUS];
 static int nt_context_nproto(
 		struct net_device *in,
 		struct net_device *out,
@@ -106,11 +107,11 @@ static int nt_context_nproto(
 		struct nos_track *nt)
 {
 	int n;
-	nt_packet_t pkt;
+	nt_packet_t *pkt = &npkt_pcpu[smp_processor_id()];
 	flow_info_t *fi = nt_flow(nt);
 
 	/* FIXME: tackoff-fixup the sock4/5/http proxy header. */
-	n = nproto_pkt_init(in, out, skb, nt, &pkt);
+	n = nproto_pkt_init(in, out, skb, nt, pkt);
 	if(n) {
 		// np_debug("packet init failed: %d\n", n);
 		return n;
@@ -118,7 +119,7 @@ static int nt_context_nproto(
 
 	/* update proto as match'ed fn. */
 	if(!nt_flow_nproto_fin(fi)) {
-		n = nproto_rules_match(&pkt);
+		n = nproto_rules_match(pkt);
 	} else {
 		np_debug(FMT_FLOW_STR" l7: %d\n", FMT_FLOW(fi), nt_flow_nproto(fi));
 	}
@@ -178,7 +179,7 @@ static struct nf_hook_ops nproto_nf_hook_ops[] = {
 	},
 };
 
-static np_hook_t np_hooks[NP_HOOK_MAX];
+static np_hook_t np_hooks[NP_HOOK_MAX] = {NULL, };
 int np_hook_register(np_hook_t fn)
 {
 	int i = 0;
@@ -202,18 +203,20 @@ int np_hook_register(np_hook_t fn)
 }
 int np_hook_unregister(np_hook_t fn)
 {
-	int i=0;
+	int i;
 
-	for (; i < NP_HOOK_MAX; ++i) {
+	for (i=0; i < NP_HOOK_MAX; ++i) {
 		if(np_hooks[i] && np_hooks[i] == fn) {
 			int j = i;
-			np_info("hook: %d fn: %p\n", i, fn);
-			rcu_assign_pointer(np_hooks[i], NULL);
 			for(; j < NP_HOOK_MAX - 1; j++) {
-				np_hooks[j] = np_hooks[j+1];
+				rcu_assign_pointer(np_hooks[j], np_hooks[j+1]);
 				if(!np_hooks[j]) {
 					break;
 				}
+			}
+			np_info("hook: %d fn: %p\n", j, fn);
+			if(np_hooks[j]) {
+				rcu_assign_pointer(np_hooks[j], NULL);
 			}
 			break;
 		}
@@ -230,14 +233,19 @@ EXPORT_SYMBOL(np_hook_unregister);
 
 void nproto_update(nt_packet_t *pkt, np_rule_t *rule)
 {
-	int i, ret;
-	flow_info_t *fi = pkt->fi;
-	uint16_t proto_new = rule->ID;
+	int i;
+	flow_info_t *fi;
+	uint16_t proto_new;
 
-	NP_ASSERT(fi != NULL);
+	NP_ASSERT(pkt);
+	NP_ASSERT(pkt->fi);
+	NP_ASSERT(rule);
 
+	fi = pkt->fi;
+	proto_new = rule->ID;
 	if(fi->hdr.proto != proto_new) {
 		for (i = 0; i < NP_HOOK_MAX; ++i) {
+			int ret;
 			np_hook_t fn = rcu_dereference(np_hooks[i]);
 			if(!fn) {
 				break;
@@ -258,7 +266,9 @@ void nproto_update(nt_packet_t *pkt, np_rule_t *rule)
 void *nproto_klog_fd = NULL;
 static int __init nproto_module_init(void)
 {
-	int r;
+	int r = 0;
+
+	memset(&npkt_pcpu, 0, sizeof(npkt_pcpu));
 
 	nproto_klog_fd = klog_init("nproto", 0x0e, 0);
 	if(!nproto_klog_fd) {
@@ -276,21 +286,29 @@ static int __init nproto_module_init(void)
 	r = test_init();
 	if(r) {
 		np_error("test init failed.\n");
-		goto __error;
+		goto __error_nproto;
+	}
+
+	r = nproto_proc_init();
+	if(r) {
+		np_error("proc init failed.\n");
+		goto __error_hooks;
 	}
 
 	r = nf_register_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
-	if (r) {
+	if(r) {
 		np_error("nf hook register failed.\n");
-		goto __error;
+		goto __error_proc;
 	}
-
-	nproto_proc_init();
 	return 0;
 
-__error:
+__error_proc:
+	nproto_proc_exit();
+__error_hooks:
 	test_exit();
+__error_nproto:
 	nproto_cleanup();
+__error:
 	if(nproto_klog_fd)
 		klog_fini(nproto_klog_fd);
 	return r;
@@ -298,11 +316,13 @@ __error:
 
 static void __exit nproto_module_exit(void)
 {
-	nproto_proc_exit();
 	nf_unregister_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
 
+	nproto_proc_exit();
 	test_exit();
 	nproto_cleanup();
+
+	synchronize_rcu();
 	if(nproto_klog_fd)
 		klog_fini(nproto_klog_fd);
 }

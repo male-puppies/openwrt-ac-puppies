@@ -37,7 +37,7 @@ int klog_release(struct inode *inode, struct file *file)
 
 ssize_t klog_write(struct file *file, const char __user *buf, size_t count, loff_t *off)
 {
-    char kbuf[1024] = {0};
+    char kbuf[512] = {0};
     char *ptr;
     int cnt;
 
