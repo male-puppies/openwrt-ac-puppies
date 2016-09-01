@@ -2,5 +2,7 @@
 
 cp -a /usr/share/nginx-ac/nginx.init /etc/init.d/nginx
 chmod 755 /etc/init.d/nginx
+/etc/init.d/nginx disable
+/etc/init.d/nginx enable
 
 exit 0

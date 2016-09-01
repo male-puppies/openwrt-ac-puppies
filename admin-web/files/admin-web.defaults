@@ -1,5 +1,5 @@
 #!/bin/sh
 
-cp -a /usr/share/admin-web/admin-ac /usr/share/nginx-ac/sites-enabled/admin
+ln -sf /usr/share/admin-web/admin-ac /usr/share/nginx-ac/sites-enabled/admin
 
 exit 0
