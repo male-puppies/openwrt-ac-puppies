@@ -666,7 +666,6 @@ local function check_config_update()
 			log.error("translate config(type=%s) failed for %s", config_type, err)
 			return false
 		end
-
 		new_ac_config[config_type] = new_config
 		old_config = cur_ac_config[config_type]
 
@@ -705,7 +704,6 @@ local function default_reload_config()
 	return check_config_update()
 end
 
-tcp_map["dbsync_ipgroup"]	= default_reload_config
 tcp_map["dbsync_timegroup"]	= default_reload_config
 tcp_map["dbsync_acrule"]	= default_reload_config
 tcp_map["dbsync_acset"]		= default_reload_config
