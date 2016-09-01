@@ -1,12 +1,11 @@
 local ski = require("ski")
 local log = require("log")
-local board = require("board")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local common = require("common")
 local cfglib = require("cfglib")
-
-local read, save_safe, arr2map = common.read, common.save_safe, common.arr2map
+local board = require("cfgmgr.board")
+local network = require("cfgmgr.network")
 
 local udp_map = {}
 local udpsrv, mqtt, dbrpc, reply
@@ -18,12 +17,10 @@ local function init(u, p)
 end
 
 udp_map["iface_get"] = function(p, ip, port)
-	local r = board.load()
-	local ports, options, networks = r.ports, r.options, r.networks
-	local path = "/etc/config/network.json"
-	local s = read(path) 	assert(s)
-	local m = js.decode(s) 	assert(m)
-	local net_name, net_cfg = m.name, m.network
+	local board_m = board.load()
+	local network_m = network.load()
+	local ports, options, networks = board_m.ports, board_m.options, board_m.networks
+	local net_name, net_cfg = network_m.name, network_m.network
 
 	local layout = {}
 	for iface, cfg in pairs(net_cfg) do
@@ -31,6 +28,7 @@ udp_map["iface_get"] = function(p, ip, port)
 			layout[i] = {name = iface, enable = 1, fixed = 0}
 		end
 	end
+
 	for i = 1, #ports do
 		if not layout[i] then
 			layout[i] = {name = "", enable = 0, fixed = 0}
@@ -39,14 +37,12 @@ udp_map["iface_get"] = function(p, ip, port)
 	end
 
 	table.insert(options,  {name = "custom", layout = layout})
-	local res = {ports = ports, options = options, networks = networks, network = m}
+	local res = {ports = ports, options = options, networks = networks, network = network_m}
 	reply(ip, port, 0, res)
 end
 
 udp_map["iface_list"] = function(p, ip, port)
-	local path = "/etc/config/network.json"
-	local s = read(path) 	assert(s)
-	local m = js.decode(s) 	assert(m)
+	local m = network.load()
 	local net_name, net_cfg = m.name, m.network
 
 	local ifaces = {}
@@ -61,7 +57,7 @@ end
 udp_map["iface_set"] = function(p, ip, port)
 	local config = p.network
 
-	local _ = config and save_safe("/etc/config/network.json", js.encode(config))
+	local _ = network.save(config)
 	reply(ip, port, 0, "ok")
 	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "network"}}))
 end

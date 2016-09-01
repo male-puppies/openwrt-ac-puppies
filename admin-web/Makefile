@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +nginx-ac +status 
+  DEPENDS:= +nginx-ac +status +cfgmgr-common
 endef
 
 define Package/$(PKG_NAME)

@@ -6,38 +6,13 @@ local rpccli = require("rpccli")
 local simplesql = require("simplesql")
 local ipops = require("ipops")
 local md5 = require("md5")
+local board = require("cfgmgr.board")
+local network = require("cfgmgr.network")
 
 local tcp_map = {}
 local mqtt, simple, on_event_cb
 
 local read = common.read
-
-local function load_board()
-	local path = "/etc/config/board.json"
-	local s = read(path)	assert(s)
-	local m = js.decode(s)	assert(m)
-	local ports, options, networks = m.ports, m.options, m.networks	assert(ports and options and networks)
-	local port_map = {}
-
-	for _, dev in ipairs(ports) do
-		if dev.type == "switch" then
-			for idx, port in ipairs(dev.outer_ports) do
-				table.insert(port_map, {ifname = dev.ifname, mac = port.mac, type = dev.type, device = dev.device, num = port.num, inner_port = dev.inner_port})
-			end
-		elseif dev.type == "ether" then
-			table.insert(port_map, {ifname = dev.ifname, mac = dev.outer_ports[1].mac, type = dev.type, device = dev.device})
-		end
-	end
-
-	return {ports = port_map, options = options, networks = networks}
-end
-
-local function load_network()
-	local path = "/etc/config/network.json"
-	local s = read(path)	assert(s)
-	local m = js.decode(s)	assert(m)
-	return m.network
-end
 
 local function generate_network_cmds(board, network)
 	local switchs = {}
@@ -55,7 +30,7 @@ local function generate_network_cmds(board, network)
 	table.insert(arr["dhcp"], string.format("while uci delete dhcp.@dhcp[0] >/dev/null 2>&1; do :; done"))
 	table.insert(arr["network"], string.format("while uci delete network.@interface[1] >/dev/null 2>&1; do :; done"))
 	table.insert(arr["network"], string.format("while uci delete network.@device[0] >/dev/null 2>&1; do :; done"))
-	for name, option in pairs(network) do
+	for name, option in pairs(network.network) do
 		uci_network[name] = option
 		if name:find("^lan") or #option.ports > 1 then
 			uci_network[name].type = 'bridge'
@@ -236,8 +211,8 @@ local function generate_network_cmds(board, network)
 end
 
 local function network_reload()
-	local board = load_board()
-	local network = load_network()
+	local board_m = board.load()
+	local network_m = network.load()
 	local cmd = ""
 	local new_md5, old_md5
 	local arr = {}
@@ -268,7 +243,7 @@ local function network_reload()
 
 	orders = {"network", "dhcp", "nos-zone", "firewall"}
 
-	local network_arr = generate_network_cmds(board, network)
+	local network_arr = generate_network_cmds(board_m, network_m)
 
 	for _, name in ipairs(orders) do
 		for _, line in ipairs(network_arr[name]) do

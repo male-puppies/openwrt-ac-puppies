@@ -6,83 +6,15 @@ local simplesql = require("simplesql")
 local md5 = require("md5")
 local common = require("common")
 local ipops = require("ipops")
+local network = require("cfgmgr.network")
 
 local tcp_map = {}
 local mqtt, simple
 
-local read = common.read
-local save = common.save
-
-local function load_iface_map()
-	local board_s = read("/etc/config/board.json")	assert(board_s)
-	local board_m = js.decode(board_s)	assert(board_m)
-	local ports = board_m.ports
-	local port_map = {}
-
-	for _, dev in ipairs(ports) do
-		if dev.type == "switch" then
-			for idx, port in ipairs(dev.outer_ports) do
-				table.insert(port_map, {ifname = dev.ifname, mac = port.mac, type = dev.type, device = dev.device, num = port.num, inner_port = dev.inner_port})
-			end
-		elseif dev.type == "ether" then
-			table.insert(port_map, {ifname = dev.ifname, mac = dev.outer_ports[1].mac, type = dev.type, device = dev.device})
-		end
-	end
-
-	local path = "/etc/config/network.json"
-	local network_s = read("/etc/config/network.json")	assert(network_s)
-	local network_m = js.decode(network_s)	assert(network_m)
-	local network = network_m.network
-
-	local iface_map = {}
-	local ifname_map = {}
-	local uci_network = {}
-
-	for name, option in pairs(network) do
-		uci_network[name] = option
-		if name:find("^lan") or #option.ports > 1 then
-			uci_network[name].type = 'bridge'
-		end
-
-		uci_network[name].ifname = ""
-		local ifnames = {}
-		local vlan = nil
-		for _, i in ipairs(option.ports) do
-			if port_map[i].type == 'switch' then
-				vlan = vlan or tostring(i)
-				ifnames[port_map[i].ifname .. "." .. vlan] = tonumber(vlan)
-			else
-				ifnames[port_map[i].ifname] = i
-			end
-		end
-
-		for ifname, i in pairs(ifnames) do
-			if uci_network[name].ifname == "" then
-				uci_network[name].ifname = ifname
-			else
-				uci_network[name].ifname = uci_network[name].ifname .. " " .. ifname
-			end
-		end
-
-		if uci_network[name].proto == "static" or uci_network[name].proto == "dhcp" then
-			if uci_network[name].type == 'bridge' then
-				iface_map["br-" .. name] = name
-				ifname_map[name] = "br-" .. name
-			else
-				iface_map[uci_network[name].ifname] = name
-				ifname_map[name] = uci_network[name].ifname
-			end
-		elseif uci_network[name].proto == "pppoe" then
-			iface_map["pppoe-" .. name] = name
-			ifname_map[name] = "pppoe-" .. name
-		end
-	end
-
-	return iface_map, ifname_map
-end
+local read, save = common.read, common.save
 
 local function generate_route_cmds()
-	local _, ifname_map = load_iface_map()
+	local _, ifname_map = network.load_network_map()
 	local arr = {}
 	arr["network"] = {}
 	arr["route_add"] = {}

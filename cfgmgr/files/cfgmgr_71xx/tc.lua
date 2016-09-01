@@ -1,12 +1,11 @@
 local ski = require("ski")
 local log = require("log")
-local board = require("board")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local common = require("common")
 local cfglib = require("cfglib")
 
-local read, save_safe, arr2map = common.read, common.save_safe, common.arr2map
+local read, save_safe = common.read, common.save_safe
 
 local udp_map = {}
 local udpsrv, mqtt, dbrpc, reply

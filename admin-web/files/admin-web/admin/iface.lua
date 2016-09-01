@@ -44,62 +44,6 @@ function cmd_map.iface_list()
 	return query_common(m, "iface_list")
 end
 
-local s = [[
-{
-            "name": "custom",
-            "network": {
-                "lan0": {
-                    "mac": "00:00:00:00:00:01",
-                    "proto": "static",
-                    "dns": "",
-                    "mtu": "",
-                    "ports": [
-                        1,
-                        2,
-                        3,
-                        4
-                    ],
-                    "pppoe_account": "",
-                    "pppoe_password": "",
-                    "gateway": "",
-                    "dhcpd": {
-                        "enabled": 1,
-                        "leasetime": "12h",
-                        "dns": "172.16.0.1",
-                        "end": "172.16.200.254",
-                        "start": "172.16.0.100",
-                        "staticlease": {},
-                        "dynamicdhcp": 1
-                    },
-                    "metric": "",
-                    "ipaddr": "172.16.0.1/16"
-                },
-                "wan0": {
-                    "mac": "00:00:00:00:00:01",
-                    "proto": "dhcp",
-                    "dns": "",
-                    "mtu": "",
-                    "ports": [
-                        5
-                    ],
-                    "pppoe_account": "",
-                    "pppoe_password": "",
-                    "gateway": "",
-                    "dhcpd": {
-                        "enabled": 0,
-                        "leasetime": "12h",
-                        "dns": "",
-                        "end": "",
-                        "start": "",
-                        "staticlease": {},
-                        "dynamicdhcp": 1
-                    },
-                    "metric": "",
-                    "ipaddr": ""
-                }
-            }
-        }
-]]
 function cmd_map.iface_set()
 	ngx.req.read_body()
 	local p = ngx.req.get_post_args()

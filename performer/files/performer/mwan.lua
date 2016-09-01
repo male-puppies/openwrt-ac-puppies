@@ -4,47 +4,9 @@ local js = require("cjson.safe")
 local common = require("common")
 local ipops = require("ipops")
 local md5 = require("md5")
+local mwan = require("cfgmgr.mwan")
 
 local read = common.read
-
-local function load_mwan()
-	local mwan_path = '/etc/config/mwan.json'
-	local mwan_s = read(mwan_path) or '{}'
-	local mwan_m = js.decode(mwan_s)	assert(mwan_m)
-	local network_path = '/etc/config/network.json'
-	local network_s = read(network_path)	assert(network_path)
-	local network_m = js.decode(network_s)	assert(network_m)
-
-	local res = {
-		ifaces = {},
-		policy = mwan_m.policy or "balanced",
-		main_iface = mwan_m.main_iface or {},
-	}
-
-	for iface, _ in pairs(network_m.network) do
-		if iface:find("^wan") then
-			local iface_exist = false
-			local new_ifc = nil
-			for _, ifc in ipairs(mwan_m.ifaces or {}) do
-				if ifc.name == iface then
-					iface_exist = true
-					new_ifc = ifc
-					break
-				end
-			end
-			if iface_exist then
-				table.insert(res.ifaces, new_ifc)
-			else
-				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 1, track_ip = {}})
-			end
-		end
-	end
-
-	table.sort(res.main_iface)
-	table.sort(res.ifaces, function(a, b) return a.name < b.name end)
-
-	return res
-end
 
 local function generate_mwan_cmds(mwan)
 	local arr = {}
@@ -119,7 +81,7 @@ local function generate_mwan_cmds(mwan)
 end
 
 local function mwan_reload()
-	local mwan = load_mwan()
+	local mwan_m = mwan.load()
 	local cmd = ""
 	local new_md5, old_md5
 	local arr = {}
@@ -135,7 +97,7 @@ local function mwan_reload()
 
 	orders = {"mwan3"}
 
-	local mwan_arr = generate_mwan_cmds(mwan)
+	local mwan_arr = generate_mwan_cmds(mwan_m)
 
 	for _, name in ipairs(orders) do
 		for _, line in ipairs(mwan_arr[name]) do
