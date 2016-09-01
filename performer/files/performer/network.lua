@@ -3,14 +3,13 @@ local log = require("log")
 local js = require("cjson.safe")
 local common = require("common")
 local rpccli = require("rpccli")
-local simplesql = require("simplesql")
 local ipops = require("ipops")
 local md5 = require("md5")
 local board = require("cfgmgr.board")
 local network = require("cfgmgr.network")
 
 local tcp_map = {}
-local mqtt, simple, on_event_cb
+local on_event_cb
 
 local read = common.read
 
@@ -273,10 +272,6 @@ local function network_reload()
 end
 
 local function init(p)
-	mqtt = p
-	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-	simple = simplesql.new(dbrpc)
-
 	network_reload()
 end
 

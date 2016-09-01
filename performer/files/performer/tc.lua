@@ -14,9 +14,7 @@ local function tc_reload()
 end
 
 local tcp_map = {}
-local mqtt
 local function init(p)
-	mqtt = p
 	tc_reload()
 end
 
