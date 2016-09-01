@@ -28,6 +28,8 @@ local modules = {
 	tc			= 	require("tc"),
 	cloud		= 	require("cloud"),
 	system 		= 	require("system")
+	wlanssid	=	require("wlanssid"),
+	radio		=	require("radio"),
 }
 
 local encode, decode = js.encode, js.decode

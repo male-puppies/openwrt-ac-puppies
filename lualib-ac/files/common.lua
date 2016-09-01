@@ -1,3 +1,4 @@
+local lfs = require("lfs")
 local function read(path, func)
 	func = func and func or io.open
 	local fp, err = func(path, "r")
@@ -77,6 +78,12 @@ local function empty(m)
 	return true
 end
 
+local function file_exist(file)
+	if file and lfs.attributes(file, "mode") then
+		return true
+	end
+	return false
+end
 return {
 	read = read,
 	save = save,
@@ -87,4 +94,5 @@ return {
 	save_safe = save_safe,
 	escape_arr = escape_arr,
 	escape_map = escape_map,
+	file_exist = file_exist,
 }
