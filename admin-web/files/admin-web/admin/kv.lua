@@ -48,9 +48,18 @@ function cmd_map.kv_get()
 end
 
 local kvmap = {
+	username	= gen_validate_str(1, 16, true),
 	auth_offline_time = gen_validate_num(1, 8640000),
 	auth_no_flow_timeout = gen_validate_num(1, 8640000),
 }
+
+function kvmap.password(s)
+	if not gen_validate_str(1, 31, true)(s) then
+		return nil, "invalid password"
+	end
+
+	return ngx.md5(s)
+end
 
 function kvmap.auth_redirect_ip(ip)
 	if ip:find(ip_pattern) then

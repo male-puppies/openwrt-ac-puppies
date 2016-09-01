@@ -145,3 +145,8 @@ end
 if cmd:find("^nettool_") then
 	return require("admin.nettool").run(cmd)
 end
+
+-- curl 'http://127.0.0.1/v1/admin/api/system_get?token=f9eeb5c037ac033a969f6f806bdc4617&keys=%5B%22time%22,%22timezone%22%5D'
+if cmd:find("^system_") then
+	return require("admin.system").run(cmd)
+end
