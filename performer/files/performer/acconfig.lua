@@ -371,29 +371,28 @@ local function fetch_leaf_protoids(ids)
 		return {}
 	end
 
-	local leaf_ids = {}
-	local nids = fp.reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
+	local leaf_ids, reduce = {}, fp.reduce
+	local nids = reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
 	local sql = string.format("select proto_id, node_type from acproto where proto_id in (%s)", table.concat(nids, ", ")) assert(sql)
 	local protos = fetch_proto(sql)
-	local leafs = protos and fp.reduce(protos, function(t, r) if r.node_type == "leaf" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
-	for _, proto_id in ipairs(leafs) do
-		table.insert(leaf_ids, proto_id)
-	end
-
-	local nodes = protos and fp.reduce(protos, function(t, r) if r.node_type == "node" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
+	local leafs = protos and reduce(protos, function(t, r) if r.node_type == "leaf" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
+	-- need convert from hex to decimal
+	leaf_ids = reduce(leafs, function(t, r) return rawset(t, #t + 1, tonumber(r, 16)) end, leaf_ids)
+	local nodes = protos and reduce(protos, function(t, r) if r.node_type == "node" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
 	if #nodes == 0 then
 		return leaf_ids
 	end
 
-	nids = fp.reduce(nodes, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
-	sql = string.format("select a.proto_id as proto_id from acproto as a, acproto as b where b.proto_id in (%s) and a.pid = b.proto_id", table.concat(nids, ", "))
+	nids = reduce(nodes, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
+	local sel = "select a.proto_id as proto_id from acproto as a, acproto as b "
+	local wh = string.format("where b.proto_id in (%s) and a.pid = b.proto_id", table.concat(nids, ", "))
+	sql = sel..wh
 	local protos = fetch_proto(sql)
 	if protos and #protos > 0 then
-		local proto_ids = protos and fp.reduce(protos, function(t, r) return rawset(t, #t + 1, r.proto_id) end, {})
+		local proto_ids = protos and reduce(protos, function(t, r) return rawset(t, #t + 1, r.proto_id) end, {})
 		local leafs = fetch_leaf_protoids(proto_ids)
-		for _, proto_id in ipairs(leafs) do
-			table.insert(leaf_ids, proto_id)
-		end
+		-- no need convert it to decimal from hex, because it's decimal now
+		leaf_ids = reduce(leafs, function(t, r) return rawset(t, #t + 1, r) end, leaf_ids)
 	end
 
 	return leaf_ids
@@ -423,13 +422,14 @@ translate_config["Rule"] = function(raw_rule_config)
 						SrcIpgrpIds = js.decode(item.src_ipgids),
 						DstZoneIds = js.decode(item.dest_zids),
 						DstIpgrpIds = js.decode(item.dest_ipgids),
-						ProtoIds = js.decode(item.proto_ids) and fetch_leaf_protoids(js.decode(item.proto_ids)),
+						ProtoIds = fetch_leaf_protoids(js.decode(item.proto_ids) or {}),
 						Actions = js.decode(item.actions)
 					}
 				for _, key in ipairs(item_keys) do
 					assert(rule_item[key], string.format("missing %s", key))
 				end
-				local _ = #rule_item.ProtoIds > 0 and table.sort(rule_item.ProtoIds)
+				assert(#rule_item.ProtoIds > 0)
+				table.sort(rule_item.ProtoIds)
 				table.insert(rule_arr, rule_item)
 			end
 		end
@@ -523,7 +523,7 @@ local fetch_raw_config = {}
 -- fetch two categories rule config:audit and control
 fetch_raw_config["Rule"] = function()
 	local fetch_rule = function(cate)
-		local sql = string.format("select * from acrule where ruletype='%s' and enable=1 order by priority desc", cate)
+		local sql = string.format("select * from acrule where ruletype='%s' and enable=1 order by priority asc", cate)
 		if not sql then
 			return nil, "construct sql failed"
 		end
