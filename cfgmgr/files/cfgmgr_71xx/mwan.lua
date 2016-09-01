@@ -49,6 +49,10 @@ udp_map["mwan_get"] = function(p, ip, port)
 			end
 		end
 	end
+
+	table.sort(res.main_iface)
+	table.sort(res.ifaces, function(a, b) return a.name < b.name end)
+
 	reply(ip, port, 0, res)
 end
 

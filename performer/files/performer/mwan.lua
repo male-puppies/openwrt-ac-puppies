@@ -40,6 +40,9 @@ local function load_mwan()
 		end
 	end
 
+	table.sort(res.main_iface)
+	table.sort(res.ifaces, function(a, b) return a.name < b.name end)
+
 	return res
 end
 
