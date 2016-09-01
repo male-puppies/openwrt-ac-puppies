@@ -1,5 +1,5 @@
 local ski = require("ski")
-local redis = require("redis2")
+local redis = require("ski.redis")
 local js = require("cjson.safe")
 
 local function main()
