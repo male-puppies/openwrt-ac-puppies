@@ -51,7 +51,7 @@
 			</table>
 			<div class="btn-group">
 				<a class="btn btn-default add"><i class="icon-plus"></i>添加</a>
-				<a class="btn btn-default delete" value=""><i class="icon-trash"></i>删除</a>
+				<a class="btn btn-default delete"><i class="icon-trash"></i>删除</a>
 			</div>
 		</div>
 	</div>
@@ -113,42 +113,30 @@
 						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="mac_chk">仅限以下MAC使用</label>
 							<div class="col-xs-5">
-								<!--<div class="checkbox">
-									<label style="display:block;min-height:23px;"><input type="checkbox" id="mac_chk" value="mac none" /></label>
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" id="mac_chk" class="enable" value="1 0" />
+									</span>
+									<input class="form-control empty" id="bindmac" verify="mac"></input>
 								</div>
-								<div class="checkbox">
-									<textarea class="form-control empty" disabled="disabled" id="bindmac" verify="macs"></textarea>
-								</div>-->
-							<div class="input-group">
-								<span class="input-group-addon">
-									<input type="checkbox" id="mac_chk" class="enable" value="1 0" />
-								</span>
-								<textarea class="form-control empty" id="bindmac" verify="macs"></textarea>
 							</div>
-							</div>
-							<div class="col-xs-3 tip-icons">
+							<!--<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入MAC，每行一个，不允许多余空格和回车，例如：&#10;00:11:22:33:44:55。"><i class="icon-question-sign"></i></span>
-							</div>
+							</div>-->
 						</div>
 						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="ip_chk">仅限以下IP使用</label>
 							<div class="col-xs-5">
-								<!--<div class="checkbox">
-									<label style="display:block;min-height:23px;"><input type="checkbox" id="ip_chk" value="ip none" /></label>
+									<div class="input-group">
+										<span class="input-group-addon">
+											<input type="checkbox" id="ip_chk" class="enable" value="1 0" />
+										</span>
+										<input class="form-control empty" id="bindip" verify="ip"></input>
+									</div>
 								</div>
-								<div class="checkbox">
-									<textarea class="form-control empty" disabled="disabled" id="bindip" verify="ips"></textarea>
-								</div>-->
-								<div class="input-group">
-									<span class="input-group-addon">
-										<input type="checkbox" id="ip_chk" class="enable" value="1 0" />
-									</span>
-									<textarea class="form-control empty" id="bindip" verify="ips"></textarea>
-								</div>
-							</div>
-							<div class="col-xs-3 tip-icons">
+							<!--<div class="col-xs-3 tip-icons">
 								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入IP，每行一个，不允许多余空格和回车。"><i class="icon-question-sign"></i></span>
-							</div>
+							</div>-->
 						</div>
 						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="multi">允许多用户使用</label>

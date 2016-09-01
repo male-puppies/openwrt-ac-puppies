@@ -428,8 +428,8 @@ function DoSave() {
 		tmgrp_ids: "",
 		src_ipgids: "",
 		dest_ipgids: "",
-		src_zids: [1],
-		dest_zids: [0]
+		src_zids: [0],
+		dest_zids: [1]
 	}
 
 	var obj = jsonTraversal(acrule, jsTravGet);
@@ -484,14 +484,14 @@ function rowMove(set, id) {
 			return;
 		}
 		id2 = arr[num - 1];
-		sarr = [id2, id];
+		sarr = [parseInt(id2), parseInt(id)];
 	} else if (set == "down") {
 		if (num == data.length - 1) {
 			createModalTips("最后一条，不能移动！");
 			return;
 		}
 		id2 = arr[num + 1];
-		sarr = [id, id2];
+		sarr = [parseInt(id), parseInt(id2)];
 	}
 
 	cgicall.post("acrule_adjust", {ruleids: sarr}, function(d) {

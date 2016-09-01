@@ -9,8 +9,8 @@ var oTabUser,
 		password: "",
 		userdesc: "",
 		multi: 1,
-		bindmac: [],
-		bindip: [],
+		bindmac: "",
+		bindip: "",
 		expire: ""
 	};
 
@@ -57,6 +57,13 @@ function createDtUser() {
             },
 			{
 				"data": "expire",
+				"render": function (d, t, f) {
+					if (d == "") {
+						return "--"
+					} else {
+						return d;
+					}
+               }
 			},
             {
 				"data": "enable",
@@ -114,21 +121,9 @@ function DoSave() {
 		expire_chk = $("#expire_chk").is(":checked"),
 		macval = $("#bindmac").val(),
 		ipval = $("#bindip").val();
-	//未勾选过期时间或过期时间为空
-	if(!expire_chk){
-		data.expire = ""
-	}
-	if (!mac_chk || macval == "") {
-		data.bindmac = [];
-	} else {
-		data.bindmac = macval.split("\n")
-	}
-	if (!ip_chk || ipval == "") {
-		data.bindip = [];
-	} else {
-		data.bindip = ipval.split("\n")
-	}
-
+	if (!expire_chk) data.expire = ""
+	if (!mac_chk) data.bindmac = "";
+	if (!ip_chk) data.bindip = "";
 	if (modify_flag == "add") {
 		data.gid = gid;
 		cgicall.post("user_add", data, function(d) {
@@ -153,8 +148,6 @@ function edit(that){
 	modify_flag = "mod";
 	getSelected(that);
 	jsonTraversal(nodeEdit[0], jsTravSet);
-	$("#bindmac").val(dtObjToArray(nodeEdit[0].bindmac).join("\n"));
-	$("#bindip").val(dtObjToArray(nodeEdit[0].bindip).join("\n"));
 	$("#mac_chk").prop("checked",($("#bindmac").val() != ""))
 	$("#ip_chk").prop("checked",($("#bindip").val() != ""))
 	$("#expire_chk").prop("checked",($("#expire").val() != ""))

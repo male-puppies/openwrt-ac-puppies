@@ -15,7 +15,7 @@ local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.g
 
 local v_username	= gen_validate_str(1, 64, true)
 local v_password	= gen_validate_str(1, 64, true)
-local v_userdesc 	= gen_validate_str(1, 64)
+local v_userdesc 	= gen_validate_str(0, 64)
 local v_enable 		= gen_validate_num(0, 1)
 local v_multi 		= gen_validate_num(0, 1)
 local v_expire 		= gen_validate_str(0, 19)
