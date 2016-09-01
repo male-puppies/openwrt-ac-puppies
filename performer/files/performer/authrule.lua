@@ -81,7 +81,7 @@ local function authrule_reload()
 		old_md5 = common.read(string.format("uci get %s.@version[0].authrule_md5 2>/dev/null | head -c32", name), io.popen)
 		--print(new_md5, old_md5)
 		if new_md5 ~= old_md5 then
-			table.insert(cmd_arr, string.format("uci get %s.@version[0] 2>/dev/null || uci add %s version", name, name))
+			table.insert(cmd_arr, string.format("uci get %s.@version[0] 2>/dev/null || uci add %s version >/dev/null 2>&1", name, name))
 			table.insert(cmd_arr, string.format("uci set %s.@version[0].authrule_md5='%s'", name, new_md5))
 			for _, line in ipairs(arr_cmd[name]) do
 				table.insert(cmd_arr, line)
