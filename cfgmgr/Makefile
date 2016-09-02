@@ -33,6 +33,7 @@ define Package/cfgmgr/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/cfgmgr.init $(1)/etc/init.d/cfgmgr
 	$(INSTALL_BIN) ./files/cfgmgr.sh $(1)/usr/sbin/cfgmgr
+	$(INSTALL_BIN) ./files/openssltar.sh $(1)/usr/sbin/openssltar.sh
 ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(INSTALL_DIR) $(1)/usr/share/cfgmgr
 	$(INSTALL_DATA) ./files/cfgmgr_71xx/acgroup.lua $(1)/usr/share/cfgmgr/acgroup.lua
