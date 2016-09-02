@@ -1,5 +1,5 @@
 -- @author : xjx
--- @radio.lua : 保存数据到json文件中、从json文件中取数据
+-- @wlanssid.lua
 
 local ski	= require("ski")
 local log	= require("log")
@@ -14,7 +14,7 @@ local read, save_safe  = common.read, common.save_safe
 local keys = const.keys
 
 local udp_map = {}
-local udpsrv, reply
+local udpsrv, mqtt, dbrpc, reply
 
 local function recover_default(path)
 	local cmd = string.format("cp %s %s", "/usr/share/base-config/wireless.json", path)
@@ -30,8 +30,9 @@ local function init(u, p)
 		s = recover_default(path)	assert(s)	-- 调用默认的配置文件
 	end
 
-	udpsrv = u
+	udpsrv, mqtt = u, p
 	reply = cfglib.gen_reply(udpsrv)
+	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
 end
 
 -- 将json文件译码成map
@@ -116,6 +117,7 @@ udp_map["wlan_add"] = function(p, ip, port)
 	local _ = m and save_safe("/etc/config/wireless.json", js.encode(m))
 
 	reply(ip, port, 0, "ok")
+	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "wlancfg"}}))	-- 更新json文件，通知performer
 end
 
 udp_map["wlan_set"] = function(p, ip, port)
@@ -195,6 +197,7 @@ udp_map["wlan_set"] = function(p, ip, port)
 	local _ = m and save_safe("/etc/config/wireless.json", js.encode(m))
 
 	reply(ip, port, 0, "ok")
+	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "wlancfg"}}))	-- 更新json文件，通知performer
 end
 
 udp_map["wlan_get"] = function(p, ip, port)
@@ -290,6 +293,7 @@ udp_map["wlan_del"] = function(p, ip, port)
 	local _ = m and save_safe("/etc/config/wireless.json", js.encode(m))
 
 	reply(ip, port, 0, "ok")
+	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "wlancfg"}}))
 end
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}
