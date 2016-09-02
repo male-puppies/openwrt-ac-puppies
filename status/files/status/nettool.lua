@@ -21,7 +21,8 @@ end
 local tool_map = {}
 
 local function run_common(ip, port, check_cmd, run_cmd, max)
-	if tonumber(misc.execute(check_cmd)) > max then
+	local s = misc.execute(check_cmd)
+	if tonumber(s) > max then
 		return reply(ip, port, 0, "too many commands are running, please wait.")
 	end
 

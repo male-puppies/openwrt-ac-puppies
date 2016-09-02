@@ -127,6 +127,8 @@ curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b
 curl -F 'filename=@test.txt' 'http://192.168.0.11/v1/admin/api/system_upload?token=8a4c92d8648a20271027c9639c049fff'
 curl 'http://192.168.0.11/v1/admin/api/system_upgrade?token=8a4c92d8648a20271027c9639c049fff' -d 'keep=0'
 curl 'http://192.168.0.11/v1/admin/api/system_auth?token=235d257173d6f6fb3fcbee9b6c57c56b' -d 'password=admin1&oldpassword=admin'
+curl 'http://192.168.0.11/v1/admin/api/system_backup?token=777472b414a25cb06352d4203d13cc69'
+curl -F 'filename=@sysbackup20160902162418.bin' 'http://192.168.0.11/v1/admin/api/system_restore?token=777472b414a25cb06352d4203d13cc69'
 
 curl 'http://127.0.0.1/v1/admin/api/radio_set?token=23260c3bc548d87ce16f8d82fd748adf' -d 'radio_2g:{"proto":"n","bandwidth":"auto","chanid":"auto","power":"auto"}&radio_5g:{"proto":"an","bandwidth":"auto","chanid":"auto","power":"auto"}&opt:{"mult":"0","rate":"2","inspeed":"0","enable":"1"}'
 curl 'http://172.16.0.1/v1/admin/api/radio_get?token=23260c3bc548d87ce16f8d82fd748adf&page=1&count=10'
