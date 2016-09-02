@@ -24,4 +24,15 @@ udp_map["system_synctime"] = function(p, ip, port)
 	reply(ip, port, 0, "ok")
 end
 
+
+-- {"cmd":"system_upgrade","keep":1}
+udp_map["system_upgrade"] = function(p, ip, port)
+	-- 先回复前端，再进行升级
+	reply(ip, port, 0, {eta = 180})
+
+	local cmd = string.format("nohup sysupgrade %s %s >/dev/sysupgrade.txt 2>&1 &", p.keep == 0 and "-n" or "", p.path)
+	print(cmd)
+end
+
+
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

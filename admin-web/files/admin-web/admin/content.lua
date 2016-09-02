@@ -12,7 +12,7 @@ end
 
 local cmd_map = {}
 
--- curl 'http://127.0.0.1/v1/admin/api/login?username=wjrc&password=wjrc0409'
+-- curl 'http://127.0.0.1/v1/admin/api/login?username=root&password=admin'
 if cmd == "login" then
 	return require("admin.login").run()
 end
@@ -149,8 +149,11 @@ end
 -- curl 'http://127.0.0.1/v1/admin/api/system_get?token=f9eeb5c037ac033a969f6f806bdc4617&keys=%5B%22time%22,%22timezone%22%5D'
 -- curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=synctime&sec=1472719031'
 -- curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=timezone&zonename=xxx'
+-- curl -F 'filename=@/tmp/memfile/test.txt' 'http://192.168.0.11/v1/admin/api/system_upload?token=291b9ffe3da7cbc6aad01ae1cd4fe3e3'
+-- curl 'http://192.168.0.11/v1/admin/api/system_upgrade?token=291b9ffe3da7cbc6aad01ae1cd4fe3e3' -d 'keep=1'
 if cmd:find("^system_") then
 	return require("admin.system").run(cmd)
+end
 
 -- curl 'http://127.0.0.1/v1/admin/api/radio_set?token=23260c3bc548d87ce16f8d82fd748adf' -d 'radio_2g:{"proto":"n","bandwidth":"auto","chanid":"auto","power":"auto"}&radio_5g:{"proto":"an","bandwidth":"auto","chanid":"auto","power":"auto"}&opt:{"mult":"0","rate":"2","inspeed":"0","enable":"1"}'
 -- curl 'http://172.16.0.1/v1/admin/api/radio_get?token=23260c3bc548d87ce16f8d82fd748adf&page=1&count=10'
