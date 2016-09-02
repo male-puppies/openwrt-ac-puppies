@@ -225,4 +225,19 @@ function cmd_map.system_upgrade()
 	query_common(m, "system_upgrade")
 end
 
+function cmd_map.system_auth()
+	local m, e = validate_post({password = gen_validate_str(1, 32), oldpassword = gen_validate_str(1, 32)})
+	if not m then
+		return reply_e(e)
+	end
+
+	if m.password == m.oldpassword then
+		return reply_e("invalid password")
+	end
+
+	m.password_md5, m.oldpassword_md5 = ngx.md5(m.password), ngx.md5(m.oldpassword)
+
+	query_common(m, "system_auth")
+end
+
 return {run = run}

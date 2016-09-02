@@ -124,8 +124,9 @@ curl 'http://127.0.0.1/v1/admin/api/nettool_get?token=d4ebd1ce9d867b0009213386f3
 curl 'http://127.0.0.1/v1/admin/api/system_get?token=f9eeb5c037ac033a969f6f806bdc4617&keys=%5B%22time%22,%22timezone%22%5D'
 curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=synctime&sec=1472719031'
 curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=timezone&zonename=xxx'
-curl -F 'filename=@/tmp/memfile/test.txt' 'http://192.168.0.11/v1/admin/api/system_upload?token=291b9ffe3da7cbc6aad01ae1cd4fe3e3'
-curl 'http://192.168.0.11/v1/admin/api/system_upgrade?token=ff4d10a28b1a3c14b310a7aedab880e3' -d 'keep=1'
+curl -F 'filename=@test.txt' 'http://192.168.0.11/v1/admin/api/system_upload?token=8a4c92d8648a20271027c9639c049fff'
+curl 'http://192.168.0.11/v1/admin/api/system_upgrade?token=8a4c92d8648a20271027c9639c049fff' -d 'keep=0'
+curl 'http://192.168.0.11/v1/admin/api/system_auth?token=235d257173d6f6fb3fcbee9b6c57c56b' -d 'password=admin1&oldpassword=admin'
 
 curl 'http://127.0.0.1/v1/admin/api/radio_set?token=23260c3bc548d87ce16f8d82fd748adf' -d 'radio_2g:{"proto":"n","bandwidth":"auto","chanid":"auto","power":"auto"}&radio_5g:{"proto":"an","bandwidth":"auto","chanid":"auto","power":"auto"}&opt:{"mult":"0","rate":"2","inspeed":"0","enable":"1"}'
 curl 'http://172.16.0.1/v1/admin/api/radio_get?token=23260c3bc548d87ce16f8d82fd748adf&page=1&count=10'
