@@ -34,7 +34,7 @@ local function validate_token(token)
 	end
 
 	if left < 300 then
-		return nil, "access timeout " .. left
+		return nil, "loginout"
 	end
 
 	return true
