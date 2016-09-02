@@ -9,45 +9,49 @@ local aclib = require("aclib")
 local queue = require("queue")
 local rpccli = require("rpccli")
 local simplesql = require("simplesql")
+local fp = require("fp")
 
+local reduce = fp.reduce
 local ctrl_path = "/tmp/memfile/ctrllog.json"
 local audit_path = "/tmp/memfile/auditlog.json"
 local log_limit, ctrl_log,  audit_log = 300
 local udp_srv, mqtt, dbrpc, reply
 
-local udp_map = {}
+
+-- fixme:a temporary method
+local set_name_adapter = {
+	MACWHITELIST	= "access_white_mac",
+	IPWHITELIST		= "access_white_ip",
+	MACBLACKLIST	= "access_black_mac",
+	IPBLACKLIST		= "access_black_ip",
+}
+
+--[[
+	proto_map:{"3057439406"=b63cd2ae};
+	rule_map:
+	set_map:
+]]
+local proto_map, rule_map, set_map = {}, {}, {}
+local udp_map, tcp_map = {}, {}
 -- cmd from ntrackd
 udp_map["aclog_add"] = function(p, ip, port)
-	local fetch_property = function(sql, name)
-		local _ = assert(sql), assert(name)
-		local tmp, err = simple:mysql_select(sql)
-		print(sql, name, js.encode(tmp))
-		if err then
-			return nil, err
-		end
-		return #tmp > 0 and tmp[1][name] or "unknown"
-	end
 
 	local rulename, protoname
 	if p.subtype == "RULE" then
-		local sql = string.format("select rulename from acrule where ruleid = %s", p.rule.rule_id)
-		rulename = fetch_property(sql, "rulename")
-		-- !!!todo lua can't represent uint32
-		-- local sql = string.format("select proto_name from acproto where proto_id='%s'", string.format("%x", tonumber(p.rule.proto_id)))
-		-- protoname = fetch_property(sql, "proto_name")
+		rulename = rule_map[tostring(p.rule.rule_id)] or "unknow rule"
+		proto_name = proto_map[tostring(p.rule.proto_id)] or "unknow proto"
 	else
-		local sql = string.format("select setdesc from acset where setname = '%s'", p.rule.set_name)
-		rulename = fetch_property(sql, "setdesc")
-
-		local sql = string.format("select settype from acset where setname = '%s'", p.rule.set_name)
-		protoname = fetch_property(sql, "settype")
+		local set_info = set_map[set_name_adapter[p.rule.set_name]]
+		rulename = set_info and set_info.setdesc or "unknown"
+		protoname = set_info and set_info.settype or "unknow"
 	end
 
 	local aclog = {
 		user		= {ip = p.user.ip, mac = p.user.mac},
 		rulename	= rulename,
-		proto		= protoname,
-		tm			= p.time_stamp,
+		protoname	= protoname,
+		-- todo: convert jiffies to datetime
+		tm			= os.date("%Y-%m-%d %H:%M:%S"),
 		actions		= p.actions,
 		ext			= {flow = p.flow}
 	}
@@ -86,22 +90,64 @@ local function gen_dispatch_udp(udp_map)
 	end
 end
 
+local function fetch_proto_map()
+	local sql = string.format("select proto_id from acproto where node_type = 'leaf'")
+	local protos, err = simple:mysql_select(sql)
+	if not protos then
+		log.error("fetch proto ids failed:%s", err)
+		return nil, err
+	end
+	proto_map = reduce(protos, function(t, r)
+		return rawset(t, tostring(tonumber(r.proto_id, 16)), r.proto_id)
+		end, {})
+end
+
+local function fetch_rule_map()
+	local sql = "select rulename, ruleid from acrule"
+	local rules, err = simple:mysql_select(sql)
+	if not rules then
+		log.error("fetch rules failed:%s", err)
+		return nil, err
+	end
+	rule_map = reduce(rules, function(t,r)
+		return rawset(t, tostring(r.ruleid), r.rulename)
+		end, {})
+end
+
+local function fetch_set_map()
+	local sql = "select setname, setdesc, settype from acset"
+	local sets, err = simple:mysql_select(sql)
+	if not sets then
+		log.error("fetch sets failed:%s", err)
+		return nil, err
+	end
+	set_map = reduce(sets, function(t,r)
+		return rawset(t, r.setname, {setdesc = r.setdesc, settype = r.settype})
+		end, {})
+end
+
+tcp_map["dbsync_acproto"] = fetch_proto_map
+tcp_map["dbsync_acset"] = fetch_set_map
+tcp_map["dbysnc_acrule"] = fetch_rule_map
+
+local function dispatch_tcp(cmd)
+	local f = tcp_map[cmd.cmd]
+	if f then
+		return true, f(cmd)
+	end
+end
 local function init(p, u)
 	udp_srv, mqtt = p, u
 	ctrl_log = queue.new(ctrl_path, log_limit) assert(ctrl_log)
 	audit_log = queue.new(audit_path, log_limit) assert(audit_log)
 	reply = aclib.gen_reply(udp_srv) assert(reply)
 	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
-	if not dbrpc then
-		log.error("create rpccli failed")
-		return false
-	end
 
 	simple = simplesql.new(dbrpc)
-	if not simple then
-		log.error("create simple sql failed")
-		return false
-	end
+
+	fetch_proto_map()
+	fetch_set_map()
+	fetch_rule_map()
 end
 
-return {init = init, dispatch_udp = aclib.gen_dispatch_udp(udp_map)}
+return {init = init, dispatch_udp = aclib.gen_dispatch_udp(udp_map), dispatch_tcp = dispatch_tcp}
