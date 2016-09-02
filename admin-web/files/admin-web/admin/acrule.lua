@@ -1,3 +1,4 @@
+-- author: gx
 local js = require("cjson.safe")
 local log = require("common.log")
 local query = require("common.query")
@@ -64,8 +65,12 @@ end
 
 local function proto_get(ids)
 	local tids = js.decode(ids)
+	 for i, v in ipairs(tids) do
+		local p = string.format("'%s'", v)
+		tids[i] = p
+	end
 	local in_part = table.concat(tids, ", ")
-	local sql = string.format("select proto_id, proto_name from acproto where proto_id in (%s)", in_part)
+	local sql = string.format("select proto_id, proto_desc from acproto where proto_id in (%s)", in_part)
 	local rs, e = mysql_select(sql)
 	if not rs then
 		return nil, e
@@ -91,21 +96,21 @@ function cmd_map.acrule_get()
 					if not t_map then
 						map[k] = {}
 					end
-					map[k] = t_map
+					map[k] = js.encode(t_map)
 				end
 				if k == "src_ipgids" then
 					local si_map = ipgrp_get(v_r)
 					if not si_map then
 						map[k] = {}
 					end
-					map[k] = si_map
+					map[k] = js.encode(si_map)
 				end
 				if k == "dest_ipgids" then
 					local di_map = ipgrp_get(v_r)
 					if not di_map then
 						map[k] = {}
 					end
-					map[k] = di_map
+					map[k] = js.encode(di_map)
 				end
 				if k == "proto_ids" then
 					local pi_map = proto_get(v_r)
@@ -114,7 +119,7 @@ function cmd_map.acrule_get()
 					end
 					map[k] = pi_map
 				end
-				if k ~= "tmgrp_ids" and k ~= "src_ipgids" and k ~= "dest_ipgids" and k ~= "proto_ids" then
+				if (k ~= "tmgrp_ids" and k ~= "src_ipgids" and k ~= "dest_ipgids" and k ~= "proto_ids") then
 					map[k] = v_r
 				end
 			end
@@ -125,51 +130,51 @@ function cmd_map.acrule_get()
 end
 
 local function validate_acrule(m)
-	local src_ipgids, dest_ipgids = m.src_ipgids, m.dest_ipgids
 	local actions, enable = m.actions, m.enable
-	local tmgrp_ids, proto_ids = m.tmgrp_ids, m.proto_ids
 	local rulename, ruledesc = m.rulename, m.ruledesc
+	local tmgrp_ids, proto_ids = m.tmgrp_ids, m.proto_ids
+	local src_ipgids, dest_ipgids = m.src_ipgids, m.dest_ipgids
 
 	local sipids = js.decode(src_ipgids)
-	if not sipids then
+	if not (sipids and next(sipids)) then
 		return nil, "invalid src_ipgids"
 	end
 	for _, id in ipairs(sipids) do
 		local sid = tonumber(id)
-		if not (sid and sid >= 0 and sid < 63) then
+		if not (sid and sid >= 0 and sid <= 63) then
 			return nil, "invalid src_ipgids"
 		end
 	end
 
 	local dipids = js.decode(dest_ipgids)
-	if not dipids then
+	if not (dipids and next(dipids)) then
 		return nil, "invalid dest_ipgids"
 	end
 	for _, id in ipairs(dipids) do
 		local did = tonumber(id)
-		if not (did and did >= 0 and did < 63) then
+		if not (did and did >= 0 and did <= 63) then
 			return nil, "invalid dest_ipgids"
 		end
 	end
 
 	local tmids = js.decode(tmgrp_ids)
-	if not tmids then
+	if not (tmids and next(tmids)) then
 		return nil, "invalid timeids"
 	end
 	for _, id in ipairs(tmids) do
 		local tid = tonumber(id)
-		if not (tid and tid >= 0 and tid < 255)then
+		if not (tid and tid >= 0 and tid <= 255)then
 			return nil, "invalid timeids"
 		end
 	end
 
 	local ptids = js.decode(proto_ids)
-	if not ptids then
+	if not (ptids and next(ptids)) then
 		return nil, "invalid proto_ids"
 	end
 
 	local  iactions= js.decode(actions)
-	if not iactions then
+	if not (iactions and next(iactions)) then
 		return nil, "invalid actions"
 	end
 	local flag = 0
@@ -192,13 +197,15 @@ end
 
 local function acrule_update_common(cmd, ext)
 	local check_map = {
+		enable		= v_enable,
+		actions		= v_actions,
+		src_zids	= v_srczids,
 		rulename	= v_rulename,
 		ruledesc 	= v_ruledesc,
 		src_ipgids	= v_srcipgids,
+		dest_zids	= v_dstzids,
 		dest_ipgids	= v_dstipgids,
 		tmgrp_ids	= v_tmgrpids,
-		actions 	= v_actions,
-		enable 		= v_enable,
 		proto_ids 	= v_protoids,
 	}
 
@@ -240,7 +247,7 @@ function cmd_map.acrule_del()
 
 	for _, id in ipairs(ids) do
 		local rid = tonumber(id)
-		if not (rid and rid >=0 and rid < 63) then
+		if not (rid and rid >=0 and rid <= 63) then
 			return reply_e("invalid ruleids")
 		end
 	end
@@ -262,7 +269,7 @@ function cmd_map.acrule_adjust()
 
 	for _, id in ipairs(ids) do
 		local rid = tonumber(id)
-		if not (rid and rid >= 0 and rid < 63) then
+		if not (rid and rid >= 0 and rid <= 63) then
 			return reply_e("invalid ruleids")
 		end
 	end

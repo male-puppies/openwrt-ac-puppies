@@ -1,13 +1,12 @@
-local ski = require("ski")
+-- author: gx
+
 local log = require("log")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local cfglib = require("cfglib")
 
 local udp_map = {}
-local udpsrv, mqtt, dbrpc
-
-local reply
+local udpsrv, mqtt, dbrpc, reply
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
@@ -16,20 +15,36 @@ local function init(u, p)
 end
 
 udp_map["acrule_set"] = function(p, ip, port)
-	print(js.encode(p))
 	local code = [[
 		local ins = require("mgr").ins()
 		local js = require("cjson.safe")
 		local conn, ud, p = ins.conn, ins.ud, arg
 		local ruleid, rulename = p.ruleid, p.rulename
 
-		--check ipids tmids protoids existance
-		local src_ipgids, dest_ipgids, tmgrp_ids, proto_ids = p.src_ipgids, p.dest_ipgids, p.tmgrp_ids, p.proto_ids
+		-- check zids ipids tmids protoids existance
+		local src_ipgids, dest_ipgids, tmgrp_ids, proto_ids, src_zids, dest_zids = p.src_ipgids, p.dest_ipgids, p.tmgrp_ids, p.proto_ids, p.src_zids, p.dest_zids
+		local szids = js.decode(src_zids)
+		for _, v in ipairs(szids) do
+			if not (type(v) == "number") then
+				return nil, "invalid src_zids"
+			end
+		end
+		local dzids = js.decode(dest_zids)
+		for _, v in ipairs(dzids) do
+			if not (type(v) == "number") then
+				return nil, "invalid dest_zids"
+			end
+		end
 		local sipids = js.decode(src_ipgids)
+		for _, v in ipairs(sipids) do
+			if not (type(v) == "number") then
+				return nil, "invalid src_ipgids"
+			end
+		end
 		local n = #sipids
 		local in_part = table.concat(sipids, ", ")
 		local sql = string.format("select ipgid from ipgroup where ipgid in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -37,10 +52,15 @@ udp_map["acrule_set"] = function(p, ip, port)
 			return nil, "invalid src_ipgroup"
 		end
 		local dipids = js.decode(dest_ipgids)
+		for _, v in ipairs(dipids) do
+			if not (type(v) == "number") then
+				return nil, "invalid dest_ipgids"
+			end
+		end
 		local n = #dipids
 		local in_part = table.concat(dipids, ", ")
 		local sql = string.format("select ipgid from ipgroup where ipgid in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -50,9 +70,13 @@ udp_map["acrule_set"] = function(p, ip, port)
 
 		local pids = js.decode(proto_ids)
 		local n = #pids
+		for i, v in ipairs(pids) do
+			local p = string.format("'%s'", v)
+			pids[i] = p
+		end
 		local in_part = table.concat(pids, ", ")
 		local sql = string.format("select proto_id from acproto where proto_id in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -61,10 +85,15 @@ udp_map["acrule_set"] = function(p, ip, port)
 		end
 
 		local tids = js.decode(tmgrp_ids)
+		for _, v in ipairs(tids) do
+			if not (type(v) == "number") then
+				return nil, "invalid tmgrp_ids"
+			end
+		end
 		local n = #tids
 		local in_part = table.concat(tids, ", ")
 		local sql = string.format("select tmgid from timegroup where tmgid in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -105,7 +134,8 @@ udp_map["acrule_set"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:fetch("cfgmgr_acrule_set", code, p)
+	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -117,12 +147,29 @@ udp_map["acrule_add"] = function(p, ip, port)
 		local rulename = p.rulename
 
 		--check ipids tmids protoids existance
-		local src_ipgids, dest_ipgids, tmgrp_ids, proto_ids = p.src_ipgids, p.dest_ipgids, p.tmgrp_ids, p.proto_ids
+		local src_ipgids, dest_ipgids, tmgrp_ids, proto_ids, src_zids, dest_zids = p.src_ipgids, p.dest_ipgids, p.tmgrp_ids, p.proto_ids, p.src_zids, p.dest_zids
+		local szids = js.decode(src_zids)
+		for _, v in ipairs(szids) do
+			if not (type(v) == "number") then
+				return nil, "invalid src_zids"
+			end
+		end
+		local dzids = js.decode(dest_zids)
+		for _, v in ipairs(dzids) do
+			if not (type(v) == "number") then
+				return nil, "invalid dest_zids"
+			end
+		end
 		local sipids = js.decode(src_ipgids)
+		for _, v in ipairs(sipids) do
+			if not (type(v) == "number") then
+				return nil, "invalid src_ipgids"
+			end
+		end
 		local n = #sipids
 		local in_part = table.concat(sipids, ", ")
 		local sql = string.format("select ipgid from ipgroup where ipgid in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -130,10 +177,15 @@ udp_map["acrule_add"] = function(p, ip, port)
 			return nil, "invalid src_ipgroup"
 		end
 		local dipids = js.decode(dest_ipgids)
+		for _, v in ipairs(dipids) do
+			if not (type(v) == "number") then
+				return nil, "invalid dest_ipgids"
+			end
+		end
 		local n = #dipids
 		local in_part = table.concat(dipids, ", ")
 		local sql = string.format("select ipgid from ipgroup where ipgid in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -143,9 +195,13 @@ udp_map["acrule_add"] = function(p, ip, port)
 
 		local pids = js.decode(proto_ids)
 		local n = #pids
+		for i, v in ipairs(pids) do
+			local p = string.format("'%s'", v)
+			pids[i] = p
+		end
 		local in_part = table.concat(pids, ", ")
 		local sql = string.format("select proto_id from acproto where proto_id in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -154,10 +210,15 @@ udp_map["acrule_add"] = function(p, ip, port)
 		end
 
 		local tids = js.decode(tmgrp_ids)
+		for _, v in ipairs(tids) do
+			if not (type(v) == "number") then
+				return nil, "invalid tmgrp_ids"
+			end
+		end
 		local n = #tids
 		local in_part = table.concat(tids, ", ")
 		local sql = string.format("select tmgid from timegroup where tmgid in (%s)", in_part)
-		local rs, e = conn:select(sql)
+		local rs, e = conn:select(sql) 		assert(rs, e)
 		if not rs then
 			return nil, e
 		end
@@ -176,7 +237,7 @@ udp_map["acrule_add"] = function(p, ip, port)
 			end
 		end
 		--get ruleid priority
-		local id, e = conn:next_id(ruleids, 16)
+		local id, e = conn:next_id(ruleids, 64)
 		if not id then
 			return nil, e
 		end
@@ -200,7 +261,8 @@ udp_map["acrule_add"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:fetch("cfgmgr_acrule_add", code, p)
+	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -224,7 +286,8 @@ udp_map["acrule_del"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:fetch("cfgmgr_acrule_del", code, p)
+	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
@@ -259,12 +322,9 @@ udp_map["acrule_adjust"] = function(p, ip, port)
 				end
 				table.insert(arr, sql)
 			end
-				print("arr in is  ", js.encode(arr))
 			return arr
 		end)
-				print("arr out is   ", js.encode(arr))
 		if not arr then
-			print("arr nil")
 			return nil, e
 		end
 		ud:save_log(arr, true)
@@ -272,7 +332,8 @@ udp_map["acrule_adjust"] = function(p, ip, port)
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:fetch("cfgmgr_acrule_adjust", code, p)
+	-- local r, e = dbrpc:once(code, p)
 	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 

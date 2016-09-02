@@ -64,6 +64,7 @@ ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(INSTALL_DATA) ./files/qca9531/uci.defaults $(1)/etc/uci-defaults/95-base-config
 	$(INSTALL_DATA) ./files/board.lua $(1)/usr/share/base-config/board.lua
 	$(INSTALL_DATA) ./files/qca9531/wireless.json $(1)/usr/share/base-config/wireless.json
+	$(INSTALL_DATA) ./files/qca9531/applist.json $(1)/usr/share/base-config/wireless.json
 endif
 ifeq ($(CONFIG_TARGET_AC_qca9563),y)
 	$(INSTALL_DATA) ./files/qca9563/board.json $(1)/usr/share/base-config/board.json

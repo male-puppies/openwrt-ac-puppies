@@ -19,6 +19,7 @@ local modules = {
 	dbevent 	= 	require("dbevent"),
 	firewall 	= 	require("firewall"),
 	acrule		=	require("acrule"),
+	applist		=	require("applist"),
 	timegroup 	= 	require("timegroup"),
 	acset 		= 	require("acset"),
 	mwan		=	require("mwan"),

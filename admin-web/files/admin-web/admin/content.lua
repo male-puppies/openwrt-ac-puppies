@@ -17,6 +17,7 @@ local cmd_arr = {
 	{ pattern = "^iface_", 		lib = "admin.iface" },
 	{ pattern = "^ipgroup_", 	lib = "admin.ipgroup" },
 	{ pattern = "^acrule_", 	lib = "admin.acrule" },
+	{ pattern = "^acproto_", 	lib = "admin.acproto" },
 	{ pattern = "^authrule_", 	lib = "admin.authrule" },
 	{ pattern = "^kv_", 		lib = "admin.kv" },
 	{ pattern = "^dnat_", 		lib = "admin.firewall" },

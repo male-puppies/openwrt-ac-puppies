@@ -1,0 +1,18 @@
+{"0":{"proto_id":"0","proto_name":"main","proto_desc":"所有协议","pid":"-1","node_type":"node","version":1,"ext":"[built-in]"},
+	"1":{"proto_id":"1","proto_name":"smol","proto_desc":"网络协议","pid":"0","node_type":"node","version":1,"ext":"built-in"},
+	"2":{"proto_id":"2","proto_name":"adss","proto_desc":"应用协议","pid":"0","node_type":"node","version":1,"ext":"built-in"},
+	"3":{"proto_id":"3","proto_name":"hhh","proto_desc":"工具协议","pid":"0","node_type":"node","version":1,"ext":"built-in"},
+	"85d84426":{"proto_id":"85d84426","proto_name":"svn","proto_desc":"svn","pid":"3","node_type":"leaf","version":1,"ext":"built-in"},
+	"cfb8696e":{"proto_id":"cfb8696e","proto_name":"NTP","proto_desc":"网络时间","pid":"3","node_type":"leaf","version":1,"ext":"built-in"},
+	"0e6bfa61":{"proto_id":"0e6bfa61","proto_name":"MS-RDP","proto_desc":"远程桌面","pid":"1","node_type":"leaf","version":1,"ext":"built-in"},
+	"ec55b394":{"proto_id":"ec55b394","proto_name":"dhcp","proto_desc":"动态主机配置","pid":"1","node_type":"leaf","version":1,"ext":"built-in"},
+	"8acabead":{"proto_id":"8acabead","proto_name":"weibo","proto_desc":"微博","pid":"2","node_type":"leaf","version":1,"ext":"built-in"},
+	"f48121c0":{"proto_id":"f48121c0","proto_name":"GTalk","proto_desc":"Gtalk聊天","pid":"2","node_type":"leaf","version":1,"ext":"built-in"},
+	"5302ef27":{"proto_id":"5302ef27","proto_name":"mysql","proto_desc":"sysql","pid":"2","node_type":"leaf","version":1,"ext":"built-in"},
+	"4ace6954":{"proto_id":"4ace6954","proto_name":"ssh2","proto_desc":"ssh2","pid":"3","node_type":"leaf","version":1,"ext":"built-in"},
+	"d15825e5":{"proto_id":"d15825e5","proto_name":"Samba","proto_desc":"samba","pid":"3","node_type":"leaf","version":1,"ext":"built-in"},
+	"16a1d14f":{"proto_id":"16a1d14f","proto_name":"ss1","proto_desc":"ss1","pid":"3","node_type":"leaf","version":1,"ext":"built-in"},
+	"e91e20a3":{"proto_id":"e91e20a3","proto_name":"VNC","proto_desc":"虚拟网络计算机","pid":"3","node_type":"leaf","version":1,"ext":"built-in"},
+	"242a3551":{"proto_id":"242a3551","proto_name":"SIP","proto_desc":"会话初始协议","pid":"1","node_type":"leaf","version":1,"ext":"built-in"},
+	"b63cd2ae":{"proto_id":"b63cd2ae","proto_name":"http","proto_desc":"http协议","pid":"1","node_type":"leaf","version":1,"ext":"built-in"}
+}

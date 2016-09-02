@@ -27,7 +27,7 @@ local function init(u, p)
 	local path = "/etc/config/wireless.json"
 	local s = read(path)
 	if not s then
-		s = recover_default(path)	assert(s)	-- 调用默认的配置文件
+		recover_default(path)	assert(s)	-- 调用默认的配置文件
 	end
 
 	udpsrv, mqtt = u, p
