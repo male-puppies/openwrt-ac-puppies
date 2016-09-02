@@ -27,7 +27,7 @@ local modules = {
 	route		= 	require("route"),
 	tc			= 	require("tc"),
 	cloud		= 	require("cloud"),
-	system 		= 	require("system")
+	system 		= 	require("system"),
 	wlanssid	=	require("wlanssid"),
 	radio		=	require("radio"),
 }
