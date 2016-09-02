@@ -62,7 +62,7 @@ function cmd_map.system_get()
 end
 
 local check_map = {}
-check_map.timezone = function(p)
+function check_map.timezone(p)
 	local check = function()
 		local zonename = p.zonename
 		if not zonename then
@@ -90,7 +90,7 @@ check_map.timezone = function(p)
 	query_common(m, "kv_set")
 end
 
-check_map.synctime = function(p)
+function check_map.synctime(p)
 	local sec = p.sec
 	if not (sec and sec:find("^%d%d%d%d%d%d%d%d%d%d$")) then
 		return reply_e("invalid synctime")
@@ -239,5 +239,51 @@ function cmd_map.system_auth()
 
 	query_common(m, "system_auth")
 end
+
+function cmd_map.system_backup()
+	local m, e = validate_get({})
+	if not m then
+		return reply_e(e)
+	end
+
+	m.cmd = "system_backup"
+	local r, e = query_u(m)
+	if not r then
+		return reply_e(e)
+	end
+
+	local m = js.decode(r)
+	if m.status ~= 0 then
+		return reply_e(m.data)
+	end
+
+	local path = m.data
+	local s = require("common").read(path)
+	local filename = path:match(".+/(.+)")
+	ngx.header["Content-Disposition"] = string.format("attachment; filename=%s", filename)
+	ngx.print(s)
+end
+
+function cmd_map.system_restore()
+	local token = ngx.req.get_uri_args().token
+	local r, e = adminlib.check_method_token("POST", token)
+	if not r then
+		return reply_e(e)
+	end
+
+	local r, e = adminlib.validate_token(token)
+	if not r then
+		return reply_e(e)
+	end
+
+	local cfgpath = "/tmp/mysysbackup.bin"
+	local r, e = savefile(cfgpath, 1024 * 1024)
+	if not r then
+		return reply_e(e)
+	end
+
+	query_common({path = cfgpath}, "system_restore")
+end
+
 
 return {run = run}

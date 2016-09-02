@@ -80,4 +80,20 @@ udp_map["system_upgrade"] = function(p, ip, port)
 	os.execute(cmd)
 end
 
+-- {"cmd":"system_backup"}
+udp_map["system_backup"] = function(p, ip, port)
+	local path = string.format("/tmp/sysbackup%s.bin", os.date("%Y%m%d%H%M%S"))
+	local r, e = os.execute("./sysbackup.sh backup " .. path)
+	if r ~= 0 then
+		return reply(ip, port, 1, "backup fail")
+	end
+	reply(ip, port, 0, path)
+end
+
+-- {"cmd":"system_restore","path":"/tmp/mysysbackup.bin"}
+udp_map["system_restore"] = function(p, ip, port)
+	os.execute(string.format("./sysbackup.sh restore %s &", p.path))
+	reply(ip, port, 0, "ok")
+end
+
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}
