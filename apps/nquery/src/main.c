@@ -31,53 +31,6 @@ static int set_user_status(uint32_t uid, uint32_t magic, uint32_t status)
 	return 0;
 }
 
-static void dump_flowinfo(void)
-{
-	int i;
-
-	for(i=0; i<pntrack->fi_count; i++) {
-		flow_info_t *fi = &pntrack->fi_base[i];
-		user_info_t *ui, *pi;
-
-		if(!magic_valid(fi->magic)) {
-			continue;
-		}
-
-		/* check fi use api */
-		fi = nt_get_flow_by_id(pntrack, fi->id, fi->magic);
-		if(!fi) {
-			continue;
-		}
-		ui = nt_get_user_by_flow(pntrack, fi);
-
-		nt_print(FMT_FLOW_STR" l7: %d, recv:[%llu, %llu] xmit:[%llu, %llu]\n\t"FMT_USER_STR"\n",
-			FMT_FLOW(fi), nt_flow_nproto(fi),
-			fi->hdr.recv_pkts, fi->hdr.recv_bytes,
-			fi->hdr.xmit_pkts, fi->hdr.xmit_bytes,
-			FMT_USER(ui));
-	}
-}
-
-static void dump_userinfo(int id, int magic)
-{
-	int i;
-
-	for(i=0; i<pntrack->ui_count; i++) {
-		user_info_t *ui = &pntrack->ui_base[i];
-		if (!magic_valid(ui->magic)) {
-			continue;
-		}
-		if(id >= 0 && (uint32_t)id == ui->id) {
-			nt_dump(&ui->hdr, sizeof(ui->hdr), FMT_USER_STR"\n", FMT_USER(ui));
-		} else {
-			nt_print(FMT_USER_STR" recv:[%llu, %llu] xmit:[%llu, %llu]\n",
-				FMT_USER(ui),
-				ui->hdr.recv_pkts, ui->hdr.recv_bytes,
-				ui->hdr.xmit_pkts, ui->hdr.xmit_bytes);
-		}
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	if(argc < 2) {
@@ -117,7 +70,7 @@ int main(int argc, char *argv[])
 			nt_error("nquery flow set <fid> <magic> <flags>\n");
 			return -EINVAL;
 		} else {
-			dump_flowinfo();
+			dump_flowinfo(-1, -1);
 		}
 	}
 

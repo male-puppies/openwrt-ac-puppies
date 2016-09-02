@@ -59,7 +59,7 @@ static inline nt_authd_t *nt_user_authd(user_info_t *ui)
 	return (nt_authd_t*)ui->private;
 }
 
-static inline void dump_user(user_info_t *ui)
+static inline void nt_dump_user(user_info_t *ui)
 {
 	nt_print("[%u.%u.%u.%u] gid:%d flags:%x\n", 
 		NIPQUAD(ui->ip), ui->hdr.u_grp_id, ui->hdr.flags);
