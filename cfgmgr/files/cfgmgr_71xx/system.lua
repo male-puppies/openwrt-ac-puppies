@@ -24,6 +24,40 @@ udp_map["system_synctime"] = function(p, ip, port)
 	reply(ip, port, 0, "ok")
 end
 
+-- {"cmd":"system_auth","password_md5":"e00cf25ad42683b3df678c61f42c6bda","oldpassword":"admin","oldpassword_md5":"21232f297a57a5a743894a0e4a801fc3","password":"admin1"}
+udp_map["system_auth"] = function(p, ip, port)
+	local code = [[
+		local ins = require("mgr").ins()
+		local conn, ud, p = ins.conn, ins.ud, arg
+
+		local rs, e = conn:select("select * from kv where k='password'") 	assert(rs, e)
+		if #rs ~= 1 then
+			return nil, "miss password"
+		end
+
+		local cur_password = rs[1].v
+		if #cur_password == 32 then
+			if cur_password ~= p.oldpassword_md5 then
+				return nil, "invalid oldpassword"
+			end
+		elseif cur_password ~= p.oldpassword then
+			return nil, "invalid oldpassword"
+		end
+
+		local sql = string.format("update kv set v='%s' where k='password'", p.password_md5)
+		local r, e = conn:execute(sql)
+		if not r then
+			return nil, e
+		end
+
+		ud:save_log(sql, true)
+		return true
+	]]
+
+	p.cmd = nil
+	local r, e = dbrpc:once(code, p)
+	return r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
+end
 
 -- {"cmd":"system_upgrade","keep":1}
 udp_map["system_upgrade"] = function(p, ip, port)
