@@ -33,6 +33,7 @@ local cmd_arr = {
 	{ pattern = "^nettool_", 	lib = "admin.nettool" },
 	{ pattern = "^system_", 	lib = "admin.system" },
 	{ pattern = "^radio_", 		lib = "admin.radio" },
+	{ pattern = "^ctrllog_", 	lib = "admin.ctrllog" },
 }
 
 for _, r in ipairs(cmd_arr) do

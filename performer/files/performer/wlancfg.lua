@@ -10,13 +10,13 @@ local common	= require("common")
 local country	= require("country")
 local support	= require("support")
 local memfile	= require("memfile")
-local compare	= require("compare")
 local version	= require("version")
 local const		= require("constant")
 local js		= require("cjson.safe")
 
 js.encode_keep_buffer(false)
 
+local tcp_map = {}
 local read = common.read
 local keys = const.keys
 local s_const = {
@@ -696,7 +696,6 @@ local function reload_cfg()
 		set_debug_flag(nmap)
 		check(nmap)
 	end
-
 end
 
 local function init()
@@ -709,17 +708,19 @@ local function init()
 	end
 
 	reload_cfg()
-	local chk = compare.new_chk_file("sf")
-	while true do
-		if chk:check() then
-			log.debug("config change")
-			reload_cfg()
-			chk:save()
-		end
-		ski.sleep(1)
-	end
-
 	return true
 end
 
-return {check = check, init = init}
+local function dispatch_tcp(cmd)
+	local f = tcp_map[cmd.cmd]
+	if f then
+		return true, f(cmd.data)
+	end
+end
+
+tcp_map["wlancfg"] = function(p)
+	reload_cfg()
+	ski.sleep(1)
+end
+
+return {check = check, init = init, dispatch_tcp = dispatch_tcp}
