@@ -27,9 +27,9 @@ local modules = {
 	route		= 	require("route"),
 	tc			= 	require("tc"),
 	cloud		= 	require("cloud"),
-	system 		= 	require("system")
-	wlanssid	=	require("wlanssid"),
-	radio		=	require("radio"),
+	system 		= 	require("system"),
+	-- wlanssid	=	require("wlanssid"),
+	-- radio		=	require("radio"),
 }
 
 local encode, decode = js.encode, js.decode
