@@ -366,10 +366,10 @@ function edit(that) {
 		return false;
 	}
 
-	obj.actions = (obj.actions && obj.actions[0]) && obj.actions[0] || "ACCEPT";
-	obj.tmgrp_ids = (obj.tmgrp_ids && obj.tmgrp_ids[0] && obj.tmgrp_ids[0].tmgid) && obj.tmgrp_ids[0].tmgid || 255;
-	obj.src_ipgids = (obj.src_ipgids && obj.src_ipgids[0] && obj.src_ipgids[0].ipgid) && obj.src_ipgids[0].ipgid || 63;
-	obj.dest_ipgids = (obj.dest_ipgids && obj.dest_ipgids[0] && obj.dest_ipgids[0].ipgid) && obj.dest_ipgids[0].ipgid || 63;
+	obj.actions = (obj.actions && obj.actions[0]) ? obj.actions[0] : "ACCEPT";
+	obj.tmgrp_ids = (obj.tmgrp_ids && obj.tmgrp_ids[0] && typeof obj.tmgrp_ids[0].tmgid != "undefined") ? obj.tmgrp_ids[0].tmgid : 255;
+	obj.src_ipgids = (obj.src_ipgids && obj.src_ipgids[0] && typeof obj.src_ipgids[0].ipgid != "undefined") ? obj.src_ipgids[0].ipgid : 63;
+	obj.dest_ipgids = (obj.dest_ipgids && obj.dest_ipgids[0] && typeof obj.dest_ipgids[0].ipgid != "undefined") ? obj.dest_ipgids[0].ipgid : 63;
 
 	jsonTraversal(obj, jsTravSet);
 
@@ -398,14 +398,14 @@ function set_enable(that) {
 		sobj.enable = "1"
 	}
 
-	sobj.tmgrp_ids = [(obj.tmgrp_ids && obj.tmgrp_ids[0] && obj.tmgrp_ids[0].tmgid) && obj.tmgrp_ids[0].tmgid || 255];
-	sobj.src_ipgids = [(obj.src_ipgids && obj.src_ipgids[0] && obj.src_ipgids[0].ipgid) && obj.src_ipgids[0].ipgid || 63];
-	sobj.dest_ipgids = [(obj.dest_ipgids && obj.dest_ipgids[0] && obj.dest_ipgids[0].ipgid) && obj.dest_ipgids[0].ipgid || 63];
+	sobj.tmgrp_ids = [(obj.tmgrp_ids && obj.tmgrp_ids[0] && typeof obj.tmgrp_ids[0].tmgid != "undefined") ? obj.tmgrp_ids[0].tmgid : 255];
+	sobj.src_ipgids = [(obj.src_ipgids && obj.src_ipgids[0] && typeof obj.src_ipgids[0].ipgid != "undefined") ? obj.src_ipgids[0].ipgid : 63];
+	sobj.dest_ipgids = [(obj.dest_ipgids && obj.dest_ipgids[0] && typeof obj.dest_ipgids[0].ipgid != "undefined") ? obj.dest_ipgids[0].ipgid : 63];
 	sobj.proto_ids = (function(){
 		var arr = [];
 		var ids = obj.proto_ids;
 		for (var i = 0, ien = ids.length; i < ien; i++) {
-			arr.push(ids[i].proto_id);
+			arr.push(ids[i].proto_id.toString());
 		}
 		return arr;
 	}());
@@ -434,9 +434,9 @@ function DoSave() {
 
 	var obj = jsonTraversal(acrule, jsTravGet);
 	obj.actions = [obj.actions || "", "ADUIT"];
-	obj.tmgrp_ids = [parseInt(obj.tmgrp_ids) || 255];
-	obj.src_ipgids = [parseInt(obj.src_ipgids) || 63];
-	obj.dest_ipgids = [parseInt(obj.dest_ipgids) || 63];
+	obj.tmgrp_ids = [typeof parseInt(obj.tmgrp_ids) != "undefined" ? parseInt(obj.tmgrp_ids) : 255];
+	obj.src_ipgids = [typeof parseInt(obj.src_ipgids) != "undefined" ? parseInt(obj.src_ipgids) : 63];
+	obj.dest_ipgids = [typeof parseInt(obj.dest_ipgids) != "undefined" ? parseInt(obj.dest_ipgids) : 63];
 	obj.proto_ids = [];
 
 	$("#proto_sel li").each(function(index, element) {
@@ -549,7 +549,10 @@ function OnSubmit() {
 	regmacip(obj.check, check);
 
 	cgicall.post("acset_set", obj, function(d) {
-		cgicallBack(d, initData, function() {
+		cgicallBack(d, function() {
+			createModalTips("保存成功！");
+			initData();
+		}, function() {
 			createModalTips("保存失败！" + (d.data ? d.data : ""));
 		});
 	});
