@@ -1,5 +1,5 @@
 
-PPS_OBJ = utils.o nt_message.o
+PPS_OBJ = utils.o nt_message.o nt_traversal.o
 LIB_BIN = libpps.so
 FPIC = -fPIC
 

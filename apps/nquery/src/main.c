@@ -1,31 +1,11 @@
-#define _GNU_SOURCE
-#include <sched.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include <fcntl.h>
-#include <errno.h>
+#include "nquery.h"
 
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <sys/socket.h>
-
-#include <linux/netlink.h>
-
-#include <ntrack_rbf.h>
-#include <ntrack_log.h>
-#include <ntrack_msg.h>
-#include <ntrack_auth.h>
-
-ntrack_t ntrack;
+static ntrack_t ntrack;
+ntrack_t *pntrack = NULL;
 
 static int set_flow_flags(uint32_t fid, uint32_t magic, uint32_t flags)
 {
-	flow_info_t *fi = nt_get_flow_by_id(&ntrack, fid, magic);
+	flow_info_t *fi = nt_get_flow_by_id(pntrack, fid, magic);
 	if(!fi) {
 		nt_error("flow: %u-%u not found.\n", fid, magic);
 		return -EINVAL;
@@ -39,7 +19,7 @@ static int set_flow_flags(uint32_t fid, uint32_t magic, uint32_t flags)
 static int set_user_status(uint32_t uid, uint32_t magic, uint32_t status)
 {
 	uint32_t s_prev;
-	user_info_t *ui = nt_get_user_by_id(&ntrack, uid, magic);
+	user_info_t *ui = nt_get_user_by_id(pntrack, uid, magic);
 	if(!ui) {
 		nt_error("user: %u-%u not found.\n", uid, magic);
 		return -EINVAL;
@@ -55,8 +35,8 @@ static void dump_flowinfo(void)
 {
 	int i;
 
-	for(i=0; i<ntrack.fi_count; i++) {
-		flow_info_t *fi = &ntrack.fi_base[i];
+	for(i=0; i<pntrack->fi_count; i++) {
+		flow_info_t *fi = &pntrack->fi_base[i];
 		user_info_t *ui, *pi;
 
 		if(!magic_valid(fi->magic)) {
@@ -64,11 +44,11 @@ static void dump_flowinfo(void)
 		}
 
 		/* check fi use api */
-		fi = nt_get_flow_by_id(&ntrack, fi->id, fi->magic);
+		fi = nt_get_flow_by_id(pntrack, fi->id, fi->magic);
 		if(!fi) {
 			continue;
 		}
-		ui = nt_get_user_by_flow(&ntrack, fi);
+		ui = nt_get_user_by_flow(pntrack, fi);
 
 		nt_print(FMT_FLOW_STR" l7: %d, recv:[%llu, %llu] xmit:[%llu, %llu]\n\t"FMT_USER_STR"\n",
 			FMT_FLOW(fi), nt_flow_nproto(fi),
@@ -82,8 +62,8 @@ static void dump_userinfo(int id, int magic)
 {
 	int i;
 
-	for(i=0; i<ntrack.ui_count; i++) {
-		user_info_t *ui = &ntrack.ui_base[i];
+	for(i=0; i<pntrack->ui_count; i++) {
+		user_info_t *ui = &pntrack->ui_base[i];
 		if (!magic_valid(ui->magic)) {
 			continue;
 		}
@@ -123,10 +103,11 @@ int main(int argc, char *argv[])
 		nt_error("nquery message init failed.\n");
 		return 0;
 	}
+	pntrack = &ntrack;
 
 	/* debug */
-	// nt_dump(ntrack.ui_base, 64, "user base: %p\n", ntrack.ui_base);
-	// nt_dump(ntrack.fi_base, 64, "flow base: %p\n", ntrack.fi_base);
+	// nt_dump(pntrack->ui_base, 64, "user base: %p\n", pntrack->ui_base);
+	// nt_dump(pntrack->fi_base, 64, "flow base: %p\n", pntrack->fi_base);
 
 	if(strcmp(argv[1], "flow") == 0) {
 		if(argc >= 3) {
@@ -154,6 +135,14 @@ int main(int argc, char *argv[])
 			exit(0);
 		}
 		return set_user_status(atoi(argv[2]), atoi(argv[3]), atoi(argv[4]));
+	}
+
+	if(strcmp(argv[1], "stat") == 0) {
+		if(argc < 3) {
+			nt_error("nquery stat <user/flow>\n");
+			exit(0);
+		}
+		return ntrack_stat(strcmp(argv[2], "flow") == 0 ? 1 : 0);
 	}
 	return 0;
 }

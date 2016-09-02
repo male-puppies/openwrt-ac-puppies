@@ -145,7 +145,6 @@ static void __exit nfw_modules_exit(void)
 
 	nfw_dbg_exit();
 	nf_unregister_hooks(ntrack_nf_hook_ops, ARRAY_SIZE(ntrack_nf_hook_ops));
-	nfw_dbg_exit();
 
 	klog_fini(nfw_klog_fd);
 	synchronize_rcu();

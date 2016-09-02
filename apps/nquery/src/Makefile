@@ -1,4 +1,4 @@
-src = main.c pcap.c
+src = main.c pcap.c stat.c
 
 all:nquery
 

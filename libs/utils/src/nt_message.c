@@ -1,23 +1,4 @@
-#define _GNU_SOURCE
-#include <sched.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <inttypes.h>
-#include <fcntl.h>
-#include <errno.h>
-
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-
-#include <linux/nos_track.h>
-
-#include <ntrack_rbf.h>
-#include <ntrack_log.h>
-#include <ntrack_msg.h>
+#include "lib_private.h"
 
 const char *fn_sys_mem = "/dev/mem";
 const char *fn_base_loff = "/proc/sys/kernel/nt_shm_base";

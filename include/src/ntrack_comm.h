@@ -48,6 +48,25 @@ typedef struct {
 	user_info_t *ui_base;
 } ntrack_t;
 
+/* callback as traversal
+	@return < 0, stop traversal, 
+		otherwise continue next. 
+*/
+typedef int(*nt_trav_flow_cb_t)(flow_info_t *fi, void *p);
+typedef int(*nt_trav_user_cb_t)(user_info_t *ui, void *p);
+
+/* traversal flow / user buy segment. */
+int nt_trav_flow(ntrack_t *nt,
+		int32_t off_count,
+		int32_t max_count,
+		void *udata,
+		nt_trav_flow_cb_t cb_fn);
+int nt_trav_user(ntrack_t *nt,
+		int32_t off_count,
+		int32_t max_count,
+		void *udata,
+		nt_trav_user_cb_t cb_fn);
+
 /* userspace node opt apis */
 static inline flow_info_t * nt_get_flow_by_id(ntrack_t *nt, uint32_t id, uint32_t magic)
 {
