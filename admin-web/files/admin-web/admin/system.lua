@@ -1,10 +1,12 @@
 local fp = require("fp")
+local common = require("common")
 local js = require("cjson.safe")
 local log = require("common.log")
 local query = require("common.query")
 local adminlib = require("admin.adminlib")
 local timezoneinfo = require("admin.timezoneinfo")
 
+local read = common.read
 local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
 local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
@@ -34,8 +36,45 @@ function key_map.time()
 	return os.date()
 end
 
+function key_map.lease()
+	local map = {}
+	local file = io.open("/tmp/dhcp.leases")
+	if not file then
+		return {}
+	end
+
+	local now = os.time()
+	local time_map = {{s = 86400, d = "d"}, {s = 3600, d = "h"}, {s = 60, d = "m"}, {s = 1, d = "s"}}
+	while true do
+		local line = file:read("*l")
+		if not line then
+			file:close()
+			break
+		end
+
+		local ts, mac, ip, name, duid = line:match("^(%d+) (%S+) (%S+) (%S+) (%S+)")
+		if ts then
+			if not ip:match(":") then
+				map[ip] = {
+					expires  = os.difftime(tonumber(ts), now) ,
+					hostname = (name ~= "*") and name or "",
+					macaddr  = mac,
+					ipaddr   = ip
+				}
+			end
+		end
+	end
+
+	local arr = {}
+	for _, v in pairs(map) do
+		table.insert(arr, v)
+	end
+
+	return arr
+end
+
 function key_map.zonename()
-	return require("common").read("uci get system.@system[0].zonename", io.popen):gsub("%s", "")
+	return read("uci get system.@system[0].zonename", io.popen):gsub("%s", "")
 end
 
 function cmd_map.system_get()
@@ -192,8 +231,6 @@ function cmd_map.system_upload()
 		return reply_e(e)
 	end
 
-	local read = require("common").read
-
 	-- TODO the following commands will hurt performance badly!
 
 	-- validate
@@ -258,7 +295,7 @@ function cmd_map.system_backup()
 	end
 
 	local path = m.data
-	local s = require("common").read(path)
+	local s = read(path)
 	local filename = path:match(".+/(.+)")
 	ngx.header["Content-Disposition"] = string.format("attachment; filename=%s", filename)
 	ngx.print(s)
@@ -284,6 +321,5 @@ function cmd_map.system_restore()
 
 	query_common({path = cfgpath}, "system_restore")
 end
-
 
 return {run = run}
