@@ -60,7 +60,6 @@ local function start_udp_server()
 		while true do
 			r, ip, port = udpsrv:recv()
 			if r then
-				print("main", r)
 				m = decode(r)
 				if m and m.cmd then
 					r, e = udp_chan:write({m, ip, port}) 	assert(r, e)

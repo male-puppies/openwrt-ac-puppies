@@ -51,6 +51,7 @@ function method:save()
 	end
 	save(self.path, js.encode(self.arr))
 	self.updated = false
+	return true
 end
 
 local function new(path,limit)

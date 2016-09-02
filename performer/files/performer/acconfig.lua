@@ -357,11 +357,15 @@ compare_config["Set"] = function(old, new)
 	return cmp_res
 end
 
--- a recursive function:fetch leaves
+--[[
+	a recursive function:fetch leaves
+	notice:if an error ocuurs, we return nil to expose the error
+]]
 local function fetch_leaf_protoids(ids)
 	local fetch_proto = function(sql)
 		local protos, err = simple:mysql_select(sql)
 		if not protos then
+			log.error("sql:%s failed:%s", sql, err)
 			return nil, err
 		end
 		return protos
@@ -371,32 +375,38 @@ local function fetch_leaf_protoids(ids)
 		return {}
 	end
 
-	local leaf_ids, reduce = {}, fp.reduce
+	local leaf_ids, proto_ids, reduce = {}, {}, fp.reduce
 	local nids = reduce(ids, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
-	local sql = string.format([["select proto_id, node_type from acproto where proto_id in (%s)"]], table.concat(nids, ", ")) assert(sql)
-	local protos = fetch_proto(sql)
-	local leafs = protos and reduce(protos, function(t, r) if r.node_type == "leaf" then return rawset(t, #t + 1, r.proto_id) end return t end, {})
+	local sql = string.format("select proto_id, node_type from acproto where proto_id in (%s)", table.concat(nids, ", ")) assert(sql)
+	local protos, err = fetch_proto(sql)
+	if not protos then
+		return nil, err
+	end
+
+	local leafs = reduce(protos, function(t, r) return r.node_type == "leaf" and rawset(t, #t + 1, r.proto_id) or t end, {})
 	-- need convert from hex to decimal
 	leaf_ids = reduce(leafs, function(t, r) return rawset(t, #t + 1, tonumber(r, 16)) end, leaf_ids)
-	local nodes = protos and reduce(protos, function(t, r)
-		if r.node_type == "node" then
-			return rawset(t, #t + 1, r.proto_id)
-		end
-		return t
-	end, {})
+	local nodes = reduce(protos, function(t, r) return  r.node_type == "node" and rawset(t, #t + 1, r.proto_id) or t end, {})
 	if #nodes == 0 then
 		return leaf_ids
 	end
 
 	nids = reduce(nodes, function(t, r) return rawset(t, #t + 1, string.format("'%s'",r)) end, {})
-	local sql = string.format([[
+	sql = string.format([[
 			select a.proto_id as proto_id from acproto as a, acproto as b
 			where b.proto_id in (%s) and a.pid = b.proto_id
-		]], table.concat(nids, ", "))
-	local protos = fetch_proto(sql)
-	if protos and #protos > 0 then
-		local proto_ids = protos and reduce(protos, function(t, r) return rawset(t, #t + 1, r.proto_id) end, {})
-		local leafs = fetch_leaf_protoids(proto_ids)
+		]], table.concat(nids, ", ")) assert(sql)
+	protos, err = fetch_proto(sql)
+	if not protos then
+		return nil, err
+	end
+
+	if #protos > 0 then
+		proto_ids = reduce(protos, function(t, r) return rawset(t, #t + 1, r.proto_id) end, {})
+		leafs, err = fetch_leaf_protoids(proto_ids)
+		if not leafs then
+			return nil, err
+		end
 		-- no need convert it to decimal from hex, because it's decimal now
 		leaf_ids = reduce(leafs, function(t, r) return rawset(t, #t + 1, r) end, leaf_ids)
 	end
