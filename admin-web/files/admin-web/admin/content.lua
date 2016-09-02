@@ -151,6 +151,7 @@ end
 -- curl 'http://127.0.0.1/v1/admin/api/system_set?token=d77f1cd99f63302c212f926c37b94db3' -d 'cmd=timezone&zonename=xxx'
 if cmd:find("^system_") then
 	return require("admin.system").run(cmd)
+end 
 
 -- curl 'http://127.0.0.1/v1/admin/api/radio_set?token=23260c3bc548d87ce16f8d82fd748adf' -d 'radio_2g:{"proto":"n","bandwidth":"auto","chanid":"auto","power":"auto"}&radio_5g:{"proto":"an","bandwidth":"auto","chanid":"auto","power":"auto"}&opt:{"mult":"0","rate":"2","inspeed":"0","enable":"1"}'
 -- curl 'http://172.16.0.1/v1/admin/api/radio_get?token=23260c3bc548d87ce16f8d82fd748adf&page=1&count=10'
