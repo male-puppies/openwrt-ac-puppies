@@ -36,7 +36,7 @@ cmd_map.kv = {
 		end
 
 		local new_map = {
-			{k = "username", v = "root"},
+			{k = "username", v = "admin"},
 			{k = "password", v = "admin"},
 			{k = "timezone", v = "CST-8"},
 			{k = "zonename", v = "Asia/Shanghai"},
