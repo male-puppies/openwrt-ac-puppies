@@ -42,7 +42,7 @@ udp_map["system_upgrade"] = function(p, ip, port)
 	-- 先回复前端，再进行升级
 	reply(ip, port, 0, {eta = 180})
 
-	local cmd = string.format("nohup sysupgrade %s %s >/dev/sysupgrade.txt 2>&1 &", p.keep == 0 and "-n" or "", p.path)
+	local cmd = string.format("nohup sysupgrade %s %s >/tmp/sysupgrade.txt 2>&1 &", p.keep == 0 and "-n" or "", p.path)
 	os.execute(cmd)
 end
 
