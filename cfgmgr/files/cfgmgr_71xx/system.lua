@@ -27,12 +27,23 @@ end
 
 -- {"cmd":"system_upgrade","keep":1}
 udp_map["system_upgrade"] = function(p, ip, port)
-	-- ÏÈ»Ø¸´Ç°¶Ë£¬ÔÙ½øÐÐÉý¼¶
+	local code = [[
+		local ins = require("mgr").ins()
+		ins.ud:backup()
+		return true
+	]]
+
+	-- å¤‡ä»½æ•°æ®åº“
+	local r, e = dbrpc:once(code)
+	if not r then
+		return reply(ip, port, 1, e)
+	end
+
+	-- å…ˆå›žå¤å‰ç«¯ï¼Œå†è¿›è¡Œå‡çº§
 	reply(ip, port, 0, {eta = 180})
 
 	local cmd = string.format("nohup sysupgrade %s %s >/dev/sysupgrade.txt 2>&1 &", p.keep == 0 and "-n" or "", p.path)
-	print(cmd)
+	os.execute(cmd)
 end
-
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}
