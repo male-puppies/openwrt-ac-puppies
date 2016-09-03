@@ -301,7 +301,7 @@ function cmd_map.system_backup()
 	ngx.print(s)
 end
 
-function cmd_map.system_restore()
+function cmd_map.system_backupload()
 	local token = ngx.req.get_uri_args().token
 	local r, e = adminlib.check_method_token("POST", token)
 	if not r then
@@ -318,7 +318,14 @@ function cmd_map.system_restore()
 	if not r then
 		return reply_e(e)
 	end
+	reply("ok")
+end
 
+function cmd_map.system_restore()
+	local cfgpath = "/tmp/mysysbackup.bin"
+	if not require("lfs").attributes(cfgpath) then
+		return reply_e("not find " .. cfgpath)
+	end
 	query_common({path = cfgpath}, "system_restore")
 end
 

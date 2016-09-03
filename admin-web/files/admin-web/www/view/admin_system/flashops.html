@@ -32,7 +32,7 @@
 			<div class="main-top">
 				<span class="title"><i class="icon-align-justify"></i> 备份/恢复</span>
 			</div>
-			<form id="backup" class="form-horizontal" enctype="multipart/form-data">
+			<form id="restore" class="form-horizontal" enctype="multipart/form-data">
 				<div class="form-group clearfix">
 					<label class="col-md-2 col-sm-3 col-xs-4 control-label">恢复出厂配置</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
@@ -43,7 +43,7 @@
 				<div class="form-group clearfix">
 					<label class="col-md-2 col-sm-3 col-xs-4 control-label">下载备份配置</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
-						<a class="btn btn-zx download"><i class="icon-download-alt"></i> 生成备份</a>
+						<a class="btn btn-zx backup"><i class="icon-download-alt"></i> 生成备份</a>
 						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="下载备份当前系统配置文件。"><i class="icon-question-sign"></i></span>
 					</div>
 				</div>
@@ -52,14 +52,14 @@
 					<div class="col-md-4 col-sm-5 col-xs-6">
 						<div class="input-group">
 							<!-- <input type="hidden" name="typekey" value="uploadaaa" /> -->
-							<input id="UploadBackup" name="UploadBackup" type="file" class="form-control file" verify="upload tgz" value="" />
+							<input id="UploadBackup" name="UploadBackup" type="file" class="form-control file" verify="upload bin" value="" />
 							<span class="input-group-btn">
-								<a class="btn btn-zx upload"><i class="icon-upload-alt"></i> 上传备份</a>
+								<a class="btn btn-zx restore"><i class="icon-upload-alt"></i> 上传备份</a>
 							</span>
 						</div>
 					</div>
 					<div class="col-md-6 col-sm-4 col-xs-2 tip-icons">
-						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="请选择后缀名为 .tgz 格式的文件。"><i class="icon-question-sign"></i></span>
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="请选择后缀名为 .bin 格式的文件。"><i class="icon-question-sign"></i></span>
 					</div>
 				</div>
 			</form>
@@ -90,28 +90,6 @@
 					</div>
 					<div class="col-md-6 col-sm-4 col-xs-2 tip-icons">
 						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="上传固件，进行本地升级。"><i class="icon-question-sign"></i></span>
-					</div>
-				</div>
-			</form>
-		</div>
-		
-		<div class="main-wrapper clearfix">
-			<div class="main-top">
-				<span class="title"><i class="icon-align-justify"></i> 在线升级</span>
-			</div>
-			<form id="brush" class="form-horizontal">
-				<div class="form-group clearfix">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label">版本检测</label>
-					<div class="col-md-3 col-sm-4 col-xs-5">
-						<a class="btn btn-zx checkver"><i class="icon-search"></i> 检测新版本</a>
-						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="在线检测是否拥有新的固件文件。"><i class="icon-question-sign"></i></span>
-					</div>
-				</div>
-				<div class="form-group clearfix ononline" style="color:#d9534f;display:none;">
-					<label class="col-md-2 col-sm-3 col-xs-4 control-label">最新固件</label>
-					<div class="col-md-10 col-sm-9 col-xs-8">
-						<span class="ospan" style="padding-right:15px;line-height:32px"></span>
-						<a class="btn btn-danger onlineup"><i class="icon-refresh"></i> 开始在线升级</a>
 					</div>
 				</div>
 			</form>
