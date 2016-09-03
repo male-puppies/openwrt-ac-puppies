@@ -735,7 +735,7 @@ end
 local function init(p)
 	mqtt = p
 
-	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	local dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	if not dbrpc then
 		log.error("create rpccli failed")
 		return false

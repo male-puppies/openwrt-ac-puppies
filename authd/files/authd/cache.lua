@@ -18,7 +18,7 @@ local bypass_timeout, on_bypass_timeout
 local clear_map = {}
 local function init(u, p)
 	udpsrv, mqtt = u, p
-	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	local dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	simple = simplesql.new(dbrpc)
 
 	bypass_timeout 	= batch.new(on_bypass_timeout)

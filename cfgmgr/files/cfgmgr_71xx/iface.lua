@@ -13,7 +13,7 @@ local udpsrv, mqtt, dbrpc, reply
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	reply = cfglib.gen_reply(udpsrv)
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 end
 
 udp_map["iface_get"] = function(p, ip, port)
@@ -58,7 +58,7 @@ udp_map["iface_set"] = function(p, ip, port)
 
 	local _ = network.save(config)
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "network"}}))
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "network"}}))
 end
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

@@ -11,7 +11,7 @@ local reply
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	reply = cfglib.gen_reply(udpsrv)
 end
 

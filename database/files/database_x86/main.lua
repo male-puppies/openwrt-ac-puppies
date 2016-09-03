@@ -29,7 +29,7 @@ function cmd_map.rpc(cmd, ctx)
 end
 
 local function start_sand_server()
-	local unique, proxy = "a/local/database"
+	local unique, proxy = "a/ac/database"
 	local on_message = function(topic, payload)
 		local map = js.decode(payload)
 		if not (map and map.pld) then return end

@@ -3,7 +3,7 @@ local common = require("common")
 local cfgpath = "/etc/config/cloud.json"
 
 local read, save_safe = common.read, common.save_safe
-local firmware_detail = js.encode({major = "ac", minor = "9563"})
+local firmware_detail = js.encode({major = "ac", minor = "9531"})
 
 local g_kvmap, g_devid
 
@@ -15,7 +15,7 @@ end
 
 local function set_default()
 	-- TODO
-	g_kvmap = {account = "yjs", ac_host = "", ac_port = 61889, detail = firmware_detail}
+	g_kvmap = {account = "st1", ac_host = "lglink.net", ac_port = 61889, detail = firmware_detail}
 end
 
 local function get_devid()

@@ -32,7 +32,7 @@ local function init(u, p)
 
 	udpsrv, mqtt = u, p
 	reply = cfglib.gen_reply(udpsrv)
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 end
 
 -- 将json文件译码成map
@@ -123,7 +123,7 @@ udp_map["radio_set"] = function(p, ip, port)
 	local _ = m and save_safe("/etc/config/wireless.json", js.encode(m))
 
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "wlancfg"}}))	-- 更新json文件，通知performer
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "wlancfg"}}))	-- 更新json文件，通知performer
 end
 
 udp_map["radio_get"] = function(p, ip, port)

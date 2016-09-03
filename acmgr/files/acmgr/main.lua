@@ -76,7 +76,7 @@ end
 
 local function start_sand_server()
 	local pld, cmd, map, r, e
-	local unique = "a/local/acmgr"
+	local unique = "a/ac/acmgr"
 
 	local on_message = function(topic, payload)
 		map = decode(payload)

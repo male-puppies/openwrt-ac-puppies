@@ -61,7 +61,7 @@ end
 
 local function start_sand_server()
 	local pld, cmd, map, r, e
-	local unique = "a/local/cfgmgr"
+	local unique = "a/ac/cfgmgr"
 
 	local on_message = function(topic, payload)
 		map = decode(payload)
@@ -136,7 +136,7 @@ local function connect_mysql()
 end
 
 local function test()
-	local unique, proxy = "a/local/authd_test"
+	local unique, proxy = "a/ac/authd_test"
 	local on_message = function(topic, payload)
 		local map = js.decode(payload)
 		if not (map and map.pld) then return end
@@ -154,7 +154,7 @@ local function test()
 	}
 	local proxy = sandcproxy.run_new(args)
 	while true do
-		local r, e = proxy:query("a/local/authd_srv", {cmd = "dbevent", data = {user = {1,2,3,4}}})
+		local r, e = proxy:query("a/ac/authd_srv", {cmd = "dbevent", data = {user = {1,2,3,4}}})
 		print(js.encode({r, e}))
 		ski.sleep(1)
 	end

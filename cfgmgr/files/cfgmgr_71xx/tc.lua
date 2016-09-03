@@ -13,7 +13,7 @@ local udpsrv, mqtt, dbrpc, reply
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	reply = cfglib.gen_reply(udpsrv)
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 end
 
 udp_map["tc_get"] = function(p, ip, port)
@@ -59,7 +59,7 @@ udp_map["tc_add"] = function(p, ip, port)
 	local config = tc_m
 	local _ = config and save_safe("/etc/config/tc.json", js.encode(config))
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "tc"}}))
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "tc"}}))
 end
 
 
@@ -86,7 +86,7 @@ udp_map["tc_set"] = function(p, ip, port)
 	local config = tc_m
 	local _ = config and save_safe("/etc/config/tc.json", js.encode(config))
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "tc"}}))
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "tc"}}))
 end
 
 udp_map["tc_del"] = function(p, ip, port)
@@ -116,7 +116,7 @@ udp_map["tc_del"] = function(p, ip, port)
 	local config = tc_m
 	local _ = config and save_safe("/etc/config/tc.json", js.encode(config))
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "tc"}}))
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "tc"}}))
 end
 
 udp_map["tc_gset"] = function(p, ip, port)
@@ -130,7 +130,7 @@ udp_map["tc_gset"] = function(p, ip, port)
 	local config = tc_m
 	local _ = config and save_safe("/etc/config/tc.json", js.encode(config))
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "tc"}}))
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "tc"}}))
 end
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

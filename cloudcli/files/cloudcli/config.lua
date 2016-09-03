@@ -1,6 +1,11 @@
 local ski = require("ski")
 local lfs = require("lfs")
 local cfg = require("cfg")
+local log = require("log")
+local js = require("cjson.safe")
+local const = require("constant")
+local common = require("common")
+local dlconfig = require("dlconfig")
 
 local proxy
 local cfg_ver_info = {}
@@ -8,17 +13,8 @@ local NORMAL_QUERY_INTVAL = 3600
 local EMERGY_QUERY_INTVAL = 60
 local query_version_intval = NORMAL_QUERY_INTVAL
 
-local config_dir = "/etc/config"
-local const = {
-	default_config  = "/etc/default_config.json",
-	config_dir		= config_dir,
-	download_dir	= "/tmp/ugw/download",		--存放下载文件的临时目录（考虑频繁写or包大小）
-	text_dir		= "/ugw/etc/wac/json", 		--临时存放文本配置文件
-	package_dir		= "/ugw/etc/wac/package",	--临时存放tgz文件，比如广告包等
-	default_version	= "/etc/default_version.json",
-	config_version 	= config_dir.."/".."config_version.json",
-	ad_package_file	= "ad.tgz",
-}
+local cfgpath = const.cloud_config
+local read, save, save_safe = common.read, common.save, common.save_safe
 
 local cmd_map = {}
 function cmd_map.replace(map)
@@ -251,7 +247,7 @@ local function override_adcfg()
 	if lfs.attributes(o_ad..".".."del") then
 		os.execute("rm "..o_ad..".".."del")
 	end
-	os.execute("/ugw/script/resetcfg.sh ad &")
+	os.execute("/usr/sbin/resetcfg.sh ad &")
 	return true
 end
 
@@ -415,14 +411,10 @@ local function process_cfg_notify(cfg_type, map)
 		end
 		log.debug("package name:%s", file_name)
 
-		--keep singleton
-		os.execute("killstr dlconfig.lua")
-		local cmd = string.format("nohup lua ./dlconfig.lua %s %s %s >/tmp/ugw/log/apmgr.error 2>&1 &", url, file_name, cfg_type)
-		os.execute(cmd)
+		ski.go(dlconfig.run, url, file_name, cfg_type)
 		local ret, file_map = process_dlconfig(cfg_type, file_name)
 		if not ret then
 			log.debug("subcmd[%s] process failed.", map["subcmd"])
-			os.execute("killstr dlconfig.lua")
 			return false
 		end
 
@@ -462,7 +454,6 @@ function cmd_map.devcfg_notify(map)
 	else
 		query_version_intval = EMERGY_QUERY_INTVAL
 	end
-
 end
 
 function cmd_map.adcfg_notify(map)
@@ -507,7 +498,7 @@ local function check_cfg_change()
 				for k, v in pairs(map) do
 					if check_field[k] and v ~= cfg.get(k) then
 						log.debug("field change %s %s %s. kill base, exit and reload", k, cfg.get(k), v)
-						os.execute("killstr 'base/main.lua'")
+						os.execute("/etc/init.d/proxybase restart")
 						os.exit(0)
 					end
 				end
@@ -527,7 +518,6 @@ local function check_cfg_version()
 				if not lfs.attributes(file_dir.."/"..file_info["name"]) then
 					log.error("%s isn't exist, need restore.", file_info["name"])
 					restore_cfg_ver_info()
-					--set_cfg_version_to_default(cfg_type)
 					return false
 				end
 			end

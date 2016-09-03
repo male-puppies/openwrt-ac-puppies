@@ -13,7 +13,7 @@ local simple, udpsrv, mqtt, reply
 local function init(u, p)
 	udpsrv, mqtt = u, p
 
-	-- local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	-- local dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	-- simple 	= simplesql.new(dbrpc)
 	reply 	= lib.gen_reply(udpsrv)
 end

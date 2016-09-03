@@ -7,7 +7,7 @@ local js = require("cjson.safe")
 local config = require("config")
 local sandcproxy = require("sandcproxy")
 
-local unique = "a/local/cloudcli"
+local unique = "a/ac/cfgmgr"
 local read, save_safe = common.read, common.save_safe
 local get_devid, get_kvmap = cfg.get_devid, cfg.get_kvmap
 
@@ -93,13 +93,14 @@ function cmd_map.proxybase(s)
 end
 
 local function on_message(topic, payload)
-	local m = js.decode(payload)
-	if not (m and m.pld) then
+	print("-----on_message:",payload)
+	local map = js.decode(payload)
+	if not (map and map.pld)then
+		log.error("decode %s failed", payload)
 		return
 	end
 
-	local map = m.pld
-	local cmd, data = map.cmd, map.data
+	local cmd, data = map.pld.cmd, map.pld.data
 	if not (cmd and data) then
 		log.error("invalid message %s", js.encode(map))
 		return
@@ -168,5 +169,5 @@ local function main()
 	ski.go(report_status)
 end
 
-log.setmodule("cm")
+log.setmodule("cli")
 ski.run(main)

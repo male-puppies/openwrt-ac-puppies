@@ -1,0 +1,36 @@
+{
+    "dev": {
+		"version":"1970-01-01 00:00:00",
+		"files": [
+			{
+				"type":"text",
+				"name": "sms_config.json",
+				"exist": "0",
+				"version": "1970-01-01 00:00:00"
+			},
+			{
+				"type":"text",
+				"name": "user_config.json",
+				"exist": "0",
+				"version": "1970-01-01 00:00:00"
+			},
+			{
+				"type":"text",
+				"name": "wx_config.json",
+				"exist": "0",
+				"version": "1970-01-01 00:00:00"
+			}
+		]
+	},
+    "ad": {
+		"version":"1970-01-01 00:00:00",
+		"files": [
+			{
+				"type":"package",
+				"name": "ad.tgz",
+				"exist": "0",
+				"version": "1970-01-01 00:00:00"
+			}
+		]
+	}
+}

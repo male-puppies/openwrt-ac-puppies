@@ -11,7 +11,7 @@ local myconn, udpsrv, mqtt, dbrpc, simple, reply
 local function init(m, u, p)
 	myconn, udpsrv, mqtt = m, u, p
 	reply = cfglib.gen_reply(udpsrv)
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	simple = simplesql.new(dbrpc)
 end
 

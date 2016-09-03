@@ -111,7 +111,7 @@ end
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	simple = simplesql.new(dbrpc)
 	load_applist()
 end

@@ -1,31 +1,17 @@
-local arch
+-- tgb 20160903
+local soft_arch = "openwrt"
 
-local fp = io.popen("uname -a")
-local s = fp:read("*a")
-fp:close()
-if s:find("mips") then
-	arch = "mips"
-elseif s:find("x86") then
-	arch = "x86"
-else
-	io.stderr:write("get arch fail", s or "", "\n")
-	os.exit(-1)
+local function isopenwrt()
+	return soft_arch == "openwrt"
 end
 
-local function ismips()
-	return arch == "mips"
+
+local function config_dir()
+	return isopenwrt() and "/etc/config" or "/etc/config"
 end
 
-local function isx86()
-	return arch == "x86"
+local function default_config()
+	return isopenwrt() and "/etc/default_config.json" or "/etc/default_config.json"
 end
 
-local function configdir()
-	return isx86() and "/ugw/etc/wac" or "/etc/config"
-end
-
-local function default_cfg()
-	return isx86() and "/ugw/etc/wac/default_config.json" or "/etc/config/default_config.json"
-end
-
-return {ismips = ismips, isx86 = isx86, configdir = configdir, default_cfg = default_cfg}
+return {isopenwrt = isopenwrt, config_dir = config_dir, default_config = default_config}

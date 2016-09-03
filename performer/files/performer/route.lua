@@ -121,7 +121,7 @@ end
 
 local function init(p)
 	mqtt = p
-	local dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	local dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 	simple = simplesql.new(dbrpc)
 
 	route_reload()

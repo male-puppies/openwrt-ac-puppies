@@ -5,7 +5,7 @@ local simplesql = require("simplesql")
 local sandcproxy = require("sandcproxy")
 
 local function start_sand_server()
-	local unique = "a/local/dump_client"
+	local unique = "a/ac/dump_client"
 	local numb = function(...)
 		print(...)
 	end
@@ -22,7 +22,7 @@ local function start_sand_server()
 end
 
 local function rpc()
-	local dbrpc = rpccli.new(start_sand_server(), "a/local/database_srv")
+	local dbrpc = rpccli.new(start_sand_server(), "a/ac/database_srv")
 	return simplesql.new(dbrpc), dbrpc
 end
 

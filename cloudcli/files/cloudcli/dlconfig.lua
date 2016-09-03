@@ -171,39 +171,43 @@ local function clear_tm_config(file)
 	end
 end
 
---cfg_type:ad/dev
-local url, file_name, cfg_type = ...
--- local url = "http://192.168.0.205/admin/ads_download/15.20160104114230.e09683.tgz"
--- local file_name = "15.20160104114230.e09683.tgz"
--- local cfg_type = "ad"
-assert(url and file_name and cfg_type)
+local function run(...)
+	--cfg_type:ad/dev
+	local url, file_name, cfg_type = ...
+	-- local url = "http://192.168.0.205/admin/ads_download/15.20160104114230.e09683.tgz"
+	-- local file_name = "15.20160104114230.e09683.tgz"
+	-- local cfg_type = "ad"
+	assert(url and file_name and cfg_type)
 
-log.setdebug(true)
+	log.setdebug(true)
 
-local launch_flag = const.download_dir.."/"..file_name.."."..LAUNCH_FLAG
-local finish_flag = const.download_dir.."/"..file_name.."."..FINISH_FLAG
-local failed_flag = const.download_dir.."/"..file_name.."."..FAILED_FLAG
+	local launch_flag = const.download_dir.."/"..file_name.."."..LAUNCH_FLAG
+	local finish_flag = const.download_dir.."/"..file_name.."."..FINISH_FLAG
+	local failed_flag = const.download_dir.."/"..file_name.."."..FAILED_FLAG
 
-if lfs.attributes(launch_flag) then
-	os.execute("rm -rf "..launch_flag)
+	if lfs.attributes(launch_flag) then
+		os.execute("rm -rf "..launch_flag)
+	end
+
+	if lfs.attributes(finish_flag) then
+		os.execute("rm -rf "..finish_flag)
+	end
+
+	if lfs.attributes(failed_flag) then
+		os.execute("rm -rf "..failed_flag)
+	end
+
+	os.execute("touch "..launch_flag)
+
+	local ret = update_config(url, file_name, cfg_type)
+	if ret then
+		os.execute("touch "..finish_flag)
+	else
+		os.execute("touch "..failed_flag)
+	end
+	clear_tm_config(const.download_dir.."/"..file_name)
+
+	os.execute("rm -f "..launch_flag)
 end
 
-if lfs.attributes(finish_flag) then
-	os.execute("rm -rf "..finish_flag)
-end
-
-if lfs.attributes(failed_flag) then
-	os.execute("rm -rf "..failed_flag)
-end
-
-os.execute("touch "..launch_flag)
-
-local ret = update_config(url, file_name, cfg_type)
-if ret then
-	os.execute("touch "..finish_flag)
-else
-	os.execute("touch "..failed_flag)
-end
-clear_tm_config(const.download_dir.."/"..file_name)
-
-os.execute("rm -f "..launch_flag)
+return {run = run}

@@ -141,7 +141,7 @@ local function init(p, u)
 	ctrl_log = queue.new(ctrl_path, log_limit) assert(ctrl_log)
 	audit_log = queue.new(audit_path, log_limit) assert(audit_log)
 	reply = aclib.gen_reply(udp_srv) assert(reply)
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 
 	simple = simplesql.new(dbrpc)
 

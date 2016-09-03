@@ -16,7 +16,7 @@ local read, save_safe = common.read, common.save_safe
 local cfgpath = "/etc/config/cloud.json"
 
 local g_kvmap, g_devid
-local default_cfg = {ac_host = "192.168.0.213", ac_port = 61886, account = "yjs"} -- TODO
+local default_cfg = {ac_host = "lglink.net", ac_port = 61886, account = "st1"} -- TODO
 
 -- 读取本唯一ID
 local function read_id()
@@ -147,7 +147,7 @@ local function start_remote()
 	mqtt:set_callback("on_connect", function(st, err) save_status(1, ip, port) end)
 	mqtt:set_callback("on_disconnect", function(st, e)
 		save_status(0, host, port)
-		local _ = local_mqtt and local_mqtt:publish("a/local/cloudcli", js.encode({pld = {cmd = "proxybase", data = "exit"}}))
+		local _ = local_mqtt and local_mqtt:publish("a/ac/cloudcli", js.encode({pld = {cmd = "proxybase", data = "exit"}}))
 		log.fatal("mqtt disconnect %s %s %s %s %s", unique, ip, port, st, e)
 	end)
 
@@ -187,7 +187,7 @@ end
 
 local function start_sand_server()
 	local pld, cmd, map, r, e
-	local unique = "a/local/proxybase"
+	local unique = "a/ac/proxybase"
 
 	local on_message = function(topic, payload)
 		log.info("recv and exit. %s", payload)

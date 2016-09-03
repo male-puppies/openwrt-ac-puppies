@@ -12,7 +12,7 @@ local udpsrv, mqtt, dbrpc, reply
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	reply = cfglib.gen_reply(udpsrv)
-	dbrpc = rpccli.new(mqtt, "a/local/database_srv")
+	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
 end
 
 udp_map["mwan_get"] = function(p, ip, port)
@@ -28,7 +28,7 @@ udp_map["mwan_set"] = function(p, ip, port)
 	local config = mwan_m
 	local _ = mwan.save(config)
 	reply(ip, port, 0, "ok")
-	mqtt:publish("a/local/performer", js.encode({pld = {cmd = "mwan"}}))
+	mqtt:publish("a/ac/performer", js.encode({pld = {cmd = "mwan"}}))
 end
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

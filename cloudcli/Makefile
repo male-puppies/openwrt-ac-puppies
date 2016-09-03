@@ -45,6 +45,7 @@ define Package/$(PKG_NAME)/install
 	cp -r files/cloudcli $(1)/usr/share/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/cloudcli.sh $(1)/usr/sbin/cloudcli
+	$(INSTALL_BIN) ./files/resetcfg.sh $(1)/usr/sbin/resetcfg.sh
 endef
 
 define Build/Configure

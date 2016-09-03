@@ -67,7 +67,7 @@ end
 
 local function start_sand_server()
 	local pld, cmd, map, r, e
-	local unique = "a/local/status"
+	local unique = "a/ac/status"
 
 	local on_message = function(topic, payload)
 		map = decode(payload)

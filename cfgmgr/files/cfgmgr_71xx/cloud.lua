@@ -52,7 +52,7 @@ udp_map["cloud_set"] = function(p, ip, port)
 	log.info("cloud change %s", s)
 
 	-- 发送消息给proxybase
-	mqtt:publish("a/local/proxybase", s)
+	mqtt:publish("a/ac/proxybase", s)
 	reply(ip, port, 0, "ok")
 end
 
