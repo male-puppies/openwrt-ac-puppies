@@ -92,8 +92,8 @@ end
 
 -- {"cmd":"system_restore","path":"/tmp/mysysbackup.bin"}
 udp_map["system_restore"] = function(p, ip, port)
-	os.execute(string.format("./sysbackup.sh restore %s &", p.path))
 	reply(ip, port, 0, "ok")
+	os.execute(string.format("./sysbackup.sh restore %s &", p.path))
 end
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}

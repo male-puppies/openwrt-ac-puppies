@@ -12,11 +12,11 @@ function createInitModal() {
 	});
 }
 
-function upFunc(d) {
+function restoreFunc(d) {
 	$("#modal_spin").modal("hide");
 	$("#modal_spin").one("hidden.bs.modal", function() {
 		if (d.status == 0) {
-			createModalTips("上传成功！恢复配置将会重启设备。</br>是否确认恢复配置？", "DoUpload");
+			createModalTips("上传成功！恢复配置将会重启设备。</br>是否确认恢复配置？", "DoRestore");
 		} else {
 			createModalTips("上传失败！" + (d.data ? d.data : ""));
 		}
@@ -49,17 +49,18 @@ function funcall() {
 	}, 5000);
 }
 
-function DoUpload() {
+function DoRestore() {
 	$("#modal_tips").modal("hide");
 	$("#modal_tips").one("hidden.bs.modal", function() {
 		$("#modal_spin .modal-body p").html("正在恢复配置！<br>请稍候...");
 		$("#modal_spin").modal("show");
 	});
-	ucicall("UploadBackup", function(d) {
-		$.cookie('login_pwd', '', {expires: -1, path: "/"});
-		setTimeout(funcall, 12000);
+	cgicall.post("system_restore", function(d) {
+		if (d.status == 0) {
+			$.cookie('login_pwd', '', {expires: -1, path: "/"});
+			setTimeout(funcall, 12000);
+		}
 	});
-
 }
 
 function DoBrush() {
@@ -93,63 +94,45 @@ function DoReset() {
 		$("#modal_spin").modal("show");
 	});
 
-	ucicall("ConfReset", function(d) {
+	cgicall.post("ConfReset", function(d) {
 		$.cookie('login_pwd', '', {expires: -1, path: "/"});
 		setTimeout(funcall, 12000);
 	});
 }
 
-function DoOnlineup() {
-	$("#modal_tips").modal("hide");
-	$("#modal_tips").one("hidden.bs.modal", function() {
-		cgicall("ACUpgrade", function(d) {
-			if (d.status == 0) {
-				$("#modal_spin .modal-body p").html("正在下载最新固件，成功后将会自动升级！<br>请稍候...");
-				$("#modal_spin").modal("show");
-			} else {
-				createModalTips("在线升级失败！");
-			}
-		});
-	});
-}
-
 function initEvents() {
-	$(".download").on("click", OnDownload);
-	$(".upload").on("click", OnUpload);
+	$(".backup").on("click", OnBackup);
+	$(".restore").on("click", OnRestore);
 	$(".reset").on("click", OnReset);
 	$(".brush").on("click", OnBrush);
-	$(".checkver").on("click", OnCheckver);
-	$(".onlineup").on("click", OnOnlineup);
 
 	$('[data-toggle="tooltip"]').tooltip();
 }
 
-function OnDownload() {
-	cgicall.get("system_backup", function(d) {
-		if (d.status == 0 && typeof d.data != "undefined") {
-			var str = d.data;
-			window.location.href = "/tmp/" + str;
-		}
-	})
+function OnBackup() {
+	var version = "/v1/admin/api/",
+		token = $.cookie("token") ? "?token=" + $.cookie("token") : "?";
+
+	window.location.href = version + "system_backup" + token + "&_=" + new Date().getTime();
 }
 
-function OnUpload() {
-	if (!verification("#backup")) return false;
+function OnRestore() {
+	if (!verification("#restore")) return false;
 
 	var options = {
-		url: cgiDtUrl("system_restore"),	//form提交数据的地址
-		type: "post",						//form提交的方式(method:post/get)
-		dataType: "json",					//服务器返回数据类型
-		clearForm: false,					//提交成功后是否清空表单中的字段值
-		restForm: false,					//提交成功后是否重置表单中的字段值，即恢复到页面加载时的状态
-		timeout: 30000,						//设置请求时间，超过该时间后，自动退出请求，单位(毫秒)。
-		beforeSubmit: function(d) {},		//提交前执行的回调函数
-		success: function(d) {upFunc(d)}	//提交成功后执行的回调函数
+		url: cgiDtUrl("system_backupload"),		//form提交数据的地址
+		type: "post",							//form提交的方式(method:post/get)
+		dataType: "json",						//服务器返回数据类型
+		clearForm: false,						//提交成功后是否清空表单中的字段值
+		restForm: false,						//提交成功后是否重置表单中的字段值，即恢复到页面加载时的状态
+		timeout: 30000,							//设置请求时间，超过该时间后，自动退出请求，单位(毫秒)。
+		beforeSubmit: function(d) {},			//提交前执行的回调函数
+		success: function(d) {restoreFunc(d)}	//提交成功后执行的回调函数
 	};
 
 	$("#modal_spin .modal-body p").html("正在上传！<br>请稍候...");
 	$("#modal_spin").modal("show");
-	$("#backup").ajaxSubmit(options);
+	$("#restore").ajaxSubmit(options);
 	return false;
 }
 
@@ -175,29 +158,4 @@ function OnBrush() {
 	$("#modal_spin").modal("show");
 	$("#brush").ajaxSubmit(options);
 	return false;
-}
-
-function OnCheckver() {
-	$("#modal_spin .modal-body p").html("检测中...");
-	$("#modal_spin").modal("show");
-
-	cgicall("ACChkNew", function(d) {
-		if (d.status == 0 && d.data != "") {
-			$("#modal_spin").modal("hide");
-			$("#modal_spin").one("hidden.bs.modal", function() {
-				$(".ospan").html(d.data);
-				$(".ononline").show();
-			});
-		} else {
-			$("#modal_spin").modal("hide");
-			$("#modal_spin").one("hidden.bs.modal", function() {
-				createModalTips("已是最新版本！");
-				$(".ononline").hide();
-			});
-		}
-	})
-}
-
-function OnOnlineup() {
-	createModalTips("在线升级会在后台下载固件文件，成功后会自动进行升级并重启设备。</br>是否确认进行在线升级？", "DoOnlineup");
 }
