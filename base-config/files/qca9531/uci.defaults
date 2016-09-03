@@ -25,7 +25,7 @@ test $version -lt 1 && {
 	uci commit network
 	[ x`uci get firewall.@defaults[0]` = xdefault ] && uci set firewall.@defaults[0].disable_ipv6='1'
 	[ x`uci get firewall.@zone[0].name` = xlan ] && {
-		[ x`firewall.@zone[0].mtu_fix` = x1 ] || uci set firewall.@zone[0].mtu_fix='1'
+		[ x`uci get firewall.@zone[0].mtu_fix` = x1 ] || uci set firewall.@zone[0].mtu_fix='1'
 	}
 	[ x`uci get firewall.@zone[1].name` = xwan ] && {
 		uci get firewall.@zone[1].network | grep -q wan6 && {
