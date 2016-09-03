@@ -27,8 +27,8 @@ function createDtFlow(){
 					$("#GlobalSharedDownload").val(parseInt(d.data.GlobalSharedDownload));
 					$("#GlobalSharedUpload").val(parseInt(d.data.GlobalSharedUpload));
 					return dtObjToArray(data.data.Rules);
-				} else if (data.data.indexOf("timeout") > -1) {
-					window.location.href = "/login/admin_login/login.html";
+				} else if (data.data.indexOf("loginout") > -1) {
+					window.location.href = "/view/admin_login/tologin.html";
 				}
 				return [];
 			}

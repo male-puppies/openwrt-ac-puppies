@@ -25,7 +25,7 @@
 
 			$.get(url, function(d, x, s) {
 				d = initBackDatas(d);
-				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
+				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("loginout") > -1) {
 					window.location.href = "/view/admin_login/tologin.html";
 				}
 				callfn(d, x, s);
@@ -63,7 +63,7 @@
 
 			$.post(url, sobj, function(d, x, s) {
 				d = initBackDatas(d);
-				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("timeout") > -1) {
+				if (typeof d != "undefined" && typeof d.status != "undefined" && typeof d.data != "undefined" && d.status == 1 && d.data.indexOf("loginout") > -1) {
 					window.location.href = "/view/admin_login/tologin.html";
 				}
 				callfn(d, x, s);
@@ -415,8 +415,8 @@
 		var data = initBackDatas(d);
 		if (data.status == 0) {
 			return dtObjToArray(data.data);
-		} else if (data.data.indexOf("timeout") > -1) {
-			window.location.href = "/login/admin_login/login.html";
+		} else if (data.data.indexOf("loginout") > -1) {
+			window.location.href = "/view/admin_login/tologin.html";
 		}
 		return [];
 	}

@@ -36,31 +36,16 @@ function brushFunc(d) {
 
 function funcall() {
 	setInterval(function() {
-		var cmd = {
-			"key": "Login",
-			"data": {
-				"username": "",
-				"password": ""
-			}
+		var obj = {
+			username: "",
+			password: ""
 		}
-		$.post(
-			"/logincall",
-			{
-				"cmd": JSON.stringify(cmd)
-			},
-			function(d) {
-				if (typeof d == "object" && typeof d.data != "undefined") {
-					if (d.data.indexOf("failed") >= 0 || d.data.indexOf("error") >= 0 || d.data.indexOf("timeout") >= 0) {
-						console.log("continue...");
-					} else {
-						setTimeout(function() {
-							window.location.href = "/admin/login/admin_login/login.html";
-						}, 6000);
-					}
-				}
-			},
-			"json"
-		);
+
+		cgicall.get("login", obj, function(d) {
+			setTimeout(function() {
+				window.location.href = "/view/admin_login/tologin.html";
+			}, 1000);
+		});
 	}, 5000);
 }
 
@@ -71,7 +56,7 @@ function DoUpload() {
 		$("#modal_spin").modal("show");
 	});
 	ucicall("UploadBackup", function(d) {
-		$.cookie('md5psw', '', {expires: -1, path: "/"});
+		$.cookie('login_pwd', '', {expires: -1, path: "/"});
 		setTimeout(funcall, 12000);
 	});
 
@@ -84,18 +69,18 @@ function DoBrush() {
 		$("#modal_spin .modal-body p").html("Loading...");
 		$("#modal_spin").modal("show");
 
-		ucicall("UploadBrush", {"keep": keep}, function(d) {
-			if (d.status == 1 && d.data == "badupload") {
-				$("#modal_spin").modal("hide");
-				$("#modal_spin").one("hidden.bs.modal", function() {
-					createModalTips("升级失败！不支持所上传的文件，请确认选择的文件无误！");
-				});
-				return false;
-			} else {
+		cgicall.post("system_upgrade", {"keep": keep}, function(d) {
+			if (d.status == 0) {
 				$("#modal_spin .modal-body p").html("正在进行升级！<br>请稍候...");
 				$("#modal_spin").modal("show");
-				$.cookie('md5psw', '', {expires: -1, path: "/"});
+				$.cookie('login_pwd', '', {expires: -1, path: "/"});
 				setTimeout(funcall, 12000);
+			} else {
+				$("#modal_spin").modal("hide");
+				$("#modal_spin").one("hidden.bs.modal", function() {
+					createModalTips("升级失败！请确认选择的文件无误！");
+				});
+				return false;
 			}
 		});
 	});
@@ -109,7 +94,7 @@ function DoReset() {
 	});
 
 	ucicall("ConfReset", function(d) {
-		$.cookie('md5psw', '', {expires: -1, path: "/"});
+		$.cookie('login_pwd', '', {expires: -1, path: "/"});
 		setTimeout(funcall, 12000);
 	});
 }
@@ -140,7 +125,7 @@ function initEvents() {
 }
 
 function OnDownload() {
-	ucicall("DownloadBackup", function(d) {
+	cgicall.get("system_backup", function(d) {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			var str = d.data;
 			window.location.href = "/tmp/" + str;
@@ -152,7 +137,7 @@ function OnUpload() {
 	if (!verification("#backup")) return false;
 
 	var options = {
-		url: cgiDtUrl("system_upload"),		//form提交数据的地址
+		url: cgiDtUrl("system_restore"),	//form提交数据的地址
 		type: "post",						//form提交的方式(method:post/get)
 		dataType: "json",					//服务器返回数据类型
 		clearForm: false,					//提交成功后是否清空表单中的字段值
