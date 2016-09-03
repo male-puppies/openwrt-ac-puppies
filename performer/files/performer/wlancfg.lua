@@ -1,15 +1,14 @@
 -- @author : xjx modify
--- @radio.lua : 生效WLAN、Radio配置
+-- @wlancfg.lua : 生效WLAN、Radio配置
 
 local uci	= require("uci")
 local ski	= require("ski")
 local log	= require("log")
-local lfs	= require("lfs")
 local pkey	= require("key")
+local md5 	= require("md5")
 local common	= require("common")
 local country	= require("country")
 local support	= require("support")
-local memfile	= require("memfile")
 local version	= require("version")
 local const		= require("constant")
 local js		= require("cjson.safe")
@@ -17,6 +16,9 @@ local js		= require("cjson.safe")
 js.encode_keep_buffer(false)
 
 local tcp_map = {}
+local wifi_dev_cfg = {}
+local wifi_iface_cfg = {}
+local custom_wifi_dev_cfg = {}
 local read = common.read
 local keys = const.keys
 local s_const = {
@@ -28,15 +30,6 @@ local s_const = {
 	vap2g		= "ath2%03d",
 	vap5g		= "ath5%03d",
 }
-
-local wl_uci
-local dev_cfg_map = "dev_map"
-local custom_wifi_dev_cfg = {}
-local wifi_dev_cfg = {}
-local iface_cfg_map = "iface_map"
-local wifi_iface_cfg = {}
-local mf_commit = memfile.ins("commit")
-local file_exist = common.file_exist
 
 local function get_channel(v)
 	if v:upper() == "AUTO" then
@@ -110,7 +103,7 @@ local function get_htmode(v, band)
 
 	--in 5g situation, we should distinguish 5g and 11ac
 	local proto = support.get_5g_proto(hw_version)
-	print("proto:", proto, wd)
+	log.debug("proto：%s,%s", proto, wd)
 	if proto == "5g" then
 		return "HT"..wd
 	elseif proto == "11ac" then
@@ -173,13 +166,13 @@ end
 
 --config items of wifi device
 local function wifi_dev_cfg_parse(map)
-	print("wifi_dev_cfg_parse ---")
+	log.debug("%s", "wifi_dev_cfg_parse ---")
 	local k , v, dev, kvmap
 	wifi_dev_cfg = {}
-	print("support:", js.encode(support.band_arr_support()))
+	log.debug("support:%s", js.encode(support.band_arr_support()))
 	for _, band in ipairs(support.band_arr_support()) do
 		kvmap = {}
-		print(band)
+		log.debug("band:%s", band)
 		dev = support.get_wifi_dev(band)
 
 		local k = pkey.short(keys.c_g_country)
@@ -230,8 +223,8 @@ local function wifi_dev_cfg_parse(map)
 
 		wifi_dev_cfg[dev] = kvmap
 	end
-	print("wifi_dev_cfg:",js.encode(wifi_dev_cfg))
-	print("custom_wifi_dev_cfg:", js.encode(custom_wifi_dev_cfg))
+	log.debug("wifi_dev_cfg:%s",js.encode(wifi_dev_cfg))
+	log.debug("custom_wifi_dev_cfg:%s",js.encode(custom_wifi_dev_cfg))
 	return true
 end
 
@@ -338,12 +331,8 @@ local function wifi_iface_cfg_parse(map)
 
 		wifi_iface_cfg[wlanid] = kvmap
 	end
-	print("wifi_iface_cfg:", js.encode(wifi_iface_cfg))
-	return true
-end
 
---check
-local function wl_cfg_valid_check()
+	log.debug("wifi_iface_cfg:%s",js.encode(wifi_iface_cfg))
 	return true
 end
 
@@ -357,79 +346,21 @@ local function wl_cfg_parse(map)
 	if not ret then
 		return false
 	end
-	ret = wl_cfg_valid_check()
-	if not ret then
-		return false
-	end
+
 	return true
 end
 
-local function compare_cfg()
-	local change = false
-	local o_dev_cfg = mf_commit:get(dev_cfg_map)
-	local o_iface_cfg = mf_commit:get(iface_cfg_map)
+local function generate_wlancfg_cmds()
+	local arr = {}
+	arr["wireless"] = {}
+	local cnt_2g, cnt_5g, t = 0, 0, 0
+	local vap_name = "vap"	-- vap2001, vap5002
+	local userdata = {}
+	local band_support = support.band_map_support()
+	local dev_2g = support.get_wifi_dev("2g")
+	local dev_5g = support.get_wifi_dev("5g")
 
-	for dev, cfg in pairs(wifi_dev_cfg) do
-		local o_cfg = o_dev_cfg[dev]
-		if not o_cfg then
-			change = true
-			log.debug("%s add", dev)
-		else
-			for k, n_item in pairs(cfg) do
-				local o_item = o_cfg[k]
-				if n_item ~= o_item then
-					change = true
-					log.debug("%s %s->%s", k, o_item or "", n_item or "")
-				end
-			end
-		end
-	end
-
-	for wlanid in pairs(wifi_iface_cfg) do
-		if not o_iface_cfg[wlanid] then
-			change = true
-			log.debug("add %s", wlanid)
-		end
-	end
-
-	for wlanid in pairs(o_iface_cfg) do
-		if not wifi_iface_cfg[wlanid] then
-			change = true
-			log.debug("del %s", wlanid)
-		end
-	end
-
-	for wlanid, wlan_cfg in pairs(wifi_iface_cfg) do
-		local o_cfg = o_iface_cfg[wlanid]
-		if o_cfg then
-			for k, n_item in pairs(wlan_cfg) do
-				local o_item = o_cfg[k]
-				if n_item ~= o_item then
-					change = true
-					log.debug("%s %s %s->%s", wlanid, k, o_item or "", n_item or "")
-				end
-			end
-		end
-	end
-	return change
-end
-
-----------------------------commit cfg to driver by uci----------------
-local function  get_userdata_section()
-	 local map = {}
-	 map["cnt_2g"] = wl_uci:get(s_const.config, s_const.custome_n, "cnt_2g") or 0
-	 map["cnt_5g"] = wl_uci:get(s_const.config, s_const.custome_n, "cnt_5g") or 0
-	 return map
-end
-
-local function set_userdata_section(map)
-	wl_uci:set(s_const.config, s_const.custome_n, s_const.custome_t)
-	wl_uci:set(s_const.config, s_const.custome_n, "cnt_2g",  map["cnt_2g"] or 0)
-	wl_uci:set(s_const.config, s_const.custome_n, "cnt_5g",  map["cnt_5g"] or 0)
-	return true
-end
-
-local function  del_ano_wifi_iface_sections()
+	-- del
 	local s  = read("cat /etc/config/wireless | grep wifi-iface | wc -l", io.popen)
 	if not s then
 		return
@@ -438,51 +369,30 @@ local function  del_ano_wifi_iface_sections()
 	if num > 0 then
 		local idx = num - 1
 		for i = 1, num do
-			local cmd = string.format("uci delete wireless.@wifi-iface[%d]", idx)
-			print("cmd:", cmd)
-			os.execute(cmd)
+			table.insert(arr["wireless"], string.format("uci delete wireless.@wifi-iface[%d]", idx))
 			idx = idx - 1
 		end
-		print("del ", num, "ano vaps totally.")
 	end
-	os.execute("uci commit wireless")
-end
 
-local function create_wifi_dev_sections()
+	-- create wifi dev
 	for _, band in ipairs(support.band_arr_support()) do
 		local wifi_dev, cfg_map
-
 		wifi_dev = support.get_wifi_dev(band)
-		print("wifi:",wifi_dev)
 		cfg_map = wifi_dev_cfg[wifi_dev]
 		if cfg_map then
-			print("create section ", wifi_dev)
-			local cmds ={}
-			cmds["dev"] = string.format("uci set wireless.%s=%s", wifi_dev, s_const.dev_t)
-			cmds["country"] = string.format("uci set wireless.%s.country=%s", wifi_dev, cfg_map["country"])
-			cmds["hwmode"] = string.format("uci set wireless.%s.hwmode=%s", wifi_dev, cfg_map["hwmode"])
-			cmds["htmode"] = string.format("uci set wireless.%s.htmode=%s", wifi_dev, cfg_map["htmode"])
-			cmds["channel"] = string.format("uci set wireless.%s.channel=%s", wifi_dev, cfg_map["channel"])
-			cmds["txpower"] = string.format("uci set wireless.%s.txpower=%d", wifi_dev, cfg_map["txpower"])
-			cmds["noscan"] = string.format("uci set wireless.%s.noscan=1", wifi_dev)
-			cmds["dcs_enable"] = string.format("uci set wireless.%s.dcs_enable=0", wifi_dev)
-			for key, cmd in pairs(cmds) do
-				os.execute(cmd)
-			end
+			log.debug("create section:%s",wifi_dev)
+			table.insert(arr["wireless"], string.format("uci set wireless.%s=%s", wifi_dev, s_const.dev_t))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.country=%s", wifi_dev, cfg_map["country"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.hwmode=%s", wifi_dev, cfg_map["hwmode"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.htmode=%s", wifi_dev, cfg_map["htmode"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.channel=%s", wifi_dev, cfg_map["channel"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.txpower=%d", wifi_dev, cfg_map["txpower"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.noscan=1", wifi_dev))
+			table.insert(arr["wireless"], string.format("uci set wireless.%s.dcs_enable=0", wifi_dev))
 		end
 	end
-	os.execute("uci commit wireless")
-	print("create_wifi_dev_sections")
-end
 
-local function create_wifi_iface_sections()
-	local cnt_2g, cnt_5g, t = 0, 0, 0
-	local vap_name = "vap"	-- vap2001, vap5002
-	local userdata = {}
-	local band_support = support.band_map_support()
-	local dev_2g = support.get_wifi_dev("2g")
-	local dev_5g = support.get_wifi_dev("5g")
-
+	-- create wifi iface
 	for _, if_cfg in pairs(wifi_iface_cfg) do
 		local wifi_devs = {}
 		if if_cfg.type == 1 then
@@ -500,9 +410,9 @@ local function create_wifi_iface_sections()
 			if band_support["5g"] then
 				table.insert(wifi_devs, dev_5g)
 			end
-			print(dev_2g, dev_5g)
+			log.debug("dev_2g:%s , dev_5g:%s", dev_2g, dev_5g)
 		end
-		print("vap:", if_cfg.ssid, "type:", if_cfg.type)
+		log.debug("vap:%s , type:%s", if_cfg.ssid, if_cfg.type)
 		for _, dev in ipairs(wifi_devs) do
 			local band
 			if dev == dev_2g then
@@ -514,22 +424,20 @@ local function create_wifi_iface_sections()
 				cnt_5g = cnt_5g + 1
 				band = "5g"
 			end
-			print("create vap:", vap_name)
 			local idx = -1
-			local cmds = {}
 
-			table.insert(cmds, string.format("uci add wireless wifi-iface"))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].device='%s'", dev))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].disabled='%d'", if_cfg["disabled"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].hidden='%d'", if_cfg["hidden"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].ssid='%s'", if_cfg["ssid"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].encryption='%s'", if_cfg["encryption"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].key='%s'", if_cfg["key"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].mode='ap'"))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].maxsta='%d'", if_cfg[band.."maxassoc"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].isolate='%d'", if_cfg["isolate"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].cwmenable='%d'", if_cfg[band.."cwmenable"]))
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].disablecoext='%d'", if_cfg[band.."disablecoext"]))
+			table.insert(arr["wireless"], string.format("uci add wireless wifi-iface"))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].device='%s'", dev))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].disabled='%d'", if_cfg["disabled"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].hidden='%d'", if_cfg["hidden"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].ssid='%s'", if_cfg["ssid"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].encryption='%s'", if_cfg["encryption"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].key='%s'", if_cfg["key"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].mode='ap'"))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].maxsta='%d'", if_cfg[band.."maxassoc"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].isolate='%d'", if_cfg["isolate"]))
+			table.insert(arr["wireless"], string.format("uci set wireless.@wifi-iface[-1].cwmenable='%d'", if_cfg[band.."cwmenable"]))
+			table.insert(arr["wireless"],  string.format("uci set wireless.@wifi-iface[-1].disablecoext='%d'", if_cfg[band.."disablecoext"]))
 
 			-- 判断 network
 			t = read("uci show network |grep interface|grep lan", io.popen)
@@ -545,136 +453,63 @@ local function create_wifi_iface_sections()
 				end
 			end
 
-			table.insert(cmds, string.format("uci set wireless.@wifi-iface[-1].network='%s'", if_cfg["network"]))
-			--must excuting in order, so we using queue rather than map
-			for i, cmd in ipairs(cmds) do
-				os.execute(cmd)
-			end
-
+			table.insert(arr["wireless"],  string.format("uci set wireless.@wifi-iface[-1].network='%s'", if_cfg["network"]))
 		end
 		wifi_devs = {}
 	end
 
-	os.execute("uci commit wireless")
-	os.execute([[
-			vlans=`uci show wireless | grep network | grep -o "vlan[0-9]*" | sed 's/$/e/g'`
-			uci show network | grep interface | grep -o "vlan[0-9]*" | while read line; do
-				echo $vlans | grep -q ${line}e || uci delete network.$line
-			done]])
-	os.execute("uci commit network")
-	set_userdata_section({["cnt_2g"] = cnt_2g, ["cnt_5g"] = cnt_5g})
-	print("create_wifi_iface_sections")
+	return arr
 end
 
-local function commit_to_file()
-	os.execute("uci commit wireless")	--save to /etc/config/wireless
-	print("commit_to_file")
-end
-
-local function is_valid_iface(iface)
-	local cmd = string.format("ifconfig %s 2>/dev/null | grep %s", iface, iface)
-	local s = read(cmd, io.popen)
-	if  s and s:find(iface) then
-		return true
-	end
-	log.debug("%s invalid", iface)
-	return false
-end
-
-local function commit_to_driver()
-	os.execute("wifi")
-	ski.sleep(2)
-	os.execute("/etc/init.d/network reload")
-	print("commit to driver")
-end
-
+-- 判断md5值
 local function wl_cfg_commit()
-	del_ano_wifi_iface_sections()
-	create_wifi_dev_sections()
-	create_wifi_iface_sections()
-	commit_to_file()
-	commit_to_driver()
-end
+	local cmd = ""
+	local new_md5, old_md5
+	local arr = {}
+	local arr_cmd = {}
 
-local function  save_cfg_to_memfile()
-	mf_commit:set(dev_cfg_map, wifi_dev_cfg):save()
-	mf_commit:set(iface_cfg_map, wifi_iface_cfg):save()
+	arr["wireless"] = {}
+	arr_cmd["wireless"] = {
+		string.format("uci commit network"),
+		string.format("uci commit wireless"),
+		string.format("wifi reload_legacy"),
+		string.format("/etc/init.d/network reload")
+	}
 
-	return true
+	local wlancfg_arr = generate_wlancfg_cmds()
+
+	for name, cmd_arr in pairs(arr) do
+		for _, line in ipairs(wlancfg_arr[name]) do
+			table.insert(cmd_arr, line)
+		end
+
+		cmd = table.concat(cmd_arr, "\n")
+		new_md5 = md5.sumhexa(cmd)
+		old_md5 = read(string.format("uci get %s.@version[0].wlancfg_md5 2>/dev/null | head -c32", name), io.popen)
+		log.debug("new_md5:%s , old_md5:%s", new_md5, old_md5)
+
+		if new_md5 ~= old_md5 then
+			log.debug("new_md5 ~= old_md5")
+			table.insert(cmd_arr, string.format("uci get %s.@version[0] 2>/dev/null || uci add %s version >/dev/null 2>&1", name, name))
+			table.insert(cmd_arr, string.format("uci set %s.@version[0].wlancfg_md5='%s'", name, new_md5))
+			for _, line in ipairs(arr_cmd[name]) do
+				table.insert(cmd_arr, line)
+			end
+			cmd = table.concat(cmd_arr, "\n")
+			print(cmd)
+			os.execute(cmd)
+		end
+	end
 end
 
 local function reset(nmap)
 	local ret
-
 	ret = wl_cfg_parse(nmap)
 	if not ret then
 		return
 	end
 
-	ret = compare_cfg()
-	if not ret then
-		log.debug("%s", "*** wireless config nothing change")
-		return
-	end
-
 	wl_cfg_commit()
-	save_cfg_to_memfile()
-	log.debug("%s", "commit ok")
-	local map = {radio = wifi_dev_cfg, wlan = wifi_iface_cfg}
-end
-
-function lua_print_callback(s)
-	log.fromc(s)
-end
-
-local function check(nmap)
-	local res
-	res = mf_commit:get(dev_cfg_map) or mf_commit:set(dev_cfg_map, {["radio0"] = {}, ["radio1"] = {}}):save()
-	res = mf_commit:get(iface_cfg_map) or mf_commit:set(iface_cfg_map, {}):save()
-	reset(nmap)
-end
-
-local function create_debugsw_flag(debug_flag)
-	local cmd = ""
-	local debug_dir = const.ap_debug_dir
-	debug_flag = debug_dir .. debug_flag
-	cmd = string.format("test -e %s || mkdir -p %s", debug_dir, debug_dir) assert(cmd)
-	os.execute(cmd)
-	cmd = string.format("test -e %s || touch %s", debug_flag, debug_flag) assert(cmd)
-	os.execute(cmd)
-end
-
-local function del_debugsw_flag(debug_flag)
-	local cmd =""
-	debug_flag = const.ap_debug_dir .. debug_flag
-	cmd = string.format("test -e %s && rm %s;", debug_flag, debug_flag) assert(cmd)
-	os.execute(cmd)
-end
-
-local function get_debug_sw(v)
-	if v and v == "enable" then
-		return true
-	else
-		return false
-	end
-end
-
-local function set_debug_flag(nmap)
-	local cmd
-	local debug_file = const.ap_debug_flag
-	local k_arr = {}
-	table.insert(k_arr, keys.c_g_debug)
-	table.insert(k_arr, keys.c_g_ledctrl)
-	table.insert(k_arr, keys.c_g_abncheck)
-	for _, debug_key in ipairs(k_arr) do
-		local k = pkey.short(debug_key) assert(k)
-		local v = get_debug_sw(nmap[k])
-		if v then
-			create_debugsw_flag(debug_key)
-		else
-			del_debugsw_flag(debug_key)
-		end
-	end
 end
 
 local function get_new_cfg()
@@ -693,20 +528,12 @@ end
 local function reload_cfg()
 	local nmap = get_new_cfg()
 	if nmap then
-		set_debug_flag(nmap)
-		check(nmap)
+		reset(nmap)
 	end
 end
 
 local function init()
 	support.init_band_support()
-	wl_uci = uci.cursor(nil, "/var/state")
-
-	if not wl_uci then
-		log.error("wl uci init failed")
-		return false
-	end
-
 	reload_cfg()
 	return true
 end
@@ -720,7 +547,6 @@ end
 
 tcp_map["wlancfg"] = function(p)
 	reload_cfg()
-	ski.sleep(1)
 end
 
-return {check = check, init = init, dispatch_tcp = dispatch_tcp}
+return {init = init, dispatch_tcp = dispatch_tcp}
