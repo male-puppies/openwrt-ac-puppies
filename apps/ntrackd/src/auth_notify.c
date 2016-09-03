@@ -21,7 +21,7 @@ char *trans_authmsg(ntrack_t *ntrack, auth_msg_t *auth, int *len)
 	nt_debug("message uid: %u, magic: %u\n", auth->id, auth->magic);
 	ui = nt_get_user_by_id(ntrack, auth->id, auth->magic);
 	if(ui) {
-		dump_user(ui);
+		nt_dump_user(ui);
 	} else {
 		free(msg_buf);
 		msg_buf = NULL;
