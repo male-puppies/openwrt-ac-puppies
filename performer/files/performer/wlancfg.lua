@@ -361,19 +361,7 @@ local function generate_wlancfg_cmds()
 	local dev_5g = support.get_wifi_dev("5g")
 
 	-- del
-	local s  = read("cat /etc/config/wireless | grep wifi-iface | wc -l", io.popen)
-	if not s then
-		return
-	end
-	local num = tonumber(s) or 0
-	if num > 0 then
-		local idx = num - 1
-		for i = 1, num do
-			table.insert(arr["wireless"], string.format("uci delete wireless.@wifi-iface[%d]", idx))
-			idx = idx - 1
-		end
-	end
-
+	table.insert(arr["wireless"], string.format("while uci delete wireless.@wifi-iface[0] >/dev/null 2>&1; do :; done"))
 	-- create wifi dev
 	for _, band in ipairs(support.band_arr_support()) do
 		local wifi_dev, cfg_map
