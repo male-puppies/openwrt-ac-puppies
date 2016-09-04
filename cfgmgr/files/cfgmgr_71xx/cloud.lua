@@ -5,6 +5,7 @@ local log = require("log")
 local js = require("cjson.safe")
 local common = require("common")
 local cfglib = require("cfglib")
+local const = require("constant")
 
 local read, save_safe = common.read, common.save_safe
 
@@ -19,7 +20,7 @@ local function init(u, p)
 end
 
 udp_map["cloud_get"] = function(p, ip, port)
-	local path = '/etc/config/cloud.json'
+	local path = const.cloud_config
 	if not lfs.attributes(path) then
 		return reply(ip, port, 0, default_cloud)
 	end
@@ -35,7 +36,7 @@ end
 udp_map["cloud_set"] = function(p, ip, port)
 	p.cmd = nil
 
-	local path = '/etc/config/cloud.json'
+	local path = const.cloud_config
 	if lfs.attributes(path) then
 		local s = read(path)
 		if s then

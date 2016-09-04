@@ -10,8 +10,17 @@ local function config_dir()
 	return isopenwrt() and "/etc/config" or "/etc/config"
 end
 
+local function default_config_dir()
+	return isopenwrt() and "/usr/share/base-config" or "/usr/share/base-config"
+end
+
 local function default_config()
 	return isopenwrt() and "/etc/default_config.json" or "/etc/default_config.json"
 end
 
-return {isopenwrt = isopenwrt, config_dir = config_dir, default_config = default_config}
+return {
+	isopenwrt			= isopenwrt,
+	config_dir			= config_dir,
+	default_config_dir	= default_config_dir,
+	default_config		= default_config
+}

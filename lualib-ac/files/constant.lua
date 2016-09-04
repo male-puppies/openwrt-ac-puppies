@@ -1,6 +1,7 @@
 local arch = require("arch")
 -- 根据平台初始化配置文件目录
 local config_dir = arch.config_dir()
+local default_config_dir = arch.default_config_dir()
 local default_config = arch.default_config()
 
 local keys = {
@@ -108,6 +109,7 @@ local keys = {
 local const = {
 	keys 				= keys,
 	config_dir			= config_dir,
+	default_config_dir 	= default_config_dir,
 	default_config		= default_config,
 	ap_config			= config_dir .. "/wireless.json",
 	ap_debug_dir  		= "/tmp/ugw/sw/",
@@ -116,11 +118,12 @@ local const = {
 	ap_ledctrl_flag 	= "/tmp/ugw/sw/" .. keys.c_g_ledctrl,
 	ap_scan_dir 		= "/tmp/ugw/scan/",	-- scan info file for ap
 
+	default_cloud_config= default_config_dir.."/".."cloud.json", --云端账号配置
 	cloud_config		= "/etc/config/cloud.json",	--云端账号配置
 	download_dir		= "/tmp/ugw/download",		--存放下载文件的临时目录（考虑频繁写or包大小）
 	text_dir			= "/ugw/etc/wac/json", 		--临时存放文本配置文件
 	package_dir			= "/ugw/etc/wac/package",	--临时存放tgz文件，比如广告包等
-	default_version		= "/etc/default_version.json",
+	default_version		= default_config_dir.."/".."default_version.json",
 	config_version		= config_dir.."/".."config_version.json",
 	ad_package_file		= "ad.tgz",
 }

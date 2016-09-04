@@ -1,6 +1,8 @@
 local js = require("cjson.safe")
 local common = require("common")
-local cfgpath = "/etc/config/cloud.json"
+local const = require("constant")
+
+local cfgpath = const.cloud_config
 
 local read, save_safe = common.read, common.save_safe
 local firmware_detail = js.encode({major = "ac", minor = "9531"})
@@ -13,9 +15,21 @@ local function read_id()
 	g_devid = id
 end
 
+local function restore_cloud()
+	if not lfs.attributes(const.default_cloud_config) then
+		log.fatal("%s isn't exists.", const.default_cloud_config)
+	return false
+	end
+	local cmd = string.format("cp -f %s %s", const.default_cloud_config, const.cloud_config)
+	if cmd then
+	os.execute(cmd)
+	end
+	log.debug(cmd)
+	return true
+end
+
 local function set_default()
-	-- TODO
-	g_kvmap = {account = "st1", ac_host = "lglink.net", ac_port = 61889, detail = firmware_detail}
+	g_kvmap = {account = "default", ac_host = "", ac_port = 61889, detail = firmware_detail}
 end
 
 local function get_devid()
@@ -32,7 +46,7 @@ end
 
 local function load()
 	if not lfs.attributes(cfgpath) then
-		return set_default()
+		restore_cloud()
 	end
 
 	local s = read(cfgpath)
@@ -59,6 +73,7 @@ end
 return {
 	get = get,
 	init = init,
+	restore_cloud = restore_cloud,
 	set_default = set_default,
 	get_devid = get_devid,
 	get_kvmap = get_kvmap,

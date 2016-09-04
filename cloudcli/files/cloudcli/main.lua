@@ -7,7 +7,7 @@ local js = require("cjson.safe")
 local config = require("config")
 local sandcproxy = require("sandcproxy")
 
-local unique = "a/ac/cfgmgr"
+local unique = "a/local/cfgmgr"
 local read, save_safe = common.read, common.save_safe
 local get_devid, get_kvmap = cfg.get_devid, cfg.get_kvmap
 

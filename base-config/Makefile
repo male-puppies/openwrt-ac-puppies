@@ -66,6 +66,7 @@ ifeq ($(CONFIG_TARGET_AC_qca9531),y)
 	$(INSTALL_DATA) ./files/qca9531/wireless.json $(1)/usr/share/base-config/wireless.json
 	$(INSTALL_DATA) ./files/qca9531/applist.json $(1)/usr/share/base-config/applist.json
 	$(INSTALL_DATA) ./files/qca9531/default_version.json $(1)/usr/share/base-config/default_version.json
+	$(INSTALL_DATA) ./files/qca9531/cloud.json $(1)/usr/share/base-config/cloud.json
 endif
 ifeq ($(CONFIG_TARGET_AC_qca9563),y)
 	$(INSTALL_DATA) ./files/qca9563/board.json $(1)/usr/share/base-config/board.json

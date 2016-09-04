@@ -9,14 +9,14 @@ local common = require("common")
 local sandc1 = require("sandc1")
 local js = require("cjson.safe")
 local sandcproxy = require("sandcproxy")
+local const = require("constant")
 
 local remote_mqtt, local_mqtt
 local read, save_safe = common.read, common.save_safe
 
-local cfgpath = "/etc/config/cloud.json"
+local cfgpath = const.cloud_config
 
 local g_kvmap, g_devid
-local default_cfg = {ac_host = "lglink.net", ac_port = 61886, account = "st1"} -- TODO
 
 -- 读取本唯一ID
 local function read_id()
@@ -24,13 +24,34 @@ local function read_id()
 	g_devid = id
 end
 
+local function set_default()
+	g_kvmap = {account = "default", ac_host = "", ac_port = 61889, detail = firmware_detail}
+end
+
+local function restore_cloud()
+	if not lfs.attributes(const.default_cloud_config) then
+		log.fatal("%s isn't exists.", const.default_cloud_config)
+	return false
+	end
+	local cmd = string.format("cp -f %s %s", const.default_cloud_config, const.cloud_config)
+	local _ = cmd and os.execute(cmd)
+	log.debug(cmd)
+	return true
+end
+
 -- 加载cloud的配置，如果没有，设置为default
 local function load()
-	if lfs.attributes(cfgpath) then
-		g_kvmap = js.decode(read(cfgpath))
+	if not lfs.attributes(cfgpath) then
+		restore_cloud()
 	end
 
-	g_kvmap = g_kvmap and g_kvmap or default_cfg
+	local s = read(cfgpath)
+	local map = s and js.decode(s)
+	if not map then
+		os.remove(cfgpath)
+		return set_default()
+	end
+	g_kvmap = map
 end
 
 -- 保存状态到文件
