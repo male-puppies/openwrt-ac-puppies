@@ -19,7 +19,8 @@ udp_map["acset_set"] = function(p, ip, port)
 		local conn, ud, p = ins.conn, ins.ud, arg
 		local js = require("cjson.safe")
 
-		local setid, setname, setclass, settype, action = arg.setid, arg.setname, arg.class, arg.settype, arg.action
+		for _, acset in pairs(p) do
+			local setid, setname, setclass, settype, action = acset.setid, acset.setname, acset.class, acset.settype, acset.action
 		local sql = string.format("select * from acset where setname = '%s'", conn:escape(setname))
 		local r, e = conn:select(sql)	assert(r, e)
 		if not (#r == 1 and r[1].setid == setid and r[1].setname == setname ) then
@@ -27,19 +28,25 @@ udp_map["acset_set"] = function(p, ip, port)
 		end
 
 		-- update
-		print("---update_format---", js.encode(p))
-		local sql = string.format("update acset set %s where setid = %s", conn:update_format(p), setid)
+			if #acset.content ~= 0 then
+				acset.content = js.encode(acset.content)
+			else
+				acset.content = "[]"
+			end
+			local sql = string.format("update acset set %s where setid = %s", conn:update_format(acset), setid)
 		local r, e = conn:execute(sql)
 		if not r then
 			return nil, e
 		end
 
 		ud:save_log(sql, true)
+		end
 		return true
 	]]
 
 	p.cmd = nil
-	local r, e = dbrpc:once(code, p)
+	local r, e = dbrpc:fetch("cfgmgr_acset_set", code, p)
+	--local r, e = dbrpc:once(code, p)
 	local _ = r and reply(ip, port, 0, r) or reply(ip, port, 1, e)
 end
 
