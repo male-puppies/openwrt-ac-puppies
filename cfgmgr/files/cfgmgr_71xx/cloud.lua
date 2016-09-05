@@ -29,8 +29,14 @@ udp_map["cloud_get"] = function(p, ip, port)
 	if not s then
 		return reply(ip, port, 0, default_cloud)
 	end
+	local res = js.decode(s)
+	s = read("/tmp/memfile/cloudcli.json") or '{"state":0}'
+	m = js.decode(s)
+	for k, v in pairs(m) do
+		res[k] = v
+	end
 
-	reply(ip, port, 0, s)
+	reply(ip, port, 0, js.encode(res))
 end
 
 udp_map["cloud_set"] = function(p, ip, port)
