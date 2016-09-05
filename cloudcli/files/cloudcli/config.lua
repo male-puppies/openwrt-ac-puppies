@@ -68,7 +68,7 @@ end
 local get_devid = cfg.get_devid
 
 local function get_switch()
-	return cfg.get("switch") or "1"
+	return cfg.get("switch") or 1
 end
 
 local function restore_cfg_ver_info()
@@ -445,7 +445,8 @@ end
 
 function cmd_map.devcfg_notify(map)
 	local switch = get_switch()
-	if switch ~= "1" then
+	if switch ~= 1 then
+		log.debug("switch ~= 1 no need download config from cloud")
 		return
 	end
 	local ret = process_cfg_notify("dev", map)
@@ -458,7 +459,8 @@ end
 
 function cmd_map.adcfg_notify(map)
 	local switch = get_switch()
-	if switch ~= "1" then
+	if switch ~= 1 then
+		log.debug("switch ~= 1 no need download config from cloud")
 		return
 	end
 	local ret = process_cfg_notify("ad", map)
@@ -527,7 +529,7 @@ local function check_cfg_version()
 
 	while true do
 		local switch = get_switch()
-		if switch == "1" then
+		if switch == 1 then
 			local ret = get_cfg_ver_info()
 			if ret then
 				for type, info in pairs(cfg_ver_info) do
@@ -546,7 +548,7 @@ end
 local function query_cfg_version()
 	while true do
 		local switch = get_switch()
-		if switch == "1" then
+		if switch == 1 then
 			send_query_version_req()
 		end
 

@@ -25,7 +25,7 @@ local function read_id()
 end
 
 local function set_default()
-	g_kvmap = {account = "default", ac_host = "", ac_port = 61889, detail = firmware_detail}
+	g_kvmap = {account = "default", ac_host = "", ac_port = 61886, description = ""}
 end
 
 local function restore_cloud()

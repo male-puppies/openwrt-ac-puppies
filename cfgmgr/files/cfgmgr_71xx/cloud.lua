@@ -58,8 +58,10 @@ udp_map["cloud_set"] = function(p, ip, port)
 
 	log.info("cloud change %s", s)
 
-	-- 发送消息给proxybase
-	mqtt:publish("a/ac/proxybase", s)
+	-- 发送消息给proxybase & cloudcli
+	local update = js.encode({pld = {cmd = "cloud_set", data = ""}})
+	mqtt:publish("a/ac/proxybase", update)
+	mqtt:publish("a/local/cfgmgr", update)
 	reply(ip, port, 0, "ok")
 end
 

@@ -92,8 +92,11 @@ function cmd_map.proxybase(s)
 	log.fatal("recv msg from proxybase %s", s)
 end
 
+function cmd_map.cloud_set(s)
+	os.exit(0)	-- cloud.json updated, restart process
+end
+
 local function on_message(topic, payload)
-	print("-----on_message:",payload)
 	local map = js.decode(payload)
 	if not (map and map.pld)then
 		log.error("decode %s failed", payload)
