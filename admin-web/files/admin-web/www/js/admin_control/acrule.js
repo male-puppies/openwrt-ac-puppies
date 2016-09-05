@@ -216,10 +216,24 @@ function initData3() {
 				$("#check").prop("disabled", true);
 			}
 
-			var bypass_str = dtObjToArray(bypass.mac).join("\n") != "" ? dtObjToArray(bypass.mac).join("\n") + "\n" : "" + dtObjToArray(bypass.ip).join("\n");
+			var bypass_str = (function() {
+				var arr1 = dtObjToArray(bypass.mac),
+					arr2 = dtObjToArray(bypass.ip),
+					str1 = arr1.length == 0 ? "" : arr1.join("\n"),
+					str2 = arr2.length == 0 ? "" : arr2.join("\n");
+
+				return str1 + str2;
+			}());
 			$("#bypass").val(bypass_str);
 
-			var check_str = dtObjToArray(check.mac).join("\n") != "" ? dtObjToArray(check.mac).join("\n") + "\n" : "" + dtObjToArray(check.ip).join("\n");
+			var check_str = (function() {
+				var arr1 = dtObjToArray(check.mac),
+					arr2 = dtObjToArray(check.ip),
+					str1 = arr1.length == 0 ? "" : arr1.join("\n"),
+					str2 = arr2.length == 0 ? "" : arr2.join("\n");
+
+				return str1 + str2;
+			}());
 			$("#check").val(check_str);
 		}
 	});
