@@ -8,45 +8,33 @@ var f1 = {
 		"recv": [
 			{
 				"name":"wan0",
-				"data": [6955, 4156, 1234, 123]
+				"data": [1, 2, 3, 4]
 			},{
 				"name":"wan1",
-				"data": [23456, 69553, 48954, 241678]
+				"data": [5, 6, 7, 8]
 			},{
 				"name":"wan2",
-				"data": [4766404, 1664304, 7664304, 1764304]
-			},
-			{
-				"name":"wan0",
-				"data": [656172433, 696172243, 696172233, 695122433]
-			},{
-				"name":"wan1",
-				"data": [1164304, 1664304, 1174304, 1176304]
-			},{
-				"name":"wan2",
-				"data": [1176304, 1766304, 1176404, 1176304]
+				"data": [9, 10, 11, 12]
 			}
 		],
 		"xmit": [
 			{
 				"name":"wan0",
-				"data": [656172433, 696172243, 696172233, 695122433]
+				"data": [13, 14, 15, 16]
 			},{
 				"name":"wan1",
-				"data": [1164304, 1664304, 1174304, 1176304]
+				"data": [17, 18, 19, 20]
 			},{
 				"name":"wan2",
-				"data": [1176304, 1766304, 1176404, 1176304]
+				"data": [21, 22, 23, 24]
 			}
 		]
 	}
 
-// var ddd = [];
-// ddd.push(f1.recv)
 
 $(function() {
 	$(".title i.spin-load").css("display", "inline-block");
-	// initEvents();
+	initEvents();
 	initData();
 });
 
@@ -62,20 +50,57 @@ function initData() {
 	mark1 = false;
 	mark2 = false;
 
+	containerEth();
+	containerUser();
+
+	cgicall.get("GetStatus", function(d) {
+		if (d.status == 0) {
+			setSystem(d.data);
+			mark1 = true;
+			setTimeInitData();
+		} else {
+			console.log("获取数据失败！请尝试重新加载！" + (d.data ? d.data : ""));
+		}
+	});
+
+	cgicall.get("GetEthStatus", function(d) {
+		if (d.status == 0) {
+			setInterface(d.data);
+			mark2 = true;
+			setTimeInitData();
+		} else {
+			console.log("获取数据失败！请尝试重新加载！" + (d.data ? d.data : ""))
+		}
+	});
+}
+
+function containerEth() {
+	var data = ObjClone(f1);
+	var arr = [];
+	for (var i = 0, ien = data.recv.length; i < ien; i++) {
+		if (typeof data.recv[i].name != "undefined") {
+			data.recv[i].name = data.recv[i].name + "上行";
+		}
+		if (typeof data.xmit[i].name != "undefined") {
+			data.xmit[i].name = data.xmit[i].name + "下行";
+		}
+		arr.push(data.recv[i]);
+		arr.push(data.xmit[i]);
+	}
 	$('#container_eth').highcharts({
 		chart: {
 			type: 'spline',
 			zoomType:'x'
 		},
-		colors: ['#7cb5ec', '#f15c80', '#f7a35c', '#91e8e1'],
+		colors: ['#7cb5ec', '#f7a35c'],
 		title: {
-			text: '按月统计',
+			text: '网口实时流量',
 			x: -20
 		},
-		/*subtitle: {
-			text: '按月统计',
+		subtitle: {
+			text: 'xxxxx',
 			x: -20
-		},*/
+		},
 		credits: {
 			enabled: 0,
 		},
@@ -84,21 +109,21 @@ function initData() {
 			allowDecimals: false,
 			tickmarkPlacement: 'on',
 			title: {
-				text: '（天数）',
+				text: '（时间）',
 				align: 'high'
 			},
 			labels: {
 				formatter: function() {
-					return this.value + 1;
+					return this.value + 5;
 				}
 			},
-			tickInterval: 2
+			tickInterval: 1
 		},
 		yAxis: {
 			allowDecimals: false,
 			min: 0,
 			title: {
-				text: '︵<br>接<br>入<br>数<br>︶',
+				text: '︵<br>流<br>量<br>︶',
 				align: 'high',
 				rotation: 0,
 				style: {
@@ -119,7 +144,7 @@ function initData() {
 		},
 		plotOptions: {
 			series: {
-				//showCheckbox: true
+				// showCheckbox: true
 			},
             line:{
                 events :{
@@ -137,62 +162,112 @@ function initData() {
                 }
             }
 		},
-		series: f1.recv
+		series: arr
 	});
-
-	// ucicall("GetStatus", function(d) {
-		// if (d.status == 0) {
-			// setSystem(d.data);
-			// mark1 = true;
-			// setTimeInitData();
-		// } else {
-			// console.log("获取数据失败！请尝试重新加载！" + (d.data ? d.data : ""));
-		// }
-	// });
-
-	// ucicall("GetEthStatus", function(d) {
-		// if (d.status == 0) {
-			// setInterface(d.data);
-			// mark2 = true;
-			// setTimeInitData();
-		// } else {
-			// console.log("获取数据失败！请尝试重新加载！" + (d.data ? d.data : ""))
-		// }
-	// });
 }
-/*
+
+function containerUser() {
+	var data = ObjClone(f1);
+	var arr = [];
+	for (var i = 0, ien = data.recv.length; i < ien; i++) {
+		if (typeof data.recv[i].name != "undefined") {
+			data.recv[i].name = data.recv[i].name + "上行";
+		}
+		if (typeof data.xmit[i].name != "undefined") {
+			data.xmit[i].name = data.xmit[i].name + "下行";
+		}
+		arr.push(data.recv[i]);
+		arr.push(data.xmit[i]);
+	}
+	$('#container_user').highcharts({
+		chart: {
+			type: 'spline',
+			zoomType:'x'
+		},
+		colors: ['#7cb5ec', '#f7a35c'],
+		title: {
+			text: '前十用户实时流量',
+			x: -20
+		},
+		subtitle: {
+			text: 'xxxxx',
+			x: -20
+		},
+		credits: {
+			enabled: 0,
+		},
+		xAxis: {
+			type: 'linear',
+			allowDecimals: false,
+			tickmarkPlacement: 'on',
+			title: {
+				text: '（时间）',
+				align: 'high'
+			},
+			labels: {
+				formatter: function() {
+					return xtimes(this.value);
+				}
+			},
+			tickInterval: 1
+		},
+		yAxis: {
+			allowDecimals: false,
+			min: 0,
+			title: {
+				text: '︵<br>流<br>量<br>︶',
+				align: 'high',
+				rotation: 0,
+				style: {
+					'lineHeight': '14px'
+				}
+			},
+		},
+		tooltip: {
+			formatter: function() {
+				return '[<b>' + (parseInt(this.x) + 1) + '</b>] - [<b>' + this.y + '</b>]';
+			}
+		},
+		legend: {
+			layout: 'vertical',
+			align: 'right',
+			verticalAlign: 'middle',
+			borderWidth: 0
+		},
+		plotOptions: {
+			series: {
+				// showCheckbox: true
+			},
+            line:{
+                events :{
+                    checkboxClick: function(event) {
+                        if(event.checked==true) {
+                            this.show();
+                        }
+                        else {
+                            this.hide();
+                        }
+                    },
+                    legendItemClick:function(event) {//return false 即可禁用LegendIteml，防止通过点击item显示隐藏系列
+                        return false;
+                    }
+                }
+            }
+		},
+		series: arr
+	});
+}
+
 function setSystem(d) {
-	var mark = false,
-		cpu = 0,
+	var cpu = 0,
 		memory = parseInt(d.memorycount) * 100 / parseInt(d.memorymax),
 		conncount = parseInt(d.conncount) * 100 / parseInt(d.connmax),
-		loadavg = Math.round(d.loadavg[0] /65535 * 100)/100 + ", " + Math.round(d.loadavg[1] /65535 * 100)/100 + ", " + Math.round(d.loadavg[2] /65535 * 100)/100;
-
-	if (typeof d.cpu_stat != "undefined" && typeof d.cpu_stat.iowait != "undefined" && typeof d.cpu_stat.idle != "undefined" && typeof d.cpu_stat.user != "undefined" && typeof d.cpu_stat.irq != "undefined" && typeof d.cpu_stat.softirq != "undefined" && typeof d.cpu_stat.system != "undefined" && typeof d.cpu_stat.nice != "undefined") {
-		mark = true;
-	}
-	if (typeof cpu_stat.idle != "undefined") {
-		if (mark) {
-			var iowait = parseInt(d.cpu_stat.iowait) - parseInt(cpu_stat.iowait),
-				idle = parseInt(d.cpu_stat.idle) - parseInt(cpu_stat.idle),
-				user = parseInt(d.cpu_stat.user) - parseInt(cpu_stat.user),
-				irq = parseInt(d.cpu_stat.irq) - parseInt(cpu_stat.irq),
-				softirq = parseInt(d.cpu_stat.softirq) - parseInt(cpu_stat.softirq),
-				system = parseInt(d.cpu_stat.system) - parseInt(cpu_stat.system),
-				nice = parseInt(d.cpu_stat.nice) - parseInt(cpu_stat.nice);
-
-			cpu = parseInt((iowait + user + irq + softirq + system + nice) / (iowait + user + irq + softirq + system + nice + idle) * 100);
-			$(".cpu-mark").hide();
-		}
-	}
-
-	if (mark) cpu_stat = d.cpu_stat;
+		cpu_stat = d.cpu_stat;
 
 	$("#distribution").html(d.distribution);
 	$("#version").html(d.version);
 	$("#times").html(d.times);
 	$("#uptime").html(arrive_timer_format(d.uptime));
-	$("#loadavg").html(loadavg);
 	$("#usercount").html(d.usercount);
 
 
@@ -281,10 +356,11 @@ function arrive_timer_format(s) {
 	var t,
 		s = parseInt(s);
 	if (s > -1) {
-		hour = Math.floor(s / 3600);
-		min = Math.floor(s / 60) % 60;
-		sec = s % 60;
-		day = parseInt(hour / 24);
+		var hour = Math.floor(s / 3600),
+			min = Math.floor(s / 60) % 60,
+			sec = s % 60,
+			day = parseInt(hour / 24);
+
 		if (day > 0) {
 			hour = hour - 24 * day;
 			t = day + "天 " + hour + "时 ";
@@ -295,4 +371,8 @@ function arrive_timer_format(s) {
 	}
 	return t;
 }
-*/
+
+function xtimes(num) {
+	var s = (60 - parseInt(num)) * 5;
+	return arrive_timer_format(s);
+}
