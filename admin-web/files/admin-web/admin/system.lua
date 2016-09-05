@@ -138,6 +138,10 @@ function check_map.synctime(p)
 	query_common({sec = sec}, "system_synctime")
 end
 
+function check_map.reboot(p)
+	query_common({}, "system_reboot")
+end
+
 function cmd_map.system_set()
 	local m, e = validate_post({})
 	if not m then

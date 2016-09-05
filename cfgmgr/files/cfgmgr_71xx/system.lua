@@ -24,6 +24,13 @@ udp_map["system_synctime"] = function(p, ip, port)
 	reply(ip, port, 0, "ok")
 end
 
+udp_map["system_reboot"] = function(p, ip, port)
+	local cmd = string.format("sleep 3 && reboot &")
+	reply(ip, port, 0, "ok")
+	log.info("cmd %s", cmd)
+	misc.execute(cmd)
+end
+
 -- {"cmd":"system_auth","password_md5":"e00cf25ad42683b3df678c61f42c6bda","oldpassword":"admin","oldpassword_md5":"21232f297a57a5a743894a0e4a801fc3","password":"admin1"}
 udp_map["system_auth"] = function(p, ip, port)
 	local code = [[
