@@ -79,6 +79,13 @@ local function sync_trigger()
 	local ins = mgr.ins()
 	local conn, myconn = ins.conn, ins.myconn
 
+	local sql = "select count(*) as count from trigger"
+	local rs, e = conn:select(sql)
+	local _ = rs or log.fatal("%s %s", sql, e)
+	if tonumber(rs[1].count) == 0 then
+		return {}
+	end
+
 	local sql = "select * from trigger order by rowid"
 	local rs, e = conn:select(sql)
 	local _ = rs or log.fatal("%s %s", sql, e)

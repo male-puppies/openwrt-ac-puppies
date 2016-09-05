@@ -107,7 +107,7 @@ local function main()
 	proxy = start_sand_server()
 	dbrpc = rpcserv.new(proxy)
 	broadcast(change)
-	ski.go(test_sync)
+	-- ski.go(test_sync)
 end
 
 log.setmodule("db")
