@@ -219,20 +219,20 @@ function initData3() {
 			var bypass_str = (function() {
 				var arr1 = dtObjToArray(bypass.mac),
 					arr2 = dtObjToArray(bypass.ip),
-					str1 = arr1.length == 0 ? "" : arr1.join("\n"),
-					str2 = arr2.length == 0 ? "" : arr2.join("\n");
+					str1 = arr1.length == 0 ? "" : "\n" + arr1.join("\n"),
+					str2 = arr2.length == 0 ? "" : "\n" + arr2.join("\n");
 
-				return str1 + str2;
+				return (str1 + str2).substring(1);
 			}());
 			$("#bypass").val(bypass_str);
 
 			var check_str = (function() {
 				var arr1 = dtObjToArray(check.mac),
 					arr2 = dtObjToArray(check.ip),
-					str1 = arr1.length == 0 ? "" : arr1.join("\n"),
-					str2 = arr2.length == 0 ? "" : arr2.join("\n");
+					str1 = arr1.length == 0 ? "" : "\n" + arr1.join("\n"),
+					str2 = arr2.length == 0 ? "" : "\n" + arr2.join("\n");
 
-				return str1 + str2;
+				return (str1 + str2).substring(1);
 			}());
 			$("#check").val(check_str);
 		}
@@ -565,7 +565,7 @@ function OnSubmit() {
 	cgicall.post("acset_set", obj, function(d) {
 		cgicallBack(d, function() {
 			createModalTips("保存成功！");
-			initData();
+			initData3();
 		}, function() {
 			createModalTips("保存失败！" + (d.data ? d.data : ""));
 		});
