@@ -2,7 +2,7 @@
 opt=$1
 reset_ad() {
 	local adpath=/etc/config/ad.tgz
-	local cloudpath=/www/cloudauth
+	local cloudpath=/usr/share/auth-web/cloud
 	local tmpdir=$cloudpath".tmp"
 	local deldir=$cloudpath".del"
 

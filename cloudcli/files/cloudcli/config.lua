@@ -302,7 +302,7 @@ local function override_devcfg()
 		end
 	end
 
-	os.execute("/ugw/script/resetcfg.sh dev &")
+	os.execute("/usr/sbin/resetcfg.sh dev &")
 	return true, file_map
 end
 
