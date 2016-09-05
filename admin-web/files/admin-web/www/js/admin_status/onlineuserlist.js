@@ -175,10 +175,11 @@ function arrive_timer_format(s) {
 	var t,
 		s = parseInt(s);
 	if (s > -1) {
-		hour = Math.floor(s / 3600);
-		min = Math.floor(s / 60) % 60;
-		sec = s % 60;
-		day = parseInt(hour / 24);
+		var hour = Math.floor(s / 3600),
+			min = Math.floor(s / 60) % 60,
+			sec = s % 60,
+			day = parseInt(hour / 24);
+
 		if (day > 0) {
 			hour = hour - 24 * day;
 			t = day + "天 " + hour + "时 ";

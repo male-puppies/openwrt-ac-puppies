@@ -171,7 +171,7 @@
 <script src="../../js/lib/json2.js"></script>
 <script src="../../js/lib/bootstrap.min.js"></script>
 <script src="../../js/lib/highcharts.js"></script>
-<script src="../../js/black/radialIndicator.min.js"></script>
+<script src="../../js/lib/radialIndicator.min.js"></script>
 <script src="../../js/common/jquery.ext.verify.js"></script>
 <script src="../../js/common/common.js"></script>
 <script src="../../js/admin_status/index.js"></script>
@@ -206,10 +206,6 @@
 						<span><i class="icon-time"></i>运行时间</span>
 						<span class="pull-right" id="uptime">--</span>
 					</li>
-					<li class="clearfix" style="display: none;">
-						<span><i class="icon-glass"></i>平均负载</span>
-						<span class="pull-right" id="loadavg">--</span>
-					</li>
 					<li class="clearfix">
 						<span><i class="icon-user"></i>在线用户数</span>
 						<span class="pull-right" id="usercount">--</span>
@@ -218,10 +214,10 @@
 			</div>
 			<div class="col-md-5" style="padding:23px 40px; 0">
 				<div class="radial" style="position: relative;">
-					<div class="cpu-mark">
+					<!--div class="cpu-mark">
 						<div class="mark-a"></div>
 						<div class="mark-b">采集中...</div>
-					</div>
+					</div-->
 					<div class="radial-left pull-left" style="background: #4fc4ea;">
 						<div id="cpuidle"></div>
 					</div>
@@ -255,7 +251,7 @@
 
 		<div class="main-wrapper clearfix">
 			<div class="main-top">
-				<span class="title"><i class="icon-align-justify"></i> 接口状态<i class="spin-load spin-load2 icon-spin icon-spinner"></i></span>
+				<span class="title"><i class="icon-align-justify"></i> 实时流量<i class="spin-load spin-load2 icon-spin icon-spinner"></i></span>
 			</div>
 			<div class="col-md-6">
 				<div id="container_eth"></div>
