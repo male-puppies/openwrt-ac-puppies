@@ -38,7 +38,7 @@ local function load_applist()
 			sql_map[v.proto_id] = v.version
 		end
 	else
-		log.error(e)
+		log.fatal("fetch data from acproto failed for %s",e)
 	end
 
 	local v_del, v_add, v_set = {}, {}, {}
@@ -105,7 +105,7 @@ local function load_applist()
 	-- local r, e = dbrpc:fetch("cfgmgr_load_applist", code, p)
 	local r, e = dbrpc:once(code, p)
 	if not r then
-		log.error(e)
+		log.fatal("update acproto failed for %s", e)
 	end
 end
 
