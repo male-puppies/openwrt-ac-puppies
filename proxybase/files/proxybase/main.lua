@@ -213,7 +213,7 @@ local function start_sand_server()
 	local on_message = function(topic, payload)
 		log.info("recv and exit. %s", payload)
 		save_status(0)
-		os.exit(0) 		-- cloud.json变了，重启进程
+		os.execute("/etc/init.d/proxybase restart &") 		-- cloud.json变了，重启进程
 	end
 
 	local args = {
@@ -245,5 +245,5 @@ local function main()
 		start_sand_server()
 	end
 end
-
+log.setmodule("proxy")
 ski.run(main)

@@ -93,7 +93,7 @@ function cmd_map.proxybase(s)
 end
 
 function cmd_map.cloud_set(s)
-	os.exit(0)	-- cloud.json updated, restart process
+	os.execute("/etc/init.d/cloudcli restart &")	-- cloud.json updated, restart process
 end
 
 local function on_message(topic, payload)
