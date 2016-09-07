@@ -16,7 +16,7 @@ server {
 	}
 
 	location /cloud {
-		root /usr/share/auth-web/cloud/;
+		root /usr/share/auth-web/www/;
 	}
 
 	location /auth {

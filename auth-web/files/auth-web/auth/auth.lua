@@ -1,17 +1,26 @@
+-- yjs
+
 package.path = "/usr/share/auth-web/?.lua;" .. package.path
-local js 		= require("cjson.safe")
-local log 		= require("common.log")
-local query 	= require("common.query")
+
+local fp 	= require("fp")
+local rds 	= require("common.rds")
+local js 	= require("cjson.safe")
+local log 	= require("common.log")
+local query = require("common.query")
 local authlib 	= require("auth.authlib")
 
-local query_u 					= query.query_u
-local reply, reply_e 			= authlib.reply, authlib.reply_e
+local mysql_select 		= authlib.mysql_select
+local query_u, r1		= query.query_u, log.real1
+local reply, reply_e 	= authlib.reply, authlib.reply_e
 local ip_pattern, mac_pattern 	= authlib.ip_pattern, authlib.mac_pattern
 
 local uri 			= ngx.var.uri
 local host, port 	= "127.0.0.1", 50002 	-- 进程 authd
 
+log.setlevel("1,2,3,4,d,i,e") 	-- TODO
+
 -- 检查获取查询字符串中的必备参数
+-- p = {"mac":"28-A0-2B-65-4D-62","uid":"1144","_t":"1549560","rid":"0","magic":"34952","ip":"172.16.20.43"}
 local function check_common_query_vars()
 	local p, rip = ngx.req.get_uri_args(), ngx.var.remote_addr
 
@@ -26,10 +35,9 @@ local function check_common_query_vars()
 		return nil, "invalid param"
 	end
 
-	-- TODO
-	-- if rip ~= ip then
-	-- 	return reply(1, "invalid request")
-	-- end
+	if rip ~= ip then
+		return reply(1, "invalid request")
+	end
 
 	return {cmd = uri, magic = magic, uid = uid, ip = ip, mac = mac, rid = rid}
 end
@@ -39,15 +47,53 @@ local function query_common(param)
 	local _ = not r and reply_e(e) or ngx.say(r)
 end
 
+-- 发送到redis-server执行的代码，一定要简单！
+local set_redirect_code = [[
+	local pc, index, timeout = redis.call, ARGV[1], ARGV[2]
+	for _, item in ipairs(cjson.decode(ARGV[3])) do
+		local r = pc("hset", "redirect", item[1], item[2]) 	assert(r)
+		local r = pc("expire", "redirect", timeout) 		assert(r)
+	end
+	return true
+]]
+
+-- 获取rid对应的登陆页面类型，修改配置后，可能有一定时间的延迟
+local function get_redirect_type(rid)
+	local r, e = rds.query(function(rds)	return rds:hget("redirect", rid) end)
+	if r and r ~= ngx.null then
+		return r
+	end
+
+	-- redis中没有缓存，或者已经超时，重新从database获取，并缓存到redis
+	local rs, e = mysql_select("select iscloud, rid from authrule")
+	if not (rs and #rs > 0) then
+		log.error("mysql error %s", e or "")
+		return "webui"
+	end
+
+	local arr = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, {r.rid, r.iscloud == 0 and "webui" or "cloud"})  end, {})
+	local r, e = rds.query(function(rds)
+		return rds:eval(set_redirect_code, 0, 0, 60, js.encode(arr))
+	end)
+
+	for _, r in ipairs(arr) do
+		if r[1] == rid then
+			return r[2]
+		end
+	end
+
+	return "webui"
+end
+
 local function default_handler()
 	local r, e = check_common_query_vars()
 	local _ = not r and reply_e(e) or query_common(r)
 end
 
 local uri_map = {}
-uri_map["/authopt"] 	= default_handler
-uri_map["/cloudonline"] = default_handler
-uri_map["/bypass_host"] = default_handler
+uri_map["/authopt"] 	= default_handler 		-- 获取本地页面的展示选项
+uri_map["/cloudonline"] = default_handler 		-- 查询是否在线
+uri_map["/bypass_host"] = default_handler 		-- bypass
 
 -- 内核重定向页面，根据rid对应的策略，重定向到本地/云端模板。重定向会带有参数ip,mac,uid,magic,rid
 uri_map["/index.html"] = function(r, e)
@@ -56,30 +102,23 @@ uri_map["/index.html"] = function(r, e)
 		return ngx.exit(ngx.ERROR)
 	end
 
-	local rid = r.rid
-
-	-- TODO check rid
-	ngx.redirect("/webui/index.html?" .. ngx.var.query_string)
+	local url = string.format("/%s/index.html?%s", get_redirect_type(r.rid), ngx.var.query_string)
+	ngx.redirect(url)
 end
 
-uri_map["/authopt"] = function()
-	return ngx.say("not implement")
-end
-
+-- 获取wechat登陆的信息
 uri_map["/wxlogin2info"] = function()
 	local r, e = check_common_query_vars()
 
 	ngx.req.read_body()
 	local p = ngx.req.get_post_args()
-	ngx.log(ngx.ERR, js.encode(p))
 	if not (p and p.now) then
 		return reply(1, "invalid param")
 	end
-	ngx.log(ngx.ERR, "----------------------")
+
 	r.now = p.now
 	return query_common(r)
 end
-
 
 local success_fields = {
 	tid 	= function(v) return #v == 54 and v or nil end,
@@ -108,12 +147,12 @@ uri_map["/weixin2_login"] = function()
 	local m = {}
 	for field, f in pairs(success_fields) do
 		local v = p[field]
-		if not v then ngx.log(ngx.ERR, "111")
+		if not v then
 			return ngx.exit(404)
 		end
 
 		local v = f(v)
-		if not v then ngx.log(ngx.ERR, "111", field, v)
+		if not v then
 			return ngx.exit(404)
 		end
 
@@ -128,6 +167,7 @@ uri_map["/PhoneNo"] = function()
 	return ngx.say("not implement")
 end
 
+-- web登陆
 uri_map["/cloudlogin"] = function()
 	local r, e = check_common_query_vars()
 	if not r then
@@ -157,4 +197,3 @@ if f then
 end
 
 ngx.exit(404)
-
