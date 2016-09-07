@@ -66,6 +66,10 @@ local function generate_network_cmds(board, network)
 			else
 				table.insert(arr["network"], string.format("	uci set network.$obj.macaddr='%s'", board.ports[i].mac))
 			end
+			if uci_network[name].mtu and uci_network[name].mtu ~= "" then
+				table.insert(arr["network"], string.format("	uci set network.$obj.mtu='%s'", uci_network[name].mtu))
+			end
+
 			table.insert(arr["network"], string.format("}"))
 		end
 
