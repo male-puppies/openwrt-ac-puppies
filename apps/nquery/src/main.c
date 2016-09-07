@@ -34,7 +34,7 @@ static int set_user_status(uint32_t uid, uint32_t magic, uint32_t status)
 int main(int argc, char *argv[])
 {
 	if(argc < 2) {
-		nt_error("nquery <flow|user|pcap|set>\n");
+		nt_error("nquery <flow|user|pcap|set|stat>\n");
 		exit(0);
 	}
 

@@ -15,6 +15,7 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include <linux/netlink.h>
 

@@ -1,7 +1,39 @@
 #include "nquery.h"
 
-const char *fn_stat_flow = "/var/run/nt_flow.dump";
-const char *fn_stat_user = "/var/run/nt_user.dump";
+#define FMT_FN_FLOW "/var/run/stat_flow/%lu.dump"
+#define FMT_FN_USER "/var/run/stat_user/%lu.dump"
+
+typedef struct {
+	FILE *fp;
+}trav_priv_t;
+
+FILE *open_and_lock(const char *fn)
+{
+	FILE *fp = fopen(fn, "w+");
+	if(!fp) {
+		nt_error("open '%s' failed: %s\n", fn, strerror(errno));
+		return NULL;
+	}
+	return fp;
+}
+
+static int trav_priv_init(trav_priv_t *ptrav, const char *fname)
+{
+	FILE *fp = open_and_lock(fname);
+	if(!fp) {
+		nt_error("open and lock file: %s failed.\n", fname);
+		exit(-1);
+	}
+	ptrav->fp = fp;
+	return 0;
+}
+
+static int trav_flush(trav_priv_t *ptrav)
+{
+	/* update the counters */
+	assert(ptrav->fp);
+	fclose(ptrav->fp);
+}
 
 static int dump_to_file(FILE *fp, char *id, uint64_t recv, uint64_t xmit)
 {
@@ -16,76 +48,59 @@ static int dump_to_file(FILE *fp, char *id, uint64_t recv, uint64_t xmit)
 
 static int trav_hook_user(user_info_t *ui, void *p)
 {
-	FILE* fp = p;
 	char buff[128];
+	trav_priv_t *ptrav = p;
 
 	snprintf(buff, sizeof(buff), "%u.%u.%u.%u", NIPQUAD(ui->ip));
-	return dump_to_file(fp, buff, ui->hdr.recv_bytes, ui->hdr.xmit_bytes);
+	return dump_to_file(ptrav->fp, buff, ui->hdr.recv_bytes, ui->hdr.xmit_bytes);
 }
 
 static int trav_hook_flow(flow_info_t *fi, void *p)
 {
-	FILE* fp = p;
 	char buff[128];
+	trav_priv_t *ptrav = p;
 
-	snprintf(buff, sizeof(buff), "%d-%d", fi->id, fi->magic);
-	return dump_to_file(fp, buff, fi->hdr.recv_bytes, fi->hdr.xmit_bytes);
+	snprintf(buff, sizeof(buff), "%u.%u.%u.%u:%u-%u.%u.%u.%u:%u-%u",
+		NIPQUAD(fi->tuple.ip_src), ntohs(fi->tuple.port_src),
+		NIPQUAD(fi->tuple.ip_dst), ntohs(fi->tuple.port_dst), fi->tuple.proto);
+	return dump_to_file(ptrav->fp, buff, fi->hdr.recv_bytes, fi->hdr.xmit_bytes);
 }
 
-FILE *open_and_lock(const char *fn)
+static int ntrack_stat_trav(char *fn, nt_trav_t trav_fn, void *hook)
 {
-	FILE *fp = fopen(fn, "a+");
-	if(!fp) {
-		nt_error("open '%s' failed: %s\n", fn, strerror(errno));
-		return NULL;
-	}
-	return fp;
-}
+	int fd, res = 0, offset = 0;
+	trav_priv_t trav;
 
-static int ntrack_stat_user(void)
-{
-	int res = 0;
-
-	FILE *fp = open_and_lock(fn_stat_user);
-	if(!fp) {
-		nt_error("open and lock file: %s failed.\n", fn_stat_user);
+	memset(&trav, 0, sizeof(trav));
+	res = trav_priv_init(&trav, fn);
+	if(res) {
 		exit(-1);
 	}
 
-	res = nt_trav_user(pntrack, 0, 0, fp, trav_hook_user);
-	if(res < 0) {
-		nt_error("trav failed: %d\n", res);
+	do {
+		int count = trav_fn(pntrack, offset, 1000, &trav, hook);
+		if(count <= 0) {
+			break;
+		}
+		offset += count;
+		nt_info("offset: %d, count: %d\n", offset, count);
+		sleep(0.1);
+	} while(1);
+
+	res = trav_flush(&trav);
+	if(res) {
 		exit(-1);
 	}
-
-	fclose(fp);
-	return 0;
-}
-
-static int ntrack_stat_flow(void)
-{
-	int fd, res = 0;
-
-	FILE *fp = open_and_lock(fn_stat_flow);
-	if(!fp) {
-		nt_error("open and lock file: %s failed.\n", fn_stat_user);
-		exit(-1);
-	}
-
-	res = nt_trav_flow(pntrack, 0, 0, fp, trav_hook_flow);
-	if(res < 0) {
-		nt_error("trav failed: %d\n", res);
-		exit(-1);
-	}
-
-	fclose(fp);
 	return 0;
 }
 
 int ntrack_stat(int type)
 {
+	char dump_fname[1024];
 	if(type) {
-		return ntrack_stat_flow();
+		snprintf(dump_fname, sizeof(dump_fname), FMT_FN_FLOW, (unsigned long)time(NULL));
+		return ntrack_stat_trav(dump_fname, nt_trav_flow, trav_hook_flow);
 	}
-	return ntrack_stat_user();
+	snprintf(dump_fname, sizeof(dump_fname), FMT_FN_USER, (unsigned long)time(NULL));
+	return ntrack_stat_trav(dump_fname, nt_trav_user, trav_hook_user);
 }
