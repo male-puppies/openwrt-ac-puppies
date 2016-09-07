@@ -59,7 +59,7 @@ udp_map["system_sysinfo"] = function(p, ip, port)
 		distribution = boardinfo.release.distribution,
 		version = boardinfo.release.version,
 		uptime = sysinfo.uptime,
-		time = read('date "+%Y-%m-%d %H:%M:%S"', io.popen):gsub("%s", ""),
+		time = read('date "+%Y-%m-%d %H:%M:%S"', io.popen):match("(.-)$"),
 		cpu_stat = {user = a1, nice = a2, system = a3, idle = a4, iowait = a5, irq = a6, softirq = a7},
 		memory = {total = sysinfo.memory.total, used = sysinfo.memory.total - sysinfo.memory.free - sysinfo.memory.buffered},
 		connection = {max = conn_max, count = conn_count},
