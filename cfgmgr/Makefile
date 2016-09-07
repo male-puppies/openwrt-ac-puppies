@@ -20,7 +20,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/cfgmgr
   SECTION:=Applications
   CATEGORY:=Puppies
-  DEPENDS:= +ski +lua-cjson +openssl-util +lualib-ac +database +logserver +sands +base-config +nginx-ac +admin-web +cfgmgr-common
+  DEPENDS:= +ski +lua-cjson +openssl-util +lualib-ac +database +logserver +sands +base-config +nginx-ac +admin-web +cfgmgr-common +ethtool
   TITLE:= lua config update manager
 endef
 

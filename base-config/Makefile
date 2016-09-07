@@ -21,7 +21,7 @@ define Package/$(PKG_NAME)/Default
   SECTION:=Applications
   CATEGORY:=Puppies
   SUBMENU:=Base config setup for AP/AC
-  DEPENDS:= +maccalc
+  DEPENDS:= +maccalc +ethtool
 endef
 
 define Package/$(PKG_NAME)
