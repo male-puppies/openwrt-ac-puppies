@@ -28,6 +28,10 @@ case $1 in
 	"stop")
 		do_stop $2 $3;;
 	*)
-		echo "error";
+		echo "usage :"
+		echo "	$0 start|stop server"
+		echo "	$0 start nginx|other_process debug_level. debug_level=1,2,3,4,d,i,e,f"
+		echo "	$0 stop nginx|other_process"
+		;;
 esac
 
