@@ -94,8 +94,7 @@ local function fetch_proto_map()
 	local sql = string.format("select proto_id from acproto where node_type = 'leaf'")
 	local protos, err = simple:mysql_select(sql)
 	if not protos then
-		log.error("fetch proto ids failed:%s", err)
-		return nil, err
+		log.fatal("fetch proto ids failed:%s", err)
 	end
 	proto_map = reduce(protos, function(t, r)
 		return rawset(t, tostring(tonumber(r.proto_id, 16)), r.proto_id)
@@ -106,8 +105,7 @@ local function fetch_rule_map()
 	local sql = "select rulename, ruleid from acrule"
 	local rules, err = simple:mysql_select(sql)
 	if not rules then
-		log.error("fetch rules failed:%s", err)
-		return nil, err
+		log.fatal("fetch rules failed:%s", err)
 	end
 	rule_map = reduce(rules, function(t,r)
 		return rawset(t, tostring(r.ruleid), r.rulename)
@@ -118,8 +116,7 @@ local function fetch_set_map()
 	local sql = "select setname, setdesc, settype from acset"
 	local sets, err = simple:mysql_select(sql)
 	if not sets then
-		log.error("fetch sets failed:%s", err)
-		return nil, err
+		log.fatal("fetch sets failed:%s", err)
 	end
 	set_map = reduce(sets, function(t,r)
 		return rawset(t, r.setname, {setdesc = r.setdesc, settype = r.settype})
