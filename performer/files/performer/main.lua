@@ -21,6 +21,7 @@ local modules = {
 	mwan  = 	require("mwan"),
 	tc	=	 	require("tc"),
 	wlancfg	=	require("wlancfg"),
+	system	=	require("system"),
 }
 
 local encode, decode = js.encode, js.decode
