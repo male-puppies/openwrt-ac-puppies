@@ -33,7 +33,7 @@ function key_map.timezones()
 end
 
 function key_map.time()
-	return os.date()
+	return os.date("%Y-%m-%d %H:%M:%S")
 end
 
 function key_map.lease()
