@@ -7,6 +7,8 @@ local rpccli = require("rpccli")
 local cfglib = require("cfglib")
 local common = require("common")
 local simplesql = require("simplesql")
+local board = require("cfgmgr.board")
+local network = require("cfgmgr.network")
 
 local read = common.read
 
@@ -42,7 +44,8 @@ udp_map["system_sysinfo"] = function(p, ip, port)
 	local boardinfo = js.decode(read("ubus call system board", io.popen))
 	local a1, a2, a3, a4, a5, a6, a7 = read("/proc/stat"):match("[cpu  ](%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%d+)")
 	local rs, e = simple:mysql_select("select count(*) as count from online")
-	local conn_count = tonumber(read("/proc/sys/kernel/nt_flow_count"))
+	--local conn_count = tonumber(read("/proc/sys/kernel/nt_flow_count"))
+	local conn_count = 0 ---TODO FIXME
 	local conn_max = tonumber(read("/proc/sys/kernel/nt_flow_max"))
 
 	local res = {
@@ -55,6 +58,55 @@ udp_map["system_sysinfo"] = function(p, ip, port)
 		connection = {max = conn_max, count = conn_count},
 		onlineuser = {max = 200, count = rs and rs[1] and rs[1].count or 0},
 	}
+
+	reply(ip, port, 0, res)
+end
+
+udp_map["system_ifaceinfo"] = function(p, ip, port)
+	local board_m = board.load()
+	local network_m = network.load()
+	local ports, options = board_m.ports, board_m.options
+	local net_cfg = network_m.network
+
+	local layout = {}
+	for iface, cfg in pairs(net_cfg) do
+		for _, i in ipairs(cfg.ports) do
+			layout[i] = {name = iface, enable = 1, fixed = 0}
+		end
+	end
+
+	for i = 1, #ports do
+		if not layout[i] then
+			layout[i] = {name = "", enable = 0, fixed = 0}
+		end
+		layout[i].fixed = options[1].layout[i].fixed
+	end
+
+	local netm = require "luci.model.network".init()
+	local rv   = {}
+
+	for iface, _ in pairs(net_cfg) do
+		local net = netm:get_network(iface)
+		local device = net and net:get_interface()
+		if device then
+			local data = {
+				proto      = net:proto(),
+				uptime     = net:uptime(),
+				gwaddr     = net:gwaddr(),
+				ipaddrs    = net:ipaddrs(),
+				dnsaddrs   = net:dnsaddrs(),
+				macaddr    = device:mac(),
+				is_up      = device:is_up(),
+				rx_bytes   = device:rx_bytes(),
+				tx_bytes   = device:tx_bytes(),
+				rx_packets = device:rx_packets(),
+				tx_packets = device:tx_packets(),
+			}
+			rv[iface] = data
+		end
+	end
+
+	local res = {stat = rv, layout = layout}
 
 	reply(ip, port, 0, res)
 end

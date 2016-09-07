@@ -164,6 +164,10 @@ function cmd_map.system_sysinfo()
 	query_common({}, "system_sysinfo")
 end
 
+function cmd_map.system_ifaceinfo()
+	query_common({}, "system_ifaceinfo")
+end
+
 local function savefile(path, maxsize)
 	local upload = require("resty.upload")
 
