@@ -5,14 +5,20 @@ local misc = require("ski.misc")
 local js = require("cjson.safe")
 local rpccli = require("rpccli")
 local cfglib = require("cfglib")
+local common = require("common")
+local simplesql = require("simplesql")
+
+local read = common.read
 
 local udp_map = {}
 local udpsrv, mqtt, dbrpc, reply
+local simple
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
 	reply = cfglib.gen_reply(udpsrv)
 	dbrpc = rpccli.new(mqtt, "a/ac/database_srv")
+	simple  = simplesql.new(dbrpc)
 end
 
 -- {"cmd":"system_synctime","sec":"1472719031"}
@@ -29,6 +35,28 @@ udp_map["system_reboot"] = function(p, ip, port)
 	reply(ip, port, 0, "ok")
 	log.info("cmd %s", cmd)
 	misc.execute(cmd)
+end
+
+udp_map["system_sysinfo"] = function(p, ip, port)
+	local sysinfo = js.decode(read("ubus call system info", io.popen))
+	local boardinfo = js.decode(read("ubus call system board", io.popen))
+	local a1, a2, a3, a4, a5, a6, a7 = read("/proc/stat"):match("[cpu  ](%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%d+)")
+	local rs, e = simple:mysql_select("select count(*) as count from online")
+	local conn_count = tonumber(read("/proc/sys/kernel/nt_flow_count"))
+	local conn_max = tonumber(read("/proc/sys/kernel/nt_flow_max"))
+
+	local res = {
+		distribution = boardinfo.release.distribution,
+		version = boardinfo.release.version,
+		uptime = sysinfo.uptime,
+		time = os.date("%Y-%m-%d %H:%M:%S"),
+		cpu_stat = {user = a1, nice = a2, system = a3, idle = a4, iowait = a5, irq = a6, softirq = a7},
+		memory = {total = sysinfo.memory.total, used = sysinfo.memory.total - sysinfo.memory.free - sysinfo.memory.buffered},
+		connection = {max = conn_max, count = conn_count},
+		onlineuser = {max = 200, count = rs and rs[1] and rs[1].count or 0},
+	}
+
+	reply(ip, port, 0, res)
 end
 
 -- {"cmd":"system_auth","password_md5":"e00cf25ad42683b3df678c61f42c6bda","oldpassword":"admin","oldpassword_md5":"21232f297a57a5a743894a0e4a801fc3","password":"admin1"}

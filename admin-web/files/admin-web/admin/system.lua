@@ -44,7 +44,6 @@ function key_map.lease()
 	end
 
 	local now = os.time()
-	local time_map = {{s = 86400, d = "d"}, {s = 3600, d = "h"}, {s = 60, d = "m"}, {s = 1, d = "s"}}
 	while true do
 		local line = file:read("*l")
 		if not line then
@@ -159,6 +158,10 @@ function cmd_map.system_set()
 	end
 
 	f(p)
+end
+
+function cmd_map.system_sysinfo()
+	query_common({}, "system_sysinfo")
 end
 
 local function savefile(path, maxsize)
