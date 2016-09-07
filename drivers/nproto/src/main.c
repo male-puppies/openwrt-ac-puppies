@@ -270,7 +270,7 @@ static int __init nproto_module_init(void)
 
 	memset(&npkt_pcpu, 0, sizeof(npkt_pcpu));
 
-	nproto_klog_fd = klog_init("nproto", 0x0d, 0);
+	nproto_klog_fd = klog_init("nproto", 0x0c, 0);
 	if(!nproto_klog_fd) {
 		printk("klog init failed.\n");
 		return -ENOMEM;

@@ -4,7 +4,7 @@ typedef struct {
 	uint32_t id, magic;
 } tuple_t;
 
-int dump_user(user_info_t *ui, void *p)
+static int dump_user_fn(user_info_t *ui, void *p)
 {
 	tuple_t *tuple = p;
 
@@ -25,13 +25,13 @@ void dump_userinfo(int id, int magic)
 
 	tuple.id = id;
 	tuple.id = magic;
-	res = nt_trav_user(pntrack, 0, 0, &tuple, dump_user);
+	res = nt_trav_user(pntrack, 0, 0, &tuple, dump_user_fn);
 	if(res < 0) {
 		exit(-1);
 	}
 }
 
-int dump_flow(flow_info_t *fi, void *p)
+static int dump_flow_fn(flow_info_t *fi, void *p)
 {
 	tuple_t *tuple = p;
 
@@ -52,7 +52,7 @@ void dump_flowinfo(int fid, int magic)
 
 	tuple.id = fid;
 	tuple.magic = magic;
-	res = nt_trav_flow(pntrack, 0, 0, &tuple, dump_flow);
+	res = nt_trav_flow(pntrack, 0, 0, &tuple, dump_flow_fn);
 	if(res < 0) {
 		exit(-1);
 	}

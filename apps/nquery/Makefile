@@ -37,6 +37,8 @@ define Package/nquery/install
 	#$(CP) -a ./files/* $(1)/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nquery $(1)/usr/sbin/nquery
+	$(INSTALL_DIR) $(1)/usr/share/nquery
+	$(INSTALL_BIN) ./files/stat_rt.lua $(1)/usr/share/nquery/stat_rt.lua
 endef
 
 $(eval $(call BuildPackage,nquery))

@@ -54,6 +54,7 @@ typedef struct {
 */
 typedef int(*nt_trav_flow_cb_t)(flow_info_t *fi, void *p);
 typedef int(*nt_trav_user_cb_t)(user_info_t *ui, void *p);
+typedef int(*nt_trav_t)(ntrack_t *, uint32_t, uint32_t, void*, void*);
 
 /* traversal flow / user buy segment. */
 int nt_trav_flow(ntrack_t *nt,
