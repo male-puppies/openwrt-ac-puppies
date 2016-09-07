@@ -39,6 +39,13 @@ udp_map["system_reboot"] = function(p, ip, port)
 	misc.execute(cmd)
 end
 
+udp_map["system_reset"] = function(p, ip, port)
+	local cmd = string.format("sleep 1 && system_reset -f &")
+	reply(ip, port, 0, "ok")
+	log.info("cmd %s", cmd)
+	misc.execute(cmd)
+end
+
 udp_map["system_sysinfo"] = function(p, ip, port)
 	local sysinfo = js.decode(read("ubus call system info", io.popen))
 	local boardinfo = js.decode(read("ubus call system board", io.popen))

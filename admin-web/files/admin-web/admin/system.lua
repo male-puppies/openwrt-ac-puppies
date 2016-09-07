@@ -141,6 +141,10 @@ function check_map.reboot(p)
 	query_common({}, "system_reboot")
 end
 
+function check_map.reset(p)
+	query_common({}, "system_reset")
+end
+
 function cmd_map.system_set()
 	local m, e = validate_post({})
 	if not m then
