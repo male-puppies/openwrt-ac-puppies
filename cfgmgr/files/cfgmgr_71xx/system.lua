@@ -69,6 +69,30 @@ udp_map["system_sysinfo"] = function(p, ip, port)
 	reply(ip, port, 0, res)
 end
 
+local function get_port_stat(port)
+	local stat = {is_up = 0, speed = "", duplex = ""}
+	if port.type == 'switch' then
+		local cmd = string.format("swconfig dev %s port %u show", port.device, port.num)
+		local s = read(cmd, io.popen) or ""
+		local speed, duplex = s:match("speed:(%d+)baseT (.-)%-duplex")
+		stat.speed = speed and speed .. "Mbps" or ""
+		stat.duplex = duplex  or ""
+		stat.is_up = speed and 1 or 0
+	else
+		local cmd = string.format("ethtool %s", port.ifname)
+		local s = read(cmd, io.popen) or ""
+		local is_up = s:match("Link detected: (.-)\n")
+		if is_up == 'yes' then
+			local speed = s:match("Speed: (%d+)Mb/s") or "0"
+			local duplex = s:match("Duplex: (.-)\n")
+			stat.speed = speed .. "Mbps"
+			stat.duplex = duplex and string.lower(duplex) or ""
+			stat.is_up = 1
+		end
+	end
+	return stat
+end
+
 udp_map["system_ifaceinfo"] = function(p, ip, port)
 	local board_m = board.load()
 	local network_m = network.load()
@@ -87,6 +111,10 @@ udp_map["system_ifaceinfo"] = function(p, ip, port)
 			layout[i] = {name = "", enable = 0, fixed = 0}
 		end
 		layout[i].fixed = options[1].layout[i].fixed
+		local port_stat = get_port_stat(ports[i])
+		layout[i].is_up = port_stat.is_up
+		layout[i].speed = port_stat.speed
+		layout[i].duplex = port_stat.duplex
 	end
 
 	local netm = require "luci.model.network".init()
