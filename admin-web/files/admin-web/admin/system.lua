@@ -73,7 +73,8 @@ function key_map.lease()
 end
 
 function key_map.zonename()
-	return read("uci get system.@system[0].zonename", io.popen):gsub("%s", "")
+	local kv, e = mysql_select("select k,v from kv where k in ('zonename')")
+	return kv[1] and kv[1].v or ""
 end
 
 function cmd_map.system_get()
