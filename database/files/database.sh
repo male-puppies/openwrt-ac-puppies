@@ -23,18 +23,25 @@ try_stop_instance() {
 mkdir -p /tmp/db
 mkdir -p /etc/sqlite3
 cd $dir
-./init.sh
 
-for i in 1 2 3 4 5 6 7 8 9 ; do 
-	mysql -uroot -pwjrc0409 -e "select 1" >/dev/null 2>&1 
-	test $? -eq 0 && break 
-	sleep 1 
+echo `uptime` "start $name" >> /tmp/log/lua.error
+
+./init.sh 2>>/tmp/log/lua.error
+if [ $? -ne 0 ]; then
+	echo "init database fail" >> /tmp/log/lua.error
+	exit 1
+fi
+
+for i in 1 2 3 4 5 6 7 8 9 ; do
+	mysql -uroot -pwjrc0409 -e "select 1" >/dev/null 2>&1
+	test $? -eq 0 && break
+	sleep 1
 done
 
 try_stop_instance $name
 
 cd $dir
-lua $dir/main.lua >>/tmp/log/lua.error 2>&1 &
+lua $dir/main.lua 2>>/tmp/log/lua.error &
 
 pid=$!
 echo -n "$pid" > /var/run/$name.pid

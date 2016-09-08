@@ -23,7 +23,8 @@ try_stop_instance() {
 try_stop_instance $name
 
 cd $dir
-lua $dir/main.lua &
+echo `uptime` "start $name" >> /tmp/log/lua.error
+lua $dir/main.lua 2>>/tmp/log/lua/error &
 
 pid=$!
 echo -n "$pid" > /var/run/$name.pid

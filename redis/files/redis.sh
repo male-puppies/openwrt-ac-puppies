@@ -21,6 +21,7 @@ try_stop_instance() {
 try_stop_instance $name
 
 cd /tmp/
+echo `uptime` "start redis-server" >> /tmp/log/lua.error
 redis-server /usr/share/redis/conf/redis.conf &
 
 pid=$!
