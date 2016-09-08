@@ -24,8 +24,8 @@ end
 local function generate_network_cmds(board, network)
 	local firewall = {
 		zones = {
-			lan = {id = 0, ifnames = "", networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "ACCEPT", mtu_fix = 1, masq = 0},
-			wan = {id = 1, ifnames = "", networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "REJECT", mtu_fix = 1, masq = 1},
+			lan = {id = 0, ifnames = {}, networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "ACCEPT", mtu_fix = 1, masq = 0},
+			wan = {id = 1, ifnames = {}, networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "REJECT", mtu_fix = 1, masq = 1},
 		},
 		defaults = {syn_flood = 1, input = "ACCEPT", output = "ACCEPT", forward = "REJECT"},
 		forwardings = {
@@ -177,7 +177,7 @@ local function generate_network_cmds(board, network)
 		table.insert(nos_zone_arr, string.format("test -n \"$obj\" && {"))
 		table.insert(nos_zone_arr, string.format("	uci set nos-zone.$obj.name='%s'", name))
 		table.insert(nos_zone_arr, string.format("	uci set nos-zone.$obj.id='%s'", zone.id))
-		table.insert(nos_zone_arr, string.format("  uci set nos-zone.$obj.ifname='%s'", zone.ifnames))
+		table.insert(nos_zone_arr, string.format("	uci set nos-zone.$obj.ifname='%s'", table.concat(zone.ifnames, " ")))
 		table.insert(nos_zone_arr, string.format("}"))
 
 		table.insert(firewall_arr, string.format("obj=`uci add firewall zone`"))
