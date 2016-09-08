@@ -347,7 +347,7 @@ function consIpgroup() {
 	var data = g_ipgroup;
 	var str = "";
 	for (var i = 0, ien = data.length; i < ien; i++) {
-		str += '<option value="' + data[i]["ipgid"] + '">' + data[i]["ipgrpname"] + '</option>'
+		str += '<option value="' + data[i]["ipgid"] + '">' + data[i]["ipgrpname"] + '</option>';
 	}
 	$("#src_ipgids, #dest_ipgids").html(str);
 
@@ -360,7 +360,7 @@ function consTimegroup() {
 	var data = g_timegroup;
 	var str = "";
 	for (var i = 0, ien = data.length; i < ien; i++) {
-		str += '<option value="' + data[i]["tmgid"] + '">' + data[i]["tmgrpname"] + '</option>'
+		str += '<option value="' + data[i]["tmgid"] + '">' + data[i]["tmgrpname"] + '</option>';
 	}
 	$("#tmgrp_ids").html(str);
 	return true;
@@ -604,6 +604,9 @@ function OnAdd() {
 		createModalTips("初始化失败！请尝试重新加载！");
 		return false;
 	}
+
+	$("#tmgrp_ids").val("255");
+	$("#src_ipgids, #dest_ipgids").val("63");
 	$('#modal_edit').modal("show");
 }
 
@@ -669,7 +672,7 @@ function OnEditProto() {
 }
 
 function OnSelectAll() {
-	dtSelectAll(this, $("#table_timegroup"));
+	dtSelectAll(this, $("#table_acrule"));
 }
 
 function getSelected(that) {

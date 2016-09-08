@@ -27,7 +27,17 @@ function brushFunc(d) {
 	$("#modal_spin").modal("hide");
 	$("#modal_spin").one("hidden.bs.modal", function() {
 		if (d.status == 0) {
-			createModalTips("上传成功！升级刷写新的固件将会重启设备。</br>是否确认进行升级？", "DoBrush");
+			var md5 = d.data.md5;
+			var size = parseInt(d.data.size);
+			if (size < 1000) {
+				size = d + "B";
+			} else if (size > 1000 && size < 1000000) {
+				size = toDecimal(size / 1000) + "KB";
+			} else {
+				size = toDecimal(size / 1000000) + "MB";
+			}
+
+			createModalTips("上传成功！下面是效验值和文件的大小，请与原文件进行比较，以确保数据的完整性。点击“确定”，开始刷写固件。</br><span style='color:#666;font-size:14px'>效验值：" + md5 + "</span></br><span style='color:#666;font-size:14px'>文件大小：" + size + "</span>", "DoBrush");
 		} else {
 			createModalTips("上传失败！" + (d.data ? d.data : ""));
 		}
@@ -94,9 +104,11 @@ function DoReset() {
 		$("#modal_spin").modal("show");
 	});
 
-	cgicall.post("ConfReset", function(d) {
-		$.cookie('login_pwd', '', {expires: -1, path: "/"});
-		setTimeout(funcall, 12000);
+	cgicall.post("system_set", {cmd: "reset"}, function(d) {
+		if (d.status == 0) {
+			$.cookie('login_pwd', '', {expires: -1, path: "/"});
+			setTimeout(funcall, 12000);
+		}
 	});
 }
 
@@ -158,4 +170,13 @@ function OnBrush() {
 	$("#modal_spin").modal("show");
 	$("#brush").ajaxSubmit(options);
 	return false;
+}
+
+function toDecimal(x) {
+	var f = parseFloat(x);
+	if (isNaN(f)) {
+		return;
+	}
+	f = Math.round(x*100)/100;
+	return f;
 }
