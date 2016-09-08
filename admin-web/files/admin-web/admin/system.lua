@@ -5,6 +5,7 @@ local log = require("common.log")
 local query = require("common.query")
 local adminlib = require("admin.adminlib")
 local timezoneinfo = require("admin.timezoneinfo")
+local nquery = require("nquery")
 
 local read = common.read
 local mysql_select = adminlib.mysql_select
@@ -34,6 +35,14 @@ end
 
 function key_map.time()
 	return os.date("%Y-%m-%d %H:%M:%S")
+end
+
+function key_map.stat_flow()
+	return nquery.flow()
+end
+
+function key_map.stat_user()
+	return nquery.user()
 end
 
 function key_map.lease()

@@ -131,7 +131,7 @@ static int mwm_http_match(void *par, void *in, void *out)
 	lasted = npt->l7_len - start;
 	end_ptr = BMHChr(bmhLine, out+1, lasted);
 	if(!end_ptr) {
-		np_error("[%s] line end not found.\n", http_headers[idx]);
+		np_debug("[%s] line end not found.\n", http_headers[idx]);
 		np_dump(out, 16, "dump: ");
 		return 1;
 	}
