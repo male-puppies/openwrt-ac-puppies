@@ -16,9 +16,9 @@ local keepalive, insert_online = authlib.keepalive, authlib.insert_online
 local limit, reduce, each, empty, tomap = fp.limit, fp.reduce, fp.each, fp.empty, fp.tomap
 
 local udp_map = {}
+local loop_timeout_check
 local simple, udpsrv, mqtt
 local keepalive_trigger, on_keepalive_batch
-local loop_timeout_check
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
@@ -76,4 +76,3 @@ function loop_timeout_check()
 end
 
 return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
-

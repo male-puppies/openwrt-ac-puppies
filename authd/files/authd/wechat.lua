@@ -19,11 +19,11 @@ local keepalive, insert_online	= authlib.keepalive, authlib.insert_online
 local set_module = cache.set_module
 
 local udp_map = {}
-local udpsrv, mqtt, simple, reply
-local wechat_timeout, on_wechat_timeout
-local login_trigger, on_login
-local keepalive_trigger, on_keepalive
 local loop_timeout_check
+local login_trigger, on_login
+local udpsrv, mqtt, simple, reply
+local keepalive_trigger, on_keepalive
+local wechat_timeout, on_wechat_timeout
 local reduce, tomap, each, empty, limit = fp.reduce, fp.tomap, fp.each, fp.empty, fp.limit
 
 local function init(u, p)
@@ -105,7 +105,6 @@ udp_map["/wxlogin2info"] = function(p, cli_ip, cli_port)
 	local sec, mac = math.floor(ski.time()), p.mac
 	local extend = table.concat({mac, sec}, ",")
 
-	-- local n = {appid = "wx3ae592d54767e201", shop_id = 4248433, ssid = "WX_WIFI", secretkey = "eaee288fe2a5924c8012f0522a4ea524"}
 	local rid = p.rid
 	local authrule = cache.authrule(rid)
 
@@ -287,4 +286,3 @@ function loop_timeout_check()
 end
 
 return {init = init, dispatch_udp = lib.gen_dispatch_udp(udp_map)}
-

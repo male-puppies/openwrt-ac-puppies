@@ -21,10 +21,10 @@ local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
 local limit, reduce, tomap, each, empty, reduce2 = fp.limit, fp.reduce, fp.tomap, fp.each, fp.empty, fp.reduce2
 
 local udp_map = {}
-local simple, udpsrv, mqtt, reply
-local login_trigger, on_login
-local keepalive_trigger, on_keepalive
 local loop_timeout_check
+local login_trigger, on_login
+local simple, udpsrv, mqtt, reply
+local keepalive_trigger, on_keepalive
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
@@ -144,6 +144,7 @@ function on_login(count, arr)
 			set_online(r.uid, r.magic, r.gid, r.username)
 			reply(r.u_ip, r.u_port, 0, "ok")
 		end)
+
 		local _ = empty(offline) or insert_online(simple, offline, "web")
 	end
 
@@ -202,5 +203,4 @@ function loop_timeout_check()
 	end
 end
 
-return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
-
+return {init = init, dispatch_udp = authlib.gen_dispatch_tcp(udp_map)}

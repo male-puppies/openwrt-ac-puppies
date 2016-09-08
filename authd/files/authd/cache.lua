@@ -40,9 +40,9 @@ local function check_module()
 
 	local rs, e = simple:mysql_select("select ukey,type from memo.online") 	assert(rs, e)
 	online_cache = reduce(rs, function(t, r) return rawset(t, r.ukey, r.type) end, {})
-	print("init mod",  js.encode(online_cache))
 end
 
+-- 设置或者删除ukey对应的mod
 local function set_module(ukey, mod)
 	check_module()
 
@@ -51,7 +51,6 @@ local function set_module(ukey, mod)
 	elseif not online_cache[ukey] then
 		online_cache[ukey] = mod
 	end
-	print("set_module", js.encode(online_cache))
 end
 
 local function get_module(ukey)
@@ -61,16 +60,16 @@ end
 
 ---------------------------------------------- kv ---------------------------------------------
 local kv_cache
-local fields = {"auth_offline_time", "auth_redirect_ip", "auth_no_flow_timeout"}
-
 local function check_kv()
 	if kv_cache then
 		return
 	end
 
+	local fields = {"auth_offline_time", "auth_redirect_ip", "auth_no_flow_timeout"}
 	local narr = reduce(fields, function(t, v) return rawset(t, #t + 1, string.format("'%s'", v)) end, {})
 	local sql = string.format("select k,v from kv where k in (%s)", table.concat(narr, ","))
 	local rs, e = simple:mysql_select(sql)		assert(rs, e)
+
 	kv_cache = reduce(rs, function(t, r) return rawset(t, r.k, r.v) end, {})
 end
 
@@ -120,7 +119,7 @@ end
 
 ------------------------------------------------ other ---------------------------------------------------
 local function timeout_check_intervel()
-	return 10 -- TODO
+	return 30 -- TODO
 end
 
 ------------------------------------------------ bypass ---------------------------------------------------

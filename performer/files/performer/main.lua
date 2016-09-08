@@ -17,9 +17,9 @@ local modules = {
 	acconfig = 	require("acconfig"),
 	authrule = 	require("authrule"),
 	firewall = 	require("firewall"),
-	route = 	require("route"),
-	mwan  = 	require("mwan"),
-	tc	=	 	require("tc"),
+	route 	= 	require("route"),
+	mwan  	= 	require("mwan"),
+	tc		=	require("tc"),
 	wlancfg	=	require("wlancfg"),
 	system	=	require("system"),
 }
@@ -112,12 +112,14 @@ local function main()
 	log.setmodule("pf")
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
 	mqtt = start_sand_server()
+
 	for _, mod in pairs(modules) do
 		mod.init(mqtt)
 		if mod.set_event_cb then
 			mod.set_event_cb(on_ext_event)
 		end
 	end
+
 	local _ = ski.go(dispatch_tcp_loop), ski.go(loop_check_debug)
 end
 

@@ -1,9 +1,12 @@
+-- cmq
+
 local ski = require("ski")
 local log = require("log")
+local md5 = require("md5")
+local ipops = require("ipops")
+local pflib = require("pflib")
 local js = require("cjson.safe")
 local common = require("common")
-local ipops = require("ipops")
-local md5 = require("md5")
 
 local read = common.read
 
@@ -29,4 +32,4 @@ tcp_map["tc"] = function(p)
 	tc_reload()
 end
 
-return {init = init, dispatch_tcp = dispatch_tcp}
+return {init = init, dispatch_tcp = pflib.gen_dispatch_tcp(tcp_map)}

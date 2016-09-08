@@ -34,5 +34,3 @@ tcp_map["dbsync"] = function(p)
 end
 
 return {init = init, dispatch_tcp = authlib.gen_dispatch_udp(tcp_map)}
-
-

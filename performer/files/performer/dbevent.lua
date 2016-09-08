@@ -21,7 +21,6 @@ local function dispatch_tcp(cmd)
 end
 
 tcp_map["dbsync"] = function(p)
-	print(js.encode(p))
 	for tbname, n in pairs(p) do
 		n.cmd = "dbsync_" .. tbname
 		on_event_cb(n)
@@ -29,4 +28,3 @@ tcp_map["dbsync"] = function(p)
 end
 
 return {init = init, dispatch_tcp = dispatch_tcp, set_event_cb = set_event_cb}
-

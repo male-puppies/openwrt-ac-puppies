@@ -13,9 +13,10 @@ local sandcproxy = require("sandcproxy")
 js.encode_keep_buffer(false)
 js.encode_sparse_array(true)
 
+local r2 = log.real2
 local read = common.read
-local encode, decode = js.encode, js.decode
 local udp_chan, tcp_chan, mqtt, udpsrv
+local encode, decode = js.encode, js.decode
 
 --[[
 认证模块化划分，一种认证一个模块，每个模块包括函数
@@ -127,12 +128,12 @@ local function start_udp_server()
 		while true do
 			r, ip, port = udpsrv:recv()
 			if r then
-				print("main", r)
+				r2("main %s", r)
 				m = decode(r)
 				if m and m.cmd then
 					r, e = udp_chan:write({m, ip, port}) 	assert(r, e)
 				else
-					print("invalid udp request")
+					log.error("invalid udp request %s", r)
 				end
 			end
 		end
@@ -174,4 +175,3 @@ local function main()
 end
 
 ski.run(main)
-

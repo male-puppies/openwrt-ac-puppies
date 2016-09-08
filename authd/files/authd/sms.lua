@@ -12,4 +12,3 @@ local function init(u, p)
 end
 
 return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
-
