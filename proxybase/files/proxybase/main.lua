@@ -235,14 +235,13 @@ local function main()
 	-- cloudcli会向云端注册，如果帐号不对，会touch /tmp/invalid_account
 	if not lfs.attributes("/tmp/invalid_account") then
 		ski.go(start_local)
-
+		start_sand_server()
 		-- ac_host默认是""
 		while g_kvmap.ac_host == "" do
 			ski.sleep(1)
 		end
 
 		ski.go(start_remote)
-		start_sand_server()
 	end
 end
 log.setmodule("proxy")
