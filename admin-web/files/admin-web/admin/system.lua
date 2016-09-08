@@ -33,7 +33,7 @@ function key_map.timezones()
 end
 
 function key_map.time()
-	return read('date "+%Y-%m-%d %H:%M:%S"', io.popen):match("(.-)$")
+	return os.date("%Y-%m-%d %H:%M:%S")
 end
 
 function key_map.lease()
