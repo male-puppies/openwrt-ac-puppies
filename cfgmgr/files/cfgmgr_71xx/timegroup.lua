@@ -71,7 +71,8 @@ udp_map["timegroup_del"] = function(p, ip, port)
 			return nil, e
 		end
 
-		 -- judge cited id ??ϱ?????d??		local refer_tmgids = {}
+		-- judge cited id ??ϱ?????d??
+		local refer_tmgids = {}
 		for _, tmgrp in ipairs(rs) do
 			local detail = js.decode(tmgrp.tmgrp_ids)  assert(detail)
 			for _, tmgrpid in ipairs(detail) do

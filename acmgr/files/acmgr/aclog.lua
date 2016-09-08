@@ -99,6 +99,7 @@ local function fetch_proto_map()
 	proto_map = reduce(protos, function(t, r)
 		return rawset(t, tostring(tonumber(r.proto_id, 16)), r.proto_id)
 		end, {})
+	log.real1("new proto map:%s", js.encode(proto_map))
 end
 
 local function fetch_rule_map()
@@ -110,6 +111,7 @@ local function fetch_rule_map()
 	rule_map = reduce(rules, function(t,r)
 		return rawset(t, tostring(r.ruleid), r.rulename)
 		end, {})
+	log.real1("new rule map:%s", js.encode(rule_map))
 end
 
 local function fetch_set_map()
@@ -121,11 +123,12 @@ local function fetch_set_map()
 	set_map = reduce(sets, function(t,r)
 		return rawset(t, r.setname, {setdesc = r.setdesc, settype = r.settype})
 		end, {})
+	log.real1("new set map:%s", js.encode(set_map))
 end
 
 tcp_map["dbsync_acproto"] = fetch_proto_map
 tcp_map["dbsync_acset"] = fetch_set_map
-tcp_map["dbysnc_acrule"] = fetch_rule_map
+tcp_map["dbsync_acrule"] = fetch_rule_map
 
 local function dispatch_tcp(cmd)
 	local f = tcp_map[cmd.cmd]
@@ -133,6 +136,7 @@ local function dispatch_tcp(cmd)
 		return true, f(cmd)
 	end
 end
+
 local function init(p, u)
 	udp_srv, mqtt = p, u
 	ctrl_log = queue.new(ctrl_path, log_limit) assert(ctrl_log)
