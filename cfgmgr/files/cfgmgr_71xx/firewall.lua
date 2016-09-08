@@ -1,3 +1,4 @@
+-- author: gl
 local ski = require("ski")
 local log = require("log")
 local js = require("cjson.safe")
@@ -108,7 +109,6 @@ udp_map["firewall_del"] = function(p, ip, port)
 		local conn, ud = ins.conn, ins.ud
 		local fwids = js.decode(arg.fwids)
 
-		local in_part = table.concat(fwids, ",")
 
 		-- check fwids valid
 		local rs, e = conn:select("select * from firewall") 			assert(rs, e)
@@ -124,7 +124,7 @@ udp_map["firewall_del"] = function(p, ip, port)
 		end
 
 		-- delete one or more firewall
-		local sql = string.format("delete from firewall where fwid in (%s)", in_part)
+		local sql = string.format("delete from firewall where fwid in (%s)", table.concat(fwids, ","))
 		local r, e = conn:execute(sql)
 		if not r then
 			return nil, e
@@ -147,9 +147,8 @@ udp_map["firewall_adjust"] = function(p, ip, port)
 		local fwids = js.decode(arg.fwids)
 		local fwids1, fwids2 = fwids[1], fwids[2]
 
-		local in_part = table.concat(fwids, ",")
 
-		local sql = string.format("select fwid, priority from firewall where fwid in (%s)", in_part)
+		local sql = string.format("select fwid, priority from firewall where fwid in (%s)", table.concat(fwids, ","))
 		local rs, e = conn:select(sql) 	assert(rs, e)
 		if not rs then
 			return nil, e
