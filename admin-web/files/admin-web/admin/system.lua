@@ -25,8 +25,8 @@ local function query_common(m, cmd)
 	return (not r) and reply_e(e) or ngx.say(r)
 end
 
-local get_timezones = timezoneinfo.get_timezones
 local key_map = {}
+local get_timezones = timezoneinfo.get_timezones
 
 function key_map.timezones()
 	return get_timezones()
@@ -64,12 +64,7 @@ function key_map.lease()
 		end
 	end
 
-	local arr = {}
-	for _, v in pairs(map) do
-		table.insert(arr, v)
-	end
-
-	return arr
+	return fp.reduce2(map, function(t, _, v) return rawset(t, #t + 1, v) end, {})
 end
 
 function key_map.zonename()
@@ -334,6 +329,7 @@ function cmd_map.system_backupload()
 	if not r then
 		return reply_e(e)
 	end
+
 	reply("ok")
 end
 
@@ -342,6 +338,7 @@ function cmd_map.system_restore()
 	if not require("lfs").attributes(cfgpath) then
 		return reply_e("not find " .. cfgpath)
 	end
+
 	query_common({path = cfgpath}, "system_restore")
 end
 

@@ -2,6 +2,7 @@
 	author:tgb
 	date:2016-08-25 1.0 add basic code
 ]]
+
 local js = require("cjson.safe")
 local log = require("common.log")
 local query = require("common.query")
@@ -26,6 +27,7 @@ function cmd_map.ctrllog_get()
 	if not m then
 		return reply_e(e)
 	end
+
     return query_common(m, "ctrllog_get")
 end
 

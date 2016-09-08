@@ -1,3 +1,5 @@
+-- yjs
+
 local js = require("cjson.safe")
 local log = require("common.log")
 local rds = require("common.rds")
@@ -31,13 +33,13 @@ local function query_common(m, cmd)
     return (not r) and reply_e(e) or ngx.say(r)
 end
 
-local ipgrp_fields = {ipgid = 1, ipgrpname = 1, ipgrpdesc = 1, ranges = 1}
 function cmd_map.ipgroup_get()
 	local m, e = validate_get({page = 1, count = 1})
 	if not m then
 		return reply_e(e)
 	end
 
+    local ipgrp_fields = {ipgid = 1, ipgrpname = 1, ipgrpdesc = 1, ranges = 1}
     local cond = adminlib.search_cond(adminlib.search_opt(m, {order = ipgrp_fields, search = ipgrp_fields}))
     local sql = string.format("select * from ipgroup %s %s %s", cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
 
@@ -155,4 +157,3 @@ function cmd_map.ipgroup_del()
 end
 
 return {run = run}
-

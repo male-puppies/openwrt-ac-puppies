@@ -1,3 +1,5 @@
+-- cmq
+
 local js = require("cjson.safe")
 local query = require("common.query")
 local adminlib = require("admin.adminlib")
@@ -8,6 +10,9 @@ local ip_pattern = adminlib.ip_pattern
 local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
 local validate_post_get_all = adminlib.validate_post_get_all
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
+
+local v_Name 	= gen_validate_str(1, 32)
+local v_Names 	= gen_validate_str(2, 1024)
 
 local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
@@ -27,29 +32,23 @@ function cmd_map.tc_get()
 	if not m then
 		return reply_e(e)
 	end
+
 	return query_common(m, "tc_get")
 end
 
-local v_Enabled = gen_validate_num(0,1)
+local v_Enabled = gen_validate_num(0, 1)
 
 local function v_Ip(v)
 	return string.match(v, "%d+%.%d+%.%d+%.%d+-%d+%.%d+%.%d+%.%d+$") or string.match(v, "%d+%.%d+%.%d+%.%d+$")
 end
 
 local function v_Bytes(v)
-	local M = string.match(v, "%d+MBytes")
-	local K = string.match(v, "%d+KBytes")
-	return M or K
+	return string.match(v, "^(%d+[MK]Bytes)$")
 end
 
 local function v_bps(v)
-	local M = string.match(v, "%d+Mbps")
-	return M
+	return string.match(v, "^(%d+Mbps)$")
 end
-
-local v_Name = gen_validate_str(1, 32)
-
-local v_Names = gen_validate_str(2, 1024)
 
 local function tc_update_common(cmd, ext)
 	local check_map = {

@@ -43,7 +43,6 @@ function cmd_map.zone_get()
 
 	return query_common(m, "zone_get")
 end
-log.setlevel("1,2,3")
 
 function cmd_map.zone_add()
 	local m, e = validate_post({

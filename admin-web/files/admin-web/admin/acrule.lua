@@ -1,4 +1,5 @@
 -- author: gx
+
 local js = require("cjson.safe")
 local log = require("common.log")
 local query = require("common.query")
@@ -14,7 +15,7 @@ local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.g
 local v_ruleid 		= gen_validate_num(0,255)
 local v_rulename 	= gen_validate_str(1,64)
 local v_ruletype	= gen_validate_str(1,16,true)
-local v_ruledesc 	= gen_validate_str(0,63)
+local v_ruledesc 	= gen_validate_str(0,64)
 local v_srczids		= gen_validate_str(2,1024)
 local v_dstzids 	= gen_validate_str(2,1024)
 local v_protoids	= gen_validate_str(2,10240)

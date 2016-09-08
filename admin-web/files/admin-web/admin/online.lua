@@ -26,15 +26,17 @@ local function query_common(m, cmd)
 	return (not r) and reply_e(e) or ngx.say(r)
 end
 
-local online_fields = {ukey = 1, username = 1}
 function cmd_map.online_get()
 	local m, e = validate_get({page = 1, count = 1})
 	if not m then
 		return reply_e(e)
 	end
 
+	local online_fields = {ukey = 1, username = 1}
+
 	local cond = adminlib.search_cond(adminlib.search_opt(m, {order = online_fields, search = online_fields}))
 	local sql = string.format("select * from online %s %s %s", cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
+
 	local r, e = mysql_select(sql)
 	return r and reply(r) or reply_e(e)
 end
@@ -49,7 +51,7 @@ function cmd_map.online_del()
 	if not ukeys then
 		return reply_e("invalid ukeys")
 	end
-	ngx.log(ngx.ERR, m.ukeys)
+
 	for _, ukey in ipairs(ukeys) do
 		if not (type(ukey) == "string" and ukey:find("^%d+_%d+$")) then
 			return reply_e("invalid ukeys")

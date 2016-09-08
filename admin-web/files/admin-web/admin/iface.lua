@@ -48,12 +48,13 @@ function cmd_map.iface_set()
 	ngx.req.read_body()
 	local p = ngx.req.get_post_args()
 	local arg = p.arg
+
 	local cfg, e = network.validate(arg)
 	if not cfg then
 		return reply_e(e)
 	end
+
 	return query_common({cmd = "iface_set", network = cfg}, "iface_set")
 end
 
 return {run = run}
-
