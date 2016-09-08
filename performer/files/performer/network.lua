@@ -24,8 +24,8 @@ end
 local function generate_network_cmds(board, network)
 	local firewall = {
 		zones = {
-			lan = {id = 0, ifnames = {}, networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "ACCEPT", mtu_fix = 1, masq = 0},
-			wan = {id = 1, ifnames = {}, networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "REJECT", mtu_fix = 1, masq = 1},
+			lan = {id = 0, ifnames = "", networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "ACCEPT", mtu_fix = 1, masq = 0},
+			wan = {id = 1, ifnames = "", networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "REJECT", mtu_fix = 1, masq = 1},
 		},
 		defaults = {syn_flood = 1, input = "ACCEPT", output = "ACCEPT", forward = "REJECT"},
 		forwardings = {
@@ -43,46 +43,46 @@ local function generate_network_cmds(board, network)
 
 	-- setup network
 	for name, option in pairs(network.network) do
-		local ifnames, vlan = {}, nil
-
 		option.zone = name:find("^lan") and "lan" or "wan"
 		if name:find("^lan") or #option.ports > 1 then
 			option.type = 'bridge'
 		end
 
 		-- make the switchs
+		local ifname_vlan_map, vlan = {}, nil
 		for _, i in ipairs(option.ports) do
-			local bp = board.ports[i]
-			if bp.type == 'switch' then
+			local port = board.ports[i]
+			if port.type == 'switch' then
 				vlan = vlan or tostring(i)
-				local bp_device = bp.device
-				switchs[bp_device] = switchs[bp_device] or {}
-				switchs[bp_device][vlan] = switchs[bp_device][vlan] or {}
-				switchs[bp_device][vlan]["outer_ports"] = switchs[bp_device][vlan]["outer_ports"] or {}
+				local device = port.device
+				switchs[device] = switchs[device] or {}
+				switchs[device][vlan] = switchs[device][vlan] or {}
+				switchs[device][vlan].outer_ports = switchs[device][vlan].outer_ports or {}
+				table.insert(switchs[device][vlan].outer_ports, port.num)
+				switchs[device][vlan].inner_port = port.inner_port
 
-				table.insert(switchs[bp_device][vlan]["outer_ports"], bp.num)
-
-				switchs[bp_device][vlan]["inner_port"] = bp.inner_port
-				ifnames[bp.ifname .. "." .. vlan] = tonumber(vlan)
+				ifname_vlan_map[port.ifname .. "." .. vlan] = tonumber(vlan)
 			else
-				ifnames[bp.ifname] = i
+				ifname_vlan_map[port.ifname] = i
 			end
 		end
 
 		-- setup devices
-		option.ifname = ""
-		for ifname, i in pairs(ifnames) do
-			option.ifname = option.ifname == "" and ifname or string.format("%s %s", option.ifname, ifname)
+		local ifnames = {}
+		for ifname, i in pairs(ifname_vlan_map) do
 			table.insert(network_arr, string.format("obj=`uci add network device`"))
 			table.insert(network_arr, string.format("test -n \"$obj\" && {"))
 			table.insert(network_arr, string.format("	uci set network.$obj.name='%s'", ifname))
 			table.insert(network_arr, string.format("	uci set network.$obj.macaddr='%s'", option.mac and option.mac ~= "" and option.mac or board.ports[i].mac))
 			local _ = option.mtu and option.mtu ~= "" and table.insert(network_arr, string.format("	uci set network.$obj.mtu='%s'", option.mtu))
 			table.insert(network_arr, string.format("}"))
+
+			table.insert(ifnames, ifname)
 		end
+		ifnames = table.concat(ifnames, " ")
 
 		table.insert(network_arr, string.format("uci set network.%s=interface", name))
-		table.insert(network_arr, string.format("uci set network.%s.ifname='%s'", name, option.ifname))
+		table.insert(network_arr, string.format("uci set network.%s.ifname='%s'", name, ifnames))
 
 		local _ = option.mac and option.mac ~= "" and table.insert(network_arr, string.format("uci set network.%s.macaddr='%s'", name, option.mac))
 		local _ = option.type and option.type ~= "" and table.insert(network_arr, string.format("uci set network.%s.type='%s'", name, option.type))
@@ -129,10 +129,10 @@ local function generate_network_cmds(board, network)
 		end
 
 		table.insert(firewall.zones[option.zone].networks, name)
-		if option.proto == "static" or option.proto == "dhcp" then
-			table.insert(firewall.zones[option.zone].ifnames, option.type == 'bridge' and "br-" .. name or option.ifname)
-		elseif option.proto == "pppoe" then
+		if option.proto == "pppoe" then
 			table.insert(firewall.zones[option.zone].ifnames, "pppoe-" .. name)
+		else
+			table.insert(firewall.zones[option.zone].ifnames, option.type == 'bridge' and "br-" .. name or ifnames)
 		end
 	end
 
@@ -177,9 +177,7 @@ local function generate_network_cmds(board, network)
 		table.insert(nos_zone_arr, string.format("test -n \"$obj\" && {"))
 		table.insert(nos_zone_arr, string.format("	uci set nos-zone.$obj.name='%s'", name))
 		table.insert(nos_zone_arr, string.format("	uci set nos-zone.$obj.id='%s'", zone.id))
-		for _, ifname in ipairs(zone.ifnames) do
-			table.insert(nos_zone_arr, string.format("	uci add_list nos-zone.$obj.ifname='%s'", ifname))
-		end
+		table.insert(nos_zone_arr, string.format("  uci set nos-zone.$obj.ifname='%s'", zone.ifnames))
 		table.insert(nos_zone_arr, string.format("}"))
 
 		table.insert(firewall_arr, string.format("obj=`uci add firewall zone`"))
@@ -190,9 +188,7 @@ local function generate_network_cmds(board, network)
 		table.insert(firewall_arr, string.format("	uci set firewall.$obj.forward='%s'", zone.forward))
 		table.insert(firewall_arr, string.format("	uci set firewall.$obj.mtu_fix='%u'", zone.mtu_fix))
 		table.insert(firewall_arr, string.format("	uci set firewall.$obj.masq='%s'", zone.masq))
-		for _, network in ipairs(zone.networks) do
-			table.insert(firewall_arr, string.format("	uci add_list firewall.$obj.network='%s'", network))
-		end
+		table.insert(firewall_arr, string.format("	uci set firewall.$obj.network='%s'", table.concat(zone.networks, " ")))
 		table.insert(firewall_arr, string.format("}"))
 	end
 
