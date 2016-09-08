@@ -14,7 +14,7 @@ local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.g
 local v_ipgid       = gen_validate_num(0, 63)
 local v_ipgids      = gen_validate_str(1, 256)
 local v_range_str   = gen_validate_str(2, 64)
-local v_desc        = gen_validate_str(1, 64, true)
+local v_desc        = gen_validate_str(0, 64)
 local v_name        = gen_validate_str(1, 32, true)
 
 

@@ -74,7 +74,7 @@ end
 
 function key_map.zonename()
 	local kv, e = mysql_select("select k,v from kv where k in ('zonename')")
-	return kv[1] and kv[1].v or ""
+	return (kv and kv[1]) and kv[1].v or ""
 end
 
 function cmd_map.system_get()

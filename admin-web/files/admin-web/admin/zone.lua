@@ -15,7 +15,7 @@ local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.g
 local validate_zid = gen_validate_num(0, 255)
 local validate_zids = gen_validate_str(1, 256)
 local validate_zonetype = gen_validate_num(2, 3)
-local validate_zonedesc = gen_validate_str(1, 32)
+local validate_zonedesc = gen_validate_str(0, 32)
 local validate_zonename = gen_validate_str(1, 32, true)
 
 local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
