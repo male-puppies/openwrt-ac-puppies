@@ -33,6 +33,7 @@ test $version -lt 1 && {
 			uci add_list firewall.@zone[1].network="wan"
 		}
 	}
+	while uci delete firewall.@rule[0] >/dev/null 2>&1; do :; done
 	uci commit firewall
 	[ x`uci get dropbear.@dropbear[0]` = xdropbear ] && {
 		uci set dropbear.@dropbear[0].PasswordAuth='off'
