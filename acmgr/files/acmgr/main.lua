@@ -15,6 +15,7 @@ local read = common.read
 local tcp_chan, udp_chan
 local encode, decode = js.encode, js.decode
 local modules = {
+	dbevent = 	require("dbevent"),
 	aclog = 	require("aclog"),
 }
 
@@ -51,6 +52,49 @@ local function loop_check_debug()
 	end
 end
 
+local function dispatch_tcp_loop()
+	local f = function(map)
+		local match, r, e, s
+		local cmd, topic, seq = map.pld, map.mod, map.seq
+		for _, mod in pairs(modules) do
+			local f = mod.dispatch_tcp
+			if f and f(cmd) then
+				local _ = mod and seq and mqtt:publish(topic, js.encode({seq = seq, pld = {r, e}}))
+				return
+			end
+		end
+		print("invalid cmd", js.encode(cmd))
+	end
+
+	local r, e
+	while true do
+		r, e = tcp_chan:read()					assert(r, e)
+		f(r)
+	end
+end
+
+local handlers = {}
+local function on_ext_event(cmd)
+	local arr = handlers[cmd.cmd]
+	if arr then
+		for _, f in ipairs(arr) do
+			f(cmd)
+		end
+		return
+	end
+
+	local arr = {}
+	for _, mod in pairs(modules) do
+		local f = mod.dispatch_tcp
+		if f and f(cmd) then
+			table.insert(arr, f)
+		end
+	end
+
+	handlers[cmd.cmd] = arr
+	local _ = #arr == 0 and print("no one deal with cmd", js.encode(cmd))
+end
+
 local function start_udp_server()
 	local udpsrv = udp.new()
 	local r, e = udpsrv:bind("127.0.0.1", 60000) 			assert(r, e)
@@ -72,7 +116,6 @@ local function start_udp_server()
 
 	return udpsrv
 end
-
 
 local function start_sand_server()
 	local pld, cmd, map, r, e
@@ -100,7 +143,6 @@ local function start_sand_server()
 	return sandcproxy.run_new(args)
 end
 
-
 local function main()
 	log.setmodule("acmgr")
 	tcp_chan, udp_chan = ski.new_chan(100), ski.new_chan(100)
@@ -108,9 +150,12 @@ local function main()
 
 	for _, mod in pairs(modules) do
 		mod.init(udpsrv, mqtt)
+		if mod.set_event_cb then
+			mod.set_event_cb(on_ext_event)
+		end
 	end
 
-	local _ = ski.go(dispatch_udp_loop), ski.go(loop_check_debug)
+	local _ = ski.go(dispatch_udp_loop), ski.go(loop_check_debug), ski.go(dispatch_tcp_loop)
 end
 
 ski.run(main)
