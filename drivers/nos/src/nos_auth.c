@@ -152,7 +152,7 @@ unsigned int nos_auth_hook(const struct net_device *in,
 		struct nf_conn *ct,
 		struct nos_user_info *ui)
 {
-	if (ui->hdr.rule_magic != g_auth_conf_magic || ui->hdr.status == AUTH_NONE) {
+	if ((ui->hdr.rule_magic != g_auth_conf_magic && ui->hdr.status != AUTH_OK) || ui->hdr.status == AUTH_NONE) {
 		int i;
 		struct ethhdr *eth;
 		ui->hdr.rule_magic = g_auth_conf_magic;
