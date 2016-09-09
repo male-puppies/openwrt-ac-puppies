@@ -56,7 +56,19 @@ function createDt() {
 			{
 				"data": "proto_ids",
 				"render": function(d, t, f) {
-					return "协议";
+					var data = dtObjToArray(d),
+						len = data.length,
+						str = "";
+
+					for (var i = 0; i < len; i++) {
+						if (i > 1) {
+							str += ", ...";
+							break;
+						} else {
+							str += typeof data[i].proto_desc != "undefined" ? ", " + data[i].proto_desc : "";
+						}
+					}
+					return str.substring(2);
 				}
 			},
 			{
