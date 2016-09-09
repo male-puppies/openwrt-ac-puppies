@@ -1184,46 +1184,11 @@ static int process_check_result(flow_info_t *fi, nacs_msg_t *result)
 		nt_flow_audit_set(fi);
 	}
 
-	NACS_DEBUG("----------process check result start-----\n");
-	NACS_DEBUG("Match in:[%s %s]\n",
-		result->rule_type == RULE_TYPE_CONTROL ? "CONTROL": "AUDIT",
-		result->rule_sub_type == RULE_SUB_TYPE_SET ? "SET" :"RULE");
-
 	if (result->rule_sub_type == RULE_SUB_TYPE_RULE) {
-		NACS_DEBUG("proto_id=%u\n", result->u.rule.proto_id);
-	}
-	else {
-		switch(result->u.set.set_type) {
-			case AC_MACWHITELIST_SET:
-				NACS_DEBUG("Set:%s\n", "MACWHITELIST");
-				break;
-
-			case AC_IPWHITELIST_SET:
-				NACS_DEBUG("Set:%s\n", "IPWHITELIST");
-				break;
-
-			case AC_MACBLACKLIST_SET:
-				NACS_DEBUG("Set:%s\n", "MACBLACKLIST");
-				break;
-
-			case AC_IPBLACKLIST_SET:
-				NACS_DEBUG("Set:%s\n", "IPBLACKLIST");
-				break;
-
-			default:
-				break;
+		nt_msghdr_init(&hdr, en_MSG_NACS, sizeof(nacs_msg_t));
+		if (nt_msg_enqueue(&hdr, result, 0)) {
+			NACS_ERROR("nacs enqueue failed.\n");
 		}
-	}
-	NACS_DEBUG(FMT_MAC_STR, FMT_MAC(result->macaddr));
-	NACS_DEBUG("src(%u.%u.%u.%u:%d), dst_ip(%u.%u.%u.%u:%d)\n",
-				NIPQUAD(result->src_ip), ntohs(result->src_port),
-				NIPQUAD(result->dst_ip), ntohs(result->dst_port));
-	NACS_DEBUG("Actions:%u\n", result->actions);
-	NACS_DEBUG("----------process check result end--------\n");
-
-	nt_msghdr_init(&hdr, en_MSG_NACS, sizeof(nacs_msg_t));
-	if (nt_msg_enqueue(&hdr, result, 0)) {
-		NACS_ERROR("nacs enqueue failed.\n");
 	}
 	return 0;
 }
