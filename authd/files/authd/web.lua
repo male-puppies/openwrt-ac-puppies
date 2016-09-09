@@ -15,6 +15,7 @@ local cache		= require("cache")
 
 local escape_map, escape_arr = common.escape_map, common.escape_arr
 
+local r1 = log.real1
 local set_online = authlib.set_online
 local insert_online = authlib.insert_online
 local get_rule_id, get_ip_mac = nos.user_get_rule_id, nos.user_get_ip_mac
@@ -190,15 +191,33 @@ function on_keepalive(count, arr)
 		local narr = reduce(limit(arr, i, step), function(t, r) return rawset(t, #t + 1, string.format("'%s'", r.ukey)) end, {})
 		local sql = string.format("update memo.online set active='%s' where ukey in (%s)", math.floor(ski.time()), table.concat(narr, ","))
 
-		log.real1("%s", sql)
+		r1("%s", sql)
 		local r, e = simple:mysql_execute(sql) 	assert(r, e)
 	end
+end
+
+local function check_expire()
+	local now = os.date("%Y-%m-%d %H:%M:%S")
+	local sql = string.format("select ukey from online a inner join user using (username) where a.type='web' and expire not in ('0000-00-00 00:00:00', '1970-01-01 00:00:00', '') and expire<'%s'", now)
+
+	local rs, e = simple:mysql_select(sql)		assert(rs, e)
+	if #rs == 0 then
+		return
+	end
+
+	r1("expire %s", js.encode(rs))
+
+	local ukeys = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, r.ukey) end, {})
+	authlib.offline_ukeys(simple, ukeys)
 end
 
 -- 定时/超时下线
 function loop_timeout_check()
 	while true do
 		ski.sleep(cache.timeout_check_intervel())
+
+		check_expire()
+
 		authlib.timeout_offline(simple, "web")
 	end
 end
