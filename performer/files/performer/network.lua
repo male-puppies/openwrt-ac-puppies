@@ -24,8 +24,8 @@ end
 local function generate_network_cmds(board, network)
 	local firewall = {
 		zones = {
-			lan = {id = 0, ifnames = {}, networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "ACCEPT", mtu_fix = 1, masq = 0},
-			wan = {id = 1, ifnames = {}, networks = {}, input = "ACCEPT", ouput = "ACCEPT", forward = "REJECT", mtu_fix = 1, masq = 1},
+			lan = {id = 0, ifnames = {}, networks = {}, input = "ACCEPT", output = "ACCEPT", forward = "ACCEPT", mtu_fix = 1, masq = 0},
+			wan = {id = 1, ifnames = {}, networks = {}, input = "ACCEPT", output = "ACCEPT", forward = "REJECT", mtu_fix = 1, masq = 1},
 		},
 		defaults = {syn_flood = 1, input = "ACCEPT", output = "ACCEPT", forward = "REJECT"},
 		forwardings = {
@@ -112,8 +112,8 @@ local function generate_network_cmds(board, network)
 		-- setup dhcpd
 		if option.proto == "static" and option.dhcpd and option.dhcpd.enabled == 1 then
 			local ipaddr, netmask = ipops.get_ip_and_mask(option.ipaddr)
-			local startip = ipops.ipstr2int(option.dhcpd.start)
-			local endip = ipops.ipstr2int(option.dhcpd.end)
+			local startip = ipops.ipstr2int(option.dhcpd["start"])
+			local endip = ipops.ipstr2int(option.dhcpd["end"])
 			local s, e = ipops.bxor(startip, ipops.band(ipaddr, netmask)), ipops.bxor(endip, ipops.band(ipaddr, netmask))
 
 			table.insert(dhcp_arr, string.format("uci set dhcp.%s=dhcp", name))
