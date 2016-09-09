@@ -35,7 +35,7 @@ function cmd_map.nettool_get(cmd)
 	end
 
 	m.timeout = timeout
-	return query_common(m, cmd, timeout * 1000)
+	return query_common(m, cmd, (timeout + 2) * 1000)
 end
 
 return {run = run}
