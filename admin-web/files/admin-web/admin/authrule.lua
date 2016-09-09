@@ -74,6 +74,10 @@ local function validate_authrule(m)
 		end
 	end
 
+	if not (#white_ip <= 16 and #white_mac <= 16) then
+		return nil, "too many"
+	end
+
 	for _, ip in ipairs(white_ip) do
 		if not ip:find(ip_pattern) then
 			return nil, "invalid white_ip"

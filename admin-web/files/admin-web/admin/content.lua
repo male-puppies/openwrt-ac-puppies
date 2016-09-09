@@ -106,6 +106,7 @@ curl 'http://127.0.0.1/v1/admin/api/user_get?token=30810b31d61557198a749ebf5923f
 
 curl 'http://127.0.0.1/v1/admin/api/online_del?token=30810b31d61557198a749ebf5923f582' -d 'ukeys=["1234_5678"]'
 curl 'http://127.0.0.1/v1/admin/api/online_get?token=30810b31d61557198a749ebf5923f582&page=1&count=10&order=uid&desc=1&search=username&like=aaa'
+curl 'http://127.0.0.1/v1/admin/api/online_delall?token=30810b31d61557198a749ebf5923f582' -d 'ukeys=*'
 
 curl 'http://127.0.0.1/v1/admin/api/route_del?token=9903f8226c387824266f87aba80116f3' -d 'rids=[1]'
 curl 'http://127.0.0.1/v1/admin/api/route_set?token=9903f8226c387824266f87aba80116f3' -d 'rid=1&target=192.168.0.0&netmask=255.255.255.255&gateway=192.168.0.1&metric=6&mtu=1500&iface=lan0'
