@@ -141,9 +141,18 @@ function Doffline() {
 	});
 }
 
+function DoAffline() {
+	cgicall.post("online_delall", {ukeys: "*"}, function(d) {
+		cgicallBack(d, initData, function(){
+			createModalTips("强制下线所有用户失败！" + (d.data ? d.data : ""));
+		});
+	})
+}
+
 function initEvents() {
 	$(".checkall").on("click", OnSelectAll);
-	$(".offline").on("click", function(d) {Onoffline()})
+	$(".offline").on("click", function(d) {Onoffline()});
+	$(".aoffline").on("click", OnAoffline);
 	$('[data-toggle="tooltip"]').tooltip();
 }
 
@@ -158,6 +167,10 @@ function Onoffline(that) {
 		return;
 	}
 	createModalTips("是否确认使该用户强制下线？", "Doffline");
+}
+
+function OnAoffline() {
+	createModalTips("是否确认强制下线所有用户？", "DoAffline");
 }
 
 function getSelected(that) {
