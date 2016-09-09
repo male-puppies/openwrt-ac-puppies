@@ -67,6 +67,11 @@ function kvmap.auth_bypass_dst(s)
 	if not m then
 		return nil, "invalid auth_bypass_dst"
 	end
+
+	if #m > 64 then
+		return nil, "too many"
+	end
+
 	return s
 end
 
