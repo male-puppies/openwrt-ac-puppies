@@ -67,7 +67,7 @@ function createDtList() {
 			{
 				"data": null,
 				"render": function(d, t, f) {
-					return arrive_timer_format(f.active - f.login);
+					return arrive_timer_format(f.now - f.login);
 				}
 			},
 			{

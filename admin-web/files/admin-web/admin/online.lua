@@ -26,6 +26,13 @@ local function query_common(m, cmd)
 	return (not r) and reply_e(e) or ngx.say(r)
 end
 
+local function get_uptime()
+	local fp = io.open("/proc/uptime")
+	local now = fp:read("*n")
+	fp:close()
+	return now
+end
+
 function cmd_map.online_get()
 	local m, e = validate_get({page = 1, count = 1})
 	if not m then
@@ -35,7 +42,7 @@ function cmd_map.online_get()
 	local online_fields = {ukey = 1, username = 1}
 
 	local cond = adminlib.search_cond(adminlib.search_opt(m, {order = online_fields, search = online_fields}))
-	local sql = string.format("select * from online %s %s %s", cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
+	local sql = string.format("select *, %s as now from online %s %s %s", get_uptime(), cond.like and string.format("where %s", cond.like) or "", cond.order, cond.limit)
 
 	local r, e = mysql_select(sql)
 	return r and reply(r) or reply_e(e)
@@ -59,6 +66,15 @@ function cmd_map.online_del()
 	end
 
 	return query_common(m, "online_del")
+end
+
+function cmd_map.online_delall()
+	local m, e = validate_post({})
+	if not m then
+		return reply_e(e)
+	end
+
+	return query_common(m, "online_delall")
 end
 
 return {run = run}
