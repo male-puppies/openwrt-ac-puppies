@@ -28,4 +28,16 @@ udp_map["online_del"] = function(p, ip, port)
 	udpsrv:send(ip, port, js.encode({status = 0, data = "ok"}))
 end
 
+-- {"cmd":"online_delall"}
+udp_map["online_delall"] = function(p, ip, port)
+	log.info("force offline all")
+
+	local rs, e = simple:mysql_select("select ukey from online")
+	local ukeys = fp.reduce(rs, function(t, r) return rawset(t, #t + 1, r.ukey) end, {})
+
+	authlib.offline_ukeys(simple, ukeys)
+
+	udpsrv:send(ip, port, js.encode({status = 0, data = "ok"}))
+end
+
 return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}

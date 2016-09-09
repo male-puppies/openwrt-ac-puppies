@@ -203,4 +203,4 @@ function loop_timeout_check()
 	end
 end
 
-return {init = init, dispatch_udp = authlib.gen_dispatch_tcp(udp_map)}
+return {init = init, dispatch_udp = authlib.gen_dispatch_udp(udp_map)}
