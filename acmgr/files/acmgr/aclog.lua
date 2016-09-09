@@ -50,10 +50,9 @@ udp_map["aclog_add"] = function(p, ip, port)
 		user		= {ip = p.user.ip, mac = p.user.mac},
 		rulename	= rulename,
 		protoname	= protoname,
-		-- todo: convert jiffies to datetime
 		tm			= os.date("%Y-%m-%d %H:%M:%S"),
 		actions		= p.actions,
-		ext			= {flow = p.flow}
+		--ext			= {flow = p.flow}
 	}
 
 	if p.ruletype == "CONTROL" then
@@ -73,7 +72,10 @@ udp_map["ctrllog_get"] = function (p, ip, port)
 	local arr = ctrl_log:all()	assert(arr)
 
 	if idx <= #arr then
-		for i = 0, count - 1 do
+		local left = #arr - idx
+		local count = (count > left and left) or count
+		count = count - 1
+		for i = 0, count do
 			table.insert(res, arr[i + idx])
 		end
 	end
