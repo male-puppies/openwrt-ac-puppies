@@ -30,7 +30,6 @@ function initData1() {
 
 function initData3() {
 	cgicall.get("system_ifaceinfo", function(d) {
-		console.log(d)
 		if (d.status == 0) {
 			setInterface(d.data);
 			setTimeout(initData3, 5000);
@@ -420,6 +419,24 @@ function setInterface(d) {
 							}())
 						))
 					)
+					.append($("<li>").html("接收: ")
+						.append($("<span>").html(
+							(function() {
+								var d = backdata(s_data, "rx_bytes");
+								if (d === "--") return d;
+								return getBytes(d) + (s_data.tx_packets ? "(" + s_data.rx_packets + "个)" : "");
+							}())
+						))
+					)
+					.append($("<li>").html("发送: ")
+						.append($("<span>").html(
+							(function() {
+								var d = backdata(s_data, "tx_bytes");
+								if (d === "--") return d;
+								return getBytes(d) + (s_data.tx_packets ? "(" + s_data.tx_packets + "个)" : "");
+							}())
+						))
+					)
 					.append($("<li>").html("运行: ")
 						.append($("<span>").html(
 								(function() {
@@ -524,5 +541,18 @@ function initBandwidthNum(bps, ser_name) {
 		return ser_name + '：' + kbps + 'Kbps';
 	} else if (kbps >= 1000) {
 		return ser_name + '：' + toDecimal(kbps/1000) + 'Mbps';
+	}
+}
+
+function getBytes(d) {
+	var data = parseInt(d);
+	if (data < 1000) {
+		return data + "B";
+	} else if (data >= 1000 && data < 1000000) {
+		return toDecimal(data/1000) + "KB";
+	} else if (data >=1000000 && data < 1000000000) {
+		return toDecimal(data/1000000) + "MB";
+	} else {
+		return toDecimal(data/1000000000) + "GB";
 	}
 }

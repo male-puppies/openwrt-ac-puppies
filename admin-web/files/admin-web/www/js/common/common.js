@@ -44,7 +44,7 @@
 				callfn = arguments[argc];
 			}
 
-			if (argc == 2 && typeof arguments[1] == "object") {
+			if (argc == 2 && typeof arguments[1] === "object") {
 				obj = arguments[1]
 			} else {
 				obj = {}

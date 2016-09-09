@@ -3,7 +3,7 @@ var g_post = {
 	"switch": 0,
 	"account": "",
 	"ac_host": "",
-	"desc": "",
+	"descr": "",
 	"ac_port": ""
 };
 
