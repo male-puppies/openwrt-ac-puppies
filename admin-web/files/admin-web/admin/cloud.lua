@@ -35,7 +35,7 @@ function cmd_map.cloud_set()
 		ac_host 	= gen_validate_str(0, 250),
 		ac_port 	= gen_validate_num(0, 65535),
 		account 	= gen_validate_str(1, 16, true),
-		description = gen_validate_str(0, 64),
+		descr		= gen_validate_str(0, 64),
 		switch		= gen_validate_num(0, 1),
 	})
 	if not m then

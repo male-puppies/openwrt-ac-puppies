@@ -12,7 +12,7 @@ local read, save_safe = common.read, common.save_safe
 local udp_map = {}
 local udpsrv, mqtt, reply
 
-local default_cloud = {ac_host = "", ac_port = 61886, account = "", description = ""}
+local default_cloud = {ac_host = "", ac_port = 61886, account = "", descr = ""}
 
 local function init(u, p)
 	udpsrv, mqtt = u, p
