@@ -49,6 +49,7 @@ enum em_flow_flags {
 	FG_FLOW_AUDIT			= 1<<(FLOW_STAT_SHIFT + 3), /* audit need. */
 	FG_FLOW_AUDIT_FIN		= 1<<(FLOW_STAT_SHIFT + 4), /* do audit table finished . */
 	FG_FLOW_CONTROL_FIN		= 1<<(FLOW_STAT_SHIFT + 5), /* do control table finished. */
+	FG_FLOW_STATISTIC		= 1<<(FLOW_STAT_SHIFT + 6), /* flow statistics interval. */
 	/* next byte: drop flags. */
 	FG_FLOW_DROP_AUTH		= 1<<(FLOW_DROP_SHIFT + 0), /* droped by auth not successued */
 	FG_FLOW_DROP_L4_FW		= 1<<(FLOW_DROP_SHIFT + 1), /* droped by layer 4 firewall, such as blacklist. */
@@ -181,6 +182,21 @@ static inline void nt_flow_dbg_rlmt_set(flow_info_t *fi)
 static inline void nt_flow_dbg_rlmt_clr(flow_info_t *fi)
 {
 	fi->hdr.flags &= ~(FG_LFOW_DBG_RATELIMIT);
+}
+
+static inline int nt_flow_stat(flow_info_t *fi)
+{
+	return fi->hdr.flags & FG_FLOW_STATISTIC;
+}
+
+static inline void nt_flow_stat_set(flow_info_t *fi)
+{
+	fi->hdr.flags |= FG_FLOW_STATISTIC;
+}
+
+static inline void nt_flow_stat_clr(flow_info_t *fi)
+{
+	fi->hdr.flags &= ~(FG_FLOW_STATISTIC);
 }
 
 /* ########################## */
