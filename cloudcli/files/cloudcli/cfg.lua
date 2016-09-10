@@ -5,7 +5,7 @@ local const = require("constant")
 local cfgpath = const.cloud_config
 
 local read, save_safe = common.read, common.save_safe
-local firmware_detail = js.encode({major = "ac", minor = "9531"})
+local firmware_detail = js.encode({major = "ac", minor = "9531", api_ver = "2.0"})
 
 local g_kvmap, g_devid
 
