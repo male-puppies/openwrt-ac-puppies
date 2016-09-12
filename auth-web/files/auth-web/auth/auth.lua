@@ -50,6 +50,7 @@ end
 -- 发送到redis-server执行的代码，一定要简单！
 local set_redirect_code = [[
 	local pc, index, timeout = redis.call, ARGV[1], ARGV[2]
+	local r = pc("SELECT", index) 		assert(r.ok == "OK")
 	for _, item in ipairs(cjson.decode(ARGV[3])) do
 		local r = pc("hset", "redirect", item[1], item[2]) 	assert(r)
 		local r = pc("expire", "redirect", timeout) 		assert(r)
@@ -94,15 +95,61 @@ local uri_map = {}
 uri_map["/cloudonline"] = default_handler 		-- 查询是否在线
 uri_map["/bypass_host"] = default_handler 		-- bypass
 
+
+local set_authopt_code = [[
+	local pc, index, timeout = redis.call, ARGV[1], ARGV[2]
+	local r = pc("SELECT", index) 		assert(r.ok == "OK")
+	for _, item in ipairs(cjson.decode(ARGV[3])) do
+		local r = pc("hset", "authopt", item[1], item[2]) 	assert(r)
+		local r = pc("expire", "authopt", timeout) 		assert(r)
+	end
+	return true
+]]
+
+local function get_authopt(rid)
+	local r, e = rds.query(function(rds)	return rds:hget("authopt", rid) end)
+	if r and r ~= ngx.null then
+		return r
+	end
+
+	log.real1("reset")
+	local get_opt = function(opt)
+		return type(opt) == "string" and opt or js.encode(opt)
+	end
+
+	-- redis中没有缓存，或者已经超时，重新从database获取，并缓存到redis
+	local rs, e = mysql_select("select redirect,modules,rid from authrule where authtype='web'")
+	if not (rs and #rs > 0) then
+		log.error("mysql error %s", e or "")
+		return get_opt({redirect = "http://www.baidu.com", sms = 0, wechat = 1, web = 1})
+	end
+
+	local arr = fp.reduce(rs, function(t, r)
+		local m = js.decode(r.modules)
+		m.redirect = r.redirect
+		return rawset(t, #t + 1, {r.rid, get_opt(m)})
+	end, {})
+	local r, e = rds.query(function(rds)
+		return rds:eval(set_authopt_code, 0, 0, 60, js.encode(arr))
+	end)
+
+	for _, r in ipairs(arr) do
+		if r[1] == rid then
+			return r[2]
+		end
+	end
+
+	return get_opt({redirect = "http://www.baidu.com", sms = 0, wechat = 1, web = 1})
+end
+
 uri_map["/authopt"] = function()
 	local r, e = check_common_query_vars()
 	if not r then
 		return ngx.exit(ngx.ERROR)
 	end
 
-
-
-	local url = string.format("/%s/index.html?%s", get_redirect_type(r.rid), ngx.var.query_string)
+	local s = get_authopt(r.rid)
+	ngx.say(s)
 end
 
 -- 内核重定向页面，根据rid对应的策略，重定向到本地/云端模板。重定向会带有参数ip,mac,uid,magic,rid
