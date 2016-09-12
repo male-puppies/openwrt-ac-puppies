@@ -214,8 +214,12 @@ end
 
 -- {"cmd":"system_restore","path":"/tmp/mysysbackup.bin"}
 udp_map["system_restore"] = function(p, ip, port)
-	reply(ip, port, 0, "ok")
-	os.execute(string.format("./sysbackup.sh restore %s &", p.path))
+	local s = read(string.format("./sysbackup.sh restore %s 2>&1 &", p.path), io.popen)
+	local s = s:match("result:(.-)\n")
+	if s:find("ok") then
+		return reply(ip, port, 0, "ok")
+	end
+	return reply(ip, port, 1, "版本不一致！")
 end
 
 return {init = init, dispatch_udp = cfglib.gen_dispatch_udp(udp_map)}
