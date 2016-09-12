@@ -27,6 +27,7 @@ local v_wechat      = gen_validate_str(2, 1024)
 local v_sms         = gen_validate_str(2, 1024)
 local v_rids        = gen_validate_str(2, 256)
 local v_priority    = gen_validate_num(0, 99999)
+local v_redirect 	= gen_validate_str(0, 260)
 
 local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
@@ -119,6 +120,7 @@ local function authrule_update_common(cmd, ext)
 		white_mac   = v_while_mac,
 		wechat      = v_wechat,
 		sms         = v_sms,
+		redirect 	= v_redirect,
 	}
 
 	for k, v in pairs(ext or {}) do
@@ -134,6 +136,8 @@ local function authrule_update_common(cmd, ext)
 	if not r then
 		return reply_e(e)
 	end
+
+	m.redirect = m.redirect == "" and "http://www.baidu.com" or m.redirect
 
 	return query_common(m, cmd)
 end

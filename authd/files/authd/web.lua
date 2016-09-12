@@ -119,18 +119,18 @@ function on_login(count, arr)
 		local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 
 		-- 过滤在线用户
-		local online, online_names = tomap(rs, "ukey"), tomap(rs, "username")
+		local online, online_names, login_names = tomap(rs, "ukey"), tomap(rs, "username"), tomap(users, "username")
 		local offline = reduce(exists, function(t, info)
-			local u_ip, u_port, ukey = info.u_ip, info.u_port, info.ukey
+			local u_ip, u_port, ukey, username = info.u_ip, info.u_port, info.ukey, info.username
 
 			-- 排除并回复已经在线的用户
 			if online[ukey] then
-				reply(u_ip, u_port, 0, "already online")
+				local rule = cache.authrule(login_names[username].rid)
+				reply(u_ip, u_port, 0, rule and rule.redirect or "http://www.baidu.com")
 				return t
 			end
 
 			-- 检查用户属性
-			local username = info.username
 			local r, e = check_user(user_map[username], info, online_names[username])
 			if not r then
 				reply(u_ip, u_port, 1, e)
@@ -142,8 +142,10 @@ function on_login(count, arr)
 
 		-- 插入表online
 		each(offline, function(_, r)
+			local username = r.username
 			set_online(r.uid, r.magic, r.gid, r.username)
-			reply(r.u_ip, r.u_port, 0, "ok")
+			local rule = cache.authrule(login_names[username].rid)
+			reply(r.u_ip, r.u_port, 0, rule and rule.redirect or "http://www.baidu.com")
 		end)
 
 		local _ = empty(offline) or insert_online(simple, offline, "web")

@@ -230,7 +230,7 @@ function DoSave() {
 	data.white_mac = data.white_mac.length == 0 ? [] : data.white_mac.split("\n");
 	data.white_ip = data.white_ip.length == 0 ? [] : data.white_ip.split("\n");
 	data.zid = "0";
-
+	data.redirect = ""; //TODO
 	if (modify_flag == "add") {
 		cgicall.post("authrule_add", data, function(d) {
 			cgicallBack(d, initData, function() {
