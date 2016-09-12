@@ -49,6 +49,6 @@ create_mysql_disk_table "create table $tbname ( \
 		to_sip		char(24)  		not null default '', \
 		to_sport 	integer 		not null default 0, \
 		to_dip		char(24)  		not null default '', \
-		to_dport 	integer 		not null default 0 \
-		reflection 	integer 		not null default 0, \
+		to_dport 	integer 		not null default 0, \
+		reflection 	integer 		not null default 0
 	)"
