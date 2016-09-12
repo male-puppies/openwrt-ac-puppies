@@ -21,6 +21,7 @@ local v_zid = gen_validate_num(0, 255)
 local v_port = gen_validate_num(0, 65535)
 local v_ip = gen_validate_str(0, 24)
 local v_fwids = gen_validate_str(2, 256)
+local v_reflection = gen_validate_str(0, 1)
 
 local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end
 
@@ -67,6 +68,7 @@ local function dnat_update_common(cmd, ext)
 		to_dzid			=	v_zid,
 		to_dip			=	v_ip,
 		to_dport		=	v_port,
+		reflection		=	v_reflection,
 	}
 
 	for k, v in pairs(ext or {}) do

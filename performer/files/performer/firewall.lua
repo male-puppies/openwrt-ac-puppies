@@ -49,7 +49,7 @@ local function generate_firewall_cmds()
 		local _ = rule.to_dip ~= "" and	table.insert(arr, string.format("	uci set firewall.$obj.dest_ip='%s'", rule.to_dip))
 		local _ = rule.to_dport ~= 0 and table.insert(arr, string.format("	uci set firewall.$obj.dest_port='%u'", rule.to_dport))
 
-		table.insert(arr, string.format("	uci set firewall.$obj.reflection='%u'", 0))
+		table.insert(arr, string.format("	uci set firewall.$obj.reflection='%u'", rule.reflection))
 		table.insert(arr, string.format("}"))
 	end
 

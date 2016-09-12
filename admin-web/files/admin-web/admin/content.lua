@@ -70,7 +70,7 @@ curl 'http://127.0.0.1/v1/admin/api/kv_get?token=30810b31d61557198a749ebf5923f58
 curl 'http://127.0.0.1/v1/admin/api/kv_set?token=30810b31d61557198a749ebf5923f582' -d 'auth_offline_time=1900&auth_redirect_ip=1.1.1.1&auth_bypass_dst=[1]'
 
 curl 'http://127.0.0.1/v1/admin/api/dnat_del?token=9903f8226c387824266f87aba80116f3' -d 'fwids=[1]'
-curl 'http://127.0.0.1/v1/admin/api/dnat_set?token=9903f8226c387824266f87aba80116f3' -d 'fwid=1&fwname=gsl&fwdesc=123456&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22'
+curl 'http://127.0.0.1/v1/admin/api/dnat_set?token=9903f8226c387824266f87aba80116f3' -d 'fwid=1&fwname=gsl&fwdesc=123456&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22&reflection=0'
 curl 'http://127.0.0.1/v1/admin/api/dnat_add?token=9903f8226c387824266f87aba80116f3' -d 'fwname=test3&fwdesc=desc of dnat&enable=1&proto=tcp&src_zid=0&dest_port=22&target_zid=0&target_ip=127.0.0.1&target_port=22'
 curl 'http://127.0.0.1/v1/admin/api/dnat_get?token=9903f8226c387824266f87aba80116f3&page=1&count=10'
 curl 'http://127.0.0.1/v1/admin/api/dnat_adjust?token=9903f8226c387824266f87aba80116f3' -d 'fwids=[0,1]'

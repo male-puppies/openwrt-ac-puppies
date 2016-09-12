@@ -24,6 +24,7 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		to_sport 	integer 		not null default 0, \
 		to_dip		char(24)  		not null default '', \
 		to_dport 	integer 		not null default 0, \
+		reflection 	integer 		not null default 0, \
 		foreign key(from_szid) references zone(zid) on delete restrict on update restrict, \
 		foreign key(from_dzid) references zone(zid) on delete restrict on update restrict, \
 		foreign key(to_dzid) references zone(zid) on delete restrict on update restrict \
@@ -49,4 +50,5 @@ create_mysql_disk_table "create table $tbname ( \
 		to_sport 	integer 		not null default 0, \
 		to_dip		char(24)  		not null default '', \
 		to_dport 	integer 		not null default 0 \
+		reflection 	integer 		not null default 0, \
 	)"
