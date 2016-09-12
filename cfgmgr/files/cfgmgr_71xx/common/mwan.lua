@@ -31,7 +31,7 @@ local function load_mwan()
 			if iface_exist then
 				table.insert(res.ifaces, new_ifc)
 			else
-				table.insert(res.ifaces, {name = iface, bandwidth = 0, enable = 1, track_ip = {}})
+				table.insert(res.ifaces, {name = iface, bandwidth = 100, enable = 1, track_ip = {}})
 			end
 		end
 	end
