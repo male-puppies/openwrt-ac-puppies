@@ -17,7 +17,7 @@ local v_ipgid       = gen_validate_num(0, 63)
 local v_ipgids      = gen_validate_str(1, 256)
 local v_range_str   = gen_validate_str(2, 1024)
 local v_desc        = gen_validate_str(0, 64)
-local v_name        = gen_validate_str(1, 32, true)
+local v_name        = adminlib.gen_validate_name(1, 32)
 
 
 local function query_u(p, timeout)	return query.query_u("127.0.0.1", 50003, p, timeout) end

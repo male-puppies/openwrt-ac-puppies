@@ -10,7 +10,7 @@ local validate_get, validate_post = adminlib.validate_get, adminlib.validate_pos
 local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
 
 local v_fwid = gen_validate_num(0, 63)
-local v_fwname = gen_validate_str(1, 32, true)
+local v_fwname = adminlib.gen_validate_name(1, 32)
 local v_fwdesc = gen_validate_str(0, 32)
 local v_enable = gen_validate_num(0, 1)
 local v_priority = gen_validate_num(0, 99999)

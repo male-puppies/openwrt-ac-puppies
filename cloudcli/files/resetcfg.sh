@@ -2,7 +2,7 @@
 opt=$1
 reset_ad() {
 	local adpath=/etc/config/ad.tgz
-	local cloudpath=/usr/share/auth-web/cloud
+	local cloudpath=/usr/share/auth-web/www/cloud
 	local tmpdir=$cloudpath".tmp"
 	local deldir=$cloudpath".del"
 
@@ -18,6 +18,7 @@ reset_ad() {
 	rm -rf $deldir
 	rm -rf /tmp/www
 	/etc/init.d/authd restart
+	/etc/init.d/cfgmgr restart
 }
 
 reset_dev() {
@@ -29,6 +30,7 @@ cloud_switch() {
 	/etc/init.d/proxybase restart
 	/etc/init.d/cloudcli restart
 	/etc/init.d/authd restart
+	/etc/init.d/cfgmgr restart
 }
 
 case $opt in

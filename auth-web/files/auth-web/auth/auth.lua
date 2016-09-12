@@ -17,7 +17,7 @@ local ip_pattern, mac_pattern 	= authlib.ip_pattern, authlib.mac_pattern
 local uri 			= ngx.var.uri
 local host, port 	= "127.0.0.1", 50002 	-- 进程 authd
 
-log.setlevel("1,2,3,4,d,i,e") 	-- TODO
+-- log.setlevel("1,2,3,4,d,i,e") 	-- TODO
 
 -- 检查获取查询字符串中的必备参数
 -- p = {"mac":"28-A0-2B-65-4D-62","uid":"1144","_t":"1549560","rid":"0","magic":"34952","ip":"172.16.20.43"}
@@ -91,12 +91,22 @@ local function default_handler()
 end
 
 local uri_map = {}
-uri_map["/authopt"] 	= default_handler 		-- 获取本地页面的展示选项
 uri_map["/cloudonline"] = default_handler 		-- 查询是否在线
 uri_map["/bypass_host"] = default_handler 		-- bypass
 
+uri_map["/authopt"] = function()
+	local r, e = check_common_query_vars()
+	if not r then
+		return ngx.exit(ngx.ERROR)
+	end
+
+
+
+	local url = string.format("/%s/index.html?%s", get_redirect_type(r.rid), ngx.var.query_string)
+end
+
 -- 内核重定向页面，根据rid对应的策略，重定向到本地/云端模板。重定向会带有参数ip,mac,uid,magic,rid
-uri_map["/index.html"] = function(r, e)
+uri_map["/index.html"] = function()
 	local r, e = check_common_query_vars()
 	if not r then
 		return ngx.exit(ngx.ERROR)

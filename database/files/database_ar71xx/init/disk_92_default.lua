@@ -46,6 +46,7 @@ cmd_map.kv = {
 			{k = "auth_redirect_ip", 	v = "1.0.0.8"},
 
 			{k = "auth_no_flow_timeout", v = "1800"},
+			{k = "auth_redirect_url", v = "www.baidu.com"},
 		}
 
 		local miss, find = {}, false
