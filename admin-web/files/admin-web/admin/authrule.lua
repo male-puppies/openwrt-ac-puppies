@@ -10,14 +10,14 @@ local mysql_select = adminlib.mysql_select
 local reply_e, reply = adminlib.reply_e, adminlib.reply
 local ip_pattern, mac_pattern = adminlib.ip_pattern, adminlib.mac_pattern
 local validate_get, validate_post = adminlib.validate_get, adminlib.validate_post
-local gen_validate_num, gen_validate_str = adminlib.gen_validate_num, adminlib.gen_validate_str
+local gen_validate_num, gen_validate_str, gen_validate_name = adminlib.gen_validate_num, adminlib.gen_validate_str, adminlib.gen_validate_name
 
 local v_rid         = gen_validate_num(0, 15)
 local v_zid         = gen_validate_num(0, 255)
 local v_ipgid       = gen_validate_num(0, 255)
 local v_iscloud     = gen_validate_num(0, 1)
 local v_enable      = gen_validate_num(0, 1)
-local v_rulename    = gen_validate_str(1, 64, true)
+local v_rulename    = gen_validate_name(1, 64)
 local v_ruledesc    = gen_validate_str(0, 64)
 local v_authtype    = gen_validate_str(1, 16, true)
 local v_modules     = gen_validate_str(2, 32)

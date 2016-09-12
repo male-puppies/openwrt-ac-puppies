@@ -85,6 +85,16 @@ local function gen_validate_str(min, max, match_var_style)
 	end
 end
 
+local function gen_validate_name(min, max, match_var_style)
+	return function(v)
+		if not (#v >= min and #v <= max and not v:find("'")) then
+			return nil
+		end
+
+		return v
+	end
+end
+
 local default_validator = {
 	page = gen_validate_num(1, 100000),
 	count = gen_validate_num(10, 10000),
@@ -214,6 +224,7 @@ local r = {
 	validate_token = validate_token,
 	gen_validate_num = gen_validate_num,
 	gen_validate_str = gen_validate_str,
+	gen_validate_name = gen_validate_name,
 	check_method_token = check_method_token,
 	validate_update_token = validate_update_token,
 }
