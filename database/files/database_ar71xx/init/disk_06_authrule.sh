@@ -19,6 +19,7 @@ create_sqlite3_disk_table $tbname $keyname "create table if not exists $tbname (
 		white_mac	text		, \
 		wechat		text		, \
 		sms 		text 		, \
+		redirect 	text		, \
 		foreign key(zid) references zone(zid) 			on delete restrict on update restrict, \
 		foreign key(ipgid) references ipgroup(ipgid) 	on delete restrict on update restrict \
 	)"
@@ -37,7 +38,8 @@ create_mysql_disk_table "create table $tbname ( \
 		white_ip	text		, \
 		white_mac	text		, \
 		wechat		text		, \
-		sms 		text 		 \
+		sms 		text 		, \
+		redirect 	text		 \
 	)"
 
 # type : auto wechat sms onekey 
