@@ -34,12 +34,19 @@ function cmd_map.cloud_set()
 	local m, e = validate_post({
 		ac_host 	= gen_validate_str(0, 250),
 		ac_port 	= gen_validate_num(0, 65535),
-		account 	= gen_validate_str(1, 16, true),
+		account 	= gen_validate_str(0, 16),
 		descr		= gen_validate_str(0, 64),
 		switch		= gen_validate_num(0, 1),
 	})
 	if not m then
 		return reply_e(e)
+	end
+
+	local account, ac_host, descr = m.account, m.ac_host, m.descr
+	if #account > 0 or #ac_host > 0 then
+		if not (#account > 0 and #ac_host > 0 and #descr > 0) then
+			return reply_e("invalid param")
+		end
 	end
 
 	query_common(m, "cloud_set")
