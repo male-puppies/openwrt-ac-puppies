@@ -31,7 +31,7 @@ local function generate_mwan_cmds(mwan)
 			mwan_line = mwan_line + 1
 			mwan_ifaces[iface.name] = {
 				track_ip = iface.track_ip or {},
-				w = tonumber(iface.bandwidth) == 0 and 1 or tonumber(iface.bandwidth),
+				w = tonumber(iface.bandwidth) == 0 and 100 or tonumber(iface.bandwidth),
 			}
 
 			if mwan.policy == "backup" then
