@@ -202,18 +202,28 @@ uri_map["/weixin2_login"] = function()
 	end
 
 	local m = {}
-	for field, f in pairs(success_fields) do
-		local v = p[field]
-		if not v then
+	if not p.tid then
+		ngx.req.read_body()
+		local pp = ngx.req.get_post_args()
+		local openId, extend = pp.openId, pp.extend
+		if not (openId and openId:find("^wechat") and extend and extend:find("^.+,[%d]+$")) then
 			return ngx.exit(404)
 		end
+		m.openId, m.extend = openId, extend
+	else
+		for field, f in pairs(success_fields) do
+			local v = p[field]
+			if not v then
+				return ngx.exit(404)
+			end
 
-		local v = f(v)
-		if not v then
-			return ngx.exit(404)
+			local v = f(v)
+			if not v then
+				return ngx.exit(404)
+			end
+
+			m[field] = v
 		end
-
-		m[field] = v
 	end
 
 	m.cmd = uri
