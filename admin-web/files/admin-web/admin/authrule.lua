@@ -74,7 +74,7 @@ local function validate_authrule(m)
 		end
 	end
 
-	if not (#white_ip <= 16 and #white_mac <= 16) then
+	if not (#white_ip <= 64 and #white_mac <= 64) then
 		return nil, "too many"
 	end
 
