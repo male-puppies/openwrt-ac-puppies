@@ -49,9 +49,28 @@ function cmd_map.kv_get()
 	return reply(fp.reduce(rs, function(m, r) return rawset(m, r.k, r.v) end, {}))
 end
 
+local function check_time(s)
+	local m = js.decode(s)
+	if not m then
+		return nil, "invalid param"
+	end
+
+	local enable = m.enable
+	if not (type(enable) == "number" and (enable == 0 or enable == 1)) then
+		return nil, "invalid param"
+	end
+
+	local time = m.time
+	if not (type(time) == "number" and time >= 0) then
+		return nil, "invalid param"
+	end
+
+	return s
+end
+
 local kvmap = {
-	auth_offline_time = gen_validate_num(1, 8640000),
-	auth_no_flow_timeout = gen_validate_num(1, 8640000),
+	auth_offline_time = check_time,
+	auth_no_flow_timeout = check_time,
 }
 
 function kvmap.auth_redirect_ip(ip)
@@ -59,13 +78,13 @@ function kvmap.auth_redirect_ip(ip)
 		return ip
 	end
 
-	return nil, "invalid auth_redirect_ip"
+	return nil, "invalid param"
 end
 
 function kvmap.auth_bypass_dst(s)
 	local m = js.decode(s)
 	if not m then
-		return nil, "invalid auth_bypass_dst"
+		return nil, "invalid param"
 	end
 
 	if #m > 64 then
