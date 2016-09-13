@@ -42,11 +42,10 @@ cmd_map.kv = {
 			{k = "zonename", v = "Asia/Shanghai"},
 
 			{k = "auth_bypass_dst", 	v = "[]"},
-			{k = "auth_offline_time", 	v = "8640000"},
 			{k = "auth_redirect_ip", 	v = "1.0.0.8"},
 
-			{k = "auth_no_flow_timeout", v = "1800"},
-			{k = "auth_redirect_url", v = "www.baidu.com"},
+			{k = "auth_offline_time", 	v = '{"enable":1,"time":10800}'},
+			{k = "auth_no_flow_timeout", v = '{"enable":0,"time":1800}'},
 		}
 
 		local miss, find = {}, false
@@ -62,7 +61,7 @@ cmd_map.kv = {
 
 		local arr = {}
 		for k, r in pairs(miss) do
-			table.insert(arr, string.format("('%s','%s')", k, r.v))
+			table.insert(arr, string.format("('%s','%s')", conn:escape(k), conn:escape(r.v)))
 		end
 
 		local sql = string.format("insert into kv (k, v) values %s", table.concat(arr, ","))

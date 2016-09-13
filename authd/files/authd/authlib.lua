@@ -79,13 +79,16 @@ local function offline_ukeys(simple, ukeys)
 end
 
 -- 定时下线和无流量下线
+local timeout_fields = {"auth_offline_time", "auth_no_flow_timeout"}
 local function timeout_offline(simple, mod)
-	local active_timeout = 600
-	local now = math.floor(ski.time())
+	local secs = reduce(timeout_fields, function(t, field)
+		local m = cache[field]() or {enable = 0}
+		return rawset(t, field, m.enable ~= 0 and m.time or 999999999)
+	end, {})
 
 	-- 选择属于模块mod，active太久没有更新、定时下线的用户
 	local sql = string.format("select ukey,username from memo.online where type='%s' and (active-login>%s or %s-active>%s);",
-		mod, cache.auth_offline_time(), now, active_timeout)
+		mod, secs.auth_offline_time, math.floor(ski.time()), secs.auth_no_flow_timeout)
 	local rs, e = simple:mysql_select(sql) 	assert(rs, e)
 	if #rs == 0 then
 		return

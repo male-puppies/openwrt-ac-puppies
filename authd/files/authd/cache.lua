@@ -11,7 +11,7 @@ local simplesql = require("simplesql")
 
 local rid_map = {}
 local simple, udpsrv, mqtt
-local reduce, tomap = fp.reduce, fp.tomap
+local reduce, tomap, reduce2 = fp.reduce, fp.tomap, fp.reduce2
 local bypass_timeout, on_bypass_timeout
 
 -------------------------------------------- common ------------------------------------------------
@@ -65,12 +65,16 @@ local function check_kv()
 		return
 	end
 
-	local fields = {"auth_offline_time", "auth_redirect_ip", "auth_no_flow_timeout"}
-	local narr = reduce(fields, function(t, v) return rawset(t, #t + 1, string.format("'%s'", v)) end, {})
+	local fields = {auth_offline_time = 1, auth_redirect_ip = 0, auth_no_flow_timeout = 1}
+	local narr = reduce2(fields, function(t, k) return rawset(t, #t + 1, string.format("'%s'", k)) end, {})
 	local sql = string.format("select k,v from kv where k in (%s)", table.concat(narr, ","))
 	local rs, e = simple:mysql_select(sql)		assert(rs, e)
 
-	kv_cache = reduce(rs, function(t, r) return rawset(t, r.k, r.v) end, {})
+	kv_cache = reduce(rs, function(t, r)
+		local k, v = r.k, r.v
+		t[k] = fields[k] == 1 and js.decode(v) or v
+		return t
+	end, {})
 end
 
 local function kv_get_common(field)
@@ -79,7 +83,7 @@ local function kv_get_common(field)
 end
 
 local function auth_offline_time()
-	return tonumber(kv_get_common("auth_offline_time"))
+	return kv_get_common("auth_offline_time")
 end
 
 local function auth_redirect_ip()
