@@ -10,6 +10,29 @@
 #include <stdint.h>
 #endif
 
+/* -------------------------- */
+#define USER_FLAGS_SHIFT	(0)
+#define USER_FLAGS_MASK		(0x000000FFU << USER_FLAGS_SHIFT)
+enum em_user_flags {
+	/* byte: normal flags. */
+	FG_USER_STATISTICS		= 1<<(USER_FLAGS_SHIFT + 0), /* statistics need. */
+};
+
+static inline int nt_user_stat(user_info_t *ui)
+{
+	return ui->hdr.flags & FG_USER_STATISTICS;
+}
+
+static inline void nt_user_stat_set(user_info_t *ui)
+{
+	ui->hdr.flags |= FG_USER_STATISTICS;
+}
+
+static inline void nt_user_stat_clr(user_info_t *ui)
+{
+	ui->hdr.flags &= ~(FG_USER_STATISTICS);
+}
+
 /* U & K Common */
 #define NETLINK_NTRACK 28
 

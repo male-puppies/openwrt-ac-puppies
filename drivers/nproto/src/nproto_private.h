@@ -1,5 +1,7 @@
 #include <linux/nos_track.h>
 #include <ntrack_comm.h>
+#include <ntrack_flow.h>
+#include <ntrack_auth.h>
 #include <ntrack_packet.h>
 #include <ntrack_nproto.h>
 
