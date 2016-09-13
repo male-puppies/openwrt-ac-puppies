@@ -51,8 +51,11 @@ udp_map["system_sysinfo"] = function(p, ip, port)
 	local boardinfo = js.decode(read("ubus call system board", io.popen))
 	local a1, a2, a3, a4, a5, a6, a7 = read("/proc/stat"):match("[cpu  ](%d+) (%d+) (%d+) (%d+) (%d+) (%d+) (%d+)")
 	local rs, e = simple:mysql_select("select count(*) as count from online")
-	--local conn_count = tonumber(read("/proc/sys/kernel/nt_flow_count"))
-	local conn_count = 0 ---TODO FIXME
+	local conn_alloc_high, conn_alloc_low = read("/proc/sys/kernel/nt_flow_alloc"):match("(%d+)%s+(%d+)")
+	local conn_free_high, conn_free_low = read("/proc/sys/kernel/nt_flow_free"):match("(%d+)%s+(%d+)")
+	conn_alloc_high, conn_alloc_low = tonumber(conn_alloc_high), tonumber(conn_alloc_low)
+	conn_free_high, conn_free_low = tonumber(conn_free_high), tonumber(conn_free_low)
+	local conn_count = (conn_alloc_high * 4294967296 + conn_alloc_low) - (conn_free_high * 4294967296 + conn_free_low)
 	local conn_max = tonumber(read("/proc/sys/kernel/nt_flow_max"))
 
 	local res = {
