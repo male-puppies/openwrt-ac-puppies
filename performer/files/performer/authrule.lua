@@ -21,20 +21,23 @@ local function init(p)
 end
 
 local function generate_authrule_cmds()
-	local kv, e = simple:mysql_select("select k,v from kv where k in ('auth_redirect_ip', 'auth_no_flow_timeout', 'auth_bypass_dst')")
+	local kv, e = simple:mysql_select("select k,v from kv where k in ('auth_redirect_ip', 'auth_no_flow_timeout', 'auth_offline_time', 'auth_bypass_dst')")
 	local _ = kv or log.fatal("%s", e)
 
 	local rs, e = simple:mysql_select("select * from authrule where enable=1 order by priority")
 	local _ = kv or log.fatal("%s", e)
 
 	local defaults = fp.reduce(kv, function(t, r) return rawset(t, r.k, r.v) end, {})
+	defaults.auth_no_flow_timeout = js.decode(defaults.auth_no_flow_timeout)
+	defaults.auth_offline_time = js.decode(defaults.auth_offline_time)
+	local auth_no_flow_timeout = defaults.auth_no_flow_timeout.enable == 1 and defaults.auth_no_flow_timeout.time or defaults.auth_offline_time.time
 
 	local arr = {}
 	table.insert(arr, string.format("while uci delete nos-auth.@defaults[0] >/dev/null 2>&1; do :; done"))
 	table.insert(arr, string.format("obj=`uci add nos-auth defaults`"))
 	table.insert(arr, string.format("test -n \"$obj\" && {"))
 	table.insert(arr, string.format("	uci set nos-auth.$obj.redirect_ip='%s'", defaults.auth_redirect_ip))
-	table.insert(arr, string.format("	uci set nos-auth.$obj.no_flow_timeout='%u'", defaults.auth_no_flow_timeout))
+	table.insert(arr, string.format("	uci set nos-auth.$obj.no_flow_timeout='%u'", auth_no_flow_timeout))
 
 	for _, host in ipairs(js.decode(defaults.auth_bypass_dst) or {}) do
 		local fmt = ipops.ipstr2int(host) == 0 and "	uci add_list nos-auth.$obj.bypass_http_host='%s'" or "	uci add_list nos-auth.$obj.bypass_dst_ip='%s'"
