@@ -2,6 +2,7 @@
 
 #include <linux/nos_track.h>
 #include <ntrack_flow.h>
+#include <ntrack_stat.h>
 #include <ntrack_log.h>
 
 /* KERNEL & USER comm use. */
@@ -43,9 +44,10 @@ static inline user_info_t * nt_peer(struct nos_track *nt)
 
 /* node track base address mmmap used. */
 typedef struct {
-	uint32_t fi_count, ui_count;
+	uint32_t fi_count, ui_count, stat_size;
 	flow_info_t *fi_base;
 	user_info_t *ui_base;
+	stat_info_t *stat_base;
 } ntrack_t;
 
 /* callback as traversal

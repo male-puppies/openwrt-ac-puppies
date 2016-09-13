@@ -19,5 +19,6 @@
 
 #include <ntrack_rbf.h>
 #include <ntrack_comm.h>
+#include <ntrack_stat.h>
 #include <ntrack_log.h>
 #include <ntrack_msg.h>

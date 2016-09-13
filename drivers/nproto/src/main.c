@@ -270,7 +270,7 @@ static int __init nproto_module_init(void)
 
 	memset(&npkt_pcpu, 0, sizeof(npkt_pcpu));
 
-	nproto_klog_fd = klog_init("nproto", 0x0c, 0);
+	nproto_klog_fd = klog_init("nproto", 0x0e, 0);
 	if(!nproto_klog_fd) {
 		printk("klog init failed.\n");
 		return -ENOMEM;
@@ -295,13 +295,21 @@ static int __init nproto_module_init(void)
 		goto __error_hooks;
 	}
 
+	r = stat_init();
+	if(r) {
+		np_error("statistics init failed.\n");
+		goto __error_proc;
+	}
+
 	r = nf_register_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
 	if(r) {
 		np_error("nf hook register failed.\n");
-		goto __error_proc;
+		goto __error_stat;
 	}
 	return 0;
 
+__error_stat:
+	stat_exit();
 __error_proc:
 	nproto_proc_exit();
 __error_hooks:
@@ -318,6 +326,7 @@ static void __exit nproto_module_exit(void)
 {
 	nf_unregister_hooks(nproto_nf_hook_ops, ARRAY_SIZE(nproto_nf_hook_ops));
 
+	stat_exit();
 	nproto_proc_exit();
 	test_exit();
 	nproto_cleanup();

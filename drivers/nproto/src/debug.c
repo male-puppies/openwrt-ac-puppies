@@ -1,16 +1,12 @@
-#include <linux/proc_fs.h>
-
 #include "nproto_private.h"
 
-#define PROC_dir_dbg 	DRIVER_NAME
-#define PROC_file_dbg 	"debug"
-#define PROC_file_dump	"dump"
 #define CMD_str_trace 	"trace_id="
 
 #define PROC_DBG_BUFF_SIZE (1024*8)
 
 static struct mutex io_lock;
-static struct proc_dir_entry *nproto_proc_dir = NULL;
+struct proc_dir_entry *nproto_proc_dir = NULL;
+
 static int nproto_open(struct inode *inode, struct file *file)
 {
 	int err;
