@@ -190,11 +190,11 @@ function validate_data(m)
 local function limit_len(m)
     local mac, ip = m.mac, m.ip     assert(mac, ip)
 
-    if not (#mac >= 0 and #mac <= 512) then
+    if not (#mac >= 0 and #mac <= 64) then
         return nil, "mac can not pass 512"
 	end
 
-    if not (#ip >= 0 and #ip <= 256) then
+    if not (#ip >= 0 and #ip <= 64) then
         return nil, "ip can not pass 256"
 	end
 
