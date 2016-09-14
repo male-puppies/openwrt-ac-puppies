@@ -309,8 +309,6 @@ static int trav_flush_nodes_fn(void *d, stat_node_t *node)
 	stat_info_t *info = d;
 	static int type_prev = -1;
 
-	np_info("info_base: %p, node: %p %d\n", info, node, node->data.type);
-
 	/* detect the type change. */
 	if(type_prev >= 0 && type_prev != node->data.type) {
 		/* store the offset */
@@ -342,6 +340,10 @@ static int trav_flush_nodes_fn(void *d, stat_node_t *node)
 		}break;
 		default: BUG(); break;
 	}
+	np_debug("info_base: %p, node: %p %d\n"
+		"\t"FMT_STAT_STR"\n",
+		info, node, node->data.type, FMT_STAT_DATA((&node->data)));
+
 	info->data[idx] = node->data;
 	return 0;
 }

@@ -1,12 +1,5 @@
 #include "lib_private.h"
 
-#define FMT_STAT_STR "%u %u %u %u"
-#define FMT_STAT_DATA(x) \
-			(unsigned)(x)->xmit_pkts,\
-			(unsigned)(x)->xmit_bytes,\
-			(unsigned)(x)->recv_pkts,\
-			(unsigned)(x)->recv_bytes
-
 const char* fn_stat_lock = "/proc/nproto/lock_stat";
 static int fd_lock = -1;
 
