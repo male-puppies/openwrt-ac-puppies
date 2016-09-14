@@ -130,6 +130,16 @@ function initData2() {
 	cgicall.get("kv_get", obj, function(d) {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			var data = d.data;
+			if (data.auth_no_flow_timeout.enable == 1) {
+				$("input:radio[name=offline].no_flow").prop("checked", true);
+				$("#auth_no_flow_timeout").prop("disabled", false);
+				$("#auth_offline_time").prop("disabled", true);
+			} else {
+				$("input:radio[name=offline].offline").prop("checked", true);
+				$("#auth_no_flow_timeout").prop("disabled", true);
+				$("#auth_offline_time").prop("disabled", false);
+			}
+
 			data.auth_bypass_dst = data.auth_bypass_dst.length == 0 ? "" : data.auth_bypass_dst.join("\n");
 
 			var no_flow = data.auth_no_flow_timeout && data.auth_no_flow_timeout.time != "" ? parseInt(data.auth_no_flow_timeout.time) : 3600;
@@ -141,13 +151,6 @@ function initData2() {
 			var offobj = unitTime(offline);
 			setUnitTime(offobj, ".unit-offline");
 			data.auth_offline_time = offobj.time;
-
-			var enable = data.auth_no_flow_timeout.enable;
-			if (enable == 1) {
-				$("input:radio[name=offline].no_flow").prop("checked", true);
-			} else {
-				$("input:radio[name=offline].offline").prop("checked", true);
-			}
 
 			jsonTraversal(d.data, jsTravSet);
 		}
@@ -252,7 +255,7 @@ function DoSave() {
 		"authtype": "",
 		"white_ip": "",
 		"white_mac": "",
-		"auth_redirect_url":"",//????
+		"redirect":"",//????
 		"modules": {
 			"web": 0,
 			"wechat": 0,
@@ -270,12 +273,12 @@ function DoSave() {
 		}
 	}
 	if (!verification("#modal_edit")) return;
-	var url = $.trim($("#auth_redirect_url").val());
+	var url = $.trim($("#redirect").val());
 	if (url.substring(0, 7) != "http://" && url.substring(0, 8) != "https://" && url != "") {
 		url = "http://" + url;
 	}
 	var data = jsonTraversal(obj, jsTravGet);
-	data.auth_redirect_url = url;
+	data.redirect = url;
 	data.white_mac = data.white_mac.length == 0 ? [] : data.white_mac.split("\n");
 	data.white_ip = data.white_ip.length == 0 ? [] : data.white_ip.split("\n");
 	data.zid = "0";
@@ -434,15 +437,14 @@ function OnSubmit() {
 		data.auth_offline_time = offline * 60 *60 *24;
 	}
 
-	var enabled = $("input:radio[name=offline]").val();
-	console.log(enabled)
+	var enabled = $("input:radio[name=offline]:checked").val();
 	var sobj = {
 		auth_no_flow_timeout: {
-			enbale: enabled == "no_flow" ? 1 : 0,
+			enable: enabled == "no_flow" ? 1 : 0,
 			time: data.auth_no_flow_timeout
 		},
 		auth_offline_time: {
-			enbale: enabled == "no_flow" ? 0 : 1,
+			enable: enabled == "no_flow" ? 0 : 1,
 			time: data.auth_offline_time
 		},
 		auth_redirect_ip: data.auth_redirect_ip,
@@ -547,7 +549,7 @@ function OnIscloud(e) {
 		$(".iscloud").slideUp(sec).find("input").prop("disabled", true);
 	} else {
 		OnTypeChange(false);
-		$("input:radio[name='authtype'], #auth_redirect_url").prop("disabled", false);
+		$("input:radio[name='authtype'], #redirect").prop("disabled", false);
 		$(".iscloud").slideDown(sec);
 	}
 }
@@ -563,17 +565,15 @@ function OnLegend() {
 	}
 }
 
-function OnUnitChange(that) {
+function OnUnitChange() {
 	var unit;
-	var that = $(that.target);
+	var that = $(this);
 	if(that.text() == "分钟") {
 		unit = "m";
 	} else if(that.text() == "小时") {
 		unit = "h";
 	} else if(that.text() == "天") {
 		unit = "d";
-	} else {
-		return false;
 	}
 	that.parents(".btn-group").find(".dropdown-toggle").attr("value", unit).html(that.text()+"<span class='caret'>");
 }
