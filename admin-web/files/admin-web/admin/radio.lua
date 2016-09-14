@@ -57,7 +57,7 @@ local function validate_std_2g(s)
 
 	if not (m.chanid == "auto") then
 		m.chanid = tonumber(m.chanid)
-		if not (m.chanid >= 1 and m.chanid <= 11) then
+		if not (m.chanid >= 1 and m.chanid <= 13) then
 			return nil, "error chanid"
 		end
 	end
