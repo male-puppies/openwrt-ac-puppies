@@ -60,9 +60,9 @@ function system_reload()
 	end
 end
 
+-- {"set":["auth_offline_time","auth_no_flow_timeout"]}
 tcp_map["dbsync_kv"] = function(p)
 	local map = {timezone = 1, zonename = 1}
-
 	for _, key in ipairs(p.set or {}) do
 		if map[key] == 1 then
 			system_reload()

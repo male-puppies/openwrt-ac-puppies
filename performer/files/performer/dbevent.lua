@@ -22,8 +22,7 @@ end
 
 tcp_map["dbsync"] = function(p)
 	for tbname, n in pairs(p) do
-		n.cmd = "dbsync_" .. tbname
-		on_event_cb(n)
+		on_event_cb({cmd = "dbsync_" .. tbname, data = n})
 	end
 end
 
