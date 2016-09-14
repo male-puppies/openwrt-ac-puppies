@@ -27,5 +27,6 @@
 extern ntrack_t *pntrack;
 
 int ntrack_stat(int type);
+int ntrack_flush(void);
 void dump_userinfo(int id, int magic);
 void dump_flowinfo(int id, int magic);

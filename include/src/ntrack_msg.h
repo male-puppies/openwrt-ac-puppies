@@ -58,7 +58,7 @@ int nt_base_init(ntrack_t *nt);
 int nt_message_init(rbf_t **);
 
 /* flush out the stat results. */
-int nt_stat_flush(ntrack_t *nt);
+int nt_stat_flush(ntrack_t *nt, FILE *fp);
 
 typedef int (*nmsg_cb_t)(void *p);
 

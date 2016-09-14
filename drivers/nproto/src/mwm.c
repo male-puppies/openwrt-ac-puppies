@@ -68,18 +68,18 @@ static inline mwm_patt_t* mwmPatsAlloc(int m)
 {
 	mwm_patt_t* p ;
 	p = kmalloc(sizeof(mwm_patt_t), GFP_KERNEL);
-	if(p ==NULL)
+	if(ZERO_OR_NULL_PTR(p))
 	{
-		np_error("malloc failed.\n");
+		np_error("alloc failed.\n");
 		goto __err;
 	}
 	memset(p,0,sizeof(mwm_patt_t));
 
 	/* Allocate and store the Pattern 'P' with NO CASE info*/
 	p->psPat = (unsigned char*) kmalloc (m+1, GFP_KERNEL) ;
-	if( !p->psPat )
+	if(ZERO_OR_NULL_PTR(p->psPat))
 	{
-		np_error("malloc failed.\n");
+		np_error("alloc failed.\n");
 		goto __err;
 	}
 	memset(p->psPat, 0, m+1);
@@ -938,9 +938,9 @@ int mwmPrepMem(void * pv)
 		ps->msPatArray = (mwm_patt_t*)vmalloc( sizeof(mwm_patt_t)*ps->msNumPatterns);
 	}
 
-	if( !ps->msPatArray )
+	if(ZERO_OR_NULL_PTR(ps->msPatArray))
 	{
-		np_error("kmalloc %d pattern nodes failed!\n", ps->msNumPatterns);
+		np_error("alloc %d pattern nodes failed!\n", ps->msNumPatterns);
 		goto __err;
 	}
 	memset(ps->msPatArray, 0, sizeof(mwm_patt_t) * ps->msNumPatterns);
@@ -953,9 +953,9 @@ int mwmPrepMem(void * pv)
 	{
 		ps->msNumArray = (HASH_TYPE *)vmalloc(sizeof(HASH_TYPE)* ps->msNumPatterns);
 	}
-	if( !ps->msNumArray )
+	if(ZERO_OR_NULL_PTR(ps->msNumArray))
 	{
-		np_error("vmalloc %d pattern nodes failed\n", ps->msNumPatterns);
+		np_error("alloc %d pattern nodes failed\n", ps->msNumPatterns);
 		goto __err;
 
 	}
@@ -969,7 +969,7 @@ int mwmPrepMem(void * pv)
 		ps->msHash = (HASH_TYPE*)vmalloc( sizeof(HASH_TYPE) * ps->msNumHashEntries);
 		if( !ps->msHash )
 		{
-			np_error("kmalloc for hash failed! may be not enough memory\n");
+			np_error("alloc for hash failed! may be not enough memory\n");
 			goto __err;
 		}
 		memset(ps->msHash, 0, sizeof(HASH_TYPE) * ps->msNumHashEntries );
@@ -987,7 +987,7 @@ int mwmPrepMem(void * pv)
 		ps->msShift2 = (unsigned char *)vmalloc(BW_SHIFT_TABLE_SIZE*sizeof(char));
 		if(!(ps->msShift2))
 		{
-			np_error("kmalloc for Shift2 failed! may be not enough memory.\n");
+			np_error("alloc for Shift2 failed! may be not enough memory.\n");
 			goto __err;
 		}
 		memset(ps->msShift2, 0, BW_SHIFT_TABLE_SIZE*sizeof(char));
@@ -1066,9 +1066,9 @@ hbm_t *bmhPrepEx(unsigned char * pat, int m)
 	hbm_t *p;
 
 	p = (hbm_t*)kmalloc( sizeof(hbm_t), GFP_KERNEL);
-	if( !p )
+	if(ZERO_OR_NULL_PTR(p))
 	{
-		np_error("bmh malloc failed!\n");
+		np_error("bmh alloc failed!\n");
 		return 0;
 	}
 

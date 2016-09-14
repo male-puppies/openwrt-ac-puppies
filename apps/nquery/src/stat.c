@@ -104,3 +104,8 @@ int ntrack_stat(int type)
 	snprintf(dump_fname, sizeof(dump_fname), FMT_FN_USER, (unsigned long)time(NULL));
 	return ntrack_stat_trav(dump_fname, nt_trav_user, trav_hook_user);
 }
+
+int ntrack_flush(void)
+{
+	return nt_stat_flush(pntrack, NULL);
+}

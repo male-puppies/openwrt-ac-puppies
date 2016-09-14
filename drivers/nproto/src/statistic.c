@@ -1,7 +1,7 @@
 #include "nproto_private.h"
 
-#define STAT_HASH_WIDTH_FLOW 	(1024)
-#define STAT_HASH_WIDTH_USER	(128)
+#define STAT_HASH_WIDTH_FLOW 	(512)
+#define STAT_HASH_WIDTH_USER	(64)
 #define STAT_FLUSH_INTV			(7 * HZ)
 #define STAT_TIMEOUT_TOUCH		(3 * HZ)
 #define STAT_TIMEOUT_ACTIVE		(60 * HZ)
@@ -22,6 +22,7 @@ static stat_t *pStatFlow __read_mostly;
 static stat_t *pStatUser __read_mostly;
 
 static rwlock_t flush_lock;
+static rwlock_t ghash_lock;
 static struct timer_list flush_timer; /* trav timer */
 
 static inline uint64_t grand_realtime(uint64_t now, uint64_t prev, uint32_t elapse)
@@ -37,9 +38,14 @@ static inline uint64_t grand_realtime(uint64_t now, uint64_t prev, uint32_t elap
 	return grand ? : (remainder ? 1 : 0);
 }
 
-static uint32_t inline stat_hash(uint32_t a, uint32_t b, uint32_t w)
+static inline uint32_t stat_hash(uint32_t a, uint32_t b, uint32_t w)
 {
 	return (a * b) % w;
+}
+
+static inline rwlock_t* stat_hash_lock(stat_t *ps, int idx)
+{
+	return ps->hash_lock ? &ps->hash_lock[idx] : &ghash_lock;
 }
 
 static void stat_touch_fn(unsigned long d);
@@ -49,15 +55,15 @@ static stat_node_t* stat_node_find(stat_t *ps,
 			int type, void *ni)
 {
 	uint32_t idx = stat_hash(id, magic, ps->hash_width);
+	rwlock_t *lock = stat_hash_lock(ps, idx);
 	struct hlist_head *head = &ps->hash[idx];
-	rwlock_t *lock = &ps->hash_lock[idx];
 	stat_node_t *node = NULL;
 
 	read_lock_bh(lock);
 	hlist_for_each_entry_rcu(node, head, hlist) {
 		if(id == node->data.id
 			&& magic == node->data.magic) {
-			np_print("-- found node: %u,%u\n", id, magic);
+			// np_print("-- found node: %u,%u\n", id, magic);
 			break;
 		}
 	}
@@ -166,7 +172,7 @@ static void stat_realtime(void *ni, int type)
 	return;
 }
 
-inline void stat_flow(flow_info_t *fi,
+void stat_flow(flow_info_t *fi,
 		int16_t dir, int16_t nbytes)
 {
 	flow_hdr_t *hdr = &fi->hdr;
@@ -183,7 +189,7 @@ inline void stat_flow(flow_info_t *fi,
 	}
 }
 
-inline void stat_user(
+void stat_user(
 		user_info_t *ui,
 		user_info_t *pi,
 		int16_t dir, int16_t nbytes)
@@ -215,7 +221,7 @@ static void destroy_nodes_rcu_fn(struct rcu_head *head)
 {
 	stat_node_t *node = container_of(head, stat_node_t, rcu);
 
-	np_print("%p - %u, %u\n", node, node->data.id, node->data.magic);
+	np_debug("%p - %u, %u\n", node, node->data.id, node->data.magic);
 	kmem_cache_free(stat_node_cache, node);
 }
 
@@ -236,7 +242,7 @@ static void stat_touch_fn(unsigned long d)
 	/* timeout */
 	if(time_after_eq(jiffies, (unsigned long)node->data.active_stamp + STAT_TIMEOUT_ACTIVE)) {
 		/* bye, del node && cleanup */
-		np_print("on timer suicide %p.\n", node);
+		// np_print("on timer suicide %p.\n", node);
 		stat_node_release_nolock(node);
 		return;
 	} else {
@@ -285,7 +291,7 @@ static void trav_node_locked_call(stat_t *ps, void *data, int (*cb)(void *, stat
 	/* trav all node, flush stat to reserved mem. */
 	for (i = 0; i < ps->hash_width; ++i) {
 		struct hlist_head *head = &ps->hash[i];
-		rwlock_t *lock = &ps->hash_lock[i];
+		rwlock_t *lock = stat_hash_lock(ps, i);
 		write_lock_bh(lock);
 		hlist_for_each_entry_rcu(node, head, hlist) {
 			/* flush out */
@@ -301,9 +307,11 @@ static int trav_flush_nodes_fn(void *d, stat_node_t *node)
 {
 	int idx = 0;
 	stat_info_t *info = d;
+	static int type_prev = -1;
+
+	np_info("info_base: %p, node: %p %d\n", info, node, node->data.type);
 
 	/* detect the type change. */
-	static int type_prev = -1;
 	if(type_prev >= 0 && type_prev != node->data.type) {
 		/* store the offset */
 		if(info->nr_active_user) {
@@ -356,10 +364,15 @@ static void nodes_destroy(stat_t *ps)
 
 static void stat_flush_fn(unsigned long d)
 {
+	// np_info("collect unode & flow\n");
+
 	write_lock_bh(&flush_lock);
+	memset(nos_stat_info_base, 0, sizeof(stat_info_t));
 	trav_node_locked_call(pStatUser, nos_stat_info_base, trav_flush_nodes_fn);
 	trav_node_locked_call(pStatFlow, nos_stat_info_base, trav_flush_nodes_fn);
 	write_unlock_bh(&flush_lock);
+
+	mod_timer(&flush_timer, jiffies + STAT_FLUSH_INTV);
 }
 
 static void stat_flusher_start(void)
@@ -380,14 +393,11 @@ static void stat_flusher_stop(void)
 
 static int stat_open(struct inode *inode, struct file *file)
 {
-	int err = 0;
-	read_lock_bh(&flush_lock);
-	return err;
+	return 0;
 }
 
 static int stat_release(struct inode *inode, struct file *file)
 {
-	read_unlock_bh(&flush_lock);
 	return 0;
 }
 
@@ -402,39 +412,44 @@ static void stat_destroy(stat_t *ps)
 	BUG_ON(!ps);
 
 	if(ps->hash_lock) {
-		kfree(ps->hash_lock);
+		vfree(ps->hash_lock);
 		ps->hash_lock = NULL;
 	}
 	if(ps->hash) {
-		kfree(ps->hash);
+		vfree(ps->hash);
 		ps->hash = NULL;
 	}
+	kfree(ps);
 }
 
-static stat_t * stat_create(uint32_t hash_width)
+static stat_t * stat_create(int hash_width)
 {
 	int i;
 
 	stat_t *ps = kmalloc(sizeof(stat_t), GFP_KERNEL);
-	if(!ps) {
+	if(ZERO_OR_NULL_PTR(ps)) {
 		np_error("not enough mem.\n");
 		return NULL;
 	}
 	memset(ps, 0, sizeof(stat_t));
 
-	ps->hash_lock = kmalloc(sizeof(rwlock_t) * hash_width, GFP_KERNEL);
-	if(!ps->hash_lock) {
-		np_error("not enough mem for hash locks. width: %d\n", hash_width);
-		goto __err_nomem;
+	if(sizeof(rwlock_t)) {
+		/*shit: mips one core, sizeof(rwlock_t) == 0 */
+		ps->hash_lock = vmalloc((sizeof(rwlock_t) * hash_width));
+		if(!ps->hash_lock) {
+			np_error("not enough mem for hash lock[%d]s. width: %d\n", sizeof(rwlock_t), hash_width);
+			goto __err_nomem;
+		}
 	}
-	ps->hash = kmalloc(sizeof(struct hlist_head) * hash_width, GFP_KERNEL);
+	ps->hash = vmalloc(sizeof(struct hlist_head) * hash_width);
 	if(!ps->hash) {
-		np_error("not enough mem for hash head. width: %d\n", hash_width);
+		np_error("not enough mem for hash head. width: %d\n", hash_width * sizeof(struct hlist_head));
 		goto __err_nomem;
 	}
 
 	ps->hash_width = hash_width;
 	for (i = 0; i < ps->hash_width; ++i) {
+		INIT_HLIST_HEAD(&ps->hash[i]);
 		rwlock_init(&ps->hash_lock[i]);
 	}
 	return ps;
@@ -473,11 +488,13 @@ int stat_init(void)
 
 	memset(nos_stat_info_base, 0, sizeof(stat_info_t));
 	rwlock_init(&flush_lock);
+	rwlock_init(&ghash_lock);
 	stat_flusher_start();
 	np_info("statistics init ok.\n");
 	return 0;
 
 __err_nomem:
+	np_error("alloc failed.\n");
 	if(pStatFlow) {
 		stat_destroy(pStatFlow);
 	}

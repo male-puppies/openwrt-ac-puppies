@@ -42,7 +42,7 @@ static int http_init(void)
 	/* init bmh line end finder. */
 	if(!bmhLine) {
 		bmhLine = kmalloc(sizeof(bmh_t), GFP_KERNEL);
-		if(!bmhLine) {
+		if(ZERO_OR_NULL_PTR(bmhLine)) {
 			np_error("bmh malloc failed.\n");
 			return -ENOMEM;
 		}

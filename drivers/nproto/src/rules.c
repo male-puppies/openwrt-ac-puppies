@@ -85,7 +85,7 @@ static int ctm_init(np_rule_t *rule, match_t *ctm)
 		case MHTP_SEARCH: {
 			if(!ctm->bmh) {
 				bmh_t *bmh = kmalloc(sizeof(bmh_t), GFP_KERNEL);
-				if(!bmh) {
+				if(ZERO_OR_NULL_PTR(bmh)) {
 					np_error("[%s] bmh patt alloc failed.\n", rule->name_rule);
 					return -ENOMEM;
 				}
@@ -439,7 +439,7 @@ void set_cleanup(np_rule_set_t *set)
 np_rule_set_t *set_alloc(char *name)
 {
 	np_rule_set_t *set = kmalloc(sizeof(np_rule_set_t), GFP_KERNEL);
-	if(!set) {
+	if(ZERO_OR_NULL_PTR(set)) {
 		np_error("alloc set[%s] failed.\n", name);
 		return NULL;
 	}
