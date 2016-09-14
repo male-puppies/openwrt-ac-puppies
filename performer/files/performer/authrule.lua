@@ -100,7 +100,7 @@ end
 
 -- p: {"cmd":"dbsync_kv","set":["auth_offline_time"]}
 tcp_map["dbsync_kv"] = function(p)
-	local map = {auth_offline_time = 1, auth_redirect_ip = 1, auth_bypass_dst = 1}
+	local map = {auth_no_flow_timeout = 1, auth_offline_time = 1, auth_redirect_ip = 1, auth_bypass_dst = 1}
 	for _, key in ipairs(p.set or {}) do
 		if map[key] == 1 then
 			authrule_reload()
