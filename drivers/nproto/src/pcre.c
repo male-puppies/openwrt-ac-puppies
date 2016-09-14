@@ -138,6 +138,10 @@ pcre_t *pcre_create(const void *pattern, unsigned int len)
 	// int save = offsetof(pcre_t, patlen);
 
 	pcre = kmalloc(sizeof(pcre_t), GFP_KERNEL);
+	if(ZERO_OR_NULL_PTR(pcre)) {
+		np_error("alloc pcre failed.\n");
+		return NULL;
+	}
 	pcre->patlen = len;
 	pcre->pattern = calloc(len + 1, sizeof(u8));
 

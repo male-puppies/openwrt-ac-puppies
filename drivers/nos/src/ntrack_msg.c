@@ -98,7 +98,7 @@ int nt_msg_enqueue(nt_msghdr_t *hdr, void *buf_in, uint32_t key)
 	}
 
 	node = kmalloc(sizeof(nmsg_node_t), GFP_ATOMIC);
-	if(!node) {
+	if(ZERO_OR_NULL_PTR(node)) {
 		nt_error("not enough mem.\n");
 		return -ENOMEM;
 	}

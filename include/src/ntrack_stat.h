@@ -3,6 +3,17 @@
 #include <linux/nos_track.h>
 #include <ntrack_flow.h>
 
+#define FMT_STAT_STR "%llu %llu %llu %llu %u %u %u %u"
+#define FMT_STAT_DATA(x) \
+			(uint64_t)(x)->recv_pkts,\
+			(uint64_t)(x)->recv_bytes,\
+			(uint64_t)(x)->xmit_pkts,\
+			(uint64_t)(x)->xmit_bytes,\
+			(uint32_t)(x)->recv_pkts_rt,\
+			(uint32_t)(x)->recv_bytes_rt,\
+			(uint32_t)(x)->xmit_pkts_rt,\
+			(uint32_t)(x)->xmit_bytes_rt
+
 typedef struct {
 	uint32_t id, magic, type;
 

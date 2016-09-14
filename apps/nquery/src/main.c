@@ -34,7 +34,7 @@ static int set_user_status(uint32_t uid, uint32_t magic, uint32_t status)
 int main(int argc, char *argv[])
 {
 	if(argc < 2) {
-		nt_error("nquery <flow|user|pcap|set|stat>\n");
+		nt_error("nquery <flow|user|pcap|set|stat|flush>\n");
 		exit(0);
 	}
 
@@ -97,5 +97,10 @@ int main(int argc, char *argv[])
 		}
 		return ntrack_stat(strcmp(argv[2], "flow") == 0 ? 1 : 0);
 	}
+
+	if(strcmp(argv[1], "flush") == 0) {
+		return ntrack_flush();
+	}
+
 	return 0;
 }

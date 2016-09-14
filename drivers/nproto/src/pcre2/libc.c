@@ -28,21 +28,24 @@
 
 void *malloc(size_t size)
 {
-	return kmalloc(size, GFP_ATOMIC);
+	void *p = kmalloc(size, GFP_ATOMIC);
+	return ZERO_OR_NULL_PTR(p) ? NULL : p;
 }
 
 // EXPORT_SYMBOL(malloc);
 
 void *realloc(void *ptr, size_t size)
 {
-	return krealloc(ptr, size, GFP_ATOMIC);
+	void *p = krealloc(ptr, size, GFP_ATOMIC);
+	return ZERO_OR_NULL_PTR(p) ? NULL : p;
 }
 
 // EXPORT_SYMBOL(realloc);
 
 void *calloc(size_t nmemb, size_t size)
 {
-	return kzalloc(nmemb * size, GFP_ATOMIC);
+	void *p = kzalloc(nmemb * size, GFP_ATOMIC);
+	return ZERO_OR_NULL_PTR(p) ? NULL : p;
 }
 
 // EXPORT_SYMBOL(calloc);

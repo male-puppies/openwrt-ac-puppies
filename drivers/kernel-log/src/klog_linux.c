@@ -190,7 +190,8 @@ int klog_set_ratelimit_by_name(char *name, int interval, int burst)
 void *klog_init(char *name, uint16_t verbose, uint16_t limit_flag)
 {
     struct klog_item *item = kmalloc(sizeof(struct klog_item), GFP_KERNEL);
-    if(!item) {
+    if(ZERO_OR_NULL_PTR(item)) {
+        printk("klog [%s] alloc failed.\n", name);
         return NULL;
     }
 
