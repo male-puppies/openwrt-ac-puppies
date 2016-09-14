@@ -125,15 +125,29 @@ function createInitModal() {
 }
 
 function initData2() {
-	var args = '["auth_no_flow_timeout","auth_redirect_ip","auth_bypass_dst"]';
+	var args = '["auth_no_flow_timeout","auth_redirect_ip","auth_bypass_dst","auth_offline_time"]';
 	var obj = {keys: encodeURI(args)};
 	cgicall.get("kv_get", obj, function(d) {
 		if (d.status == 0 && typeof d.data != "undefined") {
 			var data = d.data;
 			data.auth_bypass_dst = data.auth_bypass_dst.length == 0 ? "" : data.auth_bypass_dst.join("\n");
 
-			var time = data.auth_no_flow_timeout && data.auth_no_flow_timeout != "" ? parseInt(data.auth_no_flow_timeout) : 3600;
-			data.auth_no_flow_timeout = parseInt(time / 60);
+			var no_flow = data.auth_no_flow_timeout && data.auth_no_flow_timeout.time != "" ? parseInt(data.auth_no_flow_timeout.time) : 3600;
+			var flowobj = unitTime(no_flow);
+			setUnitTime(flowobj, ".unit-no-flow");
+			data.auth_no_flow_timeout = flowobj.time;
+
+			var offline = data.auth_offline_time && data.auth_offline_time.time != "" ? parseInt(data.auth_offline_time.time) : 3600;
+			var offobj = unitTime(offline);
+			setUnitTime(offobj, ".unit-offline");
+			data.auth_offline_time = offobj.time;
+
+			var enable = data.auth_no_flow_timeout.enable;
+			if (enable == 1) {
+				$("input:radio[name=offline].no_flow").prop("checked", true);
+			} else {
+				$("input:radio[name=offline].offline").prop("checked", true);
+			}
 
 			jsonTraversal(d.data, jsTravSet);
 		}
@@ -142,6 +156,36 @@ function initData2() {
 
 function initData() {
 	dtReloadData(oTabAuth, false)
+}
+
+function setUnitTime(obj, id) {
+	if (obj.unit == "m") {
+		$(id).attr("value", "m").html('分钟<span class="caret"></span>');
+	} else if (obj.unit == "h") {
+		$(id).attr("value", "h").html('小时<span class="caret"></span>');
+	} else {
+		$(id).attr("value", "d").html('天<span class="caret"></span>');
+	}
+}
+
+function unitTime(t) {
+	var time = parseInt(t),
+		min = parseInt(time / 60),
+		rt = min,
+		unit = "m";
+
+	if ((min % 60) == 0) {
+		rt = parseInt(min / 60);
+		unit = "h";
+	}
+	if ((min % 1440) == 0) {
+		rt = parseInt(min / 1440);
+		unit = "d";
+	}
+	return {
+		time: rt,
+		unit: unit
+	};
 }
 
 function getIpgroup(func) {
@@ -208,6 +252,7 @@ function DoSave() {
 		"authtype": "",
 		"white_ip": "",
 		"white_mac": "",
+		"auth_redirect_url":"",//????
 		"modules": {
 			"web": 0,
 			"wechat": 0,
@@ -225,12 +270,21 @@ function DoSave() {
 		}
 	}
 	if (!verification("#modal_edit")) return;
-
+	var url = $.trim($("#auth_redirect_url").val());
+	if (url.substring(0, 7) != "http://" && url.substring(0, 8) != "https://" && url != "") {
+		url = "http://" + url;
+	}
 	var data = jsonTraversal(obj, jsTravGet);
+	data.auth_redirect_url = url;
 	data.white_mac = data.white_mac.length == 0 ? [] : data.white_mac.split("\n");
 	data.white_ip = data.white_ip.length == 0 ? [] : data.white_ip.split("\n");
 	data.zid = "0";
-	data.redirect = ""; //TODO
+
+	if (data.authtype == "web" && data.modules.web == 0 && data.modules.wechat == 0 && data.modules.sms == 0) {
+		alert("认证方式至少选择一个！");
+		return false;
+	}
+
 	if (modify_flag == "add") {
 		cgicall.post("authrule_add", data, function(d) {
 			cgicallBack(d, initData, function() {
@@ -303,8 +357,10 @@ function initEvents() {
 	$('.delete').on('click', function() { OnDelete(); });
 	$('.submit').on('click', OnSubmit);
 	$(".checkall").on("click", OnSelectAll);
+	$(".dropdown-menu a").on("click", OnUnitChange)
 	$('fieldset.form-ff legend').on('click', OnLegend);
 	$("input:radio[name='authtype']").on("change", OnTypeChange);
+	$("input:radio[name='offline']").on("change", OnOfflineChange);
 	$("#iscloud").on("click", OnIscloud);
 	$(".checkbox.modules").on("click", OnChecked);
 	$('[data-toggle="tooltip"]').tooltip();
@@ -341,6 +397,7 @@ function OnSubmit() {
 
 	var obj = {
 			auth_no_flow_timeout: "",
+			auth_offline_time: "",
 			auth_redirect_ip: "",
 			auth_bypass_dst: ""
 		},
@@ -356,8 +413,43 @@ function OnSubmit() {
 		}
 	}
 	data.auth_bypass_dst = sarr;
-	data.auth_no_flow_timeout = parseInt(data.auth_no_flow_timeout) * 60;
-	cgicall.post("kv_set", data, function(d) {
+
+	var unit_no_flow = $(".unit-no-flow").attr("value"),
+		unit_offline = $(".unit-offline").attr("value"),
+		noflow = isNaN(parseInt(data.auth_no_flow_timeout)) ? 0 : parseInt(data.auth_no_flow_timeout),
+		offline = isNaN(parseInt(data.auth_offline_time)) ? 0 : parseInt(data.auth_offline_time);
+
+	if (unit_no_flow == "m") {
+		data.auth_no_flow_timeout = noflow * 60;
+	} else if (unit_no_flow == "h") {
+		data.auth_no_flow_timeout = noflow * 60 * 60;
+	} else {
+		data.auth_no_flow_timeout = noflow * 60 *60 *24;
+	}
+	if (unit_offline == "m") {
+		data.auth_offline_time = offline * 60;
+	} else if (unit_offline == "h") {
+		data.auth_offline_time = offline * 60 * 60;
+	} else {
+		data.auth_offline_time = offline * 60 *60 *24;
+	}
+
+	var enabled = $("input:radio[name=offline]").val();
+	console.log(enabled)
+	var sobj = {
+		auth_no_flow_timeout: {
+			enbale: enabled == "no_flow" ? 1 : 0,
+			time: data.auth_no_flow_timeout
+		},
+		auth_offline_time: {
+			enbale: enabled == "no_flow" ? 0 : 1,
+			time: data.auth_offline_time
+		},
+		auth_redirect_ip: data.auth_redirect_ip,
+		auth_bypass_dst: data.auth_bypass_dst
+	}
+
+	cgicall.post("kv_set", sobj, function(d) {
 		cgicallBack(d, function() {
 			initData2();
 			createModalTips("保存成功！");
@@ -439,14 +531,23 @@ function OnTypeChange(e) {
 		disCheckbox(false, e);
 	}
 }
-
+function OnOfflineChange() {
+	var value = $("input[name='offline']:checked").val();
+	if (value == "no_flow") {
+		$("#auth_no_flow_timeout").prop("disabled", false);
+		$("#auth_offline_time").prop("disabled", true);
+	} else {
+		$("#auth_no_flow_timeout").prop("disabled", true);
+		$("#auth_offline_time").prop("disabled", false);
+	}
+}
 function OnIscloud(e) {
 	var sec = e ? 300 : 0;
 	if ($("#iscloud").is(":checked")) {
 		$(".iscloud").slideUp(sec).find("input").prop("disabled", true);
 	} else {
 		OnTypeChange(false);
-		$("input:radio[name='authtype']").prop("disabled", false);
+		$("input:radio[name='authtype'], #auth_redirect_url").prop("disabled", false);
 		$(".iscloud").slideDown(sec);
 	}
 }
@@ -460,6 +561,21 @@ function OnLegend() {
 		$(this).find("span i").removeClass("icon-double-angle-up").addClass("icon-double-angle-down");
 		t.slideUp(300);
 	}
+}
+
+function OnUnitChange(that) {
+	var unit;
+	var that = $(that.target);
+	if(that.text() == "分钟") {
+		unit = "m";
+	} else if(that.text() == "小时") {
+		unit = "h";
+	} else if(that.text() == "天") {
+		unit = "d";
+	} else {
+		return false;
+	}
+	that.parents(".btn-group").find(".dropdown-toggle").attr("value", unit).html(that.text()+"<span class='caret'>");
 }
 
 function getSelected(that) {

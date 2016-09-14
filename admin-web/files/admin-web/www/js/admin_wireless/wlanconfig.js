@@ -118,7 +118,7 @@ function edit(that) {
 				opr = 'add';
 				var oSSID = {
 					enable: '1',
-					band: 'all',
+					band: '2g',
 					ssid: '',
 					encrypt: 'none',
 					password: '',
@@ -159,7 +159,7 @@ function DoSave() {
 	if(!verification()) return;
 	var oSSID = {
 		enable: '1',
-		band: 'all',
+		band: '2g',
 		ssid: '',
 		encrypt: 'none',
 		password: 'none',

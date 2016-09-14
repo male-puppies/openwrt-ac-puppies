@@ -47,6 +47,7 @@ function initData() {
 				$(".ifaces").append(wan_node);
 				$("span.mline").append(mline_node);
 				$("span.bline").append(bline_node);
+				verifyEventsInit();
 			}
 		} else {
 			createModalTips("初始化失败！请尝试重新加载！");
@@ -88,7 +89,7 @@ function consWanNode(name, bandwidth, enable) {
 							"class": "form-control wan-text",
 							"value": bandwidth,
 							"disabled": !enable,
-							"verify": "num 0 1000"
+							"verify": "num 1 1000"
 						})
 					)
 				)

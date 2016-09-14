@@ -1,10 +1,10 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8">
 <!--[if lte IE 9 ]><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><![endif]-->
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0" />
 <title>用户管理</title>
 <link rel="stylesheet" href="../../css/bootstrap.min.css" />
@@ -70,7 +70,7 @@
 				<form class="form-horizontal">
 					<fieldset>
 						<legend>基本配置</legend>
-						<div class="form-group clearfix">	
+						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="enable">启用</label>
 							<div class="col-xs-5">
 								<div class="checkbox">
@@ -107,7 +107,7 @@
 							</div>
 						</div>
 					</fieldset>
-					
+
 					<fieldset>
 						<legend>高级设置</legend>
 						<div class="form-group clearfix">
@@ -146,13 +146,15 @@
 								</div>
 							</div>
 						</div>
+
+
 						<div class="form-group clearfix">
-							<label class="col-xs-4 control-label" for="expire">过期时间</label>
+							<label class="col-xs-4 control-label" for="expire_chk">过期时间</label>
 							<div class="col-xs-5">
-								<div class="checkbox">
-									<label><input type="checkbox" id="expire_chk" value="1 0"/></label>
-								</div>
-								<div class="checkbox">
+								<div class="input-group">
+									<span class="input-group-addon">
+										<input type="checkbox" id="expire_chk" class="enable" value="1 0"/>
+									</span>
 									<input class="form-control empty form_datetime" type="text" disabled="disabled" readonly="readonly" id="expire" verify="notspace" />
 								</div>
 							</div>

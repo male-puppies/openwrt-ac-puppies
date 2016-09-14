@@ -124,6 +124,21 @@
 			},
 			message: "非法掩码格式。"
 		},
+		"lan_ip": {
+			method: function(val, maskid) {
+				var reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+				if (!(reg.test(val))) {
+					this.message = "非法IP格式。";
+					return false;
+				}
+				if (!(verifyHost(val, $("#" + maskid).val()))) {
+					this.message = "主机位不能全为0或1";
+					return false;
+				}
+				return true;
+			},
+			message: "非法IP格式。"
+		},
 		"ips":{
 			method: function(val) {
 				var ip_reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -257,35 +272,6 @@
 					maskstr = $("#" + maskid).val(),
 					reg = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
 
-				function ipToInt(ipstr) {
-					var ip = ipstr.split(".");
-					return (Number(ip[0]) * 16777216) + (Number(ip[1]) * 65536) + (Number(ip[2]) * 256) + (Number(ip[3]) * 1);
-				}
-
-				function checkIpMask(ipstr, maskstr, ipstr1) {
-					var ip = ipToInt(ipstr);
-					var mask = ipToInt(maskstr);
-					var ip1 = ipToInt(ipstr1);
-					return (ip & mask) == (ip1 & mask);
-				}
-
-				function compareIP(start, end) {
-					var temp1 = start.split(".");
-					var temp2 = end.split(".");
-					console.log(temp1)
-					console.log(temp2)
-					for (var i = 0; i < 4; i++) {
-						var num1 = parseInt(temp1[i]);
-						var num2 = parseInt(temp2[i]);
-						if (num1 > num2) {
-							return false;
-						} else if (num1 < num2) {
-							return true;
-						}
-					}
-					return false;
-				}
-
 				if (!reg.test(val)) {
 					this.message = "非法IP格式。";
 					return false;
@@ -296,9 +282,14 @@
 					return false;
 				}
 
+				if (!verifyHost(val, maskstr)) {
+					this.message = "主机位不能全为0或1";
+					return false
+				}
+
 				if (startid && startid != "none") {
 					var startstr = $("#" + startid).val();
-					if (!compareIP(startstr, val)) {
+					if (!(ipstrToInt(startstr) < ipstrToInt(val))) {
 						this.message = "非法IP地址。结束IP地址应大于起始IP地址。";
 						return false;
 					}
@@ -559,6 +550,34 @@
 			}
 		}
 	}
+
+	// ip特殊合法性
+	function ipstrToInt(ipstr) {
+		var ip = ipstr.split(".");
+		return (Number(ip[0]) * 16777216) + (Number(ip[1]) * 65536) + (Number(ip[2]) * 256) + (Number(ip[3]) * 1);
+	}
+
+	function verifyHost(ipstr, maskstr) {
+		var ip = ipstrToInt(ipstr),
+			mask = ipstrToInt(maskstr),
+			start = (ip & mask) >>> 0,
+			end = start + ((~mask) & 0xffffffff) >>> 0;
+
+		return ip > start && ip < end;
+	}
+
+	function ipToInt(ipstr) {
+		var ip = ipstr.split(".");
+		return (Number(ip[0]) * 16777216) + (Number(ip[1]) * 65536) + (Number(ip[2]) * 256) + (Number(ip[3]) * 1);
+	}
+
+	function checkIpMask(ipstr, maskstr, ipstr1) {
+		var ip = ipToInt(ipstr);
+		var mask = ipToInt(maskstr);
+		var ip1 = ipToInt(ipstr1);
+		return (ip & mask) == (ip1 & mask);
+	}
+	// end
 
 	var verifyModalTip = function(h, t) {
 		var tips;

@@ -25,6 +25,9 @@
 .auth-modules fieldset[disabled] .form-control {
 	background-color: #fff;
 }
+.btn .caret {
+    margin-left: 5px;
+}
 </style>
 <script src="../../js/lib/jquery-1.11.3.min.js"></script>
 <script src="../../js/lib/jquery.cookie.js"></script>
@@ -57,10 +60,48 @@
 				<div class="form-group clearfix">
 					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="auth_no_flow_timeout">无流量超时下线</label>
 					<div class="col-md-3 col-sm-4 col-xs-5">
-						<input type="text" id="auth_no_flow_timeout" class="form-control" verify="num 1 1440" />
+						<div class="input-group">
+							<span class="input-group-addon">
+								<input type="radio" name="offline" class="no_flow" checked="checked" value="no_flow" />
+							</span>
+							<input type="text" id="auth_no_flow_timeout" class="form-control" verify="num 1 1440" />
+							<span class="input-group-btn">
+								<div class="btn-group" style="z-index: 3;">
+								  <a class="btn btn-default dropdown-toggle unit-no-flow" value="m" data-toggle="dropdown">分钟<span class="caret"></span></a>
+								  <ul class="dropdown-menu" role="menu">
+								    <li><a href="javascript:;">分钟</a></li>
+								    <li><a href="javascript:;">小时</a></li>
+								    <li><a href="javascript:;">天</a></li>
+								  </ul>
+								</div>
+							</span>
+						</div>
 					</div>
 					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
-						<span class="units">分钟</span>
+						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1440。"><i class="icon-question-sign"></i></span>
+					</div>
+				</div>
+				<div class="form-group clearfix">
+					<label class="col-md-2 col-sm-3 col-xs-4 control-label" for="auth_offline_time">超过指定时长强制下线</label>
+					<div class="col-md-3 col-sm-4 col-xs-5">
+						<div class="input-group">
+							<span class="input-group-addon">
+								<input type="radio" name="offline" class="offline" value="offline" />
+							</span>
+							<input type="text" id="auth_offline_time" class="form-control"  disabled="disabled" verify="num 1 1440" />
+							<span class="input-group-btn">
+								<div class="btn-group">
+								  <a class="btn btn-default dropdown-toggle unit-offline" value="m" data-toggle="dropdown">分钟<span class="caret"></span></a>
+								  <ul class="dropdown-menu" role="menu">
+								    <li><a href="javascript:;">分钟</a></li>
+								    <li><a href="javascript:;">小时</a></li>
+								    <li><a href="javascript:;">天</a></li>
+								  </ul>
+								</div>
+							</span>
+						</div>
+					</div>
+					<div class="col-md-7 col-sm-5 col-xs-3 tip-icons">
 						<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入数字1~1440。"><i class="icon-question-sign"></i></span>
 					</div>
 				</div>
@@ -143,10 +184,10 @@
 						<div class="form-group clearfix">
 							<label class="col-xs-4 control-label" for="ruledesc">描述</label>
 							<div class="col-xs-5">
-								<input type="text" id="ruledesc" class="form-control" verify="desc" />
+								<input type="text" id="ruledesc" class="form-control" verify="name" />
 							</div>
 							<div class="col-xs-3 tip-icons">
-								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="输入字符串长度小于32个字符，不超过十个中文。"><i class="icon-question-sign"></i></span>
+								<span class="icon-tip" data-toggle="tooltip" data-placement="bottom" title="只能包含中文、数字、字母、‘-’、‘.’ 和下划线，不允许空格。长度范围1~32个字符，不超过10个中文。"><i class="icon-question-sign"></i></span>
 							</div>
 						</div>
 						<div class="form-group clearfix">
@@ -166,6 +207,12 @@
 							</div>
 						</div>
 						<div class="iscloud">
+							<div class="form-group clearfix">
+								<label class="col-xs-4 control-label" for="auth_redirect_url">认证成功后重定向地址</label>
+								<div class="col-xs-5">
+									<input type="text" id="auth_redirect_url" class="form-control" verify="notspace" />
+								</div>
+							</div>
 							<div class="form-group clearfix">
 								<label class="col-xs-4 control-label">认证方式</label>
 								<div class="col-xs-8">

@@ -391,6 +391,33 @@ function maskstrToCidr(maskstr) {
 	return intToCidr(ip);
 }
 
+// args: ["192.168.0.0/24, 192.168.0.1/16, 192.168.3.1/24"]
+// 判断多组ip/mask有没有交集
+// 比如 testCrossingNets({"192.168.0.1/24", "192.16.1.1/16", "172.16.0.0/16"})
+// true: 有交集，false: 无交集
+function testCrossingNets(args) {
+	var i, j;
+	for (i = 0; i < args.length; i++) {
+		for (j = i + 1; j < args.length; j++) {
+			var ipcidr1 = args[i].split("/"),
+				ipcidr2 = args[j].split("/"),
+				ip1 = ipstrToInt(ipcidr1[0]),
+				mask1 = cidrToInt(ipcidr1[1]),
+				ip2 = ipstrToInt(ipcidr2[0]),
+				mask2 = cidrToInt(ipcidr2[1]),
+				start1 = (ip1 & mask1) >>> 0,
+				end1 = (ip1 | (~mask1)) >>> 0,
+				start2 = (ip2 & mask2) >>> 0,
+				end2 = (ip2 | (~mask2)) >>> 0;
+
+			if (!((end1 < start2) || (end2 < start1))) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 function getSelectEth() {
 	var arr = [];
 	$(".opt-select").each(function(index, element) {
@@ -513,6 +540,20 @@ function OnSubmit() {
 			createModalTips("WAN口 MAC地址不能相同！");
 			return;
 		}
+	}
+
+	var alleth = [];
+	$("#form_wan .tab-pane, #form_lan .tab-pane").each(function(index, element) {
+		var id = $(element).attr("data-mtip"),
+			netmask = $("#" + id + "__netmask").is(":disabled") ? "" : $("#" + id + "__netmask").val(),
+			ipaddr = $("#" + id + "__ipaddr").is(":disabled") ? "" : $("#" + id + "__ipaddr").val();
+
+		if (typeof netmask == "undefined" || netmask == "" || typeof ipaddr == "undefined" || ipaddr == "") return false;
+		alleth.push(ipaddr + "/" + maskstrToCidr(netmask));
+	});
+	if (testCrossingNets(alleth)) {
+		createModalTips("根据所有网口的IP地址和子网掩码，判断您所填写的配置存在冲突（有交集），请检查并重新填写！");
+		return false;
 	}
 
 	var obj = getSubmitObj();

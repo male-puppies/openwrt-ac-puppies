@@ -10,7 +10,8 @@ var oTabFirewall,
 		"from_dport": "",
 		"to_dzid": "0",
 		"to_dip": "",
-		"to_dport": ""
+		"to_dport": "",
+		"reflection": "0"
 	};
 
 $(function() {

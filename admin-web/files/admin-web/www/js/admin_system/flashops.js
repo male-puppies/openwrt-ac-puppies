@@ -69,6 +69,8 @@ function DoRestore() {
 		if (d.status == 0) {
 			$.cookie('login_pwd', '', {expires: -1, path: "/"});
 			setTimeout(funcall, 12000);
+		} else {
+			createModalTips("恢复配置失败！" + (d.data ? d.data : ""));
 		}
 	});
 }
@@ -108,6 +110,8 @@ function DoReset() {
 		if (d.status == 0) {
 			$.cookie('login_pwd', '', {expires: -1, path: "/"});
 			setTimeout(funcall, 12000);
+		} else {
+			createModalTips("还原配置失败！" + (d.data ? d.data : ""));
 		}
 	});
 }

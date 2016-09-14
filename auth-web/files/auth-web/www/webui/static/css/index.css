@@ -1,0 +1,340 @@
+<style>
+* {
+	outline:none !important;
+	margin: 0;
+	padding: 0;
+}
+*:active {
+	outline:none !important;
+}
+a {
+	list-style: none;
+    text-decoration: none;
+    color: inherit;
+}
+a:hover,
+a:focus {
+	text-decoration: none;
+}
+
+.clearfix {
+	*zoom: 1;
+}
+.clearfix:before,
+.clearfix:after {
+	display: table;
+	line-height: 0;
+	content: "";
+}
+.clearfix:after {
+	clear: both;
+}
+input[type="button"],
+input[type="text"],
+input[type="submit"],
+input[type="reset"] {
+	-webkit-appearance: none;
+	border-radius: 0;
+}
+html {
+	height: 100%;
+}
+body {
+    font-family: Microsoft YaHei,"微软雅黑",Helvitica,Verdana,Tohoma,Arial,san-serif;
+    background-color: #f0eff5;
+    font-size: 16px;
+	padding: 0;
+    margin: 0;
+	box-sizing: border-box;
+	height: 100%;
+}
+ul,li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.big {
+	max-width: 730px;
+	min-width: 290px;
+	padding: 0 15px;
+	height: 100%;
+	margin: 0 auto;
+	overflow: hidden;
+}
+.big-m {
+	width: 100%;
+	margin: auto;
+	position: relative;
+	height: 100%;
+}
+.main {
+	width: 100%;
+	height: 400px;
+	margin: 0;
+	padding: 0;
+	position: absolute;
+	top: 50%;
+	margin-top: -200px;
+}
+.main .top {
+	height: 84px;
+	line-height: 48px;
+	font-size: 22px;
+	text-align: center;
+	color: #999;
+}
+
+.main .top p {
+	color: #999;
+	text-shadow: 1px 1px 1px white;
+}
+
+.login {
+	width: 100%;
+	height: 180px;
+}
+.text-input {
+	width: 100%;
+	height: 102px;
+}
+.text-input .input {
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+	border: 1px solid #dedde3;
+}
+.text-input .input input {
+	border: none;
+	width: 100%;
+	margin: 0;
+	height: 48px;
+	padding: 12px 10px;
+	box-sizing: border-box;
+	font-size: 16px;
+	color: #000;
+}
+.text-input .input input:active,
+.text-input .input input:focus {
+	-moz-box-shadow: 0px 0px 2px 1px #158afd;
+	-webkit-box-shadow: 0px 0px 2px 1px #158afd;
+	box-shadow: 0px 0px 2px 1px #158afd;
+	z-index: 9;
+	position: relative;
+}
+.text-input .input:last-child {
+	border-top: none;
+}
+.btn-input {
+	width: 100%;
+	height: 50px;
+	display: block;
+}
+.btn-input input {
+	border: none;
+	height: 50px;
+	width: 100%;
+	box-sizing: border-box;
+	cursor: pointer;
+	background: #3399fe;
+	color: #fff;
+	font-size: 18px;
+}
+.a-login .font {
+	color: #848484;
+	margin: 26px auto 20px;
+	position: relative;
+	line-height: 24px;
+	display: none;
+}
+.a-login .font p {
+	float: left;
+	text-align: center;
+	margin-top: 0;
+	margin-bottom: 0;
+}
+.a-login .font .left,
+.a-login .font .right {
+	margin-left: -60px;
+	width:50%;
+}
+.a-login .font .mid {
+	width: 120px;
+}
+.a-login .font .left i {
+	margin: 0px;
+	width: 100%;
+}
+.a-login .font .right i {
+	margin-left: 60px;
+	width: 100%
+}
+.a-login .font i {
+	display: block;
+	border-bottom: 1px solid #848484;
+	height: 12px;
+}
+
+.auth {
+	width: 100%;
+	text-align: center;
+	height: 42px;
+	overflow: hidden;
+}
+.auth a {
+	display: inline-block;
+	width: 42px;
+	height: 42px;
+	background: #ccc;
+	margin: 0 10px;
+}
+.auth a.weixin {
+	background: url("../img/weixin.png") no-repeat 0 0;
+	display: none;
+}
+.auth a.sms {
+	background: url("../img/sms.png") no-repeat 0 0;
+	display: none;
+}
+/* 弹框start */
+.mengban {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background:#000;
+	filter:alpha(opacity=30);
+	-moz-opacity:0.3;
+	-khtml-opacity: 0.3;
+	opacity: 0.3;
+    display: none;
+    z-index: 1000;
+}
+.alertbox {
+    position: fixed;
+    width: 19rem;
+    left: 50%;
+    margin-left: -9.5rem;
+    border-radius: .35rem;
+    top: 20%;
+    background-color: #e8e8e8;
+    z-index: 10001;
+    display: none;
+    transition-property: transform,opacity;
+    color: #3d4145;
+    z-index: 1001;
+}
+.alertbox .alert-title {
+    font-size: 1rem;
+    text-align: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #b5b5b5;
+}
+.alertbox .tips {
+    line-height: 16px;
+    height: 16px;
+    font-size: 14px;
+    color: red;
+    margin: 5px 10px;
+    overflow: hidden;
+}
+.alertbox .btns {
+    height: 2.6rem;
+    line-height: 2.6rem;
+    text-align: center;
+    font-size: 1rem;
+    color: #0894ec;
+    border-top: 1px solid #b5b5b5;
+    display: table;
+    width: 100%;
+}
+.alertbox .btns span {
+    display: table-cell;
+}
+.alertbox .btns span:first-child:hover {
+    background: #d7d7d7;
+    border-bottom-left-radius: .35rem;
+}
+.alertbox .btns span:last-child:hover {
+    background: #d7d7d7;
+    border-bottom-right-radius: .35rem;
+}
+.alertbox .btns .cancle {
+    border-right: 1px solid #b5b5b5;
+}
+.number {
+    padding: 0 10px 14px;
+}
+.number input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 36px;
+    line-height: 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    padding: 8px 10px;
+    font-size: 15px;
+}
+.code {
+    width: 100%;
+    padding: 0 10px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+.code input {
+    width: 10rem;
+    box-sizing: border-box;
+    height: 36px;
+    line-height: 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    padding: 8px 10px;
+    font-size: 15px;
+}
+.code span {
+    width: 6rem;
+    float: right;
+    display: inline-block;
+    height: 34px;
+    line-height: 34px;
+    text-align: center;
+    font-size: .9rem;
+    box-sizing: border-box;
+    background-color: #ef4437;
+    color: #fff;
+    border-radius: 4px;
+    padding: 0 5px;
+    margin-top: 1px;
+}
+.code span.code-warn {
+    background-color: #ccc;
+}
+.password {
+    padding: 0 10px 24px 10px;
+    box-sizing: border-box;
+}
+.web-confirm input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 36px;
+    line-height: 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    padding: 8px 10px;
+    font-size: 15px;
+}
+input.warn {
+    border: 1px solid #f00 !important;
+    color: #f00 !important;
+}
+.login input.warn {
+    -moz-box-shadow: 0px 0px 2px 1px #f00 !important;
+	-webkit-box-shadow: 0px 0px 2px 1px #f00 !important;
+	box-shadow: 0px 0px 2px 1px #f00 !important;
+	position: relative !important;
+	z-index: 9 !important;
+	border: none !important;
+    color: #f00 !important;
+}
+/* 弹框end */

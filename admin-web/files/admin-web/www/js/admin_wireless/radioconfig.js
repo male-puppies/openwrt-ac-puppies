@@ -15,14 +15,25 @@ var country = "China",
 			"opt": {
 				"mult": "",
 				"rate": "",
+				"usrlimit": "",
 				"inspeed": "",
+				"isolation": "",
 				"enable": ""
 			}
 	}
 $(function() {
-	initData();
+	createInitModal();
+	verifyEventsInit();
 	initEvents();
+	initData();
 });
+
+function createInitModal() {
+	$("#modal_tips").modal({
+		"backdrop": "static",
+		"show": false
+	});
+}
 
 function initData() {
 	var obj = {
@@ -172,6 +183,7 @@ function setCountryChannel(obj) {
 }
 
 function saveSubmit() {
+	if(!verification()) return false;
 	var obj = jsonTraversal(radio_cfg, jsTravGet);
 	cgicall.post('radio_set', obj, function(d) {
 		if(d.status == 0) {
