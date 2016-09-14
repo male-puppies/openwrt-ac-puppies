@@ -25,7 +25,7 @@ static rwlock_t flush_lock;
 static rwlock_t ghash_lock;
 static struct timer_list flush_timer; /* trav timer */
 
-static inline uint64_t grand_realtime(uint64_t now, uint64_t prev, uint32_t elapse)
+static inline uint32_t grand_realtime(uint64_t now, uint64_t prev, uint32_t elapse)
 {
 	uint64_t grand;
 	uint32_t remainder;
@@ -103,7 +103,7 @@ static void stat_realtime(void *ni, int type)
 	flow_info_t *fi = NULL;
 	user_info_t *ui = NULL;
 	uint32_t elapse, id, magic;
-	uint64_t recv_pkts, recv_bytes, xmit_pkts, xmit_bytes;
+	uint64_t recv_pkts = 0, recv_bytes = 0, xmit_pkts = 0, xmit_bytes = 0;
 
 	switch(type) {
 		case STAT_TYPE_FLOW: {
