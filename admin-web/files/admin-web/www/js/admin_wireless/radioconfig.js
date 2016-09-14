@@ -4,7 +4,8 @@ var country = "China",
 				"proto": "",
 				"bandwidth": "",
 				"chanid": "",
-				"power": ""
+				"power": "",
+				"usrlimit": ""
 			},
 			"radio_5g": {
 				"proto": "",
@@ -15,7 +16,6 @@ var country = "China",
 			"opt": {
 				"mult": "",
 				"rate": "",
-				"usrlimit": "",
 				"inspeed": "",
 				"isolation": "",
 				"enable": ""

@@ -60,37 +60,38 @@ function web_action() {
 		username = $("#web_user").val(),
 		password = $("#web_pwd").val();
 
-	var sarr = params.substring(1).split("&");
-	var obj = {}
-	for (var i = 0; i < sarr.length; i++) {
-		var tokens = sarr[i].split("=");
-		if (tokens.length == 2) {
-			obj[tokens[0]] = tokens[1];
-		}
-	}
+	// var sarr = params.substring(1).split("&");
+	// var obj = {}
+	// for (var i = 0; i < sarr.length; i++) {
+		// var tokens = sarr[i].split("=");
+		// if (tokens.length == 2) {
+			// obj[tokens[0]] = tokens[1];
+		// }
+	// }
 
-	if (!(obj.hasOwnProperty("mac") && obj.hasOwnProperty("ip"))) {
-		alert("非法参数！尝试重新加载！");
-		return;
-	}
+	// if (!(obj.hasOwnProperty("mac") && obj.hasOwnProperty("ip"))) {
+		// alert("非法参数！尝试重新加载！");
+		// return;
+	// }
 
-	var mac = obj.mac;
-	var ip = obj.ip;
+	// var mac = obj.mac;
+	// var ip = obj.ip;
 
-	var mac_reg = /^[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/;
-	var ip_reg = /^[1-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/
-	if (!(mac_reg.test(mac) && ip_reg.test(ip))) {
-		alert("非法参数！尝试重新加载！");
-		return;
-	}
+	// var mac_reg = /^[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/;
+	// var mac_reg2 = /^[0-9a-f]{2}-[0-9a-f]{2}-[0-9a-f]{2}-[0-9a-f]{2}-[0-9a-f]{2}-[0-9a-f]{2}$/;
+	// var ip_reg = /^[1-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/
+	// if (!((mac_reg.test(mac) || mac_reg2.test(mac)) && ip_reg.test(ip))) {
+		// alert("非法参数！尝试重新加载！");
+		// return;
+	// }
 
 	$.post(
 		"/cloudlogin" + params,
 		{
 			username: username,
-			password: password,
-			mac: mac,
-			ip: ip
+			password: password
+			// mac: mac,
+			// ip: ip
 		},
 		function(d) {
 			if (d.status == 0) {
@@ -101,7 +102,7 @@ function web_action() {
 					window.location.href = "http://www.baidu.com";
 				}
 			} else {
-				$(".web-confirm .tips").html("登录失败！");
+				$(".web-confirm .tips").html("登录失败！" + (d.data ? d.data : ""));
 			}
 		},
 		"json"
