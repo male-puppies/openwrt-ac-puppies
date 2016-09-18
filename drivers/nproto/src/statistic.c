@@ -74,6 +74,7 @@ static stat_node_t* stat_node_find(stat_t *ps,
 			np_error("not enough memory\n");
 			return NULL;
 		}
+		memset(&node->data, 0, sizeof(node->data));
 		/* init */
 		node->data.id = id;
 		node->data.magic = magic;
